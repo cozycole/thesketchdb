@@ -1,0 +1,5 @@
+{{ partial "thumbnail-sample" .}} {{ range . }}
+<h2 class="{{.Title}}">{{.Title}}</h2>
+<h2 class="{{.Title}}-img">Image would be here: {{.Img_url}}</h2>
+{{ end }}
+<a href="{{.More_url}}"></a>
