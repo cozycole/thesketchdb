@@ -3,9 +3,9 @@ main:
     name: About
     url: /about
     weight: 100
-  - identifier: contact
-    name: Contact
-    url: /contact
+  - identifier: browse
+    name: browse
+    url: /browse
     weight: 200
   - identifier: random
     name: Random
