@@ -1,1 +1,4 @@
-*.lock
+.env
+go.sum
+img
+notes.md
