@@ -16,6 +16,7 @@ type Video struct {
 	Thumbnail  string
 	Rating     string
 	UploadDate time.Time
+	Creator    *Creator
 }
 
 type VideoModelInterface interface {
@@ -31,8 +32,13 @@ type VideoModel struct {
 
 func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date 
+		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date,
+		c.id, c.name, c.profile_img_path
 		FROM video AS v
+		LEFT JOIN video_creator_rel as vcr
+		ON v.id = vcr.video_id
+		LEFT JOIN creator as c
+		ON vcr.creator_id = c.id
 		WHERE search_vector @@ to_tsquery('english', $1)
 		LIMIT $2
 		OFFSET $3;
@@ -67,8 +73,13 @@ func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 // Will make DRY later
 func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date 
+		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date,
+		c.id, c.name, c.profile_img_path
 		FROM video AS v
+		JOIN video_creator_rel as vcr
+		ON v.id = vcr.video_id
+		JOIN creator as c
+		ON vcr.creator_id = c.id
 		LIMIT $1
 		OFFSET $2;
 	`
@@ -85,10 +96,15 @@ func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 	videos := []*Video{}
 	for rows.Next() {
 		v := &Video{}
-		err := rows.Scan(&v.ID, &v.Title, &v.URL, &v.Thumbnail, &v.UploadDate)
+		c := &Creator{}
+		err := rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Thumbnail, &v.UploadDate,
+			&c.ID, &c.Name, &c.ProfileImage,
+		)
 		if err != nil {
 			return nil, err
 		}
+		v.Creator = c
 		videos = append(videos, v)
 
 	}

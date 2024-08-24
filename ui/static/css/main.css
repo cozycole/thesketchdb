@@ -11,7 +11,7 @@ html, body {
 }
 
 body {
-    line-height: 1.5;
+    line-height: 1.3;
     background-color: #F1F3F6;
     color: #34495E;
     overflow-y: scroll;
@@ -109,6 +109,18 @@ a:hover {color: gray;}
     margin: 5px;
 }
 
+.videoDetails {
+    margin-left: 8px;
+    margin-top: 2px;
+    display: flex;
+}
+
+.videoMetadata {
+    width: calc(80% - 20px);
+    margin-left: 10px;
+
+}
+
 .videoDetails h3 {
     display: -webkit-box;
     -webkit-line-clamp: 2; 
@@ -117,6 +129,13 @@ a:hover {color: gray;}
     margin: 0;
     font-size: 1.15em;
 }
+
+.videoDetails img {
+    width: 35px; 
+    height: 35px;
+    border-radius: 50%;
+}
+ 
 
 /* Have search results stop scaling with screen width */
 @media only screen and (min-width: 1401px) {
