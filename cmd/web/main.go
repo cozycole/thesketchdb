@@ -10,16 +10,19 @@ import (
 
 	"sketchdb.cozycole.net/internal/models"
 
+	"github.com/go-playground/form/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	templateCache map[string]*template.Template
-	videos        models.VideoModelInterface
-	debugMode     bool
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	templateCache  map[string]*template.Template
+	imgStoragePath string
+	videos         models.VideoModelInterface
+	debugMode      bool
+	formDecoder    *form.Decoder
 }
 
 func main() {

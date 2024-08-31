@@ -20,7 +20,7 @@ type Video struct {
 }
 
 type VideoModelInterface interface {
-	// Insert(title string, url string, thumbnail string, rating, uploadDate time.Time)
+	Insert(title, url string, uploadDate time.Time, rating string) (int, error)
 	Search(search string, offset int) ([]*Video, error)
 	GetAll(offset int) ([]*Video, error)
 }
@@ -113,4 +113,21 @@ func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 		return nil, err
 	}
 	return videos, nil
+}
+
+func (m *VideoModel) Insert(title string, video_url string, upload_date time.Time, rating string) (int, error) {
+	stmt := `INSERT INTO video (title, video_url, upload_date, pg_rating)
+	VALUES ($1, $2, $3, $4) RETURNING id`
+
+	result := m.DB.QueryRow(
+		context.Background(), stmt, title,
+		video_url, upload_date, rating,
+	)
+
+	var id int
+	err := result.Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
 }

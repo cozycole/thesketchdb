@@ -1,0 +1,66 @@
+{{define "title"}} Admin {{end}}
+
+{{define "main"}}
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Add Video</title>
+        <link rel="stylesheet" href="/static/css/admin.css">
+    </head>
+    <body>
+        <div id="container">
+            <h1>Add Video</h1>
+            <form id="addForm" enctype="multipart/form-data" action="http://localhost:4000/add/video" method="POST">
+                <div style="display: inline;">
+                    <label>
+                        Video URL
+                        <input type="text" name="url" id="videoURL">
+                    </label>
+                    <button type="button" onclick="autofillMetadata()">Autofill from URL</button>
+                </div>
+                <label>
+                    Video Title
+                    <input type="text" name="title" id="videoTitle">
+                </label>
+                <label>
+                    Upload Date
+                    <input type="date" name="uploadDate" id="uploadDate">
+                </label>
+                <label>
+                    Rating
+                    <select name="rating" id="rating">
+                        <option value="pg">PG</option>
+                        <option value="pg-13">PG-13</option>
+                        <option value="r">R</option>
+                    </select>
+                </label>
+                <label class="custom-file-label">
+                    Upload Thumbnail
+                    <input type="file" name="thumbnail" id="imageInput" accept="image/*" onChange="previewImage(event)">
+                </label>
+                <label>
+                    Video Tags
+                    <input type="text" name="tag" id="videoTags">
+                </label>
+                <h2>Person Data</h2>
+                <label>
+                    Creator Name
+                    <input type="text" name="creator" id="creatorInput">
+                </label>
+                <label>
+                    Actors
+                    <input type="text" name="actor">
+                </label>
+                <button type="submit">Submit</button>
+            </form>
+            <div id="imagePreview"></div>
+        </div>
+    </body>
+    </html>
+{{end}}
+
+{{define "scripts"}}
+    <script src="/static/js/admin-add.js"></script>
+{{end}}
