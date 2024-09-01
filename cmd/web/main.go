@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"sketchdb.cozycole.net/internal/models"
 
@@ -50,12 +51,19 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	formDecoder := form.NewDecoder()
+	// letting form decoder know how to handle dates
+	formDecoder.RegisterCustomTypeFunc(func(vals []string) (interface{}, error) {
+		return time.Parse("2006-01-02", vals[0])
+	}, time.Time{})
+
 	app := &application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		videos:        &models.VideoModel{DB: dbpool, ResultSize: 16},
 		templateCache: templateCache,
 		debugMode:     *debug,
+		formDecoder:   formDecoder,
 	}
 
 	srv := &http.Server{

@@ -7,7 +7,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Add Video</title>
-        <link rel="stylesheet" href="/static/css/admin.css">
+        <link rel="stylesheet" href="/static/css/add.css">
     </head>
     <body>
         <div id="container">
@@ -51,7 +51,9 @@
                 </label>
                 <label>
                     Actors
-                    <input type="text" name="actor">
+                    <input type="text" name="actors[0]">
+                    <input type="text" name="actors[1]">
+                    <input type="text" name="actors[2]">
                 </label>
                 <button type="submit">Submit</button>
             </form>
@@ -62,5 +64,5 @@
 {{end}}
 
 {{define "scripts"}}
-    <script src="/static/js/admin-add.js"></script>
+    <script src="/static/js/add.js"></script>
 {{end}}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"time"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -24,20 +25,29 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
-	app.render(w, http.StatusOK, "admin-add.tmpl.html", data)
+	app.render(w, http.StatusOK, "add-video.tmpl.html", data)
 }
 
-// type addVideoForm struct {
-// 	Title string `form:"title"`
-// 	VideoURL string `form:"videoURL"`
-// 	Thumbnail
-
-// }
+type addVideoForm struct {
+	Title      string    `form:"title"`
+	VideoURL   string    `form:"videoURL"`
+	Rating     string    `form:"rating"`
+	UploadDate time.Time `form:"uploadDate"`
+	Creator    string    `form:"creator"`
+	Actors     []string  `form:"actors"`
+}
 
 func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(10 << 20)
+	var form addVideoForm
 
-	// 1) Validate video information (valid date, url, rating)
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		app.errorLog.Print(err)
+		return
+	}
+
+	// 1) Validate video information (url, rating, title)
 
 	// 2) Validate creator exists by getting its id
 
@@ -60,9 +70,8 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 
 	// dst, err := os.Create(header.Filename)
 
-	app.infoLog.Print(r.Form)
+	app.infoLog.Println(form)
 
 	w.WriteHeader(200)
 	w.Write([]byte("OK"))
-
 }
