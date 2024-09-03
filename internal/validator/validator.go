@@ -50,17 +50,6 @@ func PermittedValue[T comparable](value T, permittedValues ...T) bool {
 	return false
 }
 
-func ValidRating(value string) bool {
-	switch strings.ToLower(value) {
-	case
-		"pg",
-		"pg-13",
-		"r":
-		return true
-	}
-	return false
-}
-
 func ValidDate(value string) bool {
 	_, err := time.Parse("2006-02-01", value)
 	return err == nil

@@ -55,16 +55,25 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1) Validate video information
+	// 1) Validate video form information
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Rating), "rating", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.UploadDate), "uploadDate", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Creator), "creator", "This field cannot be blank")
 	form.CheckField(validator.ValidDate(form.UploadDate), "uploadDate", "Date must be of the format YYYY-MM-DD")
 	form.CheckField(validator.PermittedValue(strings.ToLower(form.Rating), "pg", "pg-13", "r"),
 		"rating",
 		"Rating must be PG, PG-13 or R (case insensitive)",
 	)
+
+	// 2) Validate creator exists by getting its id
+	// We may want to do a form check before this to prevent
+	// hitting database if creator/actor fields are blank
+	_, err = app.creators.Exists(form.Creator)
+	form.CheckField(err == nil, "creator", "Creator does not exist. Please add it, then resubmit video!")
+
+	// 3) Validate actors by getting their ids
 
 	if !form.Valid() {
 		// sending a new html form with errors if it's not valid
@@ -73,10 +82,6 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		app.render(w, http.StatusUnprocessableEntity, "add-video.tmpl.html", data)
 		return
 	}
-
-	// 2) Validate creator exists by getting its id
-
-	// 4) Validate actors by getting their ids
 
 	// 4) Validate uploaded image, then save video thumbnail path and give it a name
 

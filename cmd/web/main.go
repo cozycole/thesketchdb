@@ -21,6 +21,7 @@ type application struct {
 	templateCache  map[string]*template.Template
 	imgStoragePath string
 	videos         models.VideoModelInterface
+	creators       models.CreatorModelInterface
 	debugMode      bool
 	formDecoder    *form.Decoder
 }
@@ -56,6 +57,7 @@ func main() {
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		videos:        &models.VideoModel{DB: dbpool, ResultSize: 16},
+		creators:      &models.CreatorModel{DB: dbpool},
 		templateCache: templateCache,
 		debugMode:     *debug,
 		formDecoder:   formDecoder,

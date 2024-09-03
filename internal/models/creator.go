@@ -18,6 +18,7 @@ type Creator struct {
 
 type CreatorModelInterface interface {
 	Get(id int) (*Creator, error)
+	Exists(name string) (int, error)
 }
 
 type CreatorModel struct {
@@ -41,4 +42,22 @@ func (m *CreatorModel) Get(id int) (*Creator, error) {
 		}
 	}
 	return c, nil
+}
+
+func (m *CreatorModel) Exists(name string) (int, error) {
+	stmt := `SELECT id FROM creator WHERE id = $1`
+	row := m.DB.QueryRow(context.Background(), stmt, name)
+
+	c := &Creator{}
+
+	err := row.Scan(&c.ID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+	return c.ID, nil
+
 }
