@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"sketchdb.cozycole.net/internal/models"
 
@@ -52,10 +51,6 @@ func main() {
 	}
 
 	formDecoder := form.NewDecoder()
-	// letting form decoder know how to handle dates
-	formDecoder.RegisterCustomTypeFunc(func(vals []string) (interface{}, error) {
-		return time.Parse("2006-01-02", vals[0])
-	}, time.Time{})
 
 	app := &application{
 		errorLog:      errorLog,

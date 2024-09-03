@@ -17,8 +17,7 @@ import (
 // you need to combine it all into one
 type templateData struct {
 	CurrentYear int
-	// Snippet         *models.Snippet
-	Videos []*models.Video
+	Videos      []*models.Video
 	// User            *models.User
 	Form            any
 	Flash           string

@@ -49,7 +49,7 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	}
 }
 
-// see ~//go/pkg/mod/github.com/go-playground/form/v4@v4.2.1/README.md
+// see ~/go/pkg/mod/github.com/go-playground/form/v4@v4.2.1/README.md
 // for doc on the form decoder
 func (app *application) decodePostForm(r *http.Request, dst any) error {
 	err := r.ParseMultipartForm(10 << 20)
@@ -84,6 +84,7 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 
 	// write template to buffer instead of straight to
 	// the http.ResponseWriter
+	app.infoLog.Printf("%+v\n", data)
 	err := ts.ExecuteTemplate(buf, "base", data)
 	if err != nil {
 		app.serverError(w, err)
