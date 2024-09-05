@@ -22,6 +22,7 @@ type application struct {
 	imgStoragePath string
 	videos         models.VideoModelInterface
 	creators       models.CreatorModelInterface
+	actors         models.ActorModelInterface
 	debugMode      bool
 	formDecoder    *form.Decoder
 }
@@ -58,6 +59,7 @@ func main() {
 		infoLog:       infoLog,
 		videos:        &models.VideoModel{DB: dbpool, ResultSize: 16},
 		creators:      &models.CreatorModel{DB: dbpool},
+		actors:        &models.ActorModel{DB: dbpool},
 		templateCache: templateCache,
 		debugMode:     *debug,
 		formDecoder:   formDecoder,

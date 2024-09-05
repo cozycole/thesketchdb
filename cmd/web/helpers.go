@@ -84,7 +84,6 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 
 	// write template to buffer instead of straight to
 	// the http.ResponseWriter
-	app.infoLog.Printf("%+v\n", data)
 	err := ts.ExecuteTemplate(buf, "base", data)
 	if err != nil {
 		app.serverError(w, err)

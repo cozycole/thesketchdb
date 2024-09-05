@@ -1,7 +1,6 @@
 {{define "title"}} Add Video {{end}}
 
 {{define "main"}}
-    <link rel="stylesheet" href="/static/css/add.css">
     <h1>Add Video</h1>
     <form id="addForm" enctype="multipart/form-data" action="http://localhost:4000/add/video" method="POST">
         <div>
@@ -46,18 +45,26 @@
             <input type="text" name="tag" id="videoTags">
         </label>
         <div>
+            <label>Creator Name</label>
             {{with .Form.FieldErrors.creator}}
                 <label class="error">{{.}}</label>
             {{end}}
-            <label>Creator Name</label>
             <input type="text" name="creator" value="{{.Form.Creator}}">
         </div>
-        <label>
-            Actors
-            <input type="text" name="actors[0]">
-            <input type="text" name="actors[1]">
-            <input type="text" name="actors[2]">
-        </label>
+        <div id="actorInputs">
+            <label>Actors</label>
+            {{$FieldErrors := .Form.FieldErrors}}
+            {{range $index, $actor := .Form.Actors}}
+                {{$name := printf "actor[%d]" $index}}
+                {{with (index $FieldErrors $name)}}
+                    <label class="error">{{.}}</label>
+                {{end}}
+               <input type="text" name="{{$name}}" value="{{.}}"> 
+            {{else}}
+                <input type="text" name="actors[0]">
+            {{end}}
+            <button type="button" id="actorButton">Add actor input</button>
+        </div>
         <button type="submit">Submit</button>
         <div id="imagePreview"></div>
     </div>

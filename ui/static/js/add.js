@@ -91,6 +91,30 @@ function getVideoID(url) {
     return queryParams.get('v')
 }
 
+document.getElementById("actorButton").addEventListener("click", () => {
+    const actorInputDivs = document.querySelectorAll("#actorInputs input")
+    const lastInputs = Array.from(actorInputDivs).sort((a,b) => {
+        a = a.getAttribute("name")
+        b = b.getAttribute("name")
+        return a-b
+    })
+
+    const lastInput = lastInputs.pop()
+    console.log(lastInput.getAttribute("name"))
+
+
+    const lastInputName = lastInput.getAttribute("name")
+    let lastInputNum = lastInputName.match(/\d+/)[0]
+    
+    const newInput = document.createElement("input")
+    newInput.type = "text"
+    newInput.name = `actors[${Number(lastInputNum) + 1}]`
+
+
+    const addActorButton = document.querySelector("#actorInputs button")
+    lastInput.parentNode.insertBefore(newInput, addActorButton)
+})
+
 
 // document.getElementById('addVideoForm').addEventListener('submit', function(event) {
 //     event.preventDefault(); // Prevent form submission

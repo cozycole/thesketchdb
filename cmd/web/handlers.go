@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -68,15 +69,21 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// 2) Validate creator exists by getting its id
-	// We may want to do a form check before this to prevent
-	// hitting database if creator/actor fields are blank
-	_, err = app.creators.Exists(form.Creator)
+	_, err = app.creators.ExistsByName(form.Creator)
 	form.CheckField(err == nil, "creator", "Creator does not exist. Please add it, then resubmit video!")
 
-	// 3) Validate actors by getting their ids
+	// 3) Validate actor fields
+	var actorIds []int
+	for i, a := range form.Actors {
+		htmlFieldName := fmt.Sprintf("actor[%d]", i)
+		form.CheckField(validator.NotBlank(a), htmlFieldName, "This field cannot be blank")
+
+		id, err := app.actors.ExistsByName(a)
+		form.CheckField(err == nil, htmlFieldName, "Actor does not exist. Please add it, then resubmit video!")
+		actorIds = append(actorIds, id)
+	}
 
 	if !form.Valid() {
-		// sending a new html form with errors if it's not valid
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusUnprocessableEntity, "add-video.tmpl.html", data)
