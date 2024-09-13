@@ -8,8 +8,12 @@ import (
 	"os"
 	"path"
 	"testing"
+
+	"sketchdb.cozycole.net/internal/assert"
 )
 
+// Checking that the decodePostForm function correctly
+// marshals the request object into a addCreatorForm struct
 func TestDecodePostForm(t *testing.T) {
 	currDir, _ := os.Getwd()
 	filepath := "cmd/web/testdata/test-img.jpg"
@@ -51,21 +55,37 @@ func TestDecodePostForm(t *testing.T) {
 
 	app := newTestApplication(t)
 
-	t.Run("CorrectFormWExtraFields", func(t *testing.T) {
+	t.Run("CorrectForm ExtraFields", func(t *testing.T) {
 		var form addCreatorForm
 
 		app.decodePostForm(r, &form)
-		if form.Name != name {
-			t.Errorf("got %q; want %q", form.Name, name)
-		}
-		if form.URL != url {
-			t.Errorf("got %q; want %q", form.URL, url)
-		}
-		if form.EstablishedDate != establishedDate {
-			t.Errorf("got %q; want %q", form.EstablishedDate, establishedDate)
-		}
-		if form.ProfileImage.Filename != path.Base(filepath) {
-			t.Errorf("got %q; want %q", form.ProfileImage.Filename, path.Base(filepath))
-		}
+		assert.Equal(t, form.Name, name)
+		assert.Equal(t, form.URL, url)
+		assert.Equal(t, form.EstablishedDate, establishedDate)
+		assert.Equal(t, form.ProfileImage.Filename, path.Base(filepath))
+	})
+
+	buf = new(bytes.Buffer)
+	w = multipart.NewWriter(buf)
+
+	x, _ = w.CreateFormField("url")
+	x.Write([]byte(url))
+	x, _ = w.CreateFormField("establishedDate")
+	x.Write([]byte(establishedDate))
+
+	r, err = http.NewRequest("POST", "/test/postform", buf)
+	r.Header.Add("content-type", w.FormDataContentType())
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	w.Close()
+
+	t.Run("No Image", func(t *testing.T) {
+		var form addCreatorForm
+
+		app.decodePostForm(r, &form)
+		assert.Equal(t, form.ProfileImage, nil)
+		assert.Equal(t, form.Name, "")
 	})
 }
