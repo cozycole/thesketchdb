@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"runtime/debug"
 	"time"
 
@@ -65,8 +66,26 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 		if errors.As(err, &invalidDecoderError) {
 			panic(err)
 		}
-
 		return err
+	}
+
+	// the following checks if struct tag with key "img" exists and sets
+	// the given field with the file of name struct tag value
+	// don't do any type checking since form decoder already did it
+	v := reflect.ValueOf(dst).Elem()
+	structType := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := structType.Field(i)
+
+		if tagValue := fieldType.Tag.Get("img"); tagValue != "" {
+
+			fileHeaders, ok := r.MultipartForm.File[tagValue]
+			if ok && len(fileHeaders) > 0 {
+				newVal := reflect.ValueOf(fileHeaders[0])
+				field.Set(newVal)
+			}
+		}
 	}
 
 	return nil
