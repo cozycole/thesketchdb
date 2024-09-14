@@ -1,16 +1,13 @@
 package main
 
 import (
-	"bytes"
-	"io"
-	"mime/multipart"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"sketchdb.cozycole.net/internal/assert"
 )
 
+// This is testing the validation of the struct that
+// was unmarshalled by the decodePostForm function
 func TestValidateAddCreatorForm(t *testing.T) {
 	// store in memory valid and invalid images
 	var emptyMap map[string]string
@@ -73,52 +70,4 @@ func TestValidateAddCreatorForm(t *testing.T) {
 			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
 		})
 	}
-}
-
-func createMultipartFileHeader(t *testing.T, filePath string) *multipart.FileHeader {
-	t.Helper()
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		t.Error(err)
-		return nil
-	}
-	defer file.Close()
-
-	var buff bytes.Buffer
-	buffWriter := io.Writer(&buff)
-
-	// create a new form and create a new file field
-	formWriter := multipart.NewWriter(buffWriter)
-	formPart, err := formWriter.CreateFormFile("file", filepath.Base(file.Name()))
-	if err != nil {
-		t.Error(err)
-		return nil
-	}
-
-	if _, err := io.Copy(formPart, file); err != nil {
-		t.Error(err)
-		return nil
-	}
-
-	formWriter.Close()
-
-	buffReader := bytes.NewReader(buff.Bytes())
-	formReader := multipart.NewReader(buffReader, formWriter.Boundary())
-
-	// read the form components with max stored memory of 1MB
-	multipartForm, err := formReader.ReadForm(1 << 20)
-	if err != nil {
-		t.Error(err)
-		return nil
-	}
-
-	// return the multipart file header
-	files, exists := multipartForm.File["file"]
-	if !exists || len(files) == 0 {
-		t.Error("multipart file not exists")
-		return nil
-	}
-
-	return files[0]
 }

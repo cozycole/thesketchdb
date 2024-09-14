@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"log"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -53,40 +54,11 @@ func newTestServer(t *testing.T, h http.Handler) *testServer {
 }
 
 func (ts *testServer) postMultipartForm(t *testing.T, urlPath string, fields map[string]string, files map[string]string) {
-	// create
-	buf := new(bytes.Buffer)
-	w := multipart.NewWriter(buf)
-
-	// write text fields
-	for name, val := range fields {
-		x, err := w.CreateFormField(name)
-		if err != nil {
-			t.Fatal(err)
-		}
-		x.Write([]byte(val))
-	}
-
-	for name, filepath := range files {
-		file, err := os.Open(filepath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer file.Close()
-
-		part, err := w.CreateFormFile(name, path.Base(filepath))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = io.Copy(part, file)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	w.Close()
+	// buf, contentType := createMultipartForm()
+	// createMultipartFileHeader()
 
 	// rs, err := ts.Client().Post(ts.URL+urlPath, form)
+
 	// if err != nil {
 	// 	t.Fatal(err)
 	// }
@@ -134,5 +106,33 @@ func createMultipartForm(t *testing.T, fields map[string]string, files map[strin
 
 	w.Close()
 	return buf, w.FormDataContentType()
+}
 
+// form validation tests just want to convert an *os.File to a *multipart.FileHeader
+func createMultipartFileHeader(t *testing.T, filePath string) *multipart.FileHeader {
+	buf, contentType := createMultipartForm(t, map[string]string{}, map[string]string{"file": filePath})
+
+	_, params, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	buffReader := bytes.NewReader(buf.Bytes())
+	formReader := multipart.NewReader(buffReader, params["boundary"])
+
+	// read the form components with max stored memory of 1MB
+	multipartForm, err := formReader.ReadForm(1 << 20)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
+
+	// return the multipart file header
+	files, exists := multipartForm.File["file"]
+	if !exists || len(files) == 0 {
+		t.Error("multipart file not exists")
+		return nil
+	}
+
+	return files[0]
 }
