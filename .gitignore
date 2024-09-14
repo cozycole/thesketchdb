@@ -1,4 +1,9 @@
 .env
 go.sum
-img
+actor
+creator
+video
+img/*
 notes.md
+quick*
+tmp
