@@ -2,7 +2,9 @@ package validator
 
 // Package for validating form inputs
 import (
-	"fmt"
+	"mime/multipart"
+	"net/http"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -25,7 +27,6 @@ func (v *Validator) AddFieldError(key, message string) {
 	if v.FieldErrors == nil {
 		v.FieldErrors = map[string]string{}
 	}
-	fmt.Print(v.FieldErrors[key])
 	if _, exists := v.FieldErrors[key]; !exists {
 		v.FieldErrors[key] = message
 	}
@@ -50,10 +51,19 @@ func PermittedValue[T comparable](value T, permittedValues ...T) bool {
 }
 
 func ValidDate(value string) bool {
-	_, err := time.Parse("2006-02-01", value)
+	_, err := time.Parse(time.DateOnly, value)
 	return err == nil
 }
 
 func MaxChars(value string, n int) bool {
 	return utf8.RuneCountInString(value) <= n
+}
+
+func IsMime(file multipart.File, mtypes ...string) bool {
+	buf := make([]byte, 512)
+
+	if _, err := file.Read(buf); err != nil {
+		return false
+	}
+	return slices.Contains(mtypes, http.DetectContentType(buf))
 }

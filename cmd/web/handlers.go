@@ -1,12 +1,17 @@
 package main
 
 import (
-	"fmt"
+	"mime/multipart"
 	"net/http"
+	"path"
 	"strings"
+	"time"
 
+	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/validator"
 )
+
+var maxFileNameLength = 40
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	videos, err := app.videos.GetAll(0)
@@ -24,6 +29,80 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 func (app *application) search(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	app.render(w, http.StatusOK, "search.tmpl.html", data)
+}
+
+func (app *application) creatorAdd(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+
+	data.Form = addCreatorForm{}
+	app.render(w, http.StatusOK, "add-creator.tmpl.html", data)
+}
+
+// Changes to the form fields must be updated in forms.go and forms_test.go
+type addCreatorForm struct {
+	Name                string                `form:"name"`
+	URL                 string                `form:"url"`
+	EstablishedDate     string                `form:"establishedDate"`
+	ProfileImage        *multipart.FileHeader `img:"profileImg"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
+	var form addCreatorForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	validateAddCreatorForm(&form)
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "add-creator.tmpl.html", data)
+		return
+	}
+
+	date, _ := time.Parse(time.DateOnly, form.EstablishedDate)
+	imgName := models.CreateImageName(form.Name, maxFileNameLength)
+
+	file, err := form.ProfileImage.Open()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	defer file.Close()
+	// get image extension
+	buf := make([]byte, 512)
+
+	_, err = file.Read(buf)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	mimeType := http.DetectContentType(buf)
+
+	// the insert returns the fullImgName which is {fileName}-{id}.{ext}
+	_, fullImgName, err := app.creators.
+		Insert(
+			form.Name, form.URL, imgName,
+			mimeToExt[mimeType], date,
+		)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = app.fileStorage.SaveMultipartFile(path.Join("creator", fullImgName), file)
+	if err != nil {
+		// We gotta remove the db record on this error
+		app.serverError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, "/add/creator", http.StatusSeeOther)
 }
 
 func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
@@ -73,15 +152,15 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 	form.CheckField(err == nil, "creator", "Creator does not exist. Please add it, then resubmit video!")
 
 	// 3) Validate actor fields
-	var actorIds []int
-	for i, a := range form.Actors {
-		htmlFieldName := fmt.Sprintf("actor[%d]", i)
-		form.CheckField(validator.NotBlank(a), htmlFieldName, "This field cannot be blank")
+	// var actorIds []int
+	// for i, a := range form.Actors {
+	// 	htmlFieldName := fmt.Sprintf("actor[%d]", i)
+	// 	form.CheckField(validator.NotBlank(a), htmlFieldName, "This field cannot be blank")
 
-		id, err := app.actors.ExistsByName(a)
-		form.CheckField(err == nil, htmlFieldName, "Actor does not exist. Please add it, then resubmit video!")
-		actorIds = append(actorIds, id)
-	}
+	// 	id, err := app.actors.ExistsByName(a)
+	// 	form.CheckField(err == nil, htmlFieldName, "Actor does not exist. Please add it, then resubmit video!")
+	// 	actorIds = append(actorIds, id)
+	// }
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -110,5 +189,9 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 	app.infoLog.Println(form)
 
 	w.WriteHeader(200)
+	w.Write([]byte("OK"))
+}
+
+func ping(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("OK"))
 }

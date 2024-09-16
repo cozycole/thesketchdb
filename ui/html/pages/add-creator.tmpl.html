@@ -1,0 +1,42 @@
+{{define "title"}} Add Creator {{end}}
+
+{{define "main"}}
+    <h1>Add Video</h1>
+    <form id="addForm" enctype="multipart/form-data" action="http://localhost:4000/add/creator" method="POST">
+        <div>
+            <label>Name</label>
+            {{with .Form.FieldErrors.name}}
+                <label class="error">{{.}}</label>
+            {{end}}
+            <input type="text" name="name" value="{{.Form.Name}}">
+        </div>
+        <div>
+            <label>URL:</label>
+            {{with .Form.FieldErrors.url}}
+               <label class="error">{{.}}</label> 
+            {{end}}
+            <input type="text" name="url" value="{{.Form.URL}}">
+        </div>
+        <div>
+            <label>Date Established </label>
+            {{with .Form.FieldErrors.establishedDate}}
+                <label class="error">{{.}}</label>
+            {{end}}
+            <input type="date" name="establishedDate" value="{{.Form.EstablishedDate}}">
+        </div>
+        <label class="custom-file-label">
+            Creator Profile Image
+            <input type="file" name="profileImg" id="imageInput" accept="image/*" onChange="previewImage(event)">
+        </label>
+        <label>
+            Creator Tags
+            <input type="text" name="tag" id="videoTags">
+        </label>
+        <button type="submit">Submit</button>
+        <div id="imagePreview"></div>
+    </div>
+{{end}}
+
+{{define "scripts"}}
+    <script src="/static/js/add.js"></script>
+{{end}}
