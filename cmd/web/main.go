@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"sketchdb.cozycole.net/internal/img"
 	"sketchdb.cozycole.net/internal/models"
 
 	"github.com/go-playground/form/v4"
@@ -16,15 +17,15 @@ import (
 )
 
 type application struct {
-	errorLog       *log.Logger
-	infoLog        *log.Logger
-	templateCache  map[string]*template.Template
-	imgStoragePath string
-	videos         models.VideoModelInterface
-	creators       models.CreatorModelInterface
-	actors         models.ActorModelInterface
-	debugMode      bool
-	formDecoder    *form.Decoder
+	errorLog      *log.Logger
+	infoLog       *log.Logger
+	templateCache map[string]*template.Template
+	fileStorage   img.FileStorageInterface
+	videos        models.VideoModelInterface
+	creators      models.CreatorModelInterface
+	actors        models.ActorModelInterface
+	debugMode     bool
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -53,16 +54,19 @@ func main() {
 	}
 
 	formDecoder := form.NewDecoder()
+	storagePath := os.Getenv("IMG_STORAGE_PATH")
+	fileStorage := img.FileStorage{Path: storagePath}
 
 	app := &application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
+		templateCache: templateCache,
+		formDecoder:   formDecoder,
+		fileStorage:   &fileStorage,
 		videos:        &models.VideoModel{DB: dbpool, ResultSize: 16},
 		creators:      &models.CreatorModel{DB: dbpool},
 		actors:        &models.ActorModel{DB: dbpool},
-		templateCache: templateCache,
 		debugMode:     *debug,
-		formDecoder:   formDecoder,
 	}
 
 	srv := &http.Server{
