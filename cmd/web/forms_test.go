@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"sketchdb.cozycole.net/internal/assert"
+	"sketchdb.cozycole.net/internal/utils"
 )
 
 // This is testing the validation of the struct that
@@ -12,8 +13,17 @@ func TestValidateAddCreatorForm(t *testing.T) {
 	// store in memory valid and invalid images
 	var emptyMap map[string]string
 	var emptySlice []string
-	validImg := createMultipartFileHeader(t, "./testdata/test-img.jpg")
-	invalidImg := createMultipartFileHeader(t, "./testdata/test-img.webp")
+	validImg, err := utils.CreateMultipartFileHeader("./testdata/test-img.jpg")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	invalidImg, err := utils.CreateMultipartFileHeader("./testdata/test-img.webp")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
 
 	tests := []struct {
 		name           string

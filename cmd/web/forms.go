@@ -18,11 +18,11 @@ func validateAddCreatorForm(form *addCreatorForm) {
 	}
 
 	profileImg, err := form.ProfileImage.Open()
-	defer profileImg.Close()
-
 	if err != nil {
 		form.AddFieldError("profileImg", "Unable to open file, ensure it is a jpg or png")
 		return
 	}
+	defer profileImg.Close()
+
 	form.CheckField(validator.IsMime(profileImg, "image/jpeg", "image/png"), "profileImg", "Uploaded file must be jpg or png")
 }

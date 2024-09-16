@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"sketchdb.cozycole.net/internal/assert"
+	"sketchdb.cozycole.net/internal/utils"
 )
 
 // Checking that the decodePostForm function correctly
@@ -25,11 +26,15 @@ func TestDecodePostForm(t *testing.T) {
 		"profileImg": fullpath,
 	}
 
-	buf, contentType := createMultipartForm(t, fields, files)
+	buf, contentType, err := utils.CreateMultipartForm(fields, files)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
 
 	r, err := http.NewRequest("POST", "/test/postform", buf)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 		return
 	}
 	r.Header.Add("content-type", contentType)
@@ -52,11 +57,15 @@ func TestDecodePostForm(t *testing.T) {
 	}
 	files = map[string]string{}
 
-	buf, contentType = createMultipartForm(t, fields, files)
+	buf, contentType, err = utils.CreateMultipartForm(fields, files)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
 
 	r, err = http.NewRequest("POST", "/test/postform", buf)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 		return
 	}
 	r.Header.Add("content-type", contentType)

@@ -12,6 +12,11 @@ import (
 	"github.com/go-playground/form/v4"
 )
 
+var mimeToExt = map[string]string{
+	"image/jpeg": ".jpg",
+	"image/png":  ".png",
+}
+
 // The serverError helper writes an error message and stack trace to the errorLog,
 // then sends a generic 500 Internal Server Error response to the user.
 func (app *application) serverError(w http.ResponseWriter, err error) {
@@ -37,11 +42,11 @@ func (app *application) clientError(w http.ResponseWriter, status int) {
 // For consistency, we'll also implement a notFound helper. This is simply a
 // convenience wrapper around clientError which sends a 404 Not Found response to
 // the user.
-func (app *application) notFound(w http.ResponseWriter) {
-	app.clientError(w, http.StatusNotFound)
-}
+// func (app *application) notFound(w http.ResponseWriter) {
+// 	app.clientError(w, http.StatusNotFound)
+// }
 
-func (app *application) newTemplateData(r *http.Request) *templateData {
+func (app *application) newTemplateData(_ *http.Request) *templateData {
 	return &templateData{
 		CurrentYear: time.Now().Year(),
 		// Flash:           app.sessionManager.PopString(r.Context(), "flash"),
