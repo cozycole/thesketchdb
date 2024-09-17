@@ -23,3 +23,7 @@ func (m *ActorModel) Get(id int) (*models.Actor, error) {
 func (m *ActorModel) ExistsByName(fullname string) (int, error) {
 	return 1, nil
 }
+
+func (m *ActorModel) Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, error) {
+	return 1, "brad-pitt-1.jpg", nil
+}
