@@ -19,7 +19,7 @@ type Actor struct {
 
 type ActorModelInterface interface {
 	Get(id int) (*Actor, error)
-	ExistsByName(fullname string) (int, error)
+	Exists(id int) (bool, error)
 	Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, error)
 }
 
@@ -42,21 +42,19 @@ func (m *ActorModel) Insert(first, last, imgName, imgExt string, birthDate time.
 	return id, fullImgName, err
 }
 
-func (m *ActorModel) ExistsByName(fullname string) (int, error) {
-	stmt := `SELECT id FROM actor WHERE concat(first, ' ', last) = $1`
-	row := m.DB.QueryRow(context.Background(), stmt, fullname)
+func (m *ActorModel) Exists(id int) (bool, error) {
+	stmt := `SELECT id FROM actor WHERE id = $1`
+	row := m.DB.QueryRow(context.Background(), stmt, id)
 
-	a := &Actor{}
-
-	err := row.Scan(&a.ID)
+	err := row.Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrNoRecord
+			return false, nil
 		} else {
-			return 0, err
+			return false, err
 		}
 	}
-	return a.ID, nil
+	return true, nil
 }
 
 func (m *ActorModel) Get(id int) (*Actor, error) {

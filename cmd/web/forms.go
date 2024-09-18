@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"mime/multipart"
+	"strings"
 
 	"sketchdb.cozycole.net/internal/validator"
 )
@@ -69,6 +71,75 @@ func validateAddActorForm(form *addActorForm) {
 	defer profileImg.Close()
 
 	form.CheckField(validator.IsMime(profileImg, "image/jpeg", "image/png"), "profileImg", "Uploaded file must be jpg or png")
+}
+
+type addVideoForm struct {
+	Title      string                `form:"title"`
+	URL        string                `form:"url"`
+	Rating     string                `form:"rating"`
+	UploadDate string                `form:"uploadDate"`
+	Thumbnail  *multipart.FileHeader `img:"thumbnail"`
+	CreatorID  int                   `form:"creator"`
+	// ActorIDs have name form field names like actors[0]
+	// if there are spaces between indexes say actors[0] : 1, actors[2] : 3
+	// the result is zero filled so []int{1,0,3}
+	ActorIDs            []int `form:"actors"`
+	validator.Validator `form:"-"`
+}
+
+// We need this function to have access to the apps state
+// to validate based on database queries
+func (app *application) validateAddVideoForm(form *addVideoForm) {
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Rating), "rating", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.UploadDate), "uploadDate", "This field cannot be blank")
+	form.CheckField(form.CreatorID != 0, "creator", "This field cannot be blank")
+	form.CheckField(validator.ValidDate(form.UploadDate), "uploadDate", "Date must be of the format YYYY-MM-DD")
+	form.CheckField(
+		validator.PermittedValue(strings.ToLower(form.Rating), "pg", "pg-13", "r"),
+		"rating",
+		"Rating must be PG, PG-13 or R (case insensitive)",
+	)
+
+	if form.CreatorID != 0 {
+		form.CheckField(
+			validator.BoolWithError(app.creators.Exists(form.CreatorID)),
+			"creator",
+			"Unable to find creator, please add them",
+		)
+	}
+
+	for i, a := range form.ActorIDs {
+		htmlFieldName := fmt.Sprintf("actor[%d]", i)
+		form.CheckField(
+			validator.IsZero(a),
+			htmlFieldName,
+			"This field cannot be blank",
+		)
+
+		if !validator.IsZero(a) {
+			form.CheckField(
+				validator.BoolWithError(app.actors.Exists(a)),
+				htmlFieldName,
+				"Actor does not exist. Please add it, then resubmit video!",
+			)
+		}
+	}
+
+	form.CheckField(form.Thumbnail != nil, "thumbnail", "Please upload an image")
+	if form.Thumbnail == nil {
+		return
+	}
+
+	thumbnail, err := form.Thumbnail.Open()
+	if err != nil {
+		form.AddFieldError("thumbnail", "Unable to open file, ensure it is a jpg or png")
+		return
+	}
+	defer thumbnail.Close()
+
+	form.CheckField(validator.IsMime(thumbnail, "image/jpeg", "image/png"), "thumbnail", "Uploaded file must be jpg or png")
 }
 
 // func validateProfileImage[F FormInterface](form F, )

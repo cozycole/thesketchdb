@@ -24,6 +24,6 @@ func (m *CreatorModel) Get(id int) (*models.Creator, error) {
 	return mockCreator, nil
 }
 
-func (m *CreatorModel) ExistsByName(name string) (int, error) {
-	return 1, nil
+func (m *CreatorModel) Exists(id int) (bool, error) {
+	return true, nil
 }

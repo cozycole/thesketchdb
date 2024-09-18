@@ -20,8 +20,13 @@ func (m *ActorModel) Get(id int) (*models.Actor, error) {
 	return mockActor, nil
 }
 
-func (m *ActorModel) ExistsByName(fullname string) (int, error) {
-	return 1, nil
+func (m *ActorModel) Exists(id int) (bool, error) {
+	switch id {
+	case 1, 2, 3:
+		return true, nil
+	default:
+		return false, nil
+	}
 }
 
 func (m *ActorModel) Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, error) {

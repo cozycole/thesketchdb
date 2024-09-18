@@ -20,7 +20,7 @@ type Creator struct {
 type CreatorModelInterface interface {
 	Insert(name, url, imgName, imgExt string, establishedDate time.Time) (int, string, error)
 	Get(id int) (*Creator, error)
-	ExistsByName(name string) (int, error)
+	Exists(id int) (bool, error)
 }
 
 type CreatorModel struct {
@@ -62,19 +62,17 @@ func (m *CreatorModel) Get(id int) (*Creator, error) {
 	return c, nil
 }
 
-func (m *CreatorModel) ExistsByName(name string) (int, error) {
-	stmt := `SELECT id FROM creator WHERE name = $1`
-	row := m.DB.QueryRow(context.Background(), stmt, name)
+func (m *CreatorModel) Exists(id int) (bool, error) {
+	stmt := `SELECT id FROM creator WHERE id = $1`
+	row := m.DB.QueryRow(context.Background(), stmt, id)
 
-	c := &Creator{}
-
-	err := row.Scan(&c.ID)
+	err := row.Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrNoRecord
+			return false, nil
 		} else {
-			return 0, err
+			return false, err
 		}
 	}
-	return c.ID, nil
+	return true, nil
 }

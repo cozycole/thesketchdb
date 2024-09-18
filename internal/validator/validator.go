@@ -67,3 +67,14 @@ func IsMime(file multipart.File, mtypes ...string) bool {
 	}
 	return slices.Contains(mtypes, http.DetectContentType(buf))
 }
+
+func BoolWithError(input bool, err error) bool {
+	if err != nil {
+		return false
+	}
+	return input
+}
+
+func IsZero(num int) bool {
+	return num == 0
+}
