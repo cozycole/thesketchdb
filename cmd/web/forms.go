@@ -23,7 +23,7 @@ type addCreatorForm struct {
 	validator.Validator `form:"-"`
 }
 
-func validateAddCreatorForm(form *addCreatorForm) {
+func (app *application) validateAddCreatorForm(form *addCreatorForm) {
 	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.EstablishedDate), "establishedDate", "This field cannot be blank")
@@ -52,7 +52,7 @@ type addActorForm struct {
 	validator.Validator `form:"-"`
 }
 
-func validateAddActorForm(form *addActorForm) {
+func (app *application) validateAddActorForm(form *addActorForm) {
 	form.CheckField(validator.NotBlank(form.First), "first", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Last), "last", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.BirthDate), "birthDate", "This field cannot be blank")
@@ -73,17 +73,17 @@ func validateAddActorForm(form *addActorForm) {
 	form.CheckField(validator.IsMime(profileImg, "image/jpeg", "image/png"), "profileImg", "Uploaded file must be jpg or png")
 }
 
+// ActorIDs have name form field names of form actors[i]
+// if there are spaces between indexes say actors[0] : 1, actors[2] : 3
+// the result is zero filled so []int{1,0,3}
 type addVideoForm struct {
-	Title      string                `form:"title"`
-	URL        string                `form:"url"`
-	Rating     string                `form:"rating"`
-	UploadDate string                `form:"uploadDate"`
-	Thumbnail  *multipart.FileHeader `img:"thumbnail"`
-	CreatorID  int                   `form:"creator"`
-	// ActorIDs have name form field names like actors[0]
-	// if there are spaces between indexes say actors[0] : 1, actors[2] : 3
-	// the result is zero filled so []int{1,0,3}
-	ActorIDs            []int `form:"actors"`
+	Title               string                `form:"title"`
+	URL                 string                `form:"url"`
+	Rating              string                `form:"rating"`
+	UploadDate          string                `form:"uploadDate"`
+	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
+	CreatorID           int                   `form:"creator"`
+	ActorIDs            []int                 `form:"actors"`
 	validator.Validator `form:"-"`
 }
 

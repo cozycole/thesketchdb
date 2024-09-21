@@ -24,6 +24,7 @@ func TestValidateAddCreatorForm(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
+	app := newTestApplication(t)
 
 	tests := []struct {
 		name           string
@@ -75,7 +76,7 @@ func TestValidateAddCreatorForm(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validateAddCreatorForm(tt.form)
+			app.validateAddCreatorForm(tt.form)
 			assert.DeepEqual(t, tt.form.FieldErrors, tt.fieldErrors)
 			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
 		})
@@ -97,6 +98,7 @@ func TestValidateAddActorForm(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
+	app := newTestApplication(t)
 
 	tests := []struct {
 		name           string
@@ -148,7 +150,7 @@ func TestValidateAddActorForm(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validateAddActorForm(tt.form)
+			app.validateAddActorForm(tt.form)
 			assert.DeepEqual(t, tt.form.FieldErrors, tt.fieldErrors)
 			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
 		})

@@ -147,3 +147,95 @@ func TestActorAddPost(t *testing.T) {
 		})
 	}
 }
+
+func TestVideoAddPost(t *testing.T) {
+	app := newTestApplication(t)
+
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+	validActors := []string{"1", "2", "3"}
+
+	const (
+		validTitle     = "Title"
+		validUrl       = "www.url.com"
+		validDate      = "2024-09-10"
+		validRating    = "r"
+		validImgPath   = "./testdata/test-img.jpg"
+		invalidImgPath = "./testdata/test-img.webp"
+		validCreator   = "1"
+	)
+	tests := []struct {
+		testName string
+		title    string
+		url      string
+		rating   string
+		date     string
+		imgPath  string
+		creator  string
+		actors   []string
+		wantCode int
+	}{
+		{
+			testName: "Valid Submission",
+			title:    validTitle,
+			url:      validUrl,
+			rating:   validRating,
+			date:     validDate,
+			imgPath:  validImgPath,
+			creator:  validCreator,
+			actors:   validActors,
+			wantCode: http.StatusSeeOther,
+		},
+		{
+			testName: "Invalid Image",
+			title:    validTitle,
+			url:      validUrl,
+			rating:   validRating,
+			date:     validDate,
+			imgPath:  invalidImgPath,
+			creator:  validCreator,
+			actors:   validActors,
+			wantCode: http.StatusUnprocessableEntity,
+		},
+		{
+			testName: "Blank Submission",
+			title:    "",
+			url:      "",
+			rating:   "",
+			date:     "",
+			imgPath:  "",
+			creator:  "",
+			actors:   []string{"", "", ""},
+			wantCode: http.StatusUnprocessableEntity,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.testName, func(t *testing.T) {
+			fields := map[string]string{
+				"title":      tt.title,
+				"url":        tt.url,
+				"rating":     tt.rating,
+				"uploadDate": tt.date,
+				"creator":    tt.creator,
+				"actor[0]":   tt.actors[0],
+				"actor[1]":   tt.actors[1],
+				"actor[2]":   tt.actors[2],
+			}
+			files := map[string]string{
+				"thumbnail": tt.imgPath,
+			}
+			code, _, body := ts.postMultipartForm(t, "/add/video", fields, files)
+			fmt.Print(body)
+			assert.Equal(t, code, tt.wantCode)
+
+			// ensure inputs are returned in the form on 422
+			if tt.wantCode == http.StatusUnprocessableEntity {
+				assert.StringContains(t, body, fmt.Sprintf(`value="%s"`, tt.title))
+				assert.StringContains(t, body, fmt.Sprintf(`value="%s"`, tt.url))
+				assert.StringContains(t, body, fmt.Sprintf(`value="%s"`, tt.date))
+				assert.StringContains(t, body, fmt.Sprintf(`value="%s"`, tt.rating))
+			}
+		})
+	}
+}

@@ -16,7 +16,7 @@
             {{with .Form.FieldErrors.title}}
                 <label class="error">{{.}}</label>
             {{end}}
-            <input type="text" name="title">
+            <input type="text" name="title" value="{{.Form.Title}}">
         </div>
         <div>
             <label>Upload Date</label>
@@ -49,12 +49,12 @@
             {{with .Form.FieldErrors.creator}}
                 <label class="error">{{.}}</label>
             {{end}}
-            <input type="text" name="creator" value="{{.Form.Creator}}">
+            <input type="text" name="creator" value="{{.Form.CreatorID}}">
         </div>
         <div id="actorInputs">
             <label>Actors</label>
             {{$FieldErrors := .Form.FieldErrors}}
-            {{range $index, $actor := .Form.Actors}}
+            {{range $index, $actor := .Form.ActorIDs}}
                 {{$name := printf "actor[%d]" $index}}
                 {{with (index $FieldErrors $name)}}
                     <label class="error">{{.}}</label>

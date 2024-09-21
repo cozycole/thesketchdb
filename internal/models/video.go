@@ -20,9 +20,11 @@ type Video struct {
 }
 
 type VideoModelInterface interface {
-	Insert(title, url string, uploadDate time.Time, rating string) (int, error)
 	Search(search string, offset int) ([]*Video, error)
 	GetAll(offset int) ([]*Video, error)
+	Insert(title, video_url, rating, imgName, imgExt string, upload_date time.Time) (int, string, error)
+	InsertVideoCreatorRelation(vidId, creatorId int) error
+	InsertVideoActorRelation(vidId, actorId int) error
 }
 
 type VideoModel struct {
@@ -115,19 +117,34 @@ func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 	return videos, nil
 }
 
-func (m *VideoModel) Insert(title string, video_url string, upload_date time.Time, rating string) (int, error) {
-	stmt := `INSERT INTO video (title, video_url, upload_date, pg_rating)
-	VALUES ($1, $2, $3, $4) RETURNING id`
+func (m *VideoModel) Insert(title, video_url, rating, imgName, imgExt string, upload_date time.Time) (int, string, error) {
+	stmt := `
+	INSERT INTO video (title, video_url, upload_date, pg_rating, thumbnail_name)
+	VALUES ($1,$2,$3,$4,CONCAT($5::text, '-', currval(pg_get_serial_sequence('creator', 'id')), $6::text)) 
+	RETURNING id, thumbnail_name;`
 
 	result := m.DB.QueryRow(
 		context.Background(), stmt, title,
 		video_url, upload_date, rating,
+		imgName, imgExt,
 	)
 
 	var id int
-	err := result.Scan(&id)
+	err := result.Scan(&id, &imgName)
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
-	return id, nil
+	return id, imgName, nil
+}
+
+func (m *VideoModel) InsertVideoCreatorRelation(vidId, creatorId int) error {
+	stmt := `INSERT INTO video_creator_rel (video_id, creator_id) VALUES ($1, $2)`
+	_, err := m.DB.Exec(context.Background(), stmt, vidId, creatorId)
+	return err
+}
+
+func (m *VideoModel) InsertVideoActorRelation(vidId, actorId int) error {
+	stmt := `INSERT INTO video_actor_rel (video_id, actor_id) VALUES ($1, $2)`
+	_, err := m.DB.Exec(context.Background(), stmt, vidId, actorId)
+	return err
 }

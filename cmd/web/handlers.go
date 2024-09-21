@@ -44,7 +44,7 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validateAddCreatorForm(&form)
+	app.validateAddCreatorForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
@@ -109,7 +109,7 @@ func (app *application) actorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validateAddActorForm(&form)
+	app.validateAddActorForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
@@ -184,27 +184,57 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4) Validate uploaded image, then save video thumbnail path and give it a name
+	date, _ := time.Parse(time.DateOnly, form.UploadDate)
+	imgName := models.CreateImageName(form.Title, maxFileNameLength)
 
-	// 5) Insert video
+	file, err := form.Thumbnail.Open()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	defer file.Close()
 
-	// 6) Insert video creator relations
+	buf := make([]byte, 512)
 
-	// 7) Insert video actor relations
+	_, err = file.Read(buf)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 
-	// file, _, err := r.FormFile("thumbnail")
-	// if err != nil {
-	// 	app.serverError(w, err)
-	// 	return
-	// }
-	// defer file.Close()
+	mimeType := http.DetectContentType(buf)
 
-	// dst, err := os.Create(header.Filename)
+	vidID, thumbnailName, err := app.videos.Insert(
+		form.Title, form.URL, form.Rating,
+		imgName, mimeToExt[mimeType], date,
+	)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 
-	app.infoLog.Println(form)
+	err = app.fileStorage.SaveMultipartFile(path.Join("video", thumbnailName), file)
+	if err != nil {
+		// TODO: We gotta remove the db record on this error and any after
+		app.serverError(w, err)
+		return
+	}
 
-	w.WriteHeader(200)
-	w.Write([]byte("OK"))
+	err = app.videos.InsertVideoCreatorRelation(vidID, form.CreatorID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	for _, id := range form.ActorIDs {
+		err = app.videos.InsertVideoActorRelation(vidID, id)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+	}
+
+	http.Redirect(w, r, "/add/video", http.StatusSeeOther)
 }
 
 func ping(w http.ResponseWriter, _ *http.Request) {
