@@ -29,9 +29,9 @@ type ActorModel struct {
 
 func (m *ActorModel) Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, error) {
 	stmt := `
-	INSERT INTO creator (first, last, birthdate, profile_img)
-	VALUES ($1,$2,$3,CONCAT($4::text, '-', currval(pg_get_serial_sequence('creator', 'id')), $5::text)) 
-	RETURNING id, profile_img_path;`
+	INSERT INTO actor (first, last, birthdate, profile_img)
+	VALUES ($1,$2,$3,CONCAT($4::text, '-', currval(pg_get_serial_sequence('actor', 'id')), $5::text)) 
+	RETURNING id, profile_img;`
 	var id int
 	var fullImgName string
 	row := m.DB.QueryRow(context.Background(), stmt, first, last, birthDate, imgName, imgExt)
