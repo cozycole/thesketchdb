@@ -36,18 +36,18 @@ func newTestDB(t *testing.T) *pgxpool.Pool {
 		}
 	}
 
-	// t.Cleanup(func() {
-	// 	script, err := os.ReadFile("../../sql/teardown.sql")
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
+	t.Cleanup(func() {
+		script, err := os.ReadFile("../../sql/teardown.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// 	_, err = db.Exec(context.Background(), string(script))
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
+		_, err = db.Exec(context.Background(), string(script))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// 	db.Close()
-	// })
+		db.Close()
+	})
 	return db
 }

@@ -120,7 +120,7 @@ func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 func (m *VideoModel) Insert(title, video_url, rating, imgName, imgExt string, upload_date time.Time) (int, string, error) {
 	stmt := `
 	INSERT INTO video (title, video_url, upload_date, pg_rating, thumbnail_name)
-	VALUES ($1,$2,$3,$4,CONCAT($5::text, '-', currval(pg_get_serial_sequence('creator', 'id')), $6::text)) 
+	VALUES ($1,$2,$3,$4,CONCAT($5::text, '-', currval(pg_get_serial_sequence('video', 'id')), $6::text)) 
 	RETURNING id, thumbnail_name;`
 
 	result := m.DB.QueryRow(
