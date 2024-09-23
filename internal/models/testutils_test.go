@@ -25,7 +25,6 @@ func newTestDB(t *testing.T) *pgxpool.Pool {
 
 	for _, entry := range entries {
 		scriptPath := path.Join(schemaDirPath, entry.Name())
-		t.Log(scriptPath)
 		script, err := os.ReadFile(scriptPath)
 		if err != nil {
 			t.Fatal(err)

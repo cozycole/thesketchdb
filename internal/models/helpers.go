@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func CreateImageName(input string, maxLength int) string {
+func CreateSlugName(input string, maxLength int) string {
 	formatted := strings.ToLower(input)
 	re := regexp.MustCompile(`[^a-zA-Z0-9\-\ ]+`)
 	formatted = re.ReplaceAllString(formatted, "")

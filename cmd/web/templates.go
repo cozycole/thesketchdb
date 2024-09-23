@@ -18,6 +18,7 @@ import (
 type templateData struct {
 	CurrentYear int
 	Videos      []*models.Video
+	Video       *models.Video
 	// User            *models.User
 	Form            any
 	Flash           string

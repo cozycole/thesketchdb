@@ -24,8 +24,8 @@ var mockVideo = &models.Video{
 
 type VideoModel struct{}
 
-func (m *VideoModel) Insert(title, video_url, rating, imgName, imgExt string, upload_date time.Time) (int, string, error) {
-	return 2, "test-img.jpg", nil
+func (m *VideoModel) Insert(title, video_url, rating, slug, imgExt string, upload_date time.Time) (int, string, string, error) {
+	return 1, "test-img-1", "test-img-1.jpg", nil
 }
 
 func (m *VideoModel) Search(search string, offset int) ([]*models.Video, error) {
@@ -34,6 +34,14 @@ func (m *VideoModel) Search(search string, offset int) ([]*models.Video, error) 
 
 func (m *VideoModel) GetAll(offset int) ([]*models.Video, error) {
 	return []*models.Video{mockVideo}, nil
+}
+
+func (m *VideoModel) Get(id int) (*models.Video, error) {
+	return mockVideo, nil
+}
+
+func (m *VideoModel) GetBySlug(slug string) (*models.Video, error) {
+	return mockVideo, nil
 }
 
 func (m *VideoModel) InsertVideoCreatorRelation(vidId, creatorId int) error {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"path"
 	"time"
@@ -28,6 +29,24 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "search.tmpl.html", data)
 }
 
+func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+	video, err := app.videos.GetBySlug(slug)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Video = video
+
+	app.render(w, http.StatusOK, "view-video.tmpl.html", data)
+}
+
 func (app *application) creatorAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
@@ -53,7 +72,7 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	date, _ := time.Parse(time.DateOnly, form.EstablishedDate)
-	imgName := models.CreateImageName(form.Name, maxFileNameLength)
+	imgName := models.CreateSlugName(form.Name, maxFileNameLength)
 
 	file, err := form.ProfileImage.Open()
 	if err != nil {
@@ -118,7 +137,7 @@ func (app *application) actorAddPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	date, _ := time.Parse(time.DateOnly, form.BirthDate)
-	imgName := models.CreateImageName(form.First+" "+form.Last, maxFileNameLength)
+	imgName := models.CreateSlugName(form.First+" "+form.Last, maxFileNameLength)
 
 	file, err := form.ProfileImage.Open()
 	if err != nil {
@@ -185,7 +204,7 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	date, _ := time.Parse(time.DateOnly, form.UploadDate)
-	imgName := models.CreateImageName(form.Title, maxFileNameLength)
+	imgName := models.CreateSlugName(form.Title, maxFileNameLength)
 
 	file, err := form.Thumbnail.Open()
 	if err != nil {
@@ -204,7 +223,7 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 
 	mimeType := http.DetectContentType(buf)
 
-	vidID, thumbnailName, err := app.videos.Insert(
+	vidID, _, thumbnailName, err := app.videos.Insert(
 		form.Title, form.URL, form.Rating,
 		imgName, mimeToExt[mimeType], date,
 	)

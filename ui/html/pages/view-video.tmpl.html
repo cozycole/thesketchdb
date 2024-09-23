@@ -1,0 +1,28 @@
+{{define "title"}}{{.Video.Title}}{{end}}
+{{define "main"}}
+    {{with .Video}}
+    <div class="video">
+        <a href="{{.URL}}">
+            <img src="/static/img/video/{{.Thumbnail}}" alt="thumbnail">
+        </a>
+        <div class="metadata">
+            <strong>{{.Title}}</strong>
+            <span>Video #{{.ID}}</span>
+            <time>Created: {{humanDate .UploadDate}}</time>
+        </div>
+        {{with .Creator}}
+        <div class="creator">
+            <strong>{{.Name}}</strong>
+            <span>Creator #{{.ID}}</span>
+            <a href="{{.URL}}">
+                <img src="/static/img/creator/{{.ProfileImage}}" alt="profile-img">
+            </a>
+        </div> 
+        {{end}}
+    </div>
+    {{end}}
+{{end}}
+
+{{define "scripts"}}
+    <script src="/static/js/search.js"></script>
+{{end}}
