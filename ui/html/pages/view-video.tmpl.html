@@ -2,23 +2,17 @@
 {{define "main"}}
     {{with .Video}}
     <div class="video">
+        <h1>{{.Title}}</h1>
+        <a href="/view/creator/{{.Creator.Slug}}">
+            <img src="/static/img/creator/{{.Creator.ProfileImage}}" alt="profile-img">
+        </a>
+        <a href="/view/creator/{{.Creator.Slug}}">{{.Creator.Name}}</a><span>({{humanDate .Creator.EstablishedDate}})</span>
         <a href="{{.URL}}">
-            <img src="/static/img/video/{{.Thumbnail}}" alt="thumbnail">
+            <img class="thumbnail" src="/static/img/video/{{.Thumbnail}}" alt="thumbnail">
         </a>
         <div class="metadata">
-            <strong>{{.Title}}</strong>
-            <span>Video #{{.ID}}</span>
             <time>Created: {{humanDate .UploadDate}}</time>
         </div>
-        {{with .Creator}}
-        <div class="creator">
-            <strong>{{.Name}}</strong>
-            <span>Creator #{{.ID}}</span>
-            <a href="{{.URL}}">
-                <img src="/static/img/creator/{{.ProfileImage}}" alt="profile-img">
-            </a>
-        </div> 
-        {{end}}
     </div>
     {{end}}
 {{end}}

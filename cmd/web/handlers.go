@@ -92,7 +92,7 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 	mimeType := http.DetectContentType(buf)
 
 	// the insert returns the fullImgName which is {fileName}-{id}.{ext}
-	_, fullImgName, err := app.creators.
+	_, _, fullImgName, err := app.creators.
 		Insert(
 			form.Name, form.URL, imgName,
 			mimeToExt[mimeType], date,

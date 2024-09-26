@@ -14,11 +14,12 @@ type Creator struct {
 	Name            string
 	URL             string
 	ProfileImage    string
+	Slug            string
 	EstablishedDate time.Time
 }
 
 type CreatorModelInterface interface {
-	Insert(name, url, imgName, imgExt string, establishedDate time.Time) (int, string, error)
+	Insert(name, url, imgName, imgExt string, establishedDate time.Time) (int, string, string, error)
 	Get(id int) (*Creator, error)
 	Exists(id int) (bool, error)
 }
@@ -27,31 +28,34 @@ type CreatorModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *CreatorModel) Insert(name, url, imgName, imgExt string, establishedDate time.Time) (int, string, error) {
+func (m *CreatorModel) Insert(name, url, slug, imgExt string, establishedDate time.Time) (int, string, string, error) {
 	stmt := `
-	INSERT INTO creator (name, page_url, date_established, profile_img_path)
-	VALUES ($1,$2,$3,CONCAT($4::text, '-', currval(pg_get_serial_sequence('creator', 'id')), $5::text)) 
-	RETURNING id, profile_img_path;`
+	INSERT INTO creator (name, page_url, date_established, slug, profile_img)
+	VALUES ($1,$2,$3,
+		CONCAT($4::text, '-', currval(pg_get_serial_sequence('creator', 'id'))),
+		CONCAT($4::text, '-', currval(pg_get_serial_sequence('creator', 'id')), $5::text))
+	RETURNING id, slug, profile_img;`
 
 	var id int
 	var fullImgName string
-	row := m.DB.QueryRow(context.Background(), stmt, name, url, establishedDate, imgName, imgExt)
-	err := row.Scan(&id, &fullImgName)
+
+	row := m.DB.QueryRow(context.Background(), stmt, name, url, establishedDate, slug, imgExt)
+	err := row.Scan(&id, &slug, &fullImgName)
 	if err != nil {
-		return 0, "", err
+		return 0, "", "", err
 	}
-	return id, fullImgName, err
+	return id, slug, fullImgName, err
 }
 
 func (m *CreatorModel) Get(id int) (*Creator, error) {
-	stmt := `SELECT id, name, profile_img, creation_date FROM creator
+	stmt := `SELECT id, name, slug, profile_img, creation_date FROM creator
 	WHERE id = $1`
 
 	row := m.DB.QueryRow(context.Background(), stmt, id)
 
 	c := &Creator{}
 
-	err := row.Scan(&c.ID, &c.Name, &c.ProfileImage, &c.EstablishedDate)
+	err := row.Scan(&c.ID, &c.Name, &c.Slug, &c.ProfileImage, &c.EstablishedDate)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord

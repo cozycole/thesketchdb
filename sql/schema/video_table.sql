@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS video (
     id serial primary key,
     title VARCHAR NOT NULL,
     video_url VARCHAR NOT NULL,
+    slug VARCHAR NOT NULL,
     thumbnail_name VARCHAR,
     upload_date DATE,
     pg_rating rating,

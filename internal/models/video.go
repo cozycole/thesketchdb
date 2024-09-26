@@ -37,7 +37,7 @@ type VideoModel struct {
 func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 	stmt := `
 		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date,
-		c.id, c.name, c.profile_img_path
+		c.id, c.name, c.profile_img
 		FROM video AS v
 		LEFT JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id
@@ -77,7 +77,7 @@ func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 	stmt := `
 		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date,
-		c.id, c.name, c.profile_img_path
+		c.id, c.name, c.slug, c.profile_img
 		FROM video AS v
 		JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id
@@ -90,7 +90,7 @@ func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 	c := &Creator{}
 	err := row.Scan(
 		&v.ID, &v.Title, &v.URL, &v.Thumbnail, &v.UploadDate,
-		&c.ID, &c.Name, &c.ProfileImage,
+		&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -107,7 +107,7 @@ func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 func (m *VideoModel) Get(id int) (*Video, error) {
 	stmt := `
 		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date,
-		c.id, c.name, c.profile_img_path
+		c.id, c.name, c.profile_img
 		FROM video AS v
 		JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id
@@ -142,7 +142,7 @@ func (m *VideoModel) Get(id int) (*Video, error) {
 func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 	stmt := `
 		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date,
-		c.id, c.name, c.profile_img_path
+		c.id, c.name, c.profile_img
 		FROM video AS v
 		JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id

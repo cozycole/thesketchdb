@@ -18,29 +18,32 @@ func TestCreatorInsert(t *testing.T) {
 		name        string
 		creatorName string
 		url         string
-		imgName     string
+		slug        string
 		imgExt      string
 		birthDate   time.Time
 		wantImgName string
+		wantSlug    string
 	}{
 		{
 			name:        "Valid Entry",
 			creatorName: "Travi$ Scott",
-			imgName:     "travi-scott",
+			slug:        "travi-scott",
 			imgExt:      ".jpg",
 			birthDate:   time.Now(),
 			wantImgName: "travi-scott-1.jpg",
+			wantSlug:    "travi-scott-1",
 		},
 	}
 
 	for _, tt := range tests {
-		_, imgName, err := m.Insert(
+		_, slug, imgName, err := m.Insert(
 			tt.creatorName,
 			tt.url,
-			tt.imgName,
+			tt.slug,
 			tt.imgExt,
 			tt.birthDate,
 		)
+		assert.Equal(t, slug, tt.wantSlug)
 		assert.Equal(t, imgName, tt.wantImgName)
 		assert.NilError(t, err)
 	}
