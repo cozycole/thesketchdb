@@ -7,3 +7,6 @@ img/*
 notes.md
 quick*
 tmp
+node_modules
+todo.md
+ui/static/css/styles.css

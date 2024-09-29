@@ -13,6 +13,7 @@ type Video struct {
 	ID         int
 	Title      string
 	URL        string
+	Slug       string
 	Thumbnail  string
 	Rating     string
 	UploadDate time.Time
@@ -76,8 +77,8 @@ func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 
 func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date,
-		c.id, c.name, c.slug, c.profile_img
+		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.creation_date,
+		c.id, c.name, c.page_url, c.slug, c.profile_img
 		FROM video AS v
 		JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id
@@ -89,8 +90,8 @@ func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 	v := &Video{}
 	c := &Creator{}
 	err := row.Scan(
-		&v.ID, &v.Title, &v.URL, &v.Thumbnail, &v.UploadDate,
-		&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
+		&v.ID, &v.Title, &v.URL, &v.Slug, &v.Thumbnail, &v.UploadDate,
+		&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -141,8 +142,8 @@ func (m *VideoModel) Get(id int) (*Video, error) {
 // Will make DRY later
 func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date,
-		c.id, c.name, c.profile_img
+		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.creation_date,
+		c.id, c.name, c.page_url, c.slug, c.profile_img
 		FROM video AS v
 		JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id
@@ -166,15 +167,14 @@ func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 		v := &Video{}
 		c := &Creator{}
 		err := rows.Scan(
-			&v.ID, &v.Title, &v.URL, &v.Thumbnail, &v.UploadDate,
-			&c.ID, &c.Name, &c.ProfileImage,
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.Thumbnail, &v.UploadDate,
+			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
 		)
 		if err != nil {
 			return nil, err
 		}
 		v.Creator = c
 		videos = append(videos, v)
-
 	}
 
 	if err = rows.Err(); err != nil {

@@ -20,7 +20,7 @@ func (app *application) routes() http.Handler {
 	router.Get("/search", app.search)
 	router.Get("/video/add", app.videoAdd)
 	router.Post("/video/add", app.videoAddPost)
-	router.Get("/video/view/{slug}", app.videoView)
+	router.Get("/video/{slug}", app.videoView)
 
 	router.Get("/creator/add", app.creatorAdd)
 	router.Post("/creator/add", app.creatorAddPost)

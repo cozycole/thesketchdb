@@ -1,20 +1,24 @@
 {{define "title"}} Home {{end}}
 
 {{define "main"}}
-    <h2 class="vidDisplayTitle">Latest Sketches</h2>
-    <div class="videoDisplay">
+    <h2 class="font-bold text-xl my-3">Latest Sketches</h2>
+    <div class="flex flex-wrap justify-start">
         {{range .Videos}}
-        <div class="videoResult">
-            <a href="{{.URL}}" target="_blank">
-                <img class="videoThumbnail" src="/static/img/video/{{.Thumbnail}}" alt="video thumbnail">
+        <div class="w-[calc(25%-8px)] mx-1">
+            <a href="/video/{{.Slug}}">
+                <img class="rounded-md" src="/static/img/video/{{.Thumbnail}}" alt="video thumbnail">
             </a> 
-            <div class="videoDetails">
-                <img src="/static/img/creator/{{.Creator.ProfileImage}}" alt="creator profile image">
-                <div class="videoMetadata">
-                    <a href="{{.URL}}" target="_blank">
-                        <h3>{{.Title}}</h3>
+            <div class="flex mt-2">
+                <a class="w-[calc(15%-4px)] mr-1" href="/creator/view/{{.Creator.Slug}}" >
+                    <img src="/static/img/creator/{{.Creator.ProfileImage}}" class="rounded-full" alt="creator profile image">
+                </a>
+                <div class="w-[calc(95%-4px)]">
+                    <a href="/video/{{.Slug}}">
+                        <h3 class="inline-block font-bold">{{.Title}}</h3>
                     </a> 
-                    <p>{{.Creator.Name}}</p>
+                    <a href="/creator/view/{{.Creator.Slug}}">
+                        <p class="font-medium text-base">{{.Creator.Name}}</p>
+                    </a>
                     <p>{{.UploadDate.Format "Jan 2, 2006"}}</p>
                 </div>
             </div>

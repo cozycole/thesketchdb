@@ -3,26 +3,18 @@
 <html lang='en'>
     <head>
         <meta charset='utf-8'>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{{template "title" .}} - SketchDB</title>
-        <link rel='stylesheet' href='/static/css/main.css'>
-        <link rel="stylesheet" href="/static/css/add.css">
+        <link rel='stylesheet' href='/static/css/styles.css'>
         <link rel='shortcut icon' href='/static/img/favicon.ico' type='image/x-icon'>
         <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
     </head>
-    <body>
-        <header>
-            <h1><a href='/'>SketchDB</a></h1>
-        </header>
+    <body class="min-h-screen flex flex-col">
         {{template "nav" .}}
-        <main>
+        <main class="flex-grow w-full xl:max-w-screen-xl mx-auto m mb-3">
             {{template "main" .}}
         </main>
-    <footer>
-        <div class="footerContents">
-            <p>SketchDB™ 2024</p>
-        </div>
-    </footer>
+        {{template "footer" .}}
     <script src="/static/js/main.js" type="text/javascript"></script>
     {{template "scripts" .}}
     </body>
