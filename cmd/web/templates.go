@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"io/fs"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"sketchdb.cozycole.net/internal/models"
@@ -30,7 +31,14 @@ func humanDate(t time.Time) string {
 	if t.IsZero() {
 		return ""
 	}
-	return t.UTC().Format("02 Jan 2006 at 15:04")
+	return t.UTC().Format("Jan 2, 2006")
+}
+
+func getYear(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return strconv.Itoa(t.Year())
 }
 
 // Init global variable which maps string func names to
@@ -39,6 +47,7 @@ func humanDate(t time.Time) string {
 // return a single value
 var functions = template.FuncMap{
 	"humanDate": humanDate,
+	"getYear":   getYear,
 }
 
 // Getting mapping of html page filename to template set for the page
