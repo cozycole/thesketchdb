@@ -2,8 +2,10 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"path"
+	"strings"
 	"time"
 
 	"sketchdb.cozycole.net/internal/models"
@@ -47,6 +49,35 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view-video.tmpl.html", data)
 }
 
+func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+	creator, err := app.creators.GetBySlug(slug)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	videos, err := app.videos.GetByCreator(creator.ID)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Creator = creator
+	data.Videos = videos
+
+	app.render(w, http.StatusOK, "view-creator.tmpl.html", data)
+}
+
 func (app *application) creatorAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
@@ -88,6 +119,7 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
+	file.Seek(0, 0)
 
 	mimeType := http.DetectContentType(buf)
 
@@ -220,11 +252,12 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
+	file.Seek(0, 0)
 
 	mimeType := http.DetectContentType(buf)
 
-	vidID, _, thumbnailName, err := app.videos.Insert(
-		form.Title, form.URL, form.Rating,
+	vidID, slug, thumbnailName, err := app.videos.Insert(
+		form.Title, form.URL, strings.ToUpper(form.Rating),
 		imgName, mimeToExt[mimeType], date,
 	)
 	if err != nil {
@@ -253,7 +286,7 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	http.Redirect(w, r, "/add/video", http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/video/%s", slug), http.StatusSeeOther)
 }
 
 func ping(w http.ResponseWriter, _ *http.Request) {

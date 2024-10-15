@@ -25,6 +25,10 @@ func (m *CreatorModel) Get(id int) (*models.Creator, error) {
 	return mockCreator, nil
 }
 
+func (m *CreatorModel) GetBySlug(slug string) (*models.Creator, error) {
+	return mockCreator, nil
+}
+
 func (m *CreatorModel) Exists(id int) (bool, error) {
 	return true, nil
 }

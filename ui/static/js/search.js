@@ -51,7 +51,7 @@ function displaySearchResults(results) {
         creatorImage.src = result.creator_img_path;
         
         const uploadDate = document.createElement('p');
-        uploadDate.textContent = result.creation_date.split('T')[0]
+        uploadDate.textContent = result.upload_date.split('T')[0]
 
         
         const vidMetaData = document.createElement('div');

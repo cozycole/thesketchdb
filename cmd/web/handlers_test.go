@@ -218,9 +218,9 @@ func TestVideoAddPost(t *testing.T) {
 				"rating":     tt.rating,
 				"uploadDate": tt.date,
 				"creator":    tt.creator,
-				"actor[0]":   tt.actors[0],
-				"actor[1]":   tt.actors[1],
-				"actor[2]":   tt.actors[2],
+				"actors[0]":  tt.actors[0],
+				"actors[1]":  tt.actors[1],
+				"actors[2]":  tt.actors[2],
 			}
 			files := map[string]string{
 				"thumbnail": tt.imgPath,

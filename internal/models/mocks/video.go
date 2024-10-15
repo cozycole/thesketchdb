@@ -44,6 +44,10 @@ func (m *VideoModel) GetBySlug(slug string) (*models.Video, error) {
 	return mockVideo, nil
 }
 
+func (m *VideoModel) GetByCreator(id int) ([]*models.Video, error) {
+	return []*models.Video{mockVideo}, nil
+}
+
 func (m *VideoModel) InsertVideoCreatorRelation(vidId, creatorId int) error {
 	return nil
 }

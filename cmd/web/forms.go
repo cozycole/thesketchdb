@@ -111,9 +111,9 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 	}
 
 	for i, a := range form.ActorIDs {
-		htmlFieldName := fmt.Sprintf("actor[%d]", i)
+		htmlFieldName := fmt.Sprintf("actors[%d]", i)
 		form.CheckField(
-			validator.IsZero(a),
+			!validator.IsZero(a),
 			htmlFieldName,
 			"This field cannot be blank",
 		)

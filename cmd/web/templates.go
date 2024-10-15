@@ -20,6 +20,7 @@ type templateData struct {
 	CurrentYear int
 	Videos      []*models.Video
 	Video       *models.Video
+	Creator     *models.Creator
 	// User            *models.User
 	Form            any
 	Flash           string

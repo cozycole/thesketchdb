@@ -25,6 +25,7 @@ type VideoModelInterface interface {
 	GetAll(offset int) ([]*Video, error)
 	Get(id int) (*Video, error)
 	GetBySlug(slug string) (*Video, error)
+	GetByCreator(id int) ([]*Video, error)
 	Insert(title, video_url, rating, imgName, imgExt string, upload_date time.Time) (int, string, string, error)
 	InsertVideoCreatorRelation(vidId, creatorId int) error
 	InsertVideoActorRelation(vidId, actorId int) error
@@ -37,7 +38,7 @@ type VideoModel struct {
 
 func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date,
+		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.upload_date,
 		c.id, c.name, c.profile_img
 		FROM video AS v
 		LEFT JOIN video_creator_rel as vcr
@@ -77,7 +78,7 @@ func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 
 func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.creation_date,
+		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
 		c.id, c.name, c.page_url, c.slug, c.profile_img
 		FROM video AS v
 		JOIN video_creator_rel as vcr
@@ -104,10 +105,52 @@ func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 
 	return v, nil
 }
+func (m *VideoModel) GetByCreator(id int) ([]*Video, error) {
+	stmt := `
+		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
+		c.id, c.name, c.page_url, c.slug, c.profile_img
+		FROM video AS v
+		JOIN video_creator_rel as vcr
+		ON v.id = vcr.video_id
+		JOIN creator as c
+		ON vcr.creator_id = c.id
+		WHERE c.id = $1
+	`
+	rows, err := m.DB.Query(context.Background(), stmt, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	videos := []*Video{}
+	for rows.Next() {
+		v := &Video{}
+		c := &Creator{}
+		err := rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.Thumbnail, &v.UploadDate,
+			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
+		)
+		if err != nil {
+			return nil, err
+		}
+		v.Creator = c
+		videos = append(videos, v)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return videos, nil
+
+}
 
 func (m *VideoModel) Get(id int) (*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.creation_date,
+		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.upload_date,
 		c.id, c.name, c.profile_img
 		FROM video AS v
 		JOIN video_creator_rel as vcr
@@ -142,7 +185,7 @@ func (m *VideoModel) Get(id int) (*Video, error) {
 // Will make DRY later
 func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.creation_date,
+		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
 		c.id, c.name, c.page_url, c.slug, c.profile_img
 		FROM video AS v
 		JOIN video_creator_rel as vcr

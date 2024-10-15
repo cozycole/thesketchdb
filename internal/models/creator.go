@@ -22,10 +22,31 @@ type CreatorModelInterface interface {
 	Insert(name, url, imgName, imgExt string, establishedDate time.Time) (int, string, string, error)
 	Get(id int) (*Creator, error)
 	Exists(id int) (bool, error)
+	GetBySlug(slug string) (*Creator, error)
 }
 
 type CreatorModel struct {
 	DB *pgxpool.Pool
+}
+
+func (m *CreatorModel) GetBySlug(slug string) (*Creator, error) {
+	stmt := `SELECT id, name, slug, page_url, profile_img, date_established FROM creator
+	WHERE slug = $1`
+
+	row := m.DB.QueryRow(context.Background(), stmt, slug)
+
+	c := &Creator{}
+
+	err := row.Scan(&c.ID, &c.Name, &c.Slug, &c.URL, &c.ProfileImage, &c.EstablishedDate)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	return c, nil
+
 }
 
 func (m *CreatorModel) Insert(name, url, slug, imgExt string, establishedDate time.Time) (int, string, string, error) {
@@ -48,14 +69,14 @@ func (m *CreatorModel) Insert(name, url, slug, imgExt string, establishedDate ti
 }
 
 func (m *CreatorModel) Get(id int) (*Creator, error) {
-	stmt := `SELECT id, name, slug, profile_img, creation_date FROM creator
+	stmt := `SELECT id, name, slug, page_url, profile_img, date_established FROM creator
 	WHERE id = $1`
 
 	row := m.DB.QueryRow(context.Background(), stmt, id)
 
 	c := &Creator{}
 
-	err := row.Scan(&c.ID, &c.Name, &c.Slug, &c.ProfileImage, &c.EstablishedDate)
+	err := row.Scan(&c.ID, &c.Name, &c.Slug, &c.URL, &c.ProfileImage, &c.EstablishedDate)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
