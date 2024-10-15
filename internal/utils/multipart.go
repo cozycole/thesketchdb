@@ -5,6 +5,7 @@ import (
 	"io"
 	"mime"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path"
 )
@@ -73,4 +74,20 @@ func CreateMultipartFileHeader(filePath string) (*multipart.FileHeader, error) {
 	}
 
 	return files[0], nil
+}
+
+func GetMultipartFileMime(file multipart.File) (string, error) {
+	buf := make([]byte, 512)
+
+	_, err := file.Read(buf)
+	if err != nil {
+		return "", err
+	}
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return "", err
+	}
+
+	mimeType := http.DetectContentType(buf)
+	return mimeType, nil
 }

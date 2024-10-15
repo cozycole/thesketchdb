@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"sketchdb.cozycole.net/internal/models"
+	"sketchdb.cozycole.net/internal/utils"
 )
 
 var maxFileNameLength = 40
@@ -111,17 +112,12 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	// get image extension
-	buf := make([]byte, 512)
 
-	_, err = file.Read(buf)
+	mimeType, err := utils.GetMultipartFileMime(file)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-	file.Seek(0, 0)
-
-	mimeType := http.DetectContentType(buf)
 
 	// the insert returns the fullImgName which is {fileName}-{id}.{ext}
 	_, _, fullImgName, err := app.creators.
@@ -141,7 +137,7 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/add/creator", http.StatusSeeOther)
+	http.Redirect(w, r, "/creator/add", http.StatusSeeOther)
 }
 
 func (app *application) actorAdd(w http.ResponseWriter, r *http.Request) {
@@ -177,16 +173,12 @@ func (app *application) actorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	// get image extension
-	buf := make([]byte, 512)
 
-	_, err = file.Read(buf)
+	mimeType, err := utils.GetMultipartFileMime(file)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-
-	mimeType := http.DetectContentType(buf)
 
 	_, fullImgName, err := app.actors.
 		Insert(
@@ -205,7 +197,7 @@ func (app *application) actorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/add/actor", http.StatusSeeOther)
+	http.Redirect(w, r, "/actor/add", http.StatusSeeOther)
 }
 
 func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
@@ -290,5 +282,5 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func ping(w http.ResponseWriter, _ *http.Request) {
-	w.Write([]byte("OK"))
+	w.Write([]byte("pong"))
 }

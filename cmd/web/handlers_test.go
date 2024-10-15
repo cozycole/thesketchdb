@@ -65,7 +65,7 @@ func TestCreatorAddPost(t *testing.T) {
 			files := map[string]string{
 				"profileImg": tt.imgPath,
 			}
-			code, _, body := ts.postMultipartForm(t, "/add/creator", fields, files)
+			code, _, body := ts.postMultipartForm(t, "/creator/add", fields, files)
 			assert.Equal(t, code, tt.wantCode)
 
 			// ensure inputs are returned in the form on 422
@@ -135,7 +135,7 @@ func TestActorAddPost(t *testing.T) {
 			files := map[string]string{
 				"profileImg": tt.imgPath,
 			}
-			code, _, body := ts.postMultipartForm(t, "/add/actor", fields, files)
+			code, _, body := ts.postMultipartForm(t, "/actor/add", fields, files)
 			assert.Equal(t, code, tt.wantCode)
 
 			// ensure inputs are returned in the form on 422
@@ -225,7 +225,7 @@ func TestVideoAddPost(t *testing.T) {
 			files := map[string]string{
 				"thumbnail": tt.imgPath,
 			}
-			code, _, body := ts.postMultipartForm(t, "/add/video", fields, files)
+			code, _, body := ts.postMultipartForm(t, "/video/add", fields, files)
 			fmt.Print(body)
 			assert.Equal(t, code, tt.wantCode)
 
