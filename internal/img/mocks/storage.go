@@ -1,11 +1,11 @@
 package mock
 
 import (
-	"mime/multipart"
+	"io"
 )
 
 type FileStorage struct{}
 
-func (s *FileStorage) SaveMultipartFile(subPath string, file multipart.File) error {
+func (s *FileStorage) SaveFile(subPath string, file io.Reader) error {
 	return nil
 }

@@ -8,7 +8,7 @@ import (
 	"sketchdb.cozycole.net/internal/utils"
 )
 
-func TestSaveMultipartFile(t *testing.T) {
+func TestSaveFile(t *testing.T) {
 	storage := FileStorage{Path: os.TempDir()}
 
 	header, err := utils.CreateMultipartFileHeader("./testdata/test-img.jpg")
@@ -22,7 +22,7 @@ func TestSaveMultipartFile(t *testing.T) {
 	}
 
 	t.Run("Valid storage", func(t *testing.T) {
-		err = storage.SaveMultipartFile("test-img.jpg", multipartFile)
+		err = storage.SaveFile("test-img.jpg", multipartFile)
 		if err != nil {
 			t.Error(err)
 		}

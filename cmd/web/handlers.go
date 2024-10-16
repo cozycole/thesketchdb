@@ -3,6 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
+	"io"
 	"net/http"
 	"path"
 	"strings"
@@ -120,7 +124,7 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// the insert returns the fullImgName which is {fileName}-{id}.{ext}
-	_, _, fullImgName, err := app.creators.
+	_, slug, fullImgName, err := app.creators.
 		Insert(
 			form.Name, form.URL, imgName,
 			mimeToExt[mimeType], date,
@@ -130,14 +134,14 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.fileStorage.SaveMultipartFile(path.Join("creator", fullImgName), file)
+	err = app.fileStorage.SaveFile(path.Join("creator", fullImgName), file)
 	if err != nil {
 		// TODO: We gotta remove the db record on this error
 		app.serverError(w, err)
 		return
 	}
 
-	http.Redirect(w, r, "/creator/add", http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/creator/%s", slug), http.StatusSeeOther)
 }
 
 func (app *application) actorAdd(w http.ResponseWriter, r *http.Request) {
@@ -190,7 +194,7 @@ func (app *application) actorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.fileStorage.SaveMultipartFile(path.Join("actor", fullImgName), file)
+	err = app.fileStorage.SaveFile(path.Join("actor", fullImgName), file)
 	if err != nil {
 		// TODO: We gotta remove the db record on this error
 		app.serverError(w, err)
@@ -237,16 +241,11 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	buf := make([]byte, 512)
-
-	_, err = file.Read(buf)
+	mimeType, err := utils.GetMultipartFileMime(file)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-	file.Seek(0, 0)
-
-	mimeType := http.DetectContentType(buf)
 
 	vidID, slug, thumbnailName, err := app.videos.Insert(
 		form.Title, form.URL, strings.ToUpper(form.Rating),
@@ -257,9 +256,28 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.fileStorage.SaveMultipartFile(path.Join("video", thumbnailName), file)
+	width, height, err := utils.GetImageDimensions(file)
 	if err != nil {
-		// TODO: We gotta remove the db record on this error and any after
+		// TODO: gotta remove the db record on this error and any after
+		app.serverError(w, err)
+		return
+	}
+
+	var dstFile io.Reader
+	dstFile = file
+	// This is stock youtube thumbnail dimensions but has black
+	// top/bottom borders that need to be removed
+	if width == 480 && height == 360 {
+		rect := image.Rect(0, 45, 480, 315)
+		dstFile, err = utils.CropImg(file, mimeToExt[mimeType], rect)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+	}
+
+	err = app.fileStorage.SaveFile(path.Join("video", thumbnailName), dstFile)
+	if err != nil {
 		app.serverError(w, err)
 		return
 	}
