@@ -52,6 +52,6 @@ func (m *VideoModel) InsertVideoCreatorRelation(vidId, creatorId int) error {
 	return nil
 }
 
-func (m *VideoModel) InsertVideoActorRelation(vidId, actorId int) error {
+func (m *VideoModel) InsertVideoPersonRelation(vidId, personId int) error {
 	return nil
 }

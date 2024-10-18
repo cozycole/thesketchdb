@@ -78,7 +78,7 @@ func TestCreatorAddPost(t *testing.T) {
 	}
 }
 
-func TestActorAddPost(t *testing.T) {
+func TestPersonAddPost(t *testing.T) {
 	app := newTestApplication(t)
 
 	ts := newTestServer(t, app.routes())
@@ -135,7 +135,7 @@ func TestActorAddPost(t *testing.T) {
 			files := map[string]string{
 				"profileImg": tt.imgPath,
 			}
-			code, _, body := ts.postMultipartForm(t, "/actor/add", fields, files)
+			code, _, body := ts.postMultipartForm(t, "/person/add", fields, files)
 			assert.Equal(t, code, tt.wantCode)
 
 			// ensure inputs are returned in the form on 422
@@ -153,7 +153,7 @@ func TestVideoAddPost(t *testing.T) {
 
 	ts := newTestServer(t, app.routes())
 	defer ts.Close()
-	validActors := []string{"1", "2", "3"}
+	validPeople := []string{"1", "2", "3"}
 
 	const (
 		validTitle     = "Title"
@@ -172,7 +172,7 @@ func TestVideoAddPost(t *testing.T) {
 		date     string
 		imgPath  string
 		creator  string
-		actors   []string
+		people   []string
 		wantCode int
 	}{
 		{
@@ -183,7 +183,7 @@ func TestVideoAddPost(t *testing.T) {
 			date:     validDate,
 			imgPath:  validImgPath,
 			creator:  validCreator,
-			actors:   validActors,
+			people:   validPeople,
 			wantCode: http.StatusSeeOther,
 		},
 		{
@@ -194,7 +194,7 @@ func TestVideoAddPost(t *testing.T) {
 			date:     validDate,
 			imgPath:  invalidImgPath,
 			creator:  validCreator,
-			actors:   validActors,
+			people:   validPeople,
 			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
@@ -205,7 +205,7 @@ func TestVideoAddPost(t *testing.T) {
 			date:     "",
 			imgPath:  "",
 			creator:  "",
-			actors:   []string{"", "", ""},
+			people:   []string{"", "", ""},
 			wantCode: http.StatusUnprocessableEntity,
 		},
 	}
@@ -218,9 +218,9 @@ func TestVideoAddPost(t *testing.T) {
 				"rating":     tt.rating,
 				"uploadDate": tt.date,
 				"creator":    tt.creator,
-				"actors[0]":  tt.actors[0],
-				"actors[1]":  tt.actors[1],
-				"actors[2]":  tt.actors[2],
+				"people[0]":  tt.people[0],
+				"people[1]":  tt.people[1],
+				"people[2]":  tt.people[2],
 			}
 			files := map[string]string{
 				"thumbnail": tt.imgPath,

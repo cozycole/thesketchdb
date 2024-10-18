@@ -1,5 +1,5 @@
 BEGIN;
-CREATE TABLE IF NOT EXISTS actor (
+CREATE TABLE IF NOT EXISTS person (
     id serial primary key,
     first VARCHAR NOT NULL,
     last VARCHAR NOT NULL,

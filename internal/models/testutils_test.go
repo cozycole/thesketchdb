@@ -18,13 +18,15 @@ func newTestDB(t *testing.T) *pgxpool.Pool {
 	}
 
 	schemaDirPath := "../../sql/schema"
-	entries, err := os.ReadDir(schemaDirPath)
-	if err != nil {
-		t.Fatal(err)
+	schemaExecOrder := []string{
+		"person_table.sql",
+		"creator_table.sql",
+		"character_table.sql",
+		"tag_table.sql",
+		"video_table.sql",
 	}
-
-	for _, entry := range entries {
-		scriptPath := path.Join(schemaDirPath, entry.Name())
+	for _, scriptName := range schemaExecOrder {
+		scriptPath := path.Join(schemaDirPath, scriptName)
 		script, err := os.ReadFile(scriptPath)
 		if err != nil {
 			t.Fatal(err)

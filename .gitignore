@@ -1,10 +1,10 @@
 .env
 go.sum
-actor
+person
 creator
 video
 img/*
-notes.md
+*notes.md
 quick*
 tmp
 node_modules

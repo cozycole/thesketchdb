@@ -29,7 +29,7 @@ func newTestApplication(t *testing.T) *application {
 		templateCache: templateCache,
 		videos:        &mocks.VideoModel{},
 		creators:      &mocks.CreatorModel{},
-		actors:        &mocks.ActorModel{},
+		people:        &mocks.PersonModel{},
 		debugMode:     true,
 	}
 }

@@ -7,12 +7,12 @@ import (
 	"sketchdb.cozycole.net/internal/assert"
 )
 
-func TestActorInsert(t *testing.T) {
+func TestPersonInsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip("models: skipping integration test")
 	}
 	db := newTestDB(t)
-	m := ActorModel{db}
+	m := PersonModel{db}
 
 	tests := []struct {
 		name        string

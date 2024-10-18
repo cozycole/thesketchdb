@@ -11,10 +11,10 @@ CREATE TABLE IF NOT EXISTS video (
     insert_timestamp timestamp DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS video_actor_rel (
-    actor_id int references actor(id),
+CREATE TABLE IF NOT EXISTS video_person_rel (
+    person_id int references person(id),
     video_id int references video(id),
-    PRIMARY KEY (actor_id, video_id)
+    PRIMARY KEY (person_id, video_id)
 );
 
 CREATE TABLE IF NOT EXISTS video_creator_rel (
@@ -27,6 +27,6 @@ CREATE TABLE IF NOT EXISTS video_creator_rel (
 --     id serial primary key,
 --     video_id int references video(id),
 --     tag_id int references tag(id),
---     UNIQUE (actor_id, video_id)
+--     UNIQUE (person_id, video_id)
 -- );
 COMMIT;

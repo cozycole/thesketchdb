@@ -144,15 +144,15 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/creator/%s", slug), http.StatusSeeOther)
 }
 
-func (app *application) actorAdd(w http.ResponseWriter, r *http.Request) {
+func (app *application) personAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	data.Form = addCreatorForm{}
-	app.render(w, http.StatusOK, "add-actor.tmpl.html", data)
+	app.render(w, http.StatusOK, "add-person.tmpl.html", data)
 }
 
-func (app *application) actorAddPost(w http.ResponseWriter, r *http.Request) {
-	var form addActorForm
+func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
+	var form addPersonForm
 
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -160,11 +160,11 @@ func (app *application) actorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.validateAddActorForm(&form)
+	app.validateAddPersonForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "add-actor.tmpl.html", data)
+		app.render(w, http.StatusUnprocessableEntity, "add-person.tmpl.html", data)
 		return
 	}
 
@@ -184,7 +184,7 @@ func (app *application) actorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, fullImgName, err := app.actors.
+	_, fullImgName, err := app.people.
 		Insert(
 			form.First, form.Last, imgName,
 			mimeToExt[mimeType], date,
@@ -194,14 +194,14 @@ func (app *application) actorAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.fileStorage.SaveFile(path.Join("actor", fullImgName), file)
+	err = app.fileStorage.SaveFile(path.Join("person", fullImgName), file)
 	if err != nil {
 		// TODO: We gotta remove the db record on this error
 		app.serverError(w, err)
 		return
 	}
 
-	http.Redirect(w, r, "/actor/add", http.StatusSeeOther)
+	http.Redirect(w, r, "/person/add", http.StatusSeeOther)
 }
 
 func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
@@ -288,8 +288,8 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, id := range form.ActorIDs {
-		err = app.videos.InsertVideoActorRelation(vidID, id)
+	for _, id := range form.PersonIDs {
+		err = app.videos.InsertVideoPersonRelation(vidID, id)
 		if err != nil {
 			app.serverError(w, err)
 			return

@@ -83,9 +83,9 @@ func TestVideoDecodePostForm(t *testing.T) {
 		"uploadDate": "2024-09-10",
 		"rating":     "r",
 		"creator":    "1",
-		"actors[0]":  "1",
-		"actors[1]":  "2",
-		"actors[2]":  "3",
+		"people[0]":  "1",
+		"people[1]":  "2",
+		"people[2]":  "3",
 	}
 
 	filepath := "./testdata/test-img.jpg"
@@ -117,7 +117,7 @@ func TestVideoDecodePostForm(t *testing.T) {
 		assert.Equal(t, form.UploadDate, fields["uploadDate"])
 		assert.Equal(t, form.Rating, fields["rating"])
 		assert.Equal(t, form.CreatorID, 1)
-		assert.DeepEqual(t, form.ActorIDs, []int{1, 2, 3})
+		assert.DeepEqual(t, form.PersonIDs, []int{1, 2, 3})
 		assert.Equal(t, form.Thumbnail.Filename, path.Base(filepath))
 	})
 }

@@ -92,11 +92,11 @@
                 class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
             />
         </div>
-        <div id="actorInputs">
-            <label class="inline-block my-2">Actors</label>
+        <div id="personInputs">
+            <label class="inline-block my-2">People</label>
             {{$FieldErrors := .Form.FieldErrors}}
-            {{range $index, $actor := .Form.ActorIDs}}
-                {{$name := printf "actors[%d]" $index}}
+            {{range $index, $person := .Form.PersonIDs}}
+                {{$name := printf "people[%d]" $index}}
                 {{with (index $FieldErrors $name)}}
                     <label class="block text-red-700">{{.}}</label>
                 {{end}}
@@ -105,21 +105,21 @@
                     name="{{$name}}" 
                     value="{{.}}"
                     class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                    placeholder="Enter actor name" 
+                    placeholder="Enter person name" 
                 /> 
             {{else}}
                 <input 
                     type="text" 
-                    name="actors[0]"
+                    name="people[0]"
                     class="my-2 w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                    placeholder="Enter actor name" 
+                    placeholder="Enter person name" 
                 />
             {{end}}
             <button 
                 type="button"
-                id="addActorButton"
+                id="addPersonButton"
                 class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-            >Actor input +</button>
+            >Person input +</button>
         </div>
         <button 
             type="submit"
@@ -127,11 +127,11 @@
         >Submit</button>
     </div>
 
-    <template id="actorInputTemplate">
+    <template id="personInputTemplate">
         <input 
             type="text" 
             class="my-2 w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-            placeholder="Enter actor name" 
+            placeholder="Enter person name" 
         />
       </template>
 {{end}}

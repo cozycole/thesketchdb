@@ -91,14 +91,14 @@ function getVideoID(url) {
     return queryParams.get('v')
 }
 
-document.getElementById("addActorButton").addEventListener("click", () => {
-    const actorInputDivs = document.querySelectorAll("#actorInputs input")
-    const lastInputs = Array.from(actorInputDivs).sort((a,b) => {
+document.getElementById("addPersonButton").addEventListener("click", () => {
+    const personInputDivs = document.querySelectorAll("#personInputs input")
+    const lastInputs = Array.from(personInputDivs).sort((a,b) => {
         a = a.getAttribute("name")
         b = b.getAttribute("name")
         return a-b
     })
-    const template = document.getElementById("actorInputTemplate").content;
+    const template = document.getElementById("personInputTemplate").content;
     const newInput = document.importNode(template, true);
 
     const lastInput = lastInputs.pop()
@@ -109,8 +109,8 @@ document.getElementById("addActorButton").addEventListener("click", () => {
     const lastInputName = lastInput.getAttribute("name")
     let lastInputNum = lastInputName.match(/\d+/)[0]
 
-    newInput.name = `actors[${Number(lastInputNum) + 1}]`
+    newInput.name = `people[${Number(lastInputNum) + 1}]`
 
-    const addActorButton = document.querySelector("#actorInputs button")
-    lastInput.parentNode.insertBefore(newInput, addActorButton)
+    const addPersonButton = document.querySelector("#personInputs button")
+    lastInput.parentNode.insertBefore(newInput, addPersonButton)
 })

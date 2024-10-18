@@ -44,7 +44,7 @@ func (app *application) validateAddCreatorForm(form *addCreatorForm) {
 	form.CheckField(validator.IsMime(profileImg, "image/jpeg", "image/png"), "profileImg", "Uploaded file must be jpg or png")
 }
 
-type addActorForm struct {
+type addPersonForm struct {
 	First               string                `form:"first"`
 	Last                string                `form:"last"`
 	BirthDate           string                `form:"birthDate"`
@@ -52,7 +52,7 @@ type addActorForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateAddActorForm(form *addActorForm) {
+func (app *application) validateAddPersonForm(form *addPersonForm) {
 	form.CheckField(validator.NotBlank(form.First), "first", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Last), "last", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.BirthDate), "birthDate", "This field cannot be blank")
@@ -73,8 +73,8 @@ func (app *application) validateAddActorForm(form *addActorForm) {
 	form.CheckField(validator.IsMime(profileImg, "image/jpeg", "image/png"), "profileImg", "Uploaded file must be jpg or png")
 }
 
-// ActorIDs have name form field names of form actors[i]
-// if there are spaces between indexes say actors[0] : 1, actors[2] : 3
+// PersonIDs have name form field names of form people[i]
+// if there are spaces between indexes say people[0] : 1, people[2] : 3
 // the result is zero filled so []int{1,0,3}
 type addVideoForm struct {
 	Title               string                `form:"title"`
@@ -83,7 +83,7 @@ type addVideoForm struct {
 	UploadDate          string                `form:"uploadDate"`
 	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
 	CreatorID           int                   `form:"creator"`
-	ActorIDs            []int                 `form:"actors"`
+	PersonIDs           []int                 `form:"people"`
 	validator.Validator `form:"-"`
 }
 
@@ -110,8 +110,8 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 		)
 	}
 
-	for i, a := range form.ActorIDs {
-		htmlFieldName := fmt.Sprintf("actors[%d]", i)
+	for i, a := range form.PersonIDs {
+		htmlFieldName := fmt.Sprintf("people[%d]", i)
 		form.CheckField(
 			!validator.IsZero(a),
 			htmlFieldName,
@@ -120,9 +120,9 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 
 		if !validator.IsZero(a) {
 			form.CheckField(
-				validator.BoolWithError(app.actors.Exists(a)),
+				validator.BoolWithError(app.people.Exists(a)),
 				htmlFieldName,
-				"Actor does not exist. Please add it, then resubmit video!",
+				"Person does not exist. Please add it, then resubmit video!",
 			)
 		}
 	}

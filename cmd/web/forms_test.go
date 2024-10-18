@@ -83,7 +83,7 @@ func TestValidateAddCreatorForm(t *testing.T) {
 	}
 }
 
-func TestValidateAddActorForm(t *testing.T) {
+func TestValidateAddPersonForm(t *testing.T) {
 	// store in memory valid and invalid images
 	var emptyMap map[string]string
 	var emptySlice []string
@@ -102,13 +102,13 @@ func TestValidateAddActorForm(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		form           *addActorForm
+		form           *addPersonForm
 		fieldErrors    map[string]string
 		nonFieldErrors []string
 	}{
 		{
 			name: "Valid Submission",
-			form: &addActorForm{
+			form: &addPersonForm{
 				First:        "Brad",
 				Last:         "Pitt",
 				BirthDate:    "2024-09-07",
@@ -119,7 +119,7 @@ func TestValidateAddActorForm(t *testing.T) {
 		},
 		{
 			name: "Invalid Image",
-			form: &addActorForm{
+			form: &addPersonForm{
 				First:        "Brad",
 				Last:         "Pitt",
 				BirthDate:    "2024-09-07",
@@ -132,7 +132,7 @@ func TestValidateAddActorForm(t *testing.T) {
 		},
 		{
 			name: "Blank fields",
-			form: &addActorForm{
+			form: &addPersonForm{
 				First:        "",
 				Last:         "",
 				BirthDate:    "",
@@ -150,7 +150,7 @@ func TestValidateAddActorForm(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app.validateAddActorForm(tt.form)
+			app.validateAddPersonForm(tt.form)
 			assert.DeepEqual(t, tt.form.FieldErrors, tt.fieldErrors)
 			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
 		})

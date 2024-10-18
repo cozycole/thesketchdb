@@ -23,7 +23,7 @@ type application struct {
 	fileStorage   img.FileStorageInterface
 	videos        models.VideoModelInterface
 	creators      models.CreatorModelInterface
-	actors        models.ActorModelInterface
+	people        models.PersonModelInterface
 	debugMode     bool
 	formDecoder   *form.Decoder
 }
@@ -65,7 +65,7 @@ func main() {
 		fileStorage:   &fileStorage,
 		videos:        &models.VideoModel{DB: dbpool, ResultSize: 16},
 		creators:      &models.CreatorModel{DB: dbpool},
-		actors:        &models.ActorModel{DB: dbpool},
+		people:        &models.PersonModel{DB: dbpool},
 		debugMode:     *debug,
 	}
 

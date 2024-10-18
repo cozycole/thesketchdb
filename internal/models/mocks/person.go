@@ -6,7 +6,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-var mockActor = &models.Actor{
+var mockPerson = &models.Person{
 	ID:         1,
 	First:      "Brad",
 	Last:       "Pitt",
@@ -14,13 +14,13 @@ var mockActor = &models.Actor{
 	BirthDate:  time.Now(),
 }
 
-type ActorModel struct{}
+type PersonModel struct{}
 
-func (m *ActorModel) Get(id int) (*models.Actor, error) {
-	return mockActor, nil
+func (m *PersonModel) Get(id int) (*models.Person, error) {
+	return mockPerson, nil
 }
 
-func (m *ActorModel) Exists(id int) (bool, error) {
+func (m *PersonModel) Exists(id int) (bool, error) {
 	switch id {
 	case 1, 2, 3:
 		return true, nil
@@ -29,6 +29,6 @@ func (m *ActorModel) Exists(id int) (bool, error) {
 	}
 }
 
-func (m *ActorModel) Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, error) {
+func (m *PersonModel) Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, error) {
 	return 1, "brad-pitt-1.jpg", nil
 }

@@ -27,8 +27,8 @@ func (app *application) routes() http.Handler {
 	router.Get("/creator/add", app.creatorAdd)
 	router.Post("/creator/add", app.creatorAddPost)
 
-	router.Get("/actor/add", app.actorAdd)
-	router.Post("/actor/add", app.actorAddPost)
+	router.Get("/person/add", app.personAdd)
+	router.Post("/person/add", app.personAddPost)
 
 	return router
 }

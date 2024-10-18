@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Actor struct {
+type Person struct {
 	ID         int
 	First      string
 	Last       string
@@ -17,20 +17,20 @@ type Actor struct {
 	BirthDate  time.Time
 }
 
-type ActorModelInterface interface {
-	Get(id int) (*Actor, error)
+type PersonModelInterface interface {
+	Get(id int) (*Person, error)
 	Exists(id int) (bool, error)
 	Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, error)
 }
 
-type ActorModel struct {
+type PersonModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *ActorModel) Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, error) {
+func (m *PersonModel) Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, error) {
 	stmt := `
-	INSERT INTO actor (first, last, birthdate, profile_img)
-	VALUES ($1,$2,$3,CONCAT($4::text, '-', currval(pg_get_serial_sequence('actor', 'id')), $5::text)) 
+	INSERT INTO person (first, last, birthdate, profile_img)
+	VALUES ($1,$2,$3,CONCAT($4::text, '-', currval(pg_get_serial_sequence('person', 'id')), $5::text)) 
 	RETURNING id, profile_img;`
 	var id int
 	var fullImgName string
@@ -42,8 +42,8 @@ func (m *ActorModel) Insert(first, last, imgName, imgExt string, birthDate time.
 	return id, fullImgName, err
 }
 
-func (m *ActorModel) Exists(id int) (bool, error) {
-	stmt := `SELECT id FROM actor WHERE id = $1`
+func (m *PersonModel) Exists(id int) (bool, error) {
+	stmt := `SELECT id FROM person WHERE id = $1`
 	row := m.DB.QueryRow(context.Background(), stmt, id)
 
 	err := row.Scan(&id)
@@ -57,13 +57,13 @@ func (m *ActorModel) Exists(id int) (bool, error) {
 	return true, nil
 }
 
-func (m *ActorModel) Get(id int) (*Actor, error) {
-	stmt := `SELECT id, first, profile_img, birthdate FROM actor
+func (m *PersonModel) Get(id int) (*Person, error) {
+	stmt := `SELECT id, first, profile_img, birthdate FROM person
 	WHERE id = $1`
 
 	row := m.DB.QueryRow(context.Background(), stmt, id)
 
-	a := &Actor{}
+	a := &Person{}
 
 	err := row.Scan(&a.ID, &a.First, &a.Last, &a.ProfileImg, &a.BirthDate)
 	if err != nil {
