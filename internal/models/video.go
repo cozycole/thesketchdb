@@ -9,15 +9,24 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type CastMember struct {
+	Position  *int
+	Actor     *Person
+	Character *Character
+	// TODO: add attributes about the role
+}
+
 type Video struct {
-	ID         int
-	Title      string
-	URL        string
-	Slug       string
-	Thumbnail  string
-	Rating     string
-	UploadDate time.Time
-	Creator    *Creator
+	ID          int
+	Title       string
+	URL         string
+	Slug        string
+	Thumbnail   string
+	Rating      string
+	Description *string
+	UploadDate  *time.Time
+	Creator     *Creator
+	Cast        []*CastMember
 }
 
 type VideoModelInterface interface {
@@ -76,35 +85,37 @@ func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 	return videos, nil
 }
 
-func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
-	stmt := `
-		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
-		c.id, c.name, c.page_url, c.slug, c.profile_img
-		FROM video AS v
-		JOIN video_creator_rel as vcr
-		ON v.id = vcr.video_id
-		JOIN creator as c
-		ON vcr.creator_id = c.id
-		WHERE v.slug = $1
-	`
-	row := m.DB.QueryRow(context.Background(), stmt, slug)
-	v := &Video{}
-	c := &Creator{}
-	err := row.Scan(
-		&v.ID, &v.Title, &v.URL, &v.Slug, &v.Thumbnail, &v.UploadDate,
-		&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
-	)
+func (m *VideoModel) GetIdBySlug(slug string) (int, error) {
+	stmt := `SELECT v.id FROM video as v WHERE v.slug = $1`
+	id_row := m.DB.QueryRow(context.Background(), stmt, slug)
+
+	var id int
+	err := id_row.Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNoRecord
+			return 0, ErrNoRecord
 		} else {
-			return nil, err
+			return 0, err
 		}
 	}
-	v.Creator = c
 
-	return v, nil
+	return id, nil
 }
+
+func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
+	id, err := m.GetIdBySlug(slug)
+	if err != nil {
+		return nil, err
+	}
+
+	video, err := m.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return video, nil
+}
+
 func (m *VideoModel) GetByCreator(id int) ([]*Video, error) {
 	stmt := `
 		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
@@ -134,6 +145,7 @@ func (m *VideoModel) GetByCreator(id int) ([]*Video, error) {
 			&v.ID, &v.Title, &v.URL, &v.Slug, &v.Thumbnail, &v.UploadDate,
 			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
 		)
+
 		if err != nil {
 			return nil, err
 		}
@@ -145,21 +157,28 @@ func (m *VideoModel) GetByCreator(id int) ([]*Video, error) {
 		return nil, err
 	}
 	return videos, nil
-
 }
 
 func (m *VideoModel) Get(id int) (*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.upload_date,
-		c.id, c.name, c.profile_img
+		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.upload_date, v.description, v.pg_rating,
+			c.id, c.name, c.profile_img
 		FROM video AS v
-		JOIN video_creator_rel as vcr
+		LEFT JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id
-		JOIN creator as c
+		LEFT JOIN creator as c
 		ON vcr.creator_id = c.id
 		WHERE v.id = $1
 	`
-	row, err := m.DB.Query(context.Background(), stmt, id)
+
+	row := m.DB.QueryRow(context.Background(), stmt, id)
+
+	v := &Video{}
+	c := &Creator{}
+	err := row.Scan(
+		&v.ID, &v.Title, &v.URL, &v.Thumbnail, &v.UploadDate, &v.Description, &v.Rating,
+		&c.ID, &c.Name, &c.ProfileImage,
+	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -167,22 +186,67 @@ func (m *VideoModel) Get(id int) (*Video, error) {
 			return nil, err
 		}
 	}
-	defer row.Close()
-	v := &Video{}
-	c := &Creator{}
-	err = row.Scan(
-		&v.ID, &v.Title, &v.URL, &v.Thumbnail, &v.UploadDate,
-		&c.ID, &c.Name, &c.ProfileImage,
-	)
-	if err != nil {
-		return nil, err
-	}
+
 	v.Creator = c
+
+	members, err := m.GetCastMembers(id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	v.Cast = members
 
 	return v, nil
 }
 
-// Will make DRY later
+func (m *VideoModel) GetCastMembers(video_id int) ([]*CastMember, error) {
+	stmt := `
+		SELECT p.id as person_id, p.first as person_first, p.last as person_last, p.birthdate, 
+			p.description, p.profile_img, vpr.position,
+			ch.id as char_id, ch.name as char_name, ch.img_name as char_img
+		FROM video AS v
+		LEFT JOIN video_person_rel as vpr
+		ON v.id = vpr.video_id
+		LEFT JOIN person as p
+		ON vpr.person_id = p.id
+		LEFT JOIN character as ch
+		ON vpr.character_id = ch.id
+		WHERE v.id = $1
+	`
+	rows, err := m.DB.Query(context.Background(), stmt, video_id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	members := []*CastMember{}
+	for rows.Next() {
+		p := &Person{}
+		ch := &Character{}
+		cm := &CastMember{}
+		err := rows.Scan(
+			&p.ID, &p.First, &p.Last, &p.BirthDate, &p.Description, &p.ProfileImg,
+			&cm.Position, &ch.ID, &ch.Name, &ch.Image,
+		)
+		if err != nil {
+			return nil, err
+		}
+		cm.Actor = p
+		cm.Character = ch
+		members = append(members, cm)
+	}
+
+	return members, nil
+}
+
+// TODO: make DRY later
 func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 	stmt := `
 		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,

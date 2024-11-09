@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"os"
+	"os/exec"
 	"path"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 
 func newTestDB(t *testing.T) *pgxpool.Pool {
 	godotenv.Load()
+
 	db, err := pgxpool.New(context.Background(), os.Getenv("TEST_DB_URL"))
 	if err != nil {
 		t.Fatal(err)
@@ -51,4 +53,8 @@ func newTestDB(t *testing.T) *pgxpool.Pool {
 		db.Close()
 	})
 	return db
+}
+
+func restoreDbScript(path string) error {
+	return exec.Command("psql", os.Getenv("TEST_DB_URL"), "-f", path).Run()
 }

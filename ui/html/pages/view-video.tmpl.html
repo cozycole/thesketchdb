@@ -15,6 +15,13 @@
         <div class="metadata rounded-md bg-slate-300">
             <time>Created: {{humanDate .UploadDate}}</time>
         </div>
+        <div> 
+            Cast
+            {{range .Cast}}
+                <img src="/static/img/person/{{.Actor.ProfileImg}}">
+                <h3>{{.Actor.First}} {{.Actor.Last}}</h3>
+            {{end}}
+        </div>
     </div>
     {{end}}
 {{end}}

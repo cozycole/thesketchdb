@@ -1,3 +1,5 @@
+#!/bin/bash 
+
 air -c ./.air.toml & \
 npx tailwind \
   -i './ui/styles.css' \

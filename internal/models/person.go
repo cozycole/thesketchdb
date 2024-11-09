@@ -10,11 +10,12 @@ import (
 )
 
 type Person struct {
-	ID         int
-	First      string
-	Last       string
-	ProfileImg string
-	BirthDate  time.Time
+	ID          int
+	First       string
+	Last        string
+	ProfileImg  string
+	BirthDate   *time.Time
+	Description *string
 }
 
 type PersonModelInterface interface {
