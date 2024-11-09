@@ -7,3 +7,4 @@ CREATE DATABASE sketch_data_test
 
 
 CREATE TYPE IF NOT EXISTS rating AS ENUM ('PG', 'PG-13', 'R');
+CREATE TYPE IF NOT EXISTS vid_role AS ENUM ('Cast', 'Guest', 'Host');
