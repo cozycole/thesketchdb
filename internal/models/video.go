@@ -108,12 +108,7 @@ func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 		return nil, err
 	}
 
-	video, err := m.Get(id)
-	if err != nil {
-		return nil, err
-	}
-
-	return video, nil
+	return m.Get(id)
 }
 
 func (m *VideoModel) GetByCreator(id int) ([]*Video, error) {
@@ -204,7 +199,7 @@ func (m *VideoModel) Get(id int) (*Video, error) {
 
 func (m *VideoModel) GetCastMembers(video_id int) ([]*CastMember, error) {
 	stmt := `
-		SELECT p.id as person_id, p.first as person_first, p.last as person_last, p.birthdate, 
+		SELECT p.id, p.slug, p.first, p.last, p.birthdate,
 			p.description, p.profile_img, vpr.position,
 			ch.id as char_id, ch.name as char_name, ch.img_name as char_img
 		FROM video AS v
@@ -232,12 +227,13 @@ func (m *VideoModel) GetCastMembers(video_id int) ([]*CastMember, error) {
 		ch := &Character{}
 		cm := &CastMember{}
 		err := rows.Scan(
-			&p.ID, &p.First, &p.Last, &p.BirthDate, &p.Description, &p.ProfileImg,
+			&p.ID, &p.Slug, &p.First, &p.Last, &p.BirthDate, &p.Description, &p.ProfileImg,
 			&cm.Position, &ch.ID, &ch.Name, &ch.Image,
 		)
 		if err != nil {
 			return nil, err
 		}
+
 		cm.Actor = p
 		cm.Character = ch
 		members = append(members, cm)

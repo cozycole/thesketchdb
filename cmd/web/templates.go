@@ -21,6 +21,7 @@ type templateData struct {
 	Videos      []*models.Video
 	Video       *models.Video
 	Creator     *models.Creator
+	Person      *models.Person
 	// User            *models.User
 	Form            any
 	Flash           string

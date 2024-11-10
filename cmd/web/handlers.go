@@ -144,6 +144,23 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/creator/%s", slug), http.StatusSeeOther)
 }
 
+func (app *application) personView(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+	person, err := app.people.GetBySlug(slug)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Person = person
+	app.render(w, http.StatusOK, "view-person.tmpl.html", data)
+}
+
 func (app *application) personAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
@@ -184,7 +201,7 @@ func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, fullImgName, err := app.people.
+	_, slug, fullImgName, err := app.people.
 		Insert(
 			form.First, form.Last, imgName,
 			mimeToExt[mimeType], date,
@@ -201,7 +218,7 @@ func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/person/add", http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/person/%s", slug), http.StatusSeeOther)
 }
 
 func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {

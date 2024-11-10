@@ -1,0 +1,52 @@
+{{define "title"}}{{.Person.First}} {{.Person.Last}}{{end}}
+{{define "main"}}
+    {{with .Person}}
+    <div class="my-3">
+        <h1 class="text-2xl font-bold my-3">{{.First}} {{.Last}}</h1>
+        <div class="flex my-3">
+            <img src="/static/img/person/{{.ProfileImg}}" class="w-64" alt="profile-img">
+        </div>
+        <div class="metadata rounded-md bg-slate-300">
+            {{if .BirthDate}}
+                <time>Born: {{humanDate .BirthDate}}</time>
+            {{end}}
+        </div>
+        <div>
+            Description
+            {{with .Description}}
+                <p>{{.Description}}</p>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+    <!--<h1>Videos</h1>-->
+    <!--<div class="flex flex-wrap justify-start">-->
+    <!--    {{range .Videos}}-->
+    <!--    <div class="w-[calc(25%-8px)] mx-1">-->
+    <!--        <a href="/video/{{.Slug}}"></a>-->
+    <!--            <img class="rounded-md" src="/static/img/video/{{.Thumbnail}}" alt="video thumbnail">-->
+    <!--        </a> -->
+    <!--        <div class="flex mt-2 h-32">-->
+    <!--            <a class="w-[calc(15%-4px)] mr-1" href="/creator/{{.Creator.Slug}}" >-->
+    <!--                <img src="/static/img/creator/{{.Creator.ProfileImage}}" class="rounded-full" alt="creator profile image">-->
+    <!--            </a>-->
+    <!--            <div class="w-[calc(95%-4px)]">-->
+    <!--                <h3 class="font-bold line-clamp-2">-->
+    <!--                    <a href="/video/{{.Slug}}">{{.Title}}</a> -->
+    <!--                </h3>-->
+    <!--                <p class="font-medium text-base">-->
+    <!--                    <a href="/creator/{{.Creator.Slug}}">-->
+    <!--                        {{.Creator.Name}}-->
+    <!--                    </a>-->
+    <!--                </p>-->
+    <!--                <p>{{.UploadDate.Format "Jan 2, 2006"}}</p>-->
+    <!--            </div>-->
+    <!--        </div>-->
+    <!--    </div>-->
+    <!--    {{end}}-->
+    <!--</div>-->
+{{end}}
+
+{{define "scripts"}}
+    <script src="/static/js/search.js"></script>
+{{end}}
