@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -10,11 +11,11 @@ import (
 )
 
 type Person struct {
-	ID          int
-	Slug        string
-	First       string
-	Last        string
-	ProfileImg  string
+	ID          *int
+	Slug        *string
+	First       *string
+	Last        *string
+	ProfileImg  *string
 	BirthDate   *time.Time
 	Description *string
 }
@@ -34,17 +35,49 @@ func (m *PersonModel) Insert(first, last, imgName, imgExt string, birthDate time
 	stmt := `
 	INSERT INTO person (first, last, birthdate, slug, profile_img)
 	VALUES ($1,$2,$3,
-		CONCAT($4::text, '-', currval(pg_get_serial_sequence('person', 'id')))
+		CONCAT($4::text, '-', currval(pg_get_serial_sequence('person', 'id'))),
 		CONCAT($4::text, '-', currval(pg_get_serial_sequence('person', 'id')), $5::text))
 	RETURNING id, slug, profile_img;`
 	var id int
 	var fullImgName, slug string
 	row := m.DB.QueryRow(context.Background(), stmt, first, last, birthDate, imgName, imgExt)
-	err := row.Scan(&id, &fullImgName, &slug)
+	err := row.Scan(&id, &slug, &fullImgName)
 	if err != nil {
 		return 0, "", "", err
 	}
 	return id, fullImgName, slug, err
+}
+
+func (m *PersonModel) Search(query string) ([]*Person, error) {
+	query = query + "%"
+	fmt.Println(query)
+	stmt := `SELECT id, slug, first, last, profile_img, birthdate
+			FROM person
+			WHERE CONCAT(LOWER(first), LOWER(last)) LIKE LOWER($1)
+			OR LOWER(last) LIKE LOWER($1)`
+
+	rows, err := m.DB.Query(context.Background(), stmt, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	people := []*Person{}
+	for rows.Next() {
+		p := &Person{}
+		err := rows.Scan(
+			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg, &p.BirthDate,
+		)
+		if err != nil {
+			return nil, err
+		}
+		people = append(people, p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return people, nil
 }
 
 func (m *PersonModel) Exists(id int) (bool, error) {

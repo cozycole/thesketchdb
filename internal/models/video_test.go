@@ -69,6 +69,8 @@ func TestVideoGet(t *testing.T) {
 	}
 
 	uploadDate := time.Date(2008, 9, 8, 0, 0, 0, 0, time.UTC)
+	emptyDescription := new(string)
+	*emptyDescription = ""
 
 	tests := []struct {
 		name        string
@@ -77,7 +79,7 @@ func TestVideoGet(t *testing.T) {
 		thumbnail   string
 		uploadDate  time.Time
 		pgRating    string
-		description string
+		description *string
 		creatorName string
 		castSize    int
 	}{
@@ -88,7 +90,7 @@ func TestVideoGet(t *testing.T) {
 			thumbnail:   "good-pals-1.jpg",
 			uploadDate:  uploadDate,
 			pgRating:    "PG",
-			description: "",
+			description: emptyDescription,
 			creatorName: "nathanfielder",
 			castSize:    2,
 		},
@@ -156,8 +158,8 @@ func TestCastMembersGet(t *testing.T) {
 		member := *members[i]
 
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, member.Actor.First, test.first)
-			assert.Equal(t, member.Actor.Last, test.last)
+			assert.Equal(t, member.Actor.First, &test.first)
+			assert.Equal(t, member.Actor.Last, &test.last)
 			if member.Actor.BirthDate != nil {
 				t.Log(bday)
 				assert.Equal(t, *member.Actor.BirthDate, *test.birthdate)

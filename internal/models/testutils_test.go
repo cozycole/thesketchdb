@@ -58,3 +58,8 @@ func newTestDB(t *testing.T) *pgxpool.Pool {
 func restoreDbScript(path string) error {
 	return exec.Command("psql", os.Getenv("TEST_DB_URL"), "-f", path).Run()
 }
+
+func getStringPtr(value string) *string {
+	s := value
+	return &s
+}
