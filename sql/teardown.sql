@@ -1,8 +1,10 @@
-DROP TABLE video_creator_rel;
-DROP TABLE video_person_rel;
-DROP TABLE video;
-DROP TABLE creator CASCADE;
-DROP TABLE person CASCADE;
-DROP TABLE character CASCADE;
-DROP TABLE tag CASCADE;
+DROP TABLE IF EXISTS video_creator_rel;
+DROP TABLE IF EXISTS video_person_rel;
+DROP TABLE IF EXISTS video_tag_rel;
+DROP TABLE IF EXISTS actor_creator_rel;
+DROP TABLE IF EXISTS video;
+DROP TABLE IF EXISTS creator;
+DROP TABLE IF EXISTS character;
+DROP TABLE IF EXISTS person;
+DROP TABLE IF EXISTS tag;
 

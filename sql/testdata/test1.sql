@@ -20,9 +20,10 @@ SET row_security = off;
 -- Data for Name: person; Type: TABLE DATA; Schema: public; Owner: colet
 --
 
-COPY public.person (id, first, last, birthdate, profile_img, description) FROM stdin;
-4	Tim	Gilbert	1983-05-13	tim-gilbert-4.jpg	this is the description
-5	James	Hartnett	\N	james-hartnett-5.jpg	\N
+COPY public.person (id, slug, first, last, birthdate, profile_img, description) FROM stdin;
+1	kyle-mooney-1	Kyle	Mooney	1984-09-03	kyle-mooney-1.jpg	\N
+4	tim-gilbert-4	Tim	Gilbert	1983-05-13	tim-gilbert-4.jpg	this is the description
+5	james-hartnett-5	James	Hartnett	\N	james-hartnett-5.jpg	\N
 \.
 
 

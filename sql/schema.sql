@@ -1,5 +1,38 @@
 BEGIN;
 
+CREATE TABLE IF NOT EXISTS person (
+    id SERIAL PRIMARY KEY,
+    slug VARCHAR NOT NULL,
+    first VARCHAR NOT NULL,
+    last VARCHAR NOT NULL,
+    description VARCHAR,
+    birthdate DATE, 
+    profile_img VARCHAR NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS character (
+    id SERIAL PRIMARY KEY, 
+    name VARCHAR NOT NULL, 
+    description VARCHAR, 
+    img_name VARCHAR,
+    person_id INT REFERENCES person(id)
+);
+
+CREATE TABLE IF NOT EXISTS creator (
+    id serial primary key,
+    name VARCHAR NOT NULL,
+    slug VARCHAR NOT NULL,
+    page_url VARCHAR NOT NULL,
+    description VARCHAR,
+    profile_img VARCHAR, 
+    date_established DATE
+);
+
+--CREATE TABLE IF NOT EXISTS tag (
+--    id serial primary key,
+--    tag VARCHAR UNIQUE
+--);
+
 CREATE TABLE IF NOT EXISTS video (
     id SERIAL PRIMARY KEY,
     title VARCHAR NOT NULL,
@@ -36,4 +69,5 @@ CREATE TABLE IF NOT EXISTS video_creator_rel (
 --     tag_id int references tag(id),
 --     UNIQUE (video_id, tag_id)
 -- );
+
 COMMIT;
