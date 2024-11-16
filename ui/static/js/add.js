@@ -114,3 +114,13 @@ document.getElementById("addPersonButton").addEventListener("click", () => {
     const addPersonButton = document.querySelector("#personInputs button")
     lastInput.parentNode.insertBefore(newInput, addPersonButton)
 })
+
+function insertDropdownItem(e) {
+    text = e.target.outerText
+    dropDownList = e.target.parentNode
+    // dropdown list is contained in div
+    input = dropDownList.parentNode.previousElementSibling
+    input.value = text
+
+    dropDownList.remove()
+}

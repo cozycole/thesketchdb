@@ -17,17 +17,19 @@ import (
 // struct for inserting data and data can come from many sources,
 // you need to combine it all into one
 type templateData struct {
-	CurrentYear int
-	Videos      []*models.Video
-	Video       *models.Video
-	Creator     *models.Creator
-	Person      *models.Person
-	// User            *models.User
+	CurrentYear     int
+	Videos          []*models.Video
+	Video           *models.Video
+	Creator         *models.Creator
+	Person          *models.Person
+	DropdownResults searchResults
 	Form            any
 	Flash           string
 	IsAuthenticated bool
 	CSRFToken       string
 }
+
+// User            *models.User
 
 func humanDate(t time.Time) string {
 	if t.IsZero() {
@@ -56,7 +58,8 @@ var functions = template.FuncMap{
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 
-	pages, err := fs.Glob(ui.Files, "html/pages/*.tmpl.html")
+	// Add all pages and partials to the cache
+	pages, err := fs.Glob(ui.Files, "html/**/*.tmpl.html")
 	if err != nil {
 		return nil, err
 	}

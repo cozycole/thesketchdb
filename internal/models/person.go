@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -25,6 +24,7 @@ type PersonModelInterface interface {
 	Get(id int) (*Person, error)
 	Exists(id int) (bool, error)
 	Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, string, error)
+	Search(query string) ([]*Person, error)
 }
 
 type PersonModel struct {
@@ -50,7 +50,6 @@ func (m *PersonModel) Insert(first, last, imgName, imgExt string, birthDate time
 
 func (m *PersonModel) Search(query string) ([]*Person, error) {
 	query = query + "%"
-	fmt.Println(query)
 	stmt := `SELECT id, slug, first, last, profile_img, birthdate
 			FROM person
 			WHERE CONCAT(LOWER(first), LOWER(last)) LIKE LOWER($1)

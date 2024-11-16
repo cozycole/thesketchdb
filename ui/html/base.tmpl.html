@@ -1,22 +1,25 @@
 {{define "base"}}
 <!doctype html>
 <html lang='en'>
-    <head>
-        <meta charset='utf-8'>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{{template "title" .}} - SketchDB</title>
-        <link rel='stylesheet' href='/static/css/styles.css'>
-        <link rel='shortcut icon' href='/static/img/favicon.ico' type='image/x-icon'>
-        <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
-    </head>
-    <body class="min-h-screen flex flex-col">
-        {{template "nav" .}}
-        <main class="flex-grow w-full lg:max-w-screen-lg mx-auto px-6">
-            {{template "main" .}}
-        </main>
-        {{template "footer" .}}
-    <script src="/static/js/main.js" type="text/javascript"></script>
+
+<head>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{template "title" .}} - SketchDB</title>
+    <link rel='stylesheet' href='/static/css/styles.css'>
+    <link rel='shortcut icon' href='/static/img/favicon.ico' type='image/x-icon'>
+    <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+</head>
+
+<body class="min-h-screen flex flex-col">
+    {{template "nav" .}}
+    <main class="flex-grow w-full lg:max-w-screen-lg mx-auto px-6">
+        {{template "main" .}}
+    </main>
+    {{template "footer" .}}
     {{template "scripts" .}}
-    </body>
+    <script src="/static/js/htmx.min.js" type="text/javascript"></script>
+</body>
+
 </html>
 {{end}}

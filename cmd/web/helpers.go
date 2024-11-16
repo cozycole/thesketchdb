@@ -100,7 +100,7 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 	return nil
 }
 
-func (app *application) render(w http.ResponseWriter, status int, page string, data *templateData) {
+func (app *application) render(w http.ResponseWriter, status int, page string, baseTemplate string, data *templateData) {
 	ts, ok := app.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
@@ -112,7 +112,13 @@ func (app *application) render(w http.ResponseWriter, status int, page string, d
 
 	// write template to buffer instead of straight to
 	// the http.ResponseWriter
-	err := ts.ExecuteTemplate(buf, "base", data)
+	var err error
+	if baseTemplate != "" {
+		err = ts.ExecuteTemplate(buf, baseTemplate, data)
+	} else {
+		err = ts.Execute(buf, data)
+	}
+
 	if err != nil {
 		app.serverError(w, err)
 		return

@@ -28,12 +28,12 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Videos = videos
 
-	app.render(w, http.StatusOK, "home.tmpl.html", data)
+	app.render(w, http.StatusOK, "home.tmpl.html", "base", data)
 }
 
 func (app *application) search(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
-	app.render(w, http.StatusOK, "search.tmpl.html", data)
+	app.render(w, http.StatusOK, "search.tmpl.html", "base", data)
 }
 
 func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +51,7 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Video = video
 
-	app.render(w, http.StatusOK, "view-video.tmpl.html", data)
+	app.render(w, http.StatusOK, "view-video.tmpl.html", "base", data)
 }
 
 func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
@@ -80,14 +80,14 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 	data.Creator = creator
 	data.Videos = videos
 
-	app.render(w, http.StatusOK, "view-creator.tmpl.html", data)
+	app.render(w, http.StatusOK, "view-creator.tmpl.html", "base", data)
 }
 
 func (app *application) creatorAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	data.Form = addCreatorForm{}
-	app.render(w, http.StatusOK, "add-creator.tmpl.html", data)
+	app.render(w, http.StatusOK, "add-creator.tmpl.html", "base", data)
 }
 
 func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +103,7 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "add-creator.tmpl.html", data)
+		app.render(w, http.StatusUnprocessableEntity, "add-creator.tmpl.html", "base", data)
 		return
 	}
 
@@ -158,14 +158,14 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Person = person
-	app.render(w, http.StatusOK, "view-person.tmpl.html", data)
+	app.render(w, http.StatusOK, "view-person.tmpl.html", "base", data)
 }
 
 func (app *application) personAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	data.Form = addCreatorForm{}
-	app.render(w, http.StatusOK, "add-person.tmpl.html", data)
+	app.render(w, http.StatusOK, "add-person.tmpl.html", "base", data)
 }
 
 func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
@@ -181,7 +181,7 @@ func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "add-person.tmpl.html", data)
+		app.render(w, http.StatusUnprocessableEntity, "add-person.tmpl.html", "base", data)
 		return
 	}
 
@@ -227,7 +227,7 @@ func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
 	// Need to initialize form data since the template needs it to
 	// render. It's a good place to put default values for the fields
 	data.Form = addVideoForm{}
-	app.render(w, http.StatusOK, "add-video.tmpl.html", data)
+	app.render(w, http.StatusOK, "add-video.tmpl.html", "base", data)
 }
 
 func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
@@ -244,7 +244,7 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "add-video.tmpl.html", data)
+		app.render(w, http.StatusUnprocessableEntity, "add-video.tmpl.html", "base", data)
 		return
 	}
 
@@ -314,6 +314,55 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/video/%s", slug), http.StatusSeeOther)
+}
+
+type searchResults struct {
+	Results      []result
+	Redirect     string // e.g. Add person result -> /person/add
+	RedirectText string
+}
+
+type result struct {
+	Text string
+	Img  string
+}
+
+func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("query")
+
+	redirLink := "/person/add"
+	redirText := "Add Person +"
+	results := searchResults{
+		Redirect:     redirLink,
+		RedirectText: redirText,
+	}
+	app.infoLog.Println(results.Results)
+
+	if q != "" {
+		dbResults, err := app.people.Search(q)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverError(w, err)
+			}
+			return
+		}
+
+		if dbResults != nil {
+			res := []result{}
+			for _, s := range dbResults {
+				r := result{}
+				r.Text = *s.First + " " + *s.Last
+				res = append(res, r)
+			}
+
+			results.Results = res
+		}
+	}
+
+	data := app.newTemplateData(r)
+	data.DropdownResults = results
+
+	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
 }
 
 func ping(w http.ResponseWriter, _ *http.Request) {
