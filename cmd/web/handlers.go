@@ -323,6 +323,7 @@ type searchResults struct {
 }
 
 type result struct {
+	ID   int
 	Text string
 	Img  string
 }
@@ -339,6 +340,7 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 	app.infoLog.Println(results.Results)
 
 	if q != "" {
+		q = strings.Replace(q, " ", "", -1)
 		dbResults, err := app.people.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
@@ -349,9 +351,10 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 
 		if dbResults != nil {
 			res := []result{}
-			for _, s := range dbResults {
+			for _, row := range dbResults {
 				r := result{}
-				r.Text = *s.First + " " + *s.Last
+				r.Text = *row.First + " " + *row.Last
+				r.ID = *row.ID
 				res = append(res, r)
 			}
 

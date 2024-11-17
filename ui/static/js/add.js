@@ -117,10 +117,26 @@ document.getElementById("addPersonButton").addEventListener("click", () => {
 
 function insertDropdownItem(e) {
     text = e.target.outerText
+    id = e.target.dataset.id
+
     dropDownList = e.target.parentNode
     // dropdown list is contained in div
     input = dropDownList.parentNode.previousElementSibling
     input.value = text
+    input.dataset.id = id
 
     dropDownList.remove()
 }
+
+document.addEventListener("click", (e) => {
+    const dropdown = document.getElementById('dropdown')
+    if (!dropdown) {
+        return
+    }
+    const input = dropdown.parentNode.previousElementSibling
+
+    const isClickInside = input.contains(e.target) || dropdown.contains(e.target)
+    if (!isClickInside) {
+        dropdown.remove()
+    }
+})
