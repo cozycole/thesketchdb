@@ -45,7 +45,7 @@ func (m *PersonModel) Insert(first, last, imgName, imgExt string, birthDate time
 	if err != nil {
 		return 0, "", "", err
 	}
-	return id, fullImgName, slug, err
+	return id, slug, fullImgName, err
 }
 
 func (m *PersonModel) Search(query string) ([]*Person, error) {

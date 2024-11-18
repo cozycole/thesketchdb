@@ -34,6 +34,12 @@ func newTestApplication(t *testing.T) *application {
 	}
 }
 
+func resetMocks(app *application) {
+	app.videos = &mocks.VideoModel{}
+	app.creators = &mocks.CreatorModel{}
+	app.people = &mocks.PersonModel{}
+}
+
 type testServer struct {
 	*httptest.Server
 }

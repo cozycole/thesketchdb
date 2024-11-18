@@ -37,7 +37,7 @@ type VideoModelInterface interface {
 	GetByCreator(id int) ([]*Video, error)
 	Insert(title, video_url, rating, imgName, imgExt string, upload_date time.Time) (int, string, string, error)
 	InsertVideoCreatorRelation(vidId, creatorId int) error
-	InsertVideoPersonRelation(vidId, personId int) error
+	InsertVideoPersonRelation(vidId, personId, position int) error
 }
 
 type VideoModel struct {
@@ -315,8 +315,8 @@ func (m *VideoModel) InsertVideoCreatorRelation(vidId, creatorId int) error {
 	return err
 }
 
-func (m *VideoModel) InsertVideoPersonRelation(vidId, personId int) error {
-	stmt := `INSERT INTO video_person_rel (video_id, person_id) VALUES ($1, $2)`
-	_, err := m.DB.Exec(context.Background(), stmt, vidId, personId)
+func (m *VideoModel) InsertVideoPersonRelation(vidId, personId, position int) error {
+	stmt := `INSERT INTO video_person_rel (video_id, person_id, position) VALUES ($1, $2, $3)`
+	_, err := m.DB.Exec(context.Background(), stmt, vidId, personId, position)
 	return err
 }

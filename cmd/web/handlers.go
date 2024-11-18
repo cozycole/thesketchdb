@@ -164,7 +164,7 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 func (app *application) personAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
-	data.Form = addCreatorForm{}
+	data.Form = addPersonForm{}
 	app.render(w, http.StatusOK, "add-person.tmpl.html", "base", data)
 }
 
@@ -305,11 +305,20 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, id := range form.PersonIDs {
-		err = app.videos.InsertVideoPersonRelation(vidID, id)
-		if err != nil {
-			app.serverError(w, err)
-			return
+	dupeSet := make(map[int]struct{})
+	for i, id := range form.PersonIDs {
+		// prevent adding duplicates from same form
+		if _, ok := dupeSet[id]; ok {
+			continue
+		}
+
+		if id != 0 {
+			err = app.videos.InsertVideoPersonRelation(vidID, id, i)
+			if err != nil {
+				app.serverError(w, err)
+				return
+			}
+			dupeSet[id] = struct{}{}
 		}
 	}
 
@@ -337,7 +346,6 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 		Redirect:     redirLink,
 		RedirectText: redirText,
 	}
-	app.infoLog.Println(results.Results)
 
 	if q != "" {
 		q = strings.Replace(q, " ", "", -1)

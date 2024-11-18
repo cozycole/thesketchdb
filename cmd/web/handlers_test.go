@@ -153,7 +153,9 @@ func TestVideoAddPost(t *testing.T) {
 
 	ts := newTestServer(t, app.routes())
 	defer ts.Close()
-	validPeople := []string{"1", "2", "3"}
+	validPeopleIds := []int{1, 2, 3}
+	duplicatePeopleIds := []int{1, 2, 2}
+	validPeopleTexts := []string{"Bob Jingus", "Terry Jangus", "Phil"}
 
 	const (
 		validTitle     = "Title"
@@ -165,68 +167,92 @@ func TestVideoAddPost(t *testing.T) {
 		validCreator   = "1"
 	)
 	tests := []struct {
-		testName string
-		title    string
-		url      string
-		rating   string
-		date     string
-		imgPath  string
-		creator  string
-		people   []string
-		wantCode int
+		testName    string
+		title       string
+		url         string
+		rating      string
+		date        string
+		imgPath     string
+		creator     string
+		peopleIds   []int
+		peopleTexts []string
+		wantCode    int
 	}{
 		{
-			testName: "Valid Submission",
-			title:    validTitle,
-			url:      validUrl,
-			rating:   validRating,
-			date:     validDate,
-			imgPath:  validImgPath,
-			creator:  validCreator,
-			people:   validPeople,
-			wantCode: http.StatusSeeOther,
+			testName:    "Valid Submission",
+			title:       validTitle,
+			url:         validUrl,
+			rating:      validRating,
+			date:        validDate,
+			imgPath:     validImgPath,
+			creator:     validCreator,
+			peopleIds:   validPeopleIds,
+			peopleTexts: validPeopleTexts,
+			wantCode:    http.StatusSeeOther,
 		},
 		{
-			testName: "Invalid Image",
-			title:    validTitle,
-			url:      validUrl,
-			rating:   validRating,
-			date:     validDate,
-			imgPath:  invalidImgPath,
-			creator:  validCreator,
-			people:   validPeople,
-			wantCode: http.StatusUnprocessableEntity,
+			testName:    "Invalid Image",
+			title:       validTitle,
+			url:         validUrl,
+			rating:      validRating,
+			date:        validDate,
+			imgPath:     invalidImgPath,
+			creator:     validCreator,
+			peopleIds:   validPeopleIds,
+			peopleTexts: validPeopleTexts,
+			wantCode:    http.StatusUnprocessableEntity,
 		},
 		{
-			testName: "Blank Submission",
-			title:    "",
-			url:      "",
-			rating:   "",
-			date:     "",
-			imgPath:  "",
-			creator:  "",
-			people:   []string{"", "", ""},
-			wantCode: http.StatusUnprocessableEntity,
+			testName:    "Duplicate People",
+			title:       validTitle,
+			url:         validUrl,
+			rating:      validRating,
+			date:        validDate,
+			imgPath:     validImgPath,
+			creator:     validCreator,
+			peopleIds:   duplicatePeopleIds,
+			peopleTexts: validPeopleTexts,
+			wantCode:    http.StatusSeeOther,
+		},
+		{
+			testName:    "Blank Submission",
+			title:       "",
+			url:         "",
+			rating:      "",
+			date:        "",
+			imgPath:     "",
+			creator:     "",
+			peopleIds:   []int{0, 0, 0},
+			peopleTexts: validPeopleTexts,
+			wantCode:    http.StatusUnprocessableEntity,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
+			t.Cleanup(func() {
+				resetMocks(app)
+			})
+
 			fields := map[string]string{
-				"title":      tt.title,
-				"url":        tt.url,
-				"rating":     tt.rating,
-				"uploadDate": tt.date,
-				"creator":    tt.creator,
-				"people[0]":  tt.people[0],
-				"people[1]":  tt.people[1],
-				"people[2]":  tt.people[2],
+				"title":         tt.title,
+				"url":           tt.url,
+				"rating":        tt.rating,
+				"uploadDate":    tt.date,
+				"creator":       tt.creator,
+				"peopleId[0]":   fmt.Sprint(tt.peopleIds[0]),
+				"peopleId[1]":   fmt.Sprint(tt.peopleIds[1]),
+				"peopleId[2]":   fmt.Sprint(tt.peopleIds[2]),
+				"peopleText[0]": tt.peopleTexts[0],
+				"peopleText[1]": tt.peopleTexts[1],
+				"peopleText[2]": tt.peopleTexts[2],
 			}
 			files := map[string]string{
 				"thumbnail": tt.imgPath,
 			}
+
 			code, _, body := ts.postMultipartForm(t, "/video/add", fields, files)
-			fmt.Print(body)
+			// fmt.Print(body)
 			assert.Equal(t, code, tt.wantCode)
 
 			// ensure inputs are returned in the form on 422

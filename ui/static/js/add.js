@@ -92,27 +92,37 @@ function getVideoID(url) {
 }
 
 document.getElementById("addPersonButton").addEventListener("click", () => {
-    const personInputDivs = document.querySelectorAll("#personInputs input")
-    const lastInputs = Array.from(personInputDivs).sort((a,b) => {
-        a = a.getAttribute("name")
-        b = b.getAttribute("name")
+    const personInputDivs = document.querySelectorAll("#personInputs > div")
+    const lastInputDivs = Array.from(personInputDivs).sort((a,b) => {
+        a = a.getAttribute("id")
+        b = b.getAttribute("id")
         return a-b
     })
+    console.log(lastInputDivs)
+
+
+    const lastInputDiv = lastInputDivs.pop()
+
+    const lastInputDivId = lastInputDiv.getAttribute("id")
+    let lastInputDivNum = lastInputDivId.match(/\d+/)[0]
+
     const template = document.getElementById("personInputTemplate").content;
     const newInput = document.importNode(template, true);
+    const addPersonButton = document.getElementById("addPersonButton")
 
-    const lastInput = lastInputs.pop()
-    console.log(lastInput.getAttribute("name"))
-    
-    
+    newInput.firstElementChild.id = `people[${Number(lastInputDivNum) + 1}]`
+    let formInputs = newInput.querySelectorAll("input")
+    formInputs.forEach((e) => {
+        if (e.type == "hidden") {
+            e.name = `peopleId[${Number(lastInputDivNum) + 1}]`
+        } else if (e.type == "search") {
+            e.name = `peopleText[${Number(lastInputDivNum) + 1}]`
+        }
+    })
 
-    const lastInputName = lastInput.getAttribute("name")
-    let lastInputNum = lastInputName.match(/\d+/)[0]
+    lastInputDiv.parentNode.insertBefore(newInput, addPersonButton)
 
-    newInput.name = `people[${Number(lastInputNum) + 1}]`
-
-    const addPersonButton = document.querySelector("#personInputs button")
-    lastInput.parentNode.insertBefore(newInput, addPersonButton)
+    htmx.process(document.getElementById("personInputs"))
 })
 
 function insertDropdownItem(e) {
@@ -121,9 +131,11 @@ function insertDropdownItem(e) {
 
     dropDownList = e.target.parentNode
     // dropdown list is contained in div
-    input = dropDownList.parentNode.previousElementSibling
-    input.value = text
-    input.dataset.id = id
+    searchInput = dropDownList.parentNode.previousElementSibling
+    searchInput.value = text
+
+    idInput = searchInput.previousElementSibling
+    idInput.value = id
 
     dropDownList.remove()
 }

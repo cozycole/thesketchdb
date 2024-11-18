@@ -73,8 +73,8 @@ func (app *application) validateAddPersonForm(form *addPersonForm) {
 	form.CheckField(validator.IsMime(profileImg, "image/jpeg", "image/png"), "profileImg", "Uploaded file must be jpg or png")
 }
 
-// PersonIDs have name form field names of form people[i]
-// if there are spaces between indexes say people[0] : 1, people[2] : 3
+// PersonIDs have name form field names of form peopleId[i]
+// if there are spaces between indexes say peopleId[0] : 1, peopleId[2] : 3
 // the result is zero filled so []int{1,0,3}
 type addVideoForm struct {
 	Title               string                `form:"title"`
@@ -83,7 +83,8 @@ type addVideoForm struct {
 	UploadDate          string                `form:"uploadDate"`
 	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
 	CreatorID           int                   `form:"creator"`
-	PersonIDs           []int                 `form:"people"`
+	PersonIDs           []int                 `form:"peopleId"`
+	PersonInputs        []string              `form:"peopleText"`
 	validator.Validator `form:"-"`
 }
 
@@ -111,13 +112,7 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 	}
 
 	for i, a := range form.PersonIDs {
-		htmlFieldName := fmt.Sprintf("people[%d]", i)
-		form.CheckField(
-			!validator.IsZero(a),
-			htmlFieldName,
-			"This field cannot be blank",
-		)
-
+		htmlFieldName := fmt.Sprintf("peopleId[%d]", i)
 		if !validator.IsZero(a) {
 			form.CheckField(
 				validator.BoolWithError(app.people.Exists(a)),

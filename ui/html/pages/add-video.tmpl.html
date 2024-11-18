@@ -37,11 +37,15 @@
         {{end}}
         <label class="inline-block my-2">Rating</label>
         <select name="rating" value="{{.Form.Rating}}" class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50">
+            <option value=""></option>
             <option value="PG">PG</option>
             <option value="PG-13">PG-13</option>
             <option value="R">R</option>
         </select>
     </div>
+    {{with .Form.FieldErrors.thumbnail}}
+        <label class="block text-red-700">{{.}}</label>
+    {{end}}
     <label
         class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
         Upload Thumbnail
@@ -64,23 +68,33 @@
     <div id="personInputs">
         <label class="inline-block my-2">Actors</label>
         {{$FieldErrors := .Form.FieldErrors}}
-        {{range $index, $person := .Form.PersonIDs}}
-        {{$name := printf "people[%d]" $index}}
-        {{with (index $FieldErrors $name)}}
-        <label class="block text-red-700">{{.}}</label>
-        {{end}}
-        <div>
-            <input type="search" name="{{$name}}" value="{{.}}"
-                class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                placeholder="Enter person name" 
-                hx-get="/person/search" 
-                hx-trigger="focus, input changed delay:500ms, search"
-                hx-target="next" />
-            <div></div>
-        </div>
+        {{$PersonIds := .Form.PersonIDs}}
+        {{$PersonInputs := .Form.PersonInputs}}
+
+        {{range $index, $personId := .Form.PersonIDs}}
+
+            {{$divName := printf "people[%d]" $index}}
+            {{$idInputName := printf "peopleId[%d]" $index}}
+            {{$textInputName := printf "peopleText[%d]" $index}}
+
+            {{with (index $FieldErrors $idInputName)}}
+                <label class="block text-red-700">{{.}}</label>
+            {{end}}
+
+            <div id="{{$divName}}" class="relative my-2">
+            <input class="hidden" name="{{$idInputName}}" value="{{.}}">
+                <input type="search" name="{{$textInputName}}" value="{{ index $PersonInputs $index}}"
+                    class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                    placeholder="Enter person name"
+                    hx-get="/person/search"
+                    hx-trigger="focus, input changed delay:500ms, search"
+                    hx-target="next" />
+                <div></div>
+            </div>
         {{else}}
-        <div class="relative">
-            <input type="search" name="people[0]"
+        <div id="people[0]" class="relative my-2">
+            <input type="hidden" name="peopleId[0]">
+            <input type="search" name="peopleText[0]"
                 class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
                 placeholder="Enter person name" 
                 hx-get="/person/search" 
@@ -91,29 +105,33 @@
         </div>
         {{end}}
         <button type="button" id="addPersonButton"
-            class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">Person
-            input +</button>
+            class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
+            Add Person+</button>
     </div>
     <button type="submit"
         class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">Submit</button>
-    </div>
 
     <template id="personInputTemplate">
-            <input type="search" name="people[0]"
+        <div class="relative my-2">
+            <input type="hidden" name="peopleId[0]">
+            <input type="search" name="peopleText[0]"
                 class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
                 placeholder="Enter person name" 
                 hx-get="/person/search" 
                 hx-params="query"
                 hx-trigger="focus, input changed delay:500ms, search"
                 hx-target="next" />
+            <div></div>
+        </div>
+
     </template>
 {{end}}
 
-    {{define "scripts"}}
+{{define "scripts"}}
     <script src="/static/js/add.js"></script>
     <script>
         document.body.addEventListener('htmx:configRequest', function(evt) {
             evt.detail.parameters['query'] = evt.detail.elt.value; 
         });
     </script>
-    {{end}}
+{{end}}
