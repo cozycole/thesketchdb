@@ -1,94 +1,27 @@
+// deletes img after input if present, then inserts an img directly after input
 function previewImage(event) {
+    const input = event.target
     const file = event.target.files[0];
 
     if (file) {
         const reader = new FileReader();
 
         reader.onload = function(e) {
-            const imagePreview = document.getElementById('imagePreview');
-            imagePreview.innerHTML = ''; // Clear previous image previews
+            let prevPreview = input.nextElementSibling;
+            if (prevPreview && prevPreview.nodeName == "IMG") {
+                prevPreview.remove()
+            }
 
             const img = document.createElement('img');
             img.src = e.target.result;
-            img.style.maxWidth = '300px'; // Limit image width for display
-            imagePreview.appendChild(img);
+            img.style.maxWidth = '300px'; 
+
+            let inputParent =  input.parentNode;
+            inputParent.insertBefore(img, input.nextSibling)
         };
 
         reader.readAsDataURL(file);
     }
-}
-
-async function autofillMetadata() {
-    let url = document.getElementById('videoURL').value;
-    console.log(url);
-
-    try {
-        var vidMetadata = await getYTVidMetadata(url);
-        var imgBlob = await getYTThumbnail(vidMetadata.videoId);
-    } catch (e) {
-        console.log(e.message);
-        return;
-    }
-    const imgUrl = URL.createObjectURL(imgBlob); 
-    const file = new File([imgBlob], 'thumbnailImg', {type: 'image/jpeg'});
-
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(file)
-    
-    const imgInput = document.getElementById('imageInput');
-    imgInput.files = dataTransfer.files;
-
-    let vidTitleInput = document.getElementById('videoTitle');
-    vidTitleInput.value = vidMetadata.title;
-    
-    let uploadDateInput = document.getElementById('uploadDate');
-    uploadDateInput.value = vidMetadata.uploadDate;
-
-    let creatorInput = document.getElementById('creatorInput');
-    creatorInput.value = vidMetadata.channelTitle;
-
-    console.log(`Setting preview to ${imgUrl}`) 
-    let imgPreview = document.getElementById('imagePreview');
-    imgPreview.innerHTML = ''; 
-
-    const img = document.createElement('img');
-    img.style.maxWidth = '300px'; 
-    img.src = imgUrl;
-    imgPreview.appendChild(img);
-}
-
-async function getYTVidMetadata(url) {
-    const vidId = getVideoID(url);
-    if (!vidId) {
-        throw new Error('Vid ID not detected');
-    }
-    
-    const response = await fetch(`/vid/metadata?vidId=${vidId}`);
-    if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
-    }
-    
-    const json = await response.json();
-    console.log(json);
-    return json;
-}
-
-async function getYTThumbnail(vidId) {
-    const imgUrl = `/vid/thumbnail/?vidId=${vidId}`;
-    console.log(`Getting thumbnail for ${imgUrl}`)
-
-    const response = await fetch(imgUrl);
-    if (!response.ok) {
-        throw new Error('Unable to fetch thumbnail')
-    }
-    
-    return response.blob()
-}
-
-function getVideoID(url) {
-    let queryParamsString = url.split('?')[1]
-    let queryParams = new URLSearchParams(queryParamsString)
-    return queryParams.get('v')
 }
 
 document.getElementById("addPersonButton").addEventListener("click", () => {
@@ -102,21 +35,34 @@ document.getElementById("addPersonButton").addEventListener("click", () => {
 
 
     const lastInputDiv = lastInputDivs.pop()
-
+    // We are just trying increment all the name attributes of each input
+    // input[0] was the last, so now we need to name them all input[1]
     const lastInputDivId = lastInputDiv.getAttribute("id")
-    let lastInputDivNum = lastInputDivId.match(/\d+/)[0]
+    let newInputNum = Number(lastInputDivId.match(/\d+/)[0]) + 1
 
     const template = document.getElementById("personInputTemplate").content;
     const newInput = document.importNode(template, true);
     const addPersonButton = document.getElementById("addPersonButton")
 
-    newInput.firstElementChild.id = `people[${Number(lastInputDivNum) + 1}]`
+    newInput.firstElementChild.id = `people[${newInputNum}]`
     let formInputs = newInput.querySelectorAll("input")
     formInputs.forEach((e) => {
-        if (e.type == "hidden") {
-            e.name = `peopleId[${Number(lastInputDivNum) + 1}]`
-        } else if (e.type == "search") {
-            e.name = `peopleText[${Number(lastInputDivNum) + 1}]`
+        switch (e.name) {
+            case "peopleId":
+                e.name = `peopleId[${newInputNum}]`
+                break
+            case "peopleText":
+                e.name = `peopleText[${newInputNum}]`
+                break
+            case "characterId":
+                e.name = `characterId[${newInputNum}]`
+                break
+            case "characterText":
+                e.name = `characterText[${newInputNum}]`
+                break
+            case "characterThumbnail":
+                e.name = `characterThumbnail[${newInputNum}]`
+                break
         }
     })
 
@@ -140,6 +86,7 @@ function insertDropdownItem(e) {
     dropDownList.remove()
 }
 
+// remove dropdown if user clicks outside of dropdown
 document.addEventListener("click", (e) => {
     const dropdown = document.getElementById('dropdown')
     if (!dropdown) {

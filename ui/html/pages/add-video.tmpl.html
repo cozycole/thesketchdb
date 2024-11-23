@@ -82,7 +82,8 @@
             {{end}}
 
             <div id="{{$divName}}" class="relative my-2">
-            <input class="hidden" name="{{$idInputName}}" value="{{.}}">
+                <span>Actor {{$index}}</span>
+                <input class="hidden" name="{{$idInputName}}" value="{{.}}">
                 <input type="search" name="{{$textInputName}}" value="{{ index $PersonInputs $index}}"
                     class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
                     placeholder="Enter person name"
@@ -92,7 +93,8 @@
                 <div></div>
             </div>
         {{else}}
-        <div id="people[0]" class="relative my-2">
+        <div id="people[0]" class="relative p-2 my-2 rounded-lg border-2 border-black">
+            <label>Name</label>
             <input type="hidden" name="peopleId[0]">
             <input type="search" name="peopleText[0]"
                 class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
@@ -102,19 +104,38 @@
                 hx-trigger="focus, input changed delay:500ms, search"
                 hx-target="next" />
             <div></div>
+            <label>Character Name (if applicable)</label>
+            <input type="hidden" name="characterId[0]">
+            <input type="search" name="characterText[0]"
+                class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                placeholder="Enter character name" 
+                hx-get="/character/search" 
+                hx-params="query"
+                hx-trigger="focus, input changed delay:500ms, search"
+                hx-target="next" />
+            <div></div>
+            <label class="inline-block my-2">
+                Thumbnail
+            </label>
+            <label
+                class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
+                Upload 
+                <input type="file" name="characterThumbnail[0]" accept="image/*" onChange="previewImage(event)" class="hidden" />
+            </label>
         </div>
         {{end}}
         <button type="button" id="addPersonButton"
             class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
-            Add Person+</button>
+            Add Person +</button>
     </div>
     <button type="submit"
         class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">Submit</button>
 
     <template id="personInputTemplate">
-        <div class="relative my-2">
-            <input type="hidden" name="peopleId[0]">
-            <input type="search" name="peopleText[0]"
+        <div class="relative p-2 my-2 rounded-lg border-2 border-black">
+            <label>Name</label>
+            <input type="hidden" name="peopleId">
+            <input type="search" name="peopleText"
                 class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
                 placeholder="Enter person name" 
                 hx-get="/person/search" 
@@ -122,6 +143,24 @@
                 hx-trigger="focus, input changed delay:500ms, search"
                 hx-target="next" />
             <div></div>
+            <label>Character Name (if applicable)</label>
+            <input type="hidden" name="characterId">
+            <input type="search" name="characterText"
+                class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                placeholder="Enter character name" 
+                hx-get="/character/search" 
+                hx-params="query"
+                hx-trigger="focus, input changed delay:500ms, search"
+                hx-target="next" />
+            <div></div>
+            <label class="inline-block my-2">
+                Thumbnail
+            </label>
+            <label
+                class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
+                Upload 
+                <input type="file" name="characterThumbnail" accept="image/*" onChange="previewImage(event)" class="hidden" />
+            </label>
         </div>
 
     </template>
