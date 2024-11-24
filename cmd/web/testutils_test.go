@@ -30,6 +30,7 @@ func newTestApplication(t *testing.T) *application {
 		videos:        &mocks.VideoModel{},
 		creators:      &mocks.CreatorModel{},
 		people:        &mocks.PersonModel{},
+		characters:    &mocks.CharacterModel{},
 		debugMode:     true,
 	}
 }

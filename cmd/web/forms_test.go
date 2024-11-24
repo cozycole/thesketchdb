@@ -1,6 +1,7 @@
 package main
 
 import (
+	"mime/multipart"
 	"testing"
 
 	"sketchdb.cozycole.net/internal/assert"
@@ -151,6 +152,109 @@ func TestValidateAddPersonForm(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			app.validateAddPersonForm(tt.form)
+			assert.DeepEqual(t, tt.form.FieldErrors, tt.fieldErrors)
+			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
+		})
+	}
+}
+
+func TestValidateAddVideoForm(t *testing.T) {
+
+	// store in memory valid and invalid images
+	var emptyMap map[string]string
+	var emptySlice []string
+	validImg, err := utils.CreateMultipartFileHeader("./testdata/test-img.jpg")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	validImg1, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail.jpg")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	validImg2, err := utils.CreateMultipartFileHeader("./testdata/test-img2.jpg")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	invalidImg, err := utils.CreateMultipartFileHeader("./testdata/test-img.webp")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	app := newTestApplication(t)
+
+	tests := []struct {
+		name           string
+		form           *addVideoForm
+		fieldErrors    map[string]string
+		nonFieldErrors []string
+	}{
+		{
+			name: "Valid Submission",
+			form: &addVideoForm{
+				Title:               "Video Title",
+				URL:                 "www.url.com",
+				Rating:              "pg-13",
+				UploadDate:          "2024-11-24",
+				Thumbnail:           validImg,
+				CreatorID:           1,
+				PersonIDs:           []int{1, 2, 3},
+				CharacterIDs:        []int{1, 2, 3},
+				CharacterThumbnails: []*multipart.FileHeader{validImg, validImg1, validImg2},
+			},
+			fieldErrors:    emptyMap,
+			nonFieldErrors: emptySlice,
+		},
+		{
+			name: "Invalid Image",
+			form: &addVideoForm{
+				Title:               "Video Title",
+				URL:                 "www.url.com",
+				Rating:              "pg-13",
+				UploadDate:          "2024-11-24",
+				Thumbnail:           validImg,
+				CreatorID:           1,
+				PersonIDs:           []int{1, 2, 3},
+				CharacterIDs:        []int{1, 2, 3},
+				CharacterThumbnails: []*multipart.FileHeader{validImg, invalidImg, validImg2},
+			},
+			fieldErrors: map[string]string{
+				"characterThumbnail[1]": "Uploaded file must be jpg or png",
+			},
+			nonFieldErrors: emptySlice,
+		},
+		{
+			name: "Blank fields",
+			form: &addVideoForm{
+				Title:               "",
+				URL:                 "",
+				Rating:              "",
+				UploadDate:          "",
+				Thumbnail:           nil,
+				CreatorID:           0,
+				PersonIDs:           nil,
+				CharacterIDs:        nil,
+				CharacterThumbnails: nil,
+			},
+			fieldErrors: map[string]string{
+				"title":      "This field cannot be blank",
+				"url":        "This field cannot be blank",
+				"rating":     "This field cannot be blank",
+				"uploadDate": "This field cannot be blank",
+				"thumbnail":  "Please upload an image",
+				"creator":    "This field cannot be blank",
+			},
+			nonFieldErrors: emptySlice,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app.validateAddVideoForm(tt.form)
 			assert.DeepEqual(t, tt.form.FieldErrors, tt.fieldErrors)
 			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
 		})

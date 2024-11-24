@@ -114,20 +114,60 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 		)
 	}
 
-	for i, a := range form.PersonIDs {
-		htmlFieldName := fmt.Sprintf("peopleId[%d]", i)
-		if !validator.IsZero(a) {
-			form.CheckField(
-				validator.BoolWithError(app.people.Exists(a)),
-				htmlFieldName,
-				"Person does not exist. Please add it, then resubmit video!",
-			)
-		}
-	}
-
 	form.CheckField(form.Thumbnail != nil, "thumbnail", "Please upload an image")
 	if form.Thumbnail == nil {
 		return
+	}
+
+	// The following fields are slices are related records
+	// (PersondIDs[0], CharacterIDs[0], CharacterThumbnails[0])
+	minLength := min(len(form.PersonIDs), len(form.CharacterIDs), len(form.CharacterThumbnails))
+	for i := 0; i < minLength; i++ {
+
+		// if they're all empty, ignore this input
+		if form.IsEmptyActorInput(i) {
+			continue
+		}
+
+		htmlPeopleIdField := fmt.Sprintf("peopleId[%d]", i)
+		htmlCharIdField := fmt.Sprintf("characterId[%d]", i)
+		htmlCharThumbField := fmt.Sprintf("characterThumbnail[%d]", i)
+
+		pid := form.PersonIDs[i]
+		if !validator.IsZero(pid) {
+			form.CheckField(
+				validator.BoolWithError(app.people.Exists(pid)),
+				htmlPeopleIdField,
+				"Person does not exist. Please add it, then resubmit video!",
+			)
+		} else {
+			form.CheckField(true, htmlPeopleIdField, "This field cannot be blank")
+		}
+
+		cid := form.CharacterIDs[i]
+		if !validator.IsZero(cid) {
+			form.CheckField(
+				validator.BoolWithError(app.characters.Exists(cid)),
+				htmlCharIdField,
+				"Character does not exist. Please add it, then resubmit video!",
+			)
+		} else {
+			form.CheckField(true, htmlCharIdField, "This field cannot be blank")
+		}
+
+		thumb := form.CharacterThumbnails[i]
+		if thumb == nil {
+			form.CheckField(true, htmlCharThumbField, "Please upload character thumbnail")
+		}
+		thumbnail, err := thumb.Open()
+		if err != nil {
+			form.AddFieldError(htmlCharThumbField, "Unable to open file, ensure it is a jpg or png")
+			return
+		}
+		defer thumbnail.Close()
+
+		form.CheckField(validator.IsMime(thumbnail, "image/jpeg", "image/png"),
+			htmlCharThumbField, "Uploaded file must be jpg or png")
 	}
 
 	thumbnail, err := form.Thumbnail.Open()
@@ -138,6 +178,16 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 	defer thumbnail.Close()
 
 	form.CheckField(validator.IsMime(thumbnail, "image/jpeg", "image/png"), "thumbnail", "Uploaded file must be jpg or png")
+	// Might want to check dimension ratios to make sure they work?
 }
 
-// func validateProfileImage[F FormInterface](form F, )
+func (f *addVideoForm) IsEmptyActorInput(index int) bool {
+	switch {
+	case f.PersonIDs[index] != 0:
+	case f.CharacterIDs[index] != 0:
+	case f.CharacterThumbnails[index] != nil:
+	default:
+		return true
+	}
+	return false
+}
