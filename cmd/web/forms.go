@@ -77,14 +77,17 @@ func (app *application) validateAddPersonForm(form *addPersonForm) {
 // if there are spaces between indexes say peopleId[0] : 1, peopleId[2] : 3
 // the result is zero filled so []int{1,0,3}
 type addVideoForm struct {
-	Title               string                `form:"title"`
-	URL                 string                `form:"url"`
-	Rating              string                `form:"rating"`
-	UploadDate          string                `form:"uploadDate"`
-	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
-	CreatorID           int                   `form:"creator"`
-	PersonIDs           []int                 `form:"peopleId"`
-	PersonInputs        []string              `form:"peopleText"`
+	Title               string                  `form:"title"`
+	URL                 string                  `form:"url"`
+	Rating              string                  `form:"rating"`
+	UploadDate          string                  `form:"uploadDate"`
+	Thumbnail           *multipart.FileHeader   `img:"thumbnail"`
+	CreatorID           int                     `form:"creator"`
+	PersonIDs           []int                   `form:"peopleId"`
+	PersonInputs        []string                `form:"peopleText"`
+	CharacterIDs        []int                   `form:"characterId"`
+	CharacterInputs     []string                `form:"characterText"`
+	CharacterThumbnails []*multipart.FileHeader `img:"characterThumbnail"`
 	validator.Validator `form:"-"`
 }
 

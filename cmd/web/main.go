@@ -24,6 +24,7 @@ type application struct {
 	videos        models.VideoModelInterface
 	creators      models.CreatorModelInterface
 	people        models.PersonModelInterface
+	characters    models.CharacterModelInterface
 	debugMode     bool
 	formDecoder   *form.Decoder
 }
@@ -66,6 +67,7 @@ func main() {
 		videos:        &models.VideoModel{DB: dbpool, ResultSize: 16},
 		creators:      &models.CreatorModel{DB: dbpool},
 		people:        &models.PersonModel{DB: dbpool},
+		characters:    &models.CharacterModel{DB: dbpool},
 		debugMode:     *debug,
 	}
 

@@ -2,14 +2,10 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"runtime/debug"
 	"time"
-
-	"github.com/go-playground/form/v4"
 )
 
 var mimeToExt = map[string]string{
@@ -57,47 +53,6 @@ func (app *application) newTemplateData(_ *http.Request) *templateData {
 		// IsAuthenticated: app.isAutheticated(r),
 		// CSRFToken:       nosurf.Token(r),
 	}
-}
-
-// see ~/go/pkg/mod/github.com/go-playground/form/v4@v4.2.1/README.md
-// for doc on the form decoder
-func (app *application) decodePostForm(r *http.Request, dst any) error {
-	err := r.ParseMultipartForm(10 << 20)
-	if err != nil {
-		return err
-	}
-
-	err = app.formDecoder.Decode(dst, r.PostForm)
-	if err != nil {
-
-		var invalidDecoderError *form.InvalidDecoderError
-
-		if errors.As(err, &invalidDecoderError) {
-			panic(err)
-		}
-		return err
-	}
-
-	// the following checks if struct tag with key "img" exists and sets
-	// the given field with the file of name struct tag value
-	// don't do any type checking since form decoder already did it
-	v := reflect.ValueOf(dst).Elem()
-	structType := v.Type()
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		fieldType := structType.Field(i)
-
-		if tagValue := fieldType.Tag.Get("img"); tagValue != "" {
-
-			fileHeaders, ok := r.MultipartForm.File[tagValue]
-			if ok && len(fileHeaders) > 0 {
-				newVal := reflect.ValueOf(fileHeaders[0])
-				field.Set(newVal)
-			}
-		}
-	}
-
-	return nil
 }
 
 func (app *application) render(w http.ResponseWriter, status int, page string, baseTemplate string, data *templateData) {
