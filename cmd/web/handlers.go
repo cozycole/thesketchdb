@@ -376,6 +376,45 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
 }
 
+func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("query")
+
+	redirLink := "/character/add"
+	redirText := "Add Character +"
+	results := searchResults{
+		Redirect:     redirLink,
+		RedirectText: redirText,
+	}
+
+	if q != "" {
+		q = strings.Replace(q, " ", "", -1)
+		dbResults, err := app.characters.Search(q)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverError(w, err)
+			}
+			return
+		}
+
+		if dbResults != nil {
+			res := []result{}
+			for _, row := range dbResults {
+				r := result{}
+				r.Text = *row.Name
+				r.ID = *row.ID
+				res = append(res, r)
+			}
+
+			results.Results = res
+		}
+	}
+
+	data := app.newTemplateData(r)
+	data.DropdownResults = results
+
+	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
+}
+
 func ping(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("pong"))
 }

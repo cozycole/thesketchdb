@@ -1,7 +1,5 @@
 #!/bin/bash 
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 if [ -z "$1" ]; then
     echo "Error: No database name provided"
     exit 1
@@ -11,12 +9,14 @@ else
         OWNER = $USER
         ENCODING = 'UTF8'
         CONNECTION LIMIT = -1
-        IS_TEMPLATE = False;"
-    
+        IS_TEMPLATE = False;
+        "
     
     if [ $? -ne 0 ]; then
         exit 1
     fi
-    
-    
+
+    psql -d $1 -U "$USER" -c "
+        CREATE TYPE rating AS ENUM ('PG', 'PG-13', 'R');
+    "
 fi

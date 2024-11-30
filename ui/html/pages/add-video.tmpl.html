@@ -1,176 +1,234 @@
-{{define "title"}} Add Video {{end}}
-
-{{define "main"}}
+{{define "title"}} Add Video {{end}} {{define "main"}}
 <h1 class="my-5 text-xl font-bold">Add Video</h1>
-<form class="w-1/2" enctype="multipart/form-data" action="http://localhost:4000/video/add" method="POST">
-    <div>
-        <label class="inline-block my-2">Video URL:</label>
-        {{with .Form.FieldErrors.url}}
-        <label class="block text-red-700">{{.}}</label>
-        {{end}}
-        <div class="flex w-full space-x-2 items-start">
-            <input type="text" name="url" value="{{.Form.URL}}"
-                class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black" />
-            <button type="button" onclick="autofillMetadata()"
-                class="w-1/4 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">Autofill</button>
-        </div>
-    </div>
-    <div>
-        <label class="inline-block my-2">Video Title</label>
-        {{with .Form.FieldErrors.title}}
-        <label class="block text-red-700">{{.}}</label>
-        {{end}}
-        <input type="text" name="title" value="{{.Form.Title}}"
-            class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black" />
-    </div>
-    <div>
-        <label class="inline-block my-2">Upload Date</label>
-        {{with .Form.FieldErrors.uploadDate}}
-        <label class="block text-red-700">{{.}}</label>
-        {{end}}
-        <input type="date" name="uploadDate" value="{{.Form.UploadDate}}"
-            class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50" />
-    </div>
-    <div>
-        {{with .Form.FieldErrors.rating}}
-        <label class="block text-red-700">{{.}}</label>
-        {{end}}
-        <label class="inline-block my-2">Rating</label>
-        <select name="rating" value="{{.Form.Rating}}" class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50">
-            <option value=""></option>
-            <option value="PG">PG</option>
-            <option value="PG-13">PG-13</option>
-            <option value="R">R</option>
-        </select>
-    </div>
-    {{with .Form.FieldErrors.thumbnail}}
-        <label class="block text-red-700">{{.}}</label>
+<form
+  class="w-1/2"
+  enctype="multipart/form-data"
+  action="http://localhost:4000/video/add"
+  method="POST"
+>
+  <div>
+    <label class="inline-block my-2">Video URL:</label>
+    {{with .Form.FieldErrors.url}}
+    <label class="block text-red-700">{{.}}</label>
     {{end}}
-    <label
-        class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
-        Upload Thumbnail
-        <input type="file" name="thumbnail" accept="image/*" onChange="previewImage(event)" class="hidden" />
-    </label>
-    <div id="imagePreview"></div>
-    <label class="inline-block my-2">
-        Video Tags
-    </label>
-    <input type="text" name="tag"
-        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black" />
-    <div>
-        <label class="inline-block my-2">Creator Name</label>
-        {{with .Form.FieldErrors.creator}}
-        <label class="block text-red-700">{{.}}</label>
-        {{end}}
-        <input type="text" name="creator" value="{{if .Form.CreatorID}}{{.Form.CreatorID}}{{end}}"
-            class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black" />
+    <div class="flex w-full space-x-2 items-start">
+      <input
+        type="text"
+        name="url"
+        value="{{.Form.URL}}"
+        class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+      />
     </div>
-    <div id="personInputs">
-        <label class="inline-block my-2">Actors</label>
-        {{$FieldErrors := .Form.FieldErrors}}
-        {{$PersonIds := .Form.PersonIDs}}
-        {{$PersonInputs := .Form.PersonInputs}}
+  </div>
+  <div>
+    <label class="inline-block my-2">Video Title</label>
+    {{with .Form.FieldErrors.title}}
+    <label class="block text-red-700">{{.}}</label>
+    {{end}}
+    <input
+      type="text"
+      name="title"
+      value="{{.Form.Title}}"
+      class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+    />
+  </div>
+  <div>
+    <label class="inline-block my-2">Upload Date</label>
+    {{with .Form.FieldErrors.uploadDate}}
+    <label class="block text-red-700">{{.}}</label>
+    {{end}}
+    <input
+      type="date"
+      name="uploadDate"
+      value="{{.Form.UploadDate}}"
+      class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
+    />
+  </div>
+  <div>
+    {{with .Form.FieldErrors.rating}}
+    <label class="block text-red-700">{{.}}</label>
+    {{end}}
+    <label class="inline-block my-2">Rating</label>
+    <select
+      name="rating"
+      value="{{.Form.Rating}}"
+      class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
+    >
+      <option value=""></option>
+      <option value="PG">PG</option>
+      <option value="PG-13">PG-13</option>
+      <option value="R">R</option>
+    </select>
+  </div>
+  {{with .Form.FieldErrors.thumbnail}}
+  <label class="block text-red-700">{{.}}</label>
+  {{end}}
+  <label
+    class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+  >
+    Upload Thumbnail
+    <input
+      type="file"
+      name="thumbnail"
+      accept="image/*"
+      onChange="previewImage(event)"
+      class="hidden"
+    />
+  </label>
+  <div id="imagePreview"></div>
+  <label class="inline-block my-2"> Video Tags </label>
+  <input
+    type="text"
+    name="tag"
+    class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+  />
+  <div>
+    <label class="inline-block my-2">Creator Name</label>
+    {{with .Form.FieldErrors.creator}}
+    <label class="block text-red-700">{{.}}</label>
+    {{end}}
+    <input
+      type="text"
+      name="creator"
+      value="{{if .Form.CreatorID}}{{.Form.CreatorID}}{{end}}"
+      class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+    />
+  </div>
+  <div id="personInputs">
+    <label class="inline-block my-2">Actors</label>
+    {{$FieldErrors := .Form.FieldErrors}} {{$PersonIds := .Form.PersonIDs}}
+    {{$PersonInputs := .Form.PersonInputs}} {{range $index, $personId :=
+    .Form.PersonIDs}} {{$divName := printf "people[%d]" $index}} {{$idInputName
+    := printf "peopleId[%d]" $index}} {{$textInputName := printf
+    "peopleText[%d]" $index}} {{with (index $FieldErrors $idInputName)}}
+    <label class="block text-red-700">{{.}}</label>
+    {{end}}
 
-        {{range $index, $personId := .Form.PersonIDs}}
-
-            {{$divName := printf "people[%d]" $index}}
-            {{$idInputName := printf "peopleId[%d]" $index}}
-            {{$textInputName := printf "peopleText[%d]" $index}}
-
-            {{with (index $FieldErrors $idInputName)}}
-                <label class="block text-red-700">{{.}}</label>
-            {{end}}
-
-            <div id="{{$divName}}" class="relative my-2">
-                <span>Actor {{$index}}</span>
-                <input class="hidden" name="{{$idInputName}}" value="{{.}}">
-                <input type="search" name="{{$textInputName}}" value="{{ index $PersonInputs $index}}"
-                    class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                    placeholder="Enter person name"
-                    hx-get="/person/search"
-                    hx-trigger="focus, input changed delay:500ms, search"
-                    hx-target="next" />
-                <div></div>
-            </div>
-        {{else}}
-        <div id="people[0]" class="relative p-2 my-2 rounded-lg border-2 border-black">
-            <label>Name</label>
-            <input type="hidden" name="peopleId[0]">
-            <input type="search" name="peopleText[0]"
-                class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                placeholder="Enter person name" 
-                hx-get="/person/search" 
-                hx-params="query"
-                hx-trigger="focus, input changed delay:500ms, search"
-                hx-target="next" />
-            <div></div>
-            <label>Character Name (if applicable)</label>
-            <input type="hidden" name="characterId[0]">
-            <input type="search" name="characterText[0]"
-                class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                placeholder="Enter character name" 
-                hx-get="/character/search" 
-                hx-params="query"
-                hx-trigger="focus, input changed delay:500ms, search"
-                hx-target="next" />
-            <div></div>
-            <label class="inline-block my-2">
-                Thumbnail
-            </label>
-            <label
-                class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
-                Upload 
-                <input type="file" name="characterThumbnail[0]" accept="image/*" onChange="previewImage(event)" class="hidden" />
-            </label>
-        </div>
-        {{end}}
-        <button type="button" id="addPersonButton"
-            class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
-            Add Person +</button>
+    <div id="{{$divName}}" class="relative my-2">
+      <span>Actor {{$index}}</span>
+      <input class="hidden" name="{{$idInputName}}" value="{{.}}" />
+      <input
+        type="search"
+        name="{{$textInputName}}"
+        value="{{ index $PersonInputs $index}}"
+        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        placeholder="Enter person name"
+        hx-get="/person/search"
+        hx-trigger="focus, input changed delay:500ms, search"
+        hx-target="next"
+      />
+      <div></div>
     </div>
-    <button type="submit"
-        class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">Submit</button>
+    {{else}}
+    <div
+      id="people[0]"
+      class="relative p-2 my-2 rounded-lg border-2 border-black"
+    >
+      <label>Name</label>
+      <input type="hidden" name="peopleId[0]" />
+      <input
+        type="search"
+        name="peopleText[0]"
+        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        placeholder="Enter person name"
+        hx-get="/person/search"
+        hx-params="query"
+        hx-trigger="focus, input changed delay:500ms, search"
+        hx-target="next"
+      />
+      <div></div>
+      <label>Character Name (if applicable)</label>
+      <input type="hidden" name="characterId[0]" />
+      <input
+        type="search"
+        name="characterText[0]"
+        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        placeholder="Enter character name"
+        hx-get="/character/search"
+        hx-params="query"
+        hx-trigger="focus, input changed delay:500ms, search"
+        hx-target="next"
+      />
+      <div></div>
+      <label class="inline-block my-2"> Thumbnail </label>
+      <label
+        class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+      >
+        Upload
+        <input
+          type="file"
+          name="characterThumbnail[0]"
+          accept="image/*"
+          onChange="previewImage(event)"
+          class="hidden"
+        />
+      </label>
+    </div>
+    {{end}}
+    <button
+      type="button"
+      id="addPersonButton"
+      class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+    >
+      Add Person +
+    </button>
+  </div>
+  <button
+    type="submit"
+    class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+  >
+    Submit
+  </button>
 
-    <template id="personInputTemplate">
-        <div class="relative p-2 my-2 rounded-lg border-2 border-black">
-            <label>Name</label>
-            <input type="hidden" name="peopleId">
-            <input type="search" name="peopleText"
-                class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                placeholder="Enter person name" 
-                hx-get="/person/search" 
-                hx-params="query"
-                hx-trigger="focus, input changed delay:500ms, search"
-                hx-target="next" />
-            <div></div>
-            <label>Character Name (if applicable)</label>
-            <input type="hidden" name="characterId">
-            <input type="search" name="characterText"
-                class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                placeholder="Enter character name" 
-                hx-get="/character/search" 
-                hx-params="query"
-                hx-trigger="focus, input changed delay:500ms, search"
-                hx-target="next" />
-            <div></div>
-            <label class="inline-block my-2">
-                Thumbnail
-            </label>
-            <label
-                class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
-                Upload 
-                <input type="file" name="characterThumbnail" accept="image/*" onChange="previewImage(event)" class="hidden" />
-            </label>
-        </div>
-
-    </template>
-{{end}}
-
-{{define "scripts"}}
-    <script src="/static/js/add.js"></script>
-    <script>
-        document.body.addEventListener('htmx:configRequest', function(evt) {
-            evt.detail.parameters['query'] = evt.detail.elt.value; 
-        });
-    </script>
-{{end}}
+  <template id="personInputTemplate">
+    <div class="relative p-2 my-2 rounded-lg border-2 border-black">
+      <label>Name</label>
+      <input type="hidden" name="peopleId" />
+      <input
+        type="search"
+        name="peopleText"
+        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        placeholder="Enter person name"
+        hx-get="/person/search"
+        hx-params="query"
+        hx-trigger="focus, input changed delay:500ms, search"
+        hx-target="next"
+      />
+      <div></div>
+      <label>Character Name (if applicable)</label>
+      <input type="hidden" name="characterId" />
+      <input
+        type="search"
+        name="characterText"
+        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        placeholder="Enter character name"
+        hx-get="/character/search"
+        hx-params="query"
+        hx-trigger="focus, input changed delay:500ms, search"
+        hx-target="next"
+      />
+      <div></div>
+      <label class="inline-block my-2"> Thumbnail </label>
+      <label
+        class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+      >
+        Upload
+        <input
+          type="file"
+          name="characterThumbnail"
+          accept="image/*"
+          onChange="previewImage(event)"
+          class="hidden"
+        />
+      </label>
+    </div>
+  </template>
+  {{end}} {{define "scripts"}}
+  <script src="/static/js/add.js"></script>
+  <script>
+    document.body.addEventListener("htmx:configRequest", function (evt) {
+      evt.detail.parameters["query"] = evt.detail.elt.value;
+    });
+  </script>
+  {{end}}
+</form>
