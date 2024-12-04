@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"sketchdb.cozycole.net/internal/assert"
+	"sketchdb.cozycole.net/internal/utils"
 )
 
 func TestVideoInsert(t *testing.T) {
@@ -12,44 +13,48 @@ func TestVideoInsert(t *testing.T) {
 		t.Skip("models: skipping integration test")
 	}
 	db := newTestDB(t)
+	// We need to have existing characters for Insert to work
+	if err := restoreDbScript("../../sql/testdata/test1.sql"); err != nil {
+		t.Fatal(err)
+	}
+
 	m := VideoModel{db, 10}
+	uploadDate := time.Date(2000, 1, 1, 0,0,0,0,time.UTC)
 
 	tests := []struct {
 		name      string
-		title     string
-		url       string
-		rating    string
-		slug      string
-		imgExt    string
-		birthDate time.Time
-		wantSlug  string
-		wantImg   string
+		video Video
 	}{
 		{
 			name:      "Valid Entry",
-			title:     "Test VIDEO",
-			url:       "www.testurl.com/video",
-			rating:    "R",
-			slug:      "test-video",
-			imgExt:    ".jpg",
-			birthDate: time.Now(),
-			wantSlug:  "test-video-1",
-			wantImg:   "test-video-1.jpg",
+			video : Video{
+				Title:     "Test VIDEO",
+				URL:       "www.testurl.com/video",
+				Rating:    "R",
+				Slug:      "test-video",
+				UploadDate: &uploadDate,
+				Creator: &Creator{ID:1},
+				Cast: []*CastMember{
+					{
+						Position: utils.GetIntPtr(0),
+						Actor: &Person{ID:utils.GetIntPtr(1)},
+						Character: &Character{ID:utils.GetIntPtr(1)},
+					},
+					{
+						Position: utils.GetIntPtr(1),
+						Actor: &Person{ID:utils.GetIntPtr(2)},
+						Character: &Character{ID:utils.GetIntPtr(2)},
+					},
+				},
+			},
 		},
 	}
 
 	for _, tt := range tests {
-		_, slug, imgName, err := m.Insert(
-			tt.title,
-			tt.url,
-			tt.rating,
-			tt.slug,
-			tt.imgExt,
-			tt.birthDate,
-		)
-		assert.Equal(t, slug, tt.wantSlug)
-		assert.Equal(t, imgName, tt.wantImg)
-		assert.NilError(t, err)
+		err := m.Insert(&tt.video)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
@@ -100,10 +105,10 @@ func TestVideoGet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, v.Title, tt.title)
 			assert.Equal(t, v.URL, tt.url)
-			assert.Equal(t, v.Thumbnail, tt.thumbnail)
+			assert.Equal(t, v.ThumbnailName, tt.thumbnail)
 			assert.Equal(t, *v.UploadDate, tt.uploadDate)
 			assert.Equal(t, v.Rating, tt.pgRating)
-			assert.Equal(t, v.Description, tt.description)
+			assert.EqualPointer(t, v.Description, tt.description)
 			assert.Equal(t, v.Creator.Name, tt.creatorName)
 			assert.Equal(t, len(v.Cast), tt.castSize)
 		})
@@ -177,5 +182,4 @@ func TestCastMembersGet(t *testing.T) {
 		})
 
 	}
-
 }

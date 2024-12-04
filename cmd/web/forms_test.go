@@ -3,6 +3,7 @@ package main
 import (
 	"mime/multipart"
 	"testing"
+	"time"
 
 	"sketchdb.cozycole.net/internal/assert"
 	"sketchdb.cozycole.net/internal/utils"
@@ -259,4 +260,54 @@ func TestValidateAddVideoForm(t *testing.T) {
 			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
 		})
 	}
+}
+
+func TestConvertFormToVideo(t *testing.T) {
+	validThumbnail, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail.jpg")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	validImg, err := utils.CreateMultipartFileHeader("./testdata/test-img.jpg")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	validImg2, err := utils.CreateMultipartFileHeader("./testdata/test-img2.jpg")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	title := "Test Title"
+	url := "www.test.com"
+	rating := "pg"
+	uploadDateStr := "2024-11-30"
+	vidForm := addVideoForm{
+		Title : title,
+		URL: url,
+		Rating: rating,
+		UploadDate: uploadDateStr,
+		Thumbnail: validThumbnail,
+		PersonIDs : []int{1,2},
+		PersonInputs: []string{"Tim", "James"},
+		CharacterIDs: []int{1,2},
+		CharacterInputs: []string{"Davey D", "Sammy S"},
+		CharacterThumbnails: []*multipart.FileHeader{validImg,validImg2},
+	}
+
+	v, err := convertFormToVideo(&vidForm)
+	if err != nil {
+		t.Fatalf("unable to convert video: %s", err)
+	}
+
+	assert.Equal(t, v.Title, title)
+	assert.Equal(t, v.URL, url)
+	assert.Equal(t, v.Rating, rating)
+	assert.Equal(t, *v.UploadDate, time.Date(2024, 11, 30, 0,0,0,0, time.UTC))
+	assert.Equal(t, *v.Cast[0].Actor.ID, 1)
+	assert.Equal(t, *v.Cast[0].Character.ID, 1)
+	assert.Equal(t, *v.Cast[1].Actor.ID, 2)
+	assert.Equal(t, *v.Cast[1].Character.ID, 2)
+	assert.Equal(t, v.Cast[0].ThumbnailFile.Filename, "test-img.jpg")
+	assert.Equal(t, v.Cast[1].ThumbnailFile.Filename, "test-img2.jpg")
 }

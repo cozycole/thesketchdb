@@ -141,3 +141,8 @@ func TestVideoDecodePostForm(t *testing.T) {
 		assert.Equal(t, form.CharacterThumbnails[2].Filename, path.Base(filepath2))
 	})
 }
+
+func TestHash(t *testing.T) {
+	str := toURLSafeBase64MD5("1-2-2")
+	t.Logf("Hash (%d): %s\n", len(str), str)
+}

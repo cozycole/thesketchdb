@@ -1,6 +1,7 @@
 package img
 
 import (
+	"errors"
 	"io"
 	"os"
 	"path"
@@ -16,6 +17,15 @@ type FileStorage struct {
 
 func (s *FileStorage) SaveFile(subPath string, file io.Reader) error {
 	imgPath := path.Join(s.Path, subPath)
+	imgDir := path.Dir(imgPath)
+	// Make the dir if it doesn't exist
+	if _, err := os.Stat(imgPath); errors.Is(err, os.ErrNotExist) {
+		err = os.Mkdir(imgDir, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
 	dst, err := os.Create(imgPath)
 	if err != nil {
 		return err

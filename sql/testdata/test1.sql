@@ -22,8 +22,8 @@ SET row_security = off;
 
 COPY public.person (id, slug, first, last, birthdate, profile_img, description) FROM stdin;
 1	kyle-mooney-1	Kyle	Mooney	1984-09-03	kyle-mooney-1.jpg	\N
-4	tim-gilbert-4	Tim	Gilbert	1983-05-13	tim-gilbert-4.jpg	this is the description
-5	james-hartnett-5	James	Hartnett	\N	james-hartnett-5.jpg	\N
+2	tim-gilbert-4	Tim	Gilbert	1983-05-13	tim-gilbert-4.jpg	this is the description
+3	james-hartnett-5	James	Hartnett	\N	james-hartnett-5.jpg	\N
 \.
 
 
@@ -68,9 +68,9 @@ COPY public.video_creator_rel (creator_id, video_id) FROM stdin;
 -- Data for Name: video_person_rel; Type: TABLE DATA; Schema: public; Owner: colet
 --
 
-COPY public.video_person_rel (person_id, video_id, character_id, id) FROM stdin;
-4	1	\N	4
-5	1	\N	5
+COPY public.video_person_rel (id, person_id, video_id, character_id) FROM stdin;
+1	1	1	\N
+2	2	1	\N
 \.
 
 
@@ -78,14 +78,14 @@ COPY public.video_person_rel (person_id, video_id, character_id, id) FROM stdin;
 -- Name: person_id_seq; Type: SEQUENCE SET; Schema: public; Owner: colet
 --
 
-SELECT pg_catalog.setval('public.person_id_seq', 5, true);
+SELECT pg_catalog.setval('public.person_id_seq', 4, true);
 
 
 --
 -- Name: character_id_seq; Type: SEQUENCE SET; Schema: public; Owner: colet
 --
 
-SELECT pg_catalog.setval('public.character_id_seq', 1, false);
+SELECT pg_catalog.setval('public.character_id_seq', 2, false);
 
 
 --
@@ -99,11 +99,11 @@ SELECT pg_catalog.setval('public.creator_id_seq', 13, true);
 -- Name: video_id_seq; Type: SEQUENCE SET; Schema: public; Owner: colet
 --
 
-SELECT pg_catalog.setval('public.video_id_seq', 31, true);
+SELECT pg_catalog.setval('public.video_id_seq', 1, true);
 
 
 --
 -- Name: video_person_rel_id_seq; Type: SEQUENCE SET; Schema: public; Owner: colet
 --
 
-SELECT pg_catalog.setval('public.video_person_rel_id_seq', 5, true);
+SELECT pg_catalog.setval('public.video_person_rel_id_seq', 2, true);

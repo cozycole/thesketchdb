@@ -3,6 +3,8 @@ package models
 import (
 	"context"
 	"errors"
+	"fmt"
+	"mime/multipart"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -13,6 +15,8 @@ type CastMember struct {
 	Position  *int
 	Actor     *Person
 	Character *Character
+	ThumbnailName *string
+	ThumbnailFile *multipart.FileHeader
 	// TODO: add attributes about the role
 }
 
@@ -21,7 +25,8 @@ type Video struct {
 	Title       string
 	URL         string
 	Slug        string
-	Thumbnail   string
+	ThumbnailName   string
+	ThumbnailFile *multipart.FileHeader
 	Rating      string
 	Description *string
 	UploadDate  *time.Time
@@ -35,9 +40,9 @@ type VideoModelInterface interface {
 	Get(id int) (*Video, error)
 	GetBySlug(slug string) (*Video, error)
 	GetByCreator(id int) ([]*Video, error)
-	Insert(title, video_url, rating, imgName, imgExt string, upload_date time.Time) (int, string, string, error)
+	Insert(video *Video) error
 	InsertVideoCreatorRelation(vidId, creatorId int) error
-	InsertVideoPersonRelation(vidId, personId, position int) error
+	InsertVideoPersonRelation(vidId, personId, position int, characterId *int, imgName string) error
 }
 
 type VideoModel struct {
@@ -71,7 +76,7 @@ func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 	videos := []*Video{}
 	for rows.Next() {
 		v := &Video{}
-		err := rows.Scan(&v.ID, &v.Title, &v.URL, &v.Thumbnail)
+		err := rows.Scan(&v.ID, &v.Title, &v.URL, &v.ThumbnailName)
 		if err != nil {
 			return nil, err
 		}
@@ -137,7 +142,7 @@ func (m *VideoModel) GetByCreator(id int) ([]*Video, error) {
 		v := &Video{}
 		c := &Creator{}
 		err := rows.Scan(
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.Thumbnail, &v.UploadDate,
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
 			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
 		)
 
@@ -171,7 +176,7 @@ func (m *VideoModel) Get(id int) (*Video, error) {
 	v := &Video{}
 	c := &Creator{}
 	err := row.Scan(
-		&v.ID, &v.Title, &v.URL, &v.Thumbnail, &v.UploadDate, &v.Description, &v.Rating,
+		&v.ID, &v.Title, &v.URL, &v.ThumbnailName, &v.UploadDate, &v.Description, &v.Rating,
 		&c.ID, &c.Name, &c.ProfileImage,
 	)
 	if err != nil {
@@ -270,7 +275,7 @@ func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 		v := &Video{}
 		c := &Creator{}
 		err := rows.Scan(
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.Thumbnail, &v.UploadDate,
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
 			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
 		)
 		if err != nil {
@@ -286,27 +291,51 @@ func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 	return videos, nil
 }
 
-func (m *VideoModel) Insert(title, video_url, rating, slug, imgExt string, upload_date time.Time) (int, string, string, error) {
+func (m *VideoModel) Insert(video *Video) error {
 	stmt := `
 	INSERT INTO video (title, video_url, upload_date, pg_rating, slug, thumbnail_name)
-	VALUES ($1,$2,$3,$4,
-		CONCAT($5::text, '-', currval(pg_get_serial_sequence('video', 'id'))), 
-		CONCAT($5::text, '-', currval(pg_get_serial_sequence('video', 'id')), $6::text))
-	RETURNING id, slug, thumbnail_name;`
+	VALUES ($1,$2,$3,$4,$5,$6)
+	RETURNING id;`
+	tx, err := m.DB.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
 
-	result := m.DB.QueryRow(
-		context.Background(), stmt, title,
-		video_url, upload_date, rating,
-		slug, imgExt,
+	result := tx.QueryRow(
+		context.Background(), stmt, video.Title,
+		video.URL, video.UploadDate, video.Rating,
+		video.Slug, video.ThumbnailName,
 	)
 
 	var id int
-	var imgName string
-	err := result.Scan(&id, &slug, &imgName)
+	err = result.Scan(&id)
 	if err != nil {
-		return 0, "", "", err
+		return err
 	}
-	return id, slug, imgName, nil
+
+	video.ID = id
+	stmt = `INSERT INTO video_creator_rel (video_id, creator_id) VALUES ($1, $2)`
+	_, err = tx.Exec(context.Background(), stmt, video.ID, video.Creator.ID)
+	if err != nil {
+		return err
+	}
+
+	stmt = `INSERT INTO video_person_rel (video_id, person_id, character_id, position, thumbnail) VALUES ($1, $2, $3, $4, $5)`
+	for i,v := range video.Cast {
+		fmt.Printf("Video:%d Person:%d Character:%d\n", video.ID, *v.Actor.ID, *v.Character.ID)
+		_, err = tx.Exec(context.Background(), stmt, video.ID, v.Actor.ID, v.Character.ID, i, v.ThumbnailName)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m *VideoModel) InsertVideoCreatorRelation(vidId, creatorId int) error {
@@ -315,8 +344,8 @@ func (m *VideoModel) InsertVideoCreatorRelation(vidId, creatorId int) error {
 	return err
 }
 
-func (m *VideoModel) InsertVideoPersonRelation(vidId, personId, position int) error {
-	stmt := `INSERT INTO video_person_rel (video_id, person_id, position) VALUES ($1, $2, $3)`
-	_, err := m.DB.Exec(context.Background(), stmt, vidId, personId, position)
+func (m *VideoModel) InsertVideoPersonRelation(vidId, personId, position int, characterId *int, imgName string) error {
+	stmt := `INSERT INTO video_person_rel (video_id, person_id, characterId, position, img_name) VALUES ($1, $2, $3, $4, $5)`
+	_, err := m.DB.Exec(context.Background(), stmt, vidId, personId, characterId, position, imgName)
 	return err
 }

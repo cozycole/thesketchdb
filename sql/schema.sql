@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS video_person_rel (
     person_id INT references person(id) NOT NULL,
     character_id INT references character(id),
     position INT,
-    img VARCHAR,
+    thumbnail VARCHAR,
     insert_timestamp timestamp DEFAULT now(),
     CONSTRAINT unique_video_person_character UNIQUE(video_id, person_id, character_id)
 );

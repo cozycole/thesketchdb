@@ -19,6 +19,7 @@ type Character struct {
 
 type CharacterModelInterface interface {
 	Search(search string) ([]*Character, error)
+	Exists(id int) (bool, error)
 }
 
 type CharacterModel struct {
@@ -54,4 +55,19 @@ func (m *CharacterModel) Search(query string) ([]*Character, error) {
 		return nil, err
 	}
 	return characters, nil
+}
+
+func (m *CharacterModel) Exists(id int) (bool, error) {
+	stmt := `SELECT id FROM character WHERE id = $1`
+	row := m.DB.QueryRow(context.Background(), stmt, id)
+
+	err := row.Scan(&id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+	return true, nil
 }

@@ -3,10 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"image"
-	_ "image/jpeg"
-	_ "image/png"
-	"io"
 	"net/http"
 	"path"
 	"strings"
@@ -16,7 +12,7 @@ import (
 	"sketchdb.cozycole.net/internal/utils"
 )
 
-var maxFileNameLength = 40
+var maxFileNameLength = 50
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	videos, err := app.videos.GetAll(0)
@@ -239,8 +235,8 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		app.errorLog.Print(err)
 		return
 	}
-	app.validateAddVideoForm(&form)
 
+	app.validateAddVideoForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
@@ -248,87 +244,40 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	date, _ := time.Parse(time.DateOnly, form.UploadDate)
-	imgName := models.CreateSlugName(form.Title, maxFileNameLength)
-
-	file, err := form.Thumbnail.Open()
+	video, err := convertFormToVideo(&form)
 	if err != nil {
 		app.serverError(w, err)
-		return
+		return 
 	}
-	defer file.Close()
 
-	mimeType, err := utils.GetMultipartFileMime(file)
+	err = addVideoImageNames(&video)
 	if err != nil {
 		app.serverError(w, err)
-		return
+		return 
 	}
 
-	vidID, slug, thumbnailName, err := app.videos.Insert(
-		form.Title, form.URL, strings.ToUpper(form.Rating),
-		imgName, mimeToExt[mimeType], date,
-	)
+	// NOTE: This mutates the video struct by adding the newly created db serial id 
+	// to the id field
+	err = app.videos.Insert(&video)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	width, height, err := utils.GetImageDimensions(file)
+	err = app.saveVideoImages(&video)
 	if err != nil {
-		// TODO: gotta remove the db record on this error and any after
 		app.serverError(w, err)
+		// TODO: delete video entry now
 		return
 	}
 
-	var dstFile io.Reader
-	dstFile = file
-	// This is stock youtube thumbnail dimensions but has black
-	// top/bottom borders that need to be removed
-	if width == 480 && height == 360 {
-		rect := image.Rect(0, 45, 480, 315)
-		dstFile, err = utils.CropImg(file, mimeToExt[mimeType], rect)
-		if err != nil {
-			app.serverError(w, err)
-			return
-		}
-	}
-
-	err = app.fileStorage.SaveFile(path.Join("video", thumbnailName), dstFile)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	err = app.videos.InsertVideoCreatorRelation(vidID, form.CreatorID)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	dupeSet := make(map[int]struct{})
-	for i, id := range form.PersonIDs {
-		// prevent adding duplicates from same form
-		if _, ok := dupeSet[id]; ok {
-			continue
-		}
-
-		if id != 0 {
-			err = app.videos.InsertVideoPersonRelation(vidID, id, i)
-			if err != nil {
-				app.serverError(w, err)
-				return
-			}
-			dupeSet[id] = struct{}{}
-		}
-	}
-
-	http.Redirect(w, r, fmt.Sprintf("/video/%s", slug), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/video/%s", video.Slug), http.StatusSeeOther)
 }
 
 type searchResults struct {
 	Results      []result
-	Redirect     string // e.g. Add person result -> /person/add
-	RedirectText string
+	Redirect     string // e.g. /person/add
+	RedirectText string // e.g. "Add Person +"
 }
 
 type result struct {

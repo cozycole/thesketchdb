@@ -12,7 +12,7 @@ var mockVideo = &models.Video{
 	ID:        1,
 	Title:     "Test Title",
 	URL:       "www.testvid.com",
-	Thumbnail: "a-test-thumbnail-1.jpg",
+	ThumbnailName: "a-test-thumbnail-1.jpg",
 	Rating:    "g",
 	Creator: &models.Creator{
 		ID:              1,
@@ -22,7 +22,7 @@ var mockVideo = &models.Video{
 		EstablishedDate: time.Now(),
 	},
 	Cast: []*models.CastMember{
-		&models.CastMember{
+		{
 			Position: utils.GetIntPtr(1),
 			Actor: &models.Person{
 				ID:    utils.GetIntPtr(1),
@@ -35,12 +35,12 @@ var mockVideo = &models.Video{
 }
 
 type VideoModel struct {
-	videoCreatorRel map[int][]int
+	// videoCreatorRel map[int][]int
 	videoPersonRel  map[int][]int
 }
 
-func (m *VideoModel) Insert(title, video_url, rating, slug, imgExt string, upload_date time.Time) (int, string, string, error) {
-	return 1, "test-img-1", "test-img-1.jpg", nil
+func (m *VideoModel) Insert(video *models.Video) error {
+	return nil
 }
 
 func (m *VideoModel) Search(search string, offset int) ([]*models.Video, error) {
@@ -69,7 +69,7 @@ func (m *VideoModel) InsertVideoCreatorRelation(vidId, creatorId int) error {
 	return nil
 }
 
-func (m *VideoModel) InsertVideoPersonRelation(vidId, personId, position int) error {
+func (m *VideoModel) InsertVideoPersonRelation(vidId, personId, position int, characterId *int, imgName string) error {
 	if m.videoPersonRel == nil {
 		m.videoPersonRel = map[int][]int{}
 	}
