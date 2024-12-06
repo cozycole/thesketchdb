@@ -26,35 +26,35 @@ func TestAddVideoImageNames(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		video models.Video
-		wantVidThumb string
+		name           string
+		video          models.Video
+		wantVidThumb   string
 		wantCharThumb1 string
 		wantCharThumb2 string
 	}{
 		{
-			name:      "Valid Entry",
-			video : models.Video{
-				ID: 1,
-				Title:     "Test VIDEO",
+			name: "Valid Entry",
+			video: models.Video{
+				ID:            1,
+				Title:         "Test VIDEO",
 				ThumbnailFile: validThumbnail,
-				Creator: &models.Creator{ID:1},
+				Creator:       &models.Creator{ID: 1},
 				Cast: []*models.CastMember{
 					{
-						Position: utils.GetIntPtr(0),
-						Actor: &models.Person{ID:utils.GetIntPtr(1)},
-						Character: &models.Character{ID:utils.GetIntPtr(1)},
+						Position:      utils.GetIntPtr(0),
+						Actor:         &models.Person{ID: utils.GetIntPtr(1)},
+						Character:     &models.Character{ID: utils.GetIntPtr(1)},
 						ThumbnailFile: validImg,
 					},
 					{
-						Position: utils.GetIntPtr(1),
-						Actor: &models.Person{ID:utils.GetIntPtr(2)},
-						Character: &models.Character{ID:utils.GetIntPtr(2)},
+						Position:      utils.GetIntPtr(1),
+						Actor:         &models.Person{ID: utils.GetIntPtr(2)},
+						Character:     &models.Character{ID: utils.GetIntPtr(2)},
 						ThumbnailFile: validImg2,
 					},
 				},
 			},
-			wantVidThumb: "test-video-1.jpg",
+			wantVidThumb:   "test-video-1.jpg",
 			wantCharThumb1: "LyIaGOuGOANpVwsu0UfYtA.jpg",
 			wantCharThumb2: "5hcw5nF7F4fPCdRJFP-5IA.jpg",
 		},
@@ -64,7 +64,7 @@ func TestAddVideoImageNames(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := addVideoImageNames(&tt.video)
 			if err != nil {
-				t.Fatal(err)	
+				t.Fatal(err)
 			}
 
 			assert.Equal(t, tt.video.ThumbnailName, tt.wantVidThumb)
@@ -75,19 +75,66 @@ func TestAddVideoImageNames(t *testing.T) {
 }
 
 func TestSaveVideoImages(t *testing.T) {
-	// validThumbnail, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail.jpg")
-	// if err != nil {
-	// 	t.Fatal(err)
-	// 	return
-	// }
-	// validImg, err := utils.CreateMultipartFileHeader("./testdata/test-img.jpg")
-	// if err != nil {
-	// 	t.Fatal(err)
-	// 	return
-	// }
-	// validImg2, err := utils.CreateMultipartFileHeader("./testdata/test-img2.jpg")
-	// if err != nil {
-	// 	t.Fatal(err)
-	// 	return
-	// }
+	validThumbnail, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail.jpg")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	validImg, err := utils.CreateMultipartFileHeader("./testdata/test-img.jpg")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	validImg2, err := utils.CreateMultipartFileHeader("./testdata/test-img2.jpg")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	app := newTestApplication(t)
+
+	wantCharThumb1 := "LyIaGOuGOANpVwsu0UfYtA.jpg"
+	wantCharThumb2 := "5hcw5nF7F4fPCdRJFP-5IA.jpg"
+
+	tests := []struct {
+		name      string
+		video     models.Video
+		wantError error
+	}{
+		{
+			name: "Valid Entry",
+			video: models.Video{
+				ID:            1,
+				Title:         "Test VIDEO",
+				ThumbnailFile: validThumbnail,
+				ThumbnailName: "test-video-1.jpg",
+				Creator:       &models.Creator{ID: 1},
+				Cast: []*models.CastMember{
+					{
+						Position:      utils.GetIntPtr(0),
+						Actor:         &models.Person{ID: utils.GetIntPtr(1)},
+						Character:     &models.Character{ID: utils.GetIntPtr(1)},
+						ThumbnailFile: validImg,
+						ThumbnailName: &wantCharThumb1,
+					},
+					{
+						Position:      utils.GetIntPtr(1),
+						Actor:         &models.Person{ID: utils.GetIntPtr(2)},
+						Character:     &models.Character{ID: utils.GetIntPtr(2)},
+						ThumbnailFile: validImg2,
+						ThumbnailName: &wantCharThumb2,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := app.saveVideoImages(&tt.video)
+			assert.Equal(t, err, tt.wantError)
+		})
+	}
+
 }
+

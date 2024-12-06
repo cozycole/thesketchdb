@@ -20,7 +20,7 @@ func (s *FileStorage) SaveFile(subPath string, file io.Reader) error {
 	imgDir := path.Dir(imgPath)
 	// Make the dir if it doesn't exist
 	if _, err := os.Stat(imgPath); errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(imgDir, 0755)
+		err = os.MkdirAll(imgDir, 0755)
 		if err != nil {
 			return err
 		}

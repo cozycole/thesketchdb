@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
 	"sketchdb.cozycole.net/internal/validator"
 )
 
@@ -204,36 +203,25 @@ func convertFormToVideo(form *addVideoForm) (models.Video, error) {
 	if err != nil {
 		return models.Video{}, fmt.Errorf("unable to parse date")
 	}
-	file, err := form.Thumbnail.Open()
-	if err != nil {
-		return models.Video{}, fmt.Errorf("unable to open video thumbnail")
-	}
-	defer file.Close()
-
-	mimeType, err := utils.GetMultipartFileMime(file)
-	if err != nil {
-		return models.Video{}, fmt.Errorf("unable to identify mime")
-	}
 
 	creator := &models.Creator{
-		ID : form.CreatorID,
+		ID: form.CreatorID,
 	}
 
 	slug := models.CreateSlugName(form.Title, maxFileNameLength)
 
-
 	var cast []*models.CastMember
 	for i := range form.PersonIDs {
-		p := &models.Person{ID: &form.PersonIDs[i]}	
+		p := &models.Person{ID: &form.PersonIDs[i]}
 		c := &models.Character{}
 		if form.CharacterIDs[i] != 0 {
 			c.ID = &form.CharacterIDs[i]
 		}
 
 		cm := &models.CastMember{
-			Position: &i,
-			Actor: p,
-			Character: c,
+			Position:      &i,
+			Actor:         p,
+			Character:     c,
 			ThumbnailFile: form.CharacterThumbnails[i],
 		}
 
@@ -241,14 +229,14 @@ func convertFormToVideo(form *addVideoForm) (models.Video, error) {
 	}
 
 	return models.Video{
-		Title: form.Title,
-		URL: form.URL,
-		Slug: slug,
-		ThumbnailName: slug + mimeToExt[mimeType],
+		Title:         form.Title,
+		URL:           form.URL,
+		Slug:          slug,
 		ThumbnailFile: form.Thumbnail,
-		Rating: form.Rating,
-		UploadDate: &uploadDate,
-		Creator: creator,
-		Cast: cast,
+		Rating:        form.Rating,
+		UploadDate:    &uploadDate,
+		Creator:       creator,
+		Cast:          cast,
 	}, nil
 }
+
