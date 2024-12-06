@@ -12,37 +12,37 @@ import (
 )
 
 type CastMember struct {
-	Position  *int
-	Actor     *Person
-	Character *Character
+	Position      *int
+	Actor         *Person
+	Character     *Character
 	ThumbnailName *string
 	ThumbnailFile *multipart.FileHeader
 	// TODO: add attributes about the role
 }
 
 type Video struct {
-	ID          int
-	Title       string
-	URL         string
-	Slug        string
-	ThumbnailName   string
+	ID            int
+	Title         string
+	URL           string
+	Slug          string
+	ThumbnailName string
 	ThumbnailFile *multipart.FileHeader
-	Rating      string
-	Description *string
-	UploadDate  *time.Time
-	Creator     *Creator
-	Cast        []*CastMember
+	Rating        string
+	Description   *string
+	UploadDate    *time.Time
+	Creator       *Creator
+	Cast          []*CastMember
 }
 
 type VideoModelInterface interface {
-	Search(search string, offset int) ([]*Video, error)
-	GetAll(offset int) ([]*Video, error)
 	Get(id int) (*Video, error)
-	GetBySlug(slug string) (*Video, error)
+	GetAll(offset int) ([]*Video, error)
 	GetByCreator(id int) ([]*Video, error)
+	GetBySlug(slug string) (*Video, error)
 	Insert(video *Video) error
 	InsertVideoCreatorRelation(vidId, creatorId int) error
 	InsertVideoPersonRelation(vidId, personId, position int, characterId *int, imgName string) error
+	Search(search string, offset int) ([]*Video, error)
 }
 
 type VideoModel struct {
@@ -50,20 +50,26 @@ type VideoModel struct {
 	ResultSize int
 }
 
-func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
+func (m *VideoModel) Get(id int) (*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.upload_date,
-		c.id, c.name, c.profile_img
+		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.upload_date, v.description, v.pg_rating,
+			c.id, c.name, c.slug, c.profile_img
 		FROM video AS v
 		LEFT JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id
 		LEFT JOIN creator as c
 		ON vcr.creator_id = c.id
-		WHERE search_vector @@ to_tsquery('english', $1)
-		LIMIT $2
-		OFFSET $3;
+		WHERE v.id = $1
 	`
-	rows, err := m.DB.Query(context.Background(), stmt, search, m.ResultSize, m.ResultSize*offset)
+
+	row := m.DB.QueryRow(context.Background(), stmt, id)
+
+	v := &Video{}
+	c := &Creator{}
+	err := row.Scan(
+		&v.ID, &v.Title, &v.URL, &v.ThumbnailName, &v.UploadDate, &v.Description, &v.Rating,
+		&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
+	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -71,49 +77,20 @@ func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 			return nil, err
 		}
 	}
-	defer rows.Close()
 
-	videos := []*Video{}
-	for rows.Next() {
-		v := &Video{}
-		err := rows.Scan(&v.ID, &v.Title, &v.URL, &v.ThumbnailName)
-		if err != nil {
-			return nil, err
-		}
-		videos = append(videos, v)
+	v.Creator = c
 
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return videos, nil
-}
-
-func (m *VideoModel) GetIdBySlug(slug string) (int, error) {
-	stmt := `SELECT v.id FROM video as v WHERE v.slug = $1`
-	id_row := m.DB.QueryRow(context.Background(), stmt, slug)
-
-	var id int
-	err := id_row.Scan(&id)
+	members, err := m.GetCastMembers(id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrNoRecord
+			return nil, ErrNoRecord
 		} else {
-			return 0, err
+			return nil, err
 		}
 	}
+	v.Cast = members
 
-	return id, nil
-}
-
-func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
-	id, err := m.GetIdBySlug(slug)
-	if err != nil {
-		return nil, err
-	}
-
-	return m.Get(id)
+	return v, nil
 }
 
 func (m *VideoModel) GetByCreator(id int) ([]*Video, error) {
@@ -159,54 +136,38 @@ func (m *VideoModel) GetByCreator(id int) ([]*Video, error) {
 	return videos, nil
 }
 
-func (m *VideoModel) Get(id int) (*Video, error) {
-	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.upload_date, v.description, v.pg_rating,
-			c.id, c.name, c.profile_img
-		FROM video AS v
-		LEFT JOIN video_creator_rel as vcr
-		ON v.id = vcr.video_id
-		LEFT JOIN creator as c
-		ON vcr.creator_id = c.id
-		WHERE v.id = $1
-	`
+func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
+	id, err := m.GetIdBySlug(slug)
+	if err != nil {
+		return nil, err
+	}
 
-	row := m.DB.QueryRow(context.Background(), stmt, id)
+	return m.Get(id)
+}
 
-	v := &Video{}
-	c := &Creator{}
-	err := row.Scan(
-		&v.ID, &v.Title, &v.URL, &v.ThumbnailName, &v.UploadDate, &v.Description, &v.Rating,
-		&c.ID, &c.Name, &c.ProfileImage,
-	)
+func (m *VideoModel) GetIdBySlug(slug string) (int, error) {
+	stmt := `SELECT v.id FROM video as v WHERE v.slug = $1`
+	id_row := m.DB.QueryRow(context.Background(), stmt, slug)
+
+	var id int
+	err := id_row.Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNoRecord
+			return 0, ErrNoRecord
 		} else {
-			return nil, err
+			return 0, err
 		}
 	}
 
-	v.Creator = c
-
-	members, err := m.GetCastMembers(id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
-	v.Cast = members
-
-	return v, nil
+	return id, nil
 }
 
 func (m *VideoModel) GetCastMembers(video_id int) ([]*CastMember, error) {
 	stmt := `
 		SELECT p.id, p.slug, p.first, p.last, p.birthdate,
-			p.description, p.profile_img, vpr.position,
-			ch.id as char_id, ch.name as char_name, ch.img_name as char_img
+			p.description, p.profile_img, 
+			vpr.position, vpr.img,
+			ch.id, ch.name, ch.img_name
 		FROM video AS v
 		LEFT JOIN video_person_rel as vpr
 		ON v.id = vpr.video_id
@@ -233,7 +194,7 @@ func (m *VideoModel) GetCastMembers(video_id int) ([]*CastMember, error) {
 		cm := &CastMember{}
 		err := rows.Scan(
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.BirthDate, &p.Description, &p.ProfileImg,
-			&cm.Position, &ch.ID, &ch.Name, &ch.Image,
+			&cm.Position, &cm.ThumbnailName, &ch.ID, &ch.Name, &ch.Image,
 		)
 		if err != nil {
 			return nil, err
@@ -322,7 +283,7 @@ func (m *VideoModel) Insert(video *Video) error {
 	}
 
 	stmt = `INSERT INTO video_person_rel (video_id, person_id, character_id, position, thumbnail) VALUES ($1, $2, $3, $4, $5)`
-	for i,v := range video.Cast {
+	for i, v := range video.Cast {
 		fmt.Printf("Video:%d Person:%d Character:%d\n", video.ID, *v.Actor.ID, *v.Character.ID)
 		_, err = tx.Exec(context.Background(), stmt, video.ID, v.Actor.ID, v.Character.ID, i, v.ThumbnailName)
 		if err != nil {
@@ -348,4 +309,44 @@ func (m *VideoModel) InsertVideoPersonRelation(vidId, personId, position int, ch
 	stmt := `INSERT INTO video_person_rel (video_id, person_id, characterId, position, img_name) VALUES ($1, $2, $3, $4, $5)`
 	_, err := m.DB.Exec(context.Background(), stmt, vidId, personId, characterId, position, imgName)
 	return err
+}
+
+func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
+	stmt := `
+		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.upload_date,
+		c.id, c.name, c.profile_img
+		FROM video AS v
+		LEFT JOIN video_creator_rel as vcr
+		ON v.id = vcr.video_id
+		LEFT JOIN creator as c
+		ON vcr.creator_id = c.id
+		WHERE search_vector @@ to_tsquery('english', $1)
+		LIMIT $2
+		OFFSET $3;
+	`
+	rows, err := m.DB.Query(context.Background(), stmt, search, m.ResultSize, m.ResultSize*offset)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	videos := []*Video{}
+	for rows.Next() {
+		v := &Video{}
+		err := rows.Scan(&v.ID, &v.Title, &v.URL, &v.ThumbnailName)
+		if err != nil {
+			return nil, err
+		}
+		videos = append(videos, v)
+
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return videos, nil
 }

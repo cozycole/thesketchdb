@@ -3,7 +3,7 @@ go.sum
 person
 creator
 video
-img/*
+ui/static/img
 *notes.md
 quick*
 tmp
@@ -12,3 +12,4 @@ todo.md
 ui/static/css/styles.css
 backups
 htmx.min.js 
+*.py

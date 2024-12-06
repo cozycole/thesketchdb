@@ -18,7 +18,7 @@
         {{range .Videos}}
         <div class="w-[calc(25%-8px)] mx-1">
             <a href="/video/{{.Slug}}"></a>
-                <img class="rounded-md" src="/static/img/video/{{.Thumbnail}}" alt="video thumbnail">
+        <img class="rounded-md" src="/static/img/video/{{.ID}}/{{.ThumbnailName}}" alt="video thumbnail">
             </a> 
             <div class="flex mt-2 h-32">
                 <a class="w-[calc(15%-4px)] mr-1" href="/creator/{{.Creator.Slug}}" >

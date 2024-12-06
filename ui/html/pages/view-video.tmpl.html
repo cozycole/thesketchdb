@@ -1,8 +1,12 @@
-{{define "title"}}{{.Video.Title}}{{end}} {{define "main"}} {{with .Video}}
+{{define "title"}}{{.Video.Title}}{{end}} 
+
+{{define "main"}} 
+
+{{with .Video}}
 <div class="my-3">
   <h1 class="text-2xl font-bold my-3">{{.Title}}</h1>
   <div class="flex my-3">
-    <a href="/view/creator/{{.Creator.Slug}}">
+    <a href="/creator/{{.Creator.Slug}}">
       <img
         src="/static/img/creator/{{.Creator.ProfileImage}}"
         class="rounded-full inline-block w-9"
@@ -10,7 +14,7 @@
       />
     </a>
     <div>
-      <a class="ml-2" href="/view/creator/{{.Creator.Slug}}"
+      <a class="ml-2" href="/creator/{{.Creator.Slug}}"
         >{{.Creator.Name}}</a
       >
       <time class="block ml-2">{{humanDate .UploadDate}}</time>
@@ -19,7 +23,7 @@
   <a class="my-3" href="{{.URL}}" target="_blank">
     <img
       class="rounded-md inline-block"
-      src="/static/img/video/{{.Thumbnail}}"
+      src="/static/img/video/{{.ID}}/{{.ThumbnailName}}"
       alt="thumbnail"
     />
   </a>
@@ -30,12 +34,19 @@
     </div>
 
     <div class="flex flex-wrap justify-start gap-2.5">
-      {{range .Cast}} {{if .Actor.ID}}
+    {{ $vidId := .ID}}
+    {{range .Cast}} 
+      {{if .Actor.ID}}
       <div class="relative w-[calc((100%-3*10px)/4)] rounded-md">
         <a href="/person/{{.Actor.Slug}}">
+
           <img
             class="rounded-md w-full"
+          {{if .ThumbnailName}}
+            src="/static/img/video/{{$vidId}}/{{.ThumbnailName}}"
+          {{else}}
             src="/static/img/person/{{.Actor.ProfileImg}}"
+          {{end}}
           />
         </a>
         <h3
@@ -46,10 +57,15 @@
           >
         </h3>
       </div>
-      {{end}} {{end}}
+      {{end}} 
+    {{end}}
     </div>
   </div>
 </div>
-{{end}} {{end}} {{define "scripts"}}
+{{end}} 
+
+{{end}} 
+
+{{define "scripts"}}
 <script src="/static/js/search.js"></script>
 {{end}}
