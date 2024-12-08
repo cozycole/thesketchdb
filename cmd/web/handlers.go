@@ -247,16 +247,16 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 	video, err := convertFormToVideo(&form)
 	if err != nil {
 		app.serverError(w, err)
-		return 
+		return
 	}
 
 	err = addVideoImageNames(&video)
 	if err != nil {
 		app.serverError(w, err)
-		return 
+		return
 	}
 
-	// NOTE: This mutates the video struct by adding the newly created db serial id 
+	// NOTE: This mutates the video struct by adding the newly created db serial id
 	// to the id field
 	err = app.videos.Insert(&video)
 	if err != nil {
@@ -271,7 +271,7 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/video/%s", video.Slug), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/video/%d/%s", video.ID, video.Slug), http.StatusSeeOther)
 }
 
 type searchResults struct {

@@ -142,8 +142,6 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 				htmlPeopleIdField,
 				"Person does not exist. Please add it, then resubmit video!",
 			)
-		} else {
-			form.CheckField(true, htmlPeopleIdField, "This field cannot be blank")
 		}
 
 		cid := form.CharacterIDs[i]
@@ -153,23 +151,26 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 				htmlCharIdField,
 				"Character does not exist. Please add it, then resubmit video!",
 			)
-		} else {
-			form.CheckField(true, htmlCharIdField, "This field cannot be blank")
 		}
 
 		thumb := form.CharacterThumbnails[i]
 		if thumb == nil {
-			form.CheckField(true, htmlCharThumbField, "Please upload character thumbnail")
+			// A character thumbnail should be eventually uploaded but may not be able to
+			// on intial upload of video so NO ERROR
+			// form.CheckField(true, htmlCharThumbField, "Please upload character thumbnail")
+			continue
 		}
+
 		thumbnail, err := thumb.Open()
 		if err != nil {
 			form.AddFieldError(htmlCharThumbField, "Unable to open file, ensure it is a jpg or png")
 			return
 		}
-		defer thumbnail.Close()
 
 		form.CheckField(validator.IsMime(thumbnail, "image/jpeg", "image/png"),
 			htmlCharThumbField, "Uploaded file must be jpg or png")
+
+		thumbnail.Close()
 	}
 
 	thumbnail, err := form.Thumbnail.Open()

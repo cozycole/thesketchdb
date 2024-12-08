@@ -95,75 +95,14 @@
     />
   </div>
   <div id="personInputs">
+    {{ $Form := .Form }}
     <label class="inline-block my-2">Actors</label>
-    {{$FieldErrors := .Form.FieldErrors}} {{$PersonIds := .Form.PersonIDs}}
-    {{$PersonInputs := .Form.PersonInputs}} {{range $index, $personId :=
-    .Form.PersonIDs}} {{$divName := printf "people[%d]" $index}} {{$idInputName
-    := printf "peopleId[%d]" $index}} {{$textInputName := printf
-    "peopleText[%d]" $index}} {{with (index $FieldErrors $idInputName)}}
-    <label class="block text-red-700">{{.}}</label>
-    {{end}}
-
-    <div id="{{$divName}}" class="relative my-2">
-      <span>Actor {{$index}}</span>
-      <input class="hidden" name="{{$idInputName}}" value="{{.}}" />
-      <input
-        type="search"
-        name="{{$textInputName}}"
-        value="{{ index $PersonInputs $index}}"
-        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-        placeholder="Enter person name"
-        hx-get="/person/search"
-        hx-trigger="focus, input changed delay:500ms, search"
-        hx-target="next"
-      />
-      <div></div>
-    </div>
+    {{range $index, $personId := .Form.PersonIDs}} 
+      {{ template "actor-input" (dict "Index" $index "Form" $Form)}}
+      <div>Filling w prev </div>
     {{else}}
-    <div
-      id="people[0]"
-      class="relative p-2 my-2 rounded-lg border-2 border-black"
-    >
-      <label>Name</label>
-      <input type="hidden" name="peopleId[0]" />
-      <input
-        type="search"
-        name="peopleText[0]"
-        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-        placeholder="Enter person name"
-        hx-get="/person/search"
-        hx-params="query"
-        hx-trigger="focus, input changed delay:500ms, search"
-        hx-target="next"
-      />
-      <div></div>
-      <label>Character Name (if applicable)</label>
-      <input type="hidden" name="characterId[0]" />
-      <input
-        type="search"
-        name="characterText[0]"
-        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-        placeholder="Enter character name"
-        hx-get="/character/search"
-        hx-params="query"
-        hx-trigger="focus, input changed delay:500ms, search"
-        hx-target="next"
-      />
-      <div></div>
-      <label class="inline-block my-2"> Thumbnail </label>
-      <label
-        class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-      >
-        Upload
-        <input
-          type="file"
-          name="characterThumbnail[0]"
-          accept="image/*"
-          onChange="previewImage(event)"
-          class="hidden"
-        />
-      </label>
-    </div>
+      {{ template "actor-input" (dict "Index" 0 "Form" $Form)}}
+      <div>No Prev Values</div>
     {{end}}
     <button
       type="button"
@@ -181,54 +120,18 @@
   </button>
 
   <template id="personInputTemplate">
-    <div class="relative p-2 my-2 rounded-lg border-2 border-black">
-      <label>Name</label>
-      <input type="hidden" name="peopleId" />
-      <input
-        type="search"
-        name="peopleText"
-        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-        placeholder="Enter person name"
-        hx-get="/person/search"
-        hx-params="query"
-        hx-trigger="focus, input changed delay:500ms, search"
-        hx-target="next"
-      />
-      <div></div>
-      <label>Character Name (if applicable)</label>
-      <input type="hidden" name="characterId" />
-      <input
-        type="search"
-        name="characterText"
-        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-        placeholder="Enter character name"
-        hx-get="/character/search"
-        hx-params="query"
-        hx-trigger="focus, input changed delay:500ms, search"
-        hx-target="next"
-      />
-      <div></div>
-      <label class="inline-block my-2"> Thumbnail </label>
-      <label
-        class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-      >
-        Upload
-        <input
-          type="file"
-          name="characterThumbnail"
-          accept="image/*"
-          onChange="previewImage(event)"
-          class="hidden"
-        />
-      </label>
-    </div>
+      {{ template "actor-input" (dict "Index" 0 "Form" .Form)}}
   </template>
-  {{end}} {{define "scripts"}}
-  <script src="/static/js/add.js"></script>
-  <script>
-    document.body.addEventListener("htmx:configRequest", function (evt) {
-      evt.detail.parameters["query"] = evt.detail.elt.value;
-    });
-  </script>
-  {{end}}
+
+  {{end}} 
+
 </form>
+
+{{define "scripts"}}
+<script src="/static/js/add.js"></script>
+<script>
+  document.body.addEventListener("htmx:configRequest", function (evt) {
+    evt.detail.parameters["query"] = evt.detail.elt.value;
+  });
+</script>
+{{end}}

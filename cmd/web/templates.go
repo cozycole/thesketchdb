@@ -45,6 +45,21 @@ func getYear(t time.Time) string {
 	return strconv.Itoa(t.Year())
 }
 
+func dict(values ...any) map[string]any {
+	if len(values)%2 != 0 {
+		panic("invalid dict call")
+	}
+	m := make(map[string]interface{}, len(values)/2)
+	for i := 0; i < len(values); i += 2 {
+		key, ok := values[i].(string)
+		if !ok {
+			panic("dict keys must be strings")
+		}
+		m[key] = values[i+1]
+	}
+	return m
+}
+
 // Init global variable which maps string func names to
 // functions to be used within templates (since you can call
 // functions from template). NOTE: The tempalte functions should only
@@ -52,6 +67,7 @@ func getYear(t time.Time) string {
 var functions = template.FuncMap{
 	"humanDate": humanDate,
 	"getYear":   getYear,
+	"dict":      dict,
 }
 
 // Getting mapping of html page filename to template set for the page
