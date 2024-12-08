@@ -152,8 +152,12 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	videos, err := app.videos.GetByPerson(*person.ID)
+
 	data := app.newTemplateData(r)
 	data.Person = person
+	data.Videos = videos
+
 	app.render(w, http.StatusOK, "view-person.tmpl.html", "base", data)
 }
 

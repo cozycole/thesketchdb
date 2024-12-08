@@ -38,6 +38,7 @@ type VideoModelInterface interface {
 	Get(id int) (*Video, error)
 	GetAll(offset int) ([]*Video, error)
 	GetByCreator(id int) ([]*Video, error)
+	GetByPerson(id int) ([]*Video, error)
 	GetBySlug(slug string) (*Video, error)
 	Insert(video *Video) error
 	InsertVideoCreatorRelation(vidId, creatorId int) error
@@ -143,6 +144,52 @@ func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 	}
 
 	return m.Get(id)
+}
+
+func (m *VideoModel) GetByPerson(id int) ([]*Video, error) {
+	stmt := `SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
+		c.id, c.name, c.page_url, c.slug, c.profile_img
+		FROM video AS v
+		JOIN video_creator_rel as vcr
+		ON v.id = vcr.video_id
+		JOIN creator as c
+		ON vcr.creator_id = c.id
+		JOIN video_person_rel as vpl
+		ON v.id = vpl.video_id
+		JOIN person as p
+		ON vpl.person_id = p.id
+		WHERE p.id = $1`
+
+	rows, err := m.DB.Query(context.Background(), stmt, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	videos := []*Video{}
+	for rows.Next() {
+		v := &Video{}
+		c := &Creator{}
+		err := rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+		v.Creator = c
+		videos = append(videos, v)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return videos, nil
 }
 
 func (m *VideoModel) GetIdBySlug(slug string) (int, error) {
