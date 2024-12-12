@@ -15,7 +15,7 @@ import (
 var maxFileNameLength = 50
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	videos, err := app.videos.GetAll(0)
+	videos, err := app.videos.GetAll(8)
 	if err != nil {
 		app.serverError(w, err)
 		return

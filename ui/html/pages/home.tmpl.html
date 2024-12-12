@@ -1,30 +1,17 @@
 {{define "title"}} Home {{end}}
 
 {{define "main"}}
-    <h2 class="font-bold text-xl my-3">Latest Sketches</h2>
-    <div class="flex flex-wrap justify-start">
-        {{range .Videos}}
-        <div class="w-[calc(25%-8px)] mx-1">
-        <a href="/video/{{.Slug}}">
-            <img class="rounded-md" src="/static/img/video/{{.ID}}/{{.ThumbnailName}}" alt="video thumbnail">
-        </a> 
-            <div class="flex mt-2 h-32">
-                <a class="w-[calc(15%-4px)] mr-1" href="/creator/{{.Creator.Slug}}" >
-                    <img src="/static/img/creator/{{.Creator.ProfileImage}}" class="rounded-full" alt="creator profile image">
-                </a>
-                <div class="w-[calc(95%-4px)]">
-                    <h3 class="font-bold line-clamp-2">
-                    <a href="/video/{{.Slug}}">{{.Title}}</a> 
-                    </h3>
-                    <a href="/creator/{{.Creator.Slug}}">
-                        <p class="font-medium text-base">{{.Creator.Name}}</p>
-                    </a>
-                    <p>{{.UploadDate.Format "Jan 2, 2006"}}</p>
-                </div>
-            </div>
-        </div>
-        {{end}}
+    <div class="mt-10 mb-14 w-full">
+        <h1 class="font-bold text-4xl text-center">
+            The Internet's Sketch<br/> Comedy Database
+        </h1>
+        <button class="block mx-auto my-7 bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition">
+          Browse Videos
+        </button>
     </div>
+
+    {{template "thumbnail-gallery" (dict "Videos" .Videos "Title" "Latest Sketches" "SeeMoreLink" "/categories/latest")}}
+
 {{end}}
 
 {{define "scripts"}}{{end}}

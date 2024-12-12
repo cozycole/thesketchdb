@@ -36,7 +36,7 @@ type Video struct {
 
 type VideoModelInterface interface {
 	Get(id int) (*Video, error)
-	GetAll(offset int) ([]*Video, error)
+	GetAll(limit int) ([]*Video, error)
 	GetByCreator(id int) ([]*Video, error)
 	GetByPerson(id int) ([]*Video, error)
 	GetBySlug(slug string) (*Video, error)
@@ -256,7 +256,7 @@ func (m *VideoModel) GetCastMembers(video_id int) ([]*CastMember, error) {
 }
 
 // TODO: make DRY later
-func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
+func (m *VideoModel) GetAll(limit int) ([]*Video, error) {
 	stmt := `
 		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
 		c.id, c.name, c.page_url, c.slug, c.profile_img
@@ -265,10 +265,9 @@ func (m *VideoModel) GetAll(offset int) ([]*Video, error) {
 		ON v.id = vcr.video_id
 		JOIN creator as c
 		ON vcr.creator_id = c.id
-		LIMIT $1
-		OFFSET $2;
+		LIMIT $1;
 	`
-	rows, err := m.DB.Query(context.Background(), stmt, m.ResultSize, m.ResultSize*offset)
+	rows, err := m.DB.Query(context.Background(), stmt, limit)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
