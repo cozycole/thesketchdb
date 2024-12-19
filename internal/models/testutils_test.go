@@ -12,7 +12,7 @@ import (
 
 func newTestDB(t *testing.T) *pgxpool.Pool {
 	godotenv.Load()
-	cleanup := true
+	cleanup := false
 
 	db, err := pgxpool.New(context.Background(), os.Getenv("TEST_DB_URL"))
 	if err != nil {
@@ -20,14 +20,17 @@ func newTestDB(t *testing.T) *pgxpool.Pool {
 	}
 
 	schemaScript := "../../sql/schema.sql"
-	script, err := os.ReadFile(schemaScript)
-	if err != nil {
-		t.Fatal(err)
-	}
+	triggersScript := "../../sql/triggers.sql"
+	for _, path := range []string{schemaScript, triggersScript} {
+		script, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	_, err = db.Exec(context.Background(), string(script))
-	if err != nil {
-		t.Fatal(err)
+		_, err = db.Exec(context.Background(), string(script))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	if cleanup {

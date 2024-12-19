@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS person (
     description VARCHAR,
     birthdate DATE, 
     profile_img VARCHAR NOT NULL,
+    search_vector tsvector,
     insert_timestamp timestamp DEFAULT now()
 );
 
@@ -18,6 +19,7 @@ CREATE TABLE IF NOT EXISTS character (
     description VARCHAR, 
     img_name VARCHAR,
     insert_timestamp timestamp DEFAULT now(),
+    search_vector tsvector,
     person_id INT REFERENCES person(id)
 );
 
@@ -29,6 +31,7 @@ CREATE TABLE IF NOT EXISTS creator (
     description VARCHAR,
     profile_img VARCHAR, 
     date_established DATE,
+    search_vector tsvector,
     insert_timestamp timestamp DEFAULT now()
 );
 
