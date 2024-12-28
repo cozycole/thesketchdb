@@ -1,0 +1,13 @@
+{
+  "plugins": [
+    "/Users/colet/programming/projects/sketch_website/node_modules/prettier-plugin-go-template/lib/index.js"
+  ],
+  "overrides": [
+    {
+      "files": ["*.html"],
+      "options": {
+        "parser": "go-template"
+      }
+    }
+  ]
+}

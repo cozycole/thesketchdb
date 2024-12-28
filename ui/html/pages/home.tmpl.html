@@ -1,17 +1,19 @@
-{{define "title"}} Home {{end}}
+{{ define "title" }}Home{{ end }}
 
-{{define "main"}}
-    <div class="mt-10 mb-14 w-full">
-        <h1 class="font-bold text-4xl text-center">
-            The Internet's Sketch<br/> Comedy Database
-        </h1>
-        <button class="block mx-auto my-7 bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition">
-          Browse Videos
-        </button>
-    </div>
+{{ define "main" }}
+  <div class="mt-10 mb-14 w-full">
+    <h1 class="font-bold text-4xl text-center">
+      The Internet's Sketch<br />
+      Comedy Database
+    </h1>
+    <button
+      class="block mx-auto my-7 bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition"
+    >
+      Browse Videos
+    </button>
+  </div>
 
-    {{template "thumbnail-gallery" (dict "Videos" .Videos "Title" "Latest Sketches" "SeeMoreLink" "/categories/latest")}}
+  {{ template "thumbnail-gallery" (dict "Videos" .Videos "Title" "Latest Sketches" "SeeMoreLink" "/categories/latest") }}
+{{ end }}
 
-{{end}}
-
-{{define "scripts"}}{{end}}
+{{ define "scripts" }}{{ end }}

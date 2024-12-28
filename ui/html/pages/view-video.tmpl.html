@@ -1,71 +1,68 @@
-{{define "title"}}{{.Video.Title}}{{end}} 
-
-{{define "main"}} 
-
-{{with .Video}}
-<div class="my-3">
-  <h1 class="text-2xl font-bold my-3">{{.Title}}</h1>
-  <div class="flex my-3">
-    <a href="/creator/{{.Creator.Slug}}">
-      <img
-        src="/static/img/creator/{{.Creator.ProfileImage}}"
-        class="rounded-full inline-block w-9"
-        alt="profile-img"
-      />
-    </a>
-    <div>
-      <a class="ml-2" href="/creator/{{.Creator.Slug}}"
-        >{{.Creator.Name}}</a
-      >
-      <time class="block ml-2">{{humanDate .UploadDate}}</time>
-    </div>
-  </div>
-  <a class="my-3" href="{{.URL}}" target="_blank">
-    <img
-      class="rounded-md inline-block"
-      src="/static/img/video/{{.ID}}/{{.ThumbnailName}}"
-      alt="thumbnail"
-    />
-  </a>
-  <div class="my-3 bg-gray-300 px-4">
-    <div class="flex w-full py-4">
-      <img src="/static/img/cast-icon.svg" class="w-6" alt="cast icon" />
-      <h2 class="ml-2 text-xl font-bold">Cast</h2>
-    </div>
-
-    <div class="flex flex-wrap justify-start gap-2.5">
-    {{ $vidId := .ID}}
-    {{range .Cast}} 
-      {{if .Actor.ID}}
-      <div class="relative w-[calc((100%-3*10px)/4)] rounded-md">
-        <a href="/person/{{.Actor.Slug}}">
-
+{{ define "title" }}{{ .Video.Title }}{{ end }}
+{{ define "main" }}
+  {{ with .Video }}
+    <div class="my-3">
+      <h1 class="text-2xl font-bold my-3">{{ .Title }}</h1>
+      <div class="flex my-3">
+        <a href="/creator/{{ .Creator.Slug }}">
           <img
-            class="rounded-md w-full"
-          {{if .ThumbnailName}}
-            src="/static/img/video/{{$vidId}}/{{.ThumbnailName}}"
-          {{else}}
-            src="/static/img/person/{{.Actor.ProfileImg}}"
-          {{end}}
+            src="/static/img/creator/{{ .Creator.ProfileImage }}"
+            class="rounded-full inline-block w-9"
+            alt="profile-img"
           />
         </a>
-        <h3
-          class="absolute bottom-0 left-0 right-0 h-1/5 bg-black bg-opacity-50 text-white"
-        >
-          <a href="/person/{{.Actor.Slug}}" class="hover:underline"
-            >{{.Actor.First}} {{.Actor.Last}}</a
+        <div>
+          <a class="ml-2" href="/creator/{{ .Creator.Slug }}"
+            >{{ .Creator.Name }}</a
           >
-        </h3>
+          <time class="block ml-2">{{ humanDate .UploadDate }}</time>
+        </div>
       </div>
-      {{end}} 
-    {{end}}
+      <a class="my-3" href="{{ .URL }}" target="_blank">
+        <img
+          class="rounded-md inline-block"
+          src="/static/img/video/{{ .ID }}/{{ .ThumbnailName }}"
+          alt="thumbnail"
+        />
+      </a>
+      <div class="my-3 bg-gray-300 px-4">
+        <div class="flex w-full py-4">
+          <img src="/static/img/cast-icon.svg" class="w-6" alt="cast icon" />
+          <h2 class="ml-2 text-xl font-bold">Cast</h2>
+        </div>
+
+        <div class="flex flex-wrap justify-start gap-2.5">
+          {{ $vidId := .ID }}
+          {{ range .Cast }}
+            {{ if .Actor.ID }}
+              <div class="relative w-[calc((100%-3*10px)/4)] rounded-md">
+                <a href="/person/{{ .Actor.Slug }}">
+                  <img
+                    class="rounded-md w-full"
+                    {{ if .ThumbnailName }}
+                      src="/static/img/video/{{ $vidId }}/{{ .ThumbnailName }}"
+                    {{ else }}
+                      src="/static/img/person/{{ .Actor.ProfileImg }}"
+                    {{ end }}
+                  />
+                </a>
+                <h3
+                  class="absolute bottom-0 left-0 right-0 h-1/5 bg-black bg-opacity-50 text-white"
+                >
+                  <a href="/person/{{ .Actor.Slug }}" class="hover:underline"
+                    >{{ .Actor.First }} {{ .Actor.Last }}</a
+                  >
+                </h3>
+              </div>
+            {{ end }}
+          {{ end }}
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-{{end}} 
+  {{ end }}
 
-{{end}} 
+{{ end }}
 
-{{define "scripts"}}
-<script src="/static/js/search.js"></script>
-{{end}}
+{{ define "scripts" }}
+  <script src="/static/js/search.js"></script>
+{{ end }}
