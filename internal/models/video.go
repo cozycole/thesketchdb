@@ -259,11 +259,11 @@ func (m *VideoModel) GetCastMembers(video_id int) ([]*CastMember, error) {
 func (m *VideoModel) GetAll(limit int) ([]*Video, error) {
 	stmt := `
 		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
-		c.id, c.name, c.page_url, c.slug, c.profile_img
+		COALESCE(c.id, 0), COALESCE(c.name, ''), COALESCE(c.page_url,''), COALESCE(c.slug,''), COALESCE(c.profile_img,'')
 		FROM video AS v
-		JOIN video_creator_rel as vcr
+		LEFT JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id
-		JOIN creator as c
+		LEFT JOIN creator as c
 		ON vcr.creator_id = c.id
 		LIMIT $1;
 	`

@@ -24,6 +24,10 @@ COPY public.person (id, slug, first, last, birthdate, profile_img, description) 
 1	kyle-mooney-1	Kyle	Mooney	1984-09-03	kyle-mooney-1.jpg	\N
 2	tim-gilbert-4	Tim	Gilbert	1983-05-13	tim-gilbert-4.jpg	this is the description
 3	james-hartnett-5	James	Hartnett	\N	james-hartnett-5.jpg	\N
+4	test-alpha-4	Test	Alpha	\N	james-hartnett-5.jpg	\N
+5	test-beta-5	Test	Beta	1983-05-13	tim-gilbert-4.jpg	this is the description
+6	test-charlie-6	Test	Charlie	1984-09-03	kyle-mooney-1.jpg	\N
+7	test-delta-6	Test	Delta	1984-09-03	kyle-mooney-1.jpg	\N
 \.
 
 
@@ -33,6 +37,7 @@ COPY public.person (id, slug, first, last, birthdate, profile_img, description) 
 COPY public."character" (id, name, description, img_name, person_id, slug) FROM stdin;
 1	David S. Pumpkins	\N	\N	\N	david-s-pumpkins-1
 2	Dave	\N	\N	\N	dave-2
+3	Test Character	\N	\N	\N	test-char-1
 \.
 
 
@@ -50,8 +55,9 @@ COPY public.creator (id, name, profile_img, page_url, date_established, slug, de
 -- Data for Name: video; Type: TABLE DATA; Schema: public; Owner: colet
 --
 
-COPY public.video (id, title, video_url, thumbnail_name, upload_date, pg_rating, search_vector, insert_timestamp, slug, description) FROM stdin;
-1	Good Pals	https://www.youtube.com/watch?v=6aTqXkZHnQE	good-pals-1.jpg	2008-09-08	PG	'good':1 'pal':2	\N	good-pals-1	
+COPY public.video (id, title, video_url, thumbnail_name, upload_date, pg_rating,  insert_timestamp, slug) FROM stdin;
+1	Good Pals	https://www.youtube.com/watch?v=6aTqXkZHnQE	good-pals-1.jpg	2008-09-08	PG	\N	good-pals-1
+2	Test Video	localhost:4001	grapist-2.jpg	2008-09-08	PG	\N	test-video-2
 \.
 
 
@@ -61,6 +67,7 @@ COPY public.video (id, title, video_url, thumbnail_name, upload_date, pg_rating,
 
 COPY public.video_creator_rel (creator_id, video_id) FROM stdin;
 1	1
+1	2
 \.
 
 

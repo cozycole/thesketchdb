@@ -1,0 +1,63 @@
+<div id="searchResults">
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+    {{ range .SearchResults }}
+      {{ if ne (derefString .Type) "video" }}
+        <div class="mx-1 my-3 flex flex-col items-center">
+          <div class="w-2/3">
+            <a href="/{{ .Type }}/{{ .Slug }}">
+              <img
+                src="/static/img/{{ .Type }}/{{ .Img }}"
+                class="rounded-full border border-gray-300"
+              />
+            </a>
+          </div>
+          <h3 class="mt-4 text-lg font-semibold text-gray-800">
+            <a href="/{{ .Type }}/{{ .Slug }}">{{ .Name }}</a>
+          </h3>
+          <h4>{{ .Type }}</h4>
+        </div>
+      {{ end }}
+    {{ end }}
+  </div>
+  <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+    {{ range .SearchResults }}
+      {{ if eq (derefString .Type) "video" }}
+        <div class="w-full">
+          <a href="/{{ .Type }}/{{ .Slug }}">
+            <img
+              src="/static/img/{{ .Type }}/{{ .ID }}/{{ .Img }}"
+              class="w-full rounded-lg"
+            />
+          </a>
+          <div class="flex w-full">
+            {{ if and .CreatorSlug .CreatorImg }}
+              <div class="w-1/5 mt-2">
+                <a href="/creator/{{ .CreatorSlug }}">
+                  <img
+                    src="/static/img/creator/{{ .CreatorImg }}"
+                    class="w-full rounded-full"
+                    alt="creator profile image"
+                  />
+                </a>
+              </div>
+            {{ end }}
+            <div class="mt-2 ml-2">
+              <h3 class="font-bold line-clamp-2">
+                <a href="/video/{{ .Slug }}">{{ .Name }}</a>
+              </h3>
+              {{ if and .CreatorSlug .Creator }}
+                <a href="/creator/{{ .CreatorSlug }}">
+                  <p class="font-medium text-base">{{ .Creator }}</p>
+                </a>
+              {{ end }}
+              <p>{{ .UploadDate.Format "Jan 2, 2006" }}</p>
+            </div>
+          </div>
+        </div>
+      {{ end }}
+    {{ end }}
+  </div>
+  {{ if eq (len .SearchResults) 0 }}
+    <p><b>No results...</b></p>
+  {{ end }}
+</div>
