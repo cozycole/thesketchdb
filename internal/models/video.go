@@ -47,8 +47,7 @@ type VideoModelInterface interface {
 }
 
 type VideoModel struct {
-	DB         *pgxpool.Pool
-	ResultSize int
+	DB *pgxpool.Pool
 }
 
 func (m *VideoModel) Get(id int) (*Video, error) {
@@ -370,7 +369,7 @@ func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 		LIMIT $2
 		OFFSET $3;
 	`
-	rows, err := m.DB.Query(context.Background(), stmt, search, m.ResultSize, m.ResultSize*offset)
+	rows, err := m.DB.Query(context.Background(), stmt, search, 16, 0)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord

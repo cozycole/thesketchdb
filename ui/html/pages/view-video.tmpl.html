@@ -6,7 +6,7 @@
       <div class="flex my-3">
         <a href="/creator/{{ .Creator.Slug }}">
           <img
-            src="/static/img/creator/{{ .Creator.ProfileImage }}"
+            src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
             class="rounded-full inline-block w-9"
             alt="profile-img"
           />
@@ -21,7 +21,7 @@
       <a class="my-3" href="{{ .URL }}" target="_blank">
         <img
           class="rounded-md inline-block"
-          src="/static/img/video/{{ .ID }}/{{ .ThumbnailName }}"
+          src="{{ $.ImageBaseUrl }}/video/{{ .ID }}/{{ .ThumbnailName }}"
           alt="thumbnail"
         />
       </a>
@@ -40,9 +40,9 @@
                   <img
                     class="rounded-md w-full"
                     {{ if .ThumbnailName }}
-                      src="/static/img/video/{{ $vidId }}/{{ .ThumbnailName }}"
+                      src="{{ $.ImageBaseUrl }}/video/{{ $vidId }}/{{ .ThumbnailName }}"
                     {{ else }}
-                      src="/static/img/person/{{ .Actor.ProfileImg }}"
+                      src="{{ $.ImageBaseUrl }}/person/{{ .Actor.ProfileImg }}"
                     {{ end }}
                   />
                 </a>

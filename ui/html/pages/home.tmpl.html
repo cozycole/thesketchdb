@@ -13,7 +13,7 @@
     </button>
   </div>
 
-  {{ template "thumbnail-gallery" (dict "Videos" .Videos "Title" "Latest Sketches" "SeeMoreLink" "/categories/latest") }}
+  {{ template "thumbnail-gallery" (dict "ImageBaseUrl" .ImageBaseUrl "Videos" .Videos "Title" "Latest Sketches" "SeeMoreLink" "/categories/latest") }}
 {{ end }}
 
 {{ define "scripts" }}{{ end }}

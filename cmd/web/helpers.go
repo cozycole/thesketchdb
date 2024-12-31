@@ -48,7 +48,8 @@ func (app *application) notFound(w http.ResponseWriter) {
 
 func (app *application) newTemplateData(_ *http.Request) *templateData {
 	return &templateData{
-		CurrentYear: time.Now().Year(),
+		CurrentYear:  time.Now().Year(),
+		ImageBaseUrl: app.baseImgUrl,
 		// Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		// IsAuthenticated: app.isAutheticated(r),
 		// CSRFToken:       nosurf.Token(r),

@@ -24,6 +24,7 @@ type templateData struct {
 	Person          *models.Person
 	DropdownResults dropdownSearchResults
 	SearchResults   []*models.SearchResult
+	ImageBaseUrl    string
 	Form            any
 	Flash           string
 	IsAuthenticated bool

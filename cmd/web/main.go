@@ -21,6 +21,7 @@ type application struct {
 	infoLog       *log.Logger
 	templateCache map[string]*template.Template
 	fileStorage   img.FileStorageInterface
+	baseImgUrl    string
 	videos        models.VideoModelInterface
 	creators      models.CreatorModelInterface
 	people        models.PersonModelInterface
@@ -33,6 +34,7 @@ type application struct {
 func main() {
 	addr := flag.String("addr", ":4000", "HTTP network address")
 	debug := flag.Bool("debug", false, "debug mode")
+	testing := flag.Bool("testing", false, "use testing database and img storage")
 
 	flag.Parse()
 
@@ -44,7 +46,29 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	dbpool, err := openDB(os.Getenv("DB_URL"))
+	var dbUrl, imgStoragePath, imgBaseUrl string
+	if *testing {
+		*debug = true
+		infoLog.Println("Testing env selected, debug mode set")
+		dbUrl = os.Getenv("TEST_DB_URL")
+		imgStoragePath = os.Getenv("TEST_IMG_DISK_STORAGE")
+		imgBaseUrl = os.Getenv("TEST_IMG_URL")
+	} else {
+		dbUrl = os.Getenv("DB_URL")
+		imgStoragePath = os.Getenv("IMG_DISK_STORAGE")
+		imgBaseUrl = os.Getenv("BASE_IMG_URL")
+	}
+
+	if dbUrl == "" {
+		errorLog.Fatal("Database URL not defined")
+	}
+
+	if imgStoragePath == "" {
+		errorLog.Fatal("Storage path not defined")
+	}
+	infoLog.Println(imgStoragePath)
+
+	dbpool, err := openDB(dbUrl)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
@@ -56,8 +80,7 @@ func main() {
 	}
 
 	formDecoder := form.NewDecoder()
-	storagePath := os.Getenv("IMG_STORAGE_PATH")
-	fileStorage := img.FileStorage{Path: storagePath}
+	fileStorage := img.FileStorage{Path: imgStoragePath}
 
 	app := &application{
 		errorLog:      errorLog,
@@ -65,18 +88,19 @@ func main() {
 		templateCache: templateCache,
 		formDecoder:   formDecoder,
 		fileStorage:   &fileStorage,
-		videos:        &models.VideoModel{DB: dbpool, ResultSize: 16},
+		videos:        &models.VideoModel{DB: dbpool},
 		creators:      &models.CreatorModel{DB: dbpool},
 		people:        &models.PersonModel{DB: dbpool},
 		characters:    &models.CharacterModel{DB: dbpool},
 		search:        &models.SearchModel{DB: dbpool},
 		debugMode:     *debug,
+		baseImgUrl:    imgBaseUrl,
 	}
 
 	srv := &http.Server{
 		Addr:     *addr,
 		ErrorLog: errorLog,
-		Handler:  app.routes(),
+		Handler:  app.routes("./ui/static/", imgStoragePath, imgBaseUrl),
 	}
 
 	infoLog.Println("Starting server on", *addr)

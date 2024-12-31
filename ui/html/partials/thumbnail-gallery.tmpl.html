@@ -8,14 +8,14 @@
         <a href="/video/{{ .Slug }}">
           <img
             class="rounded-md"
-            src="/static/img/video/{{ .ID }}/{{ .ThumbnailName }}"
+            src="{{ $.ImageBaseUrl }}/video/{{ .ID }}/{{ .ThumbnailName }}"
             alt="video thumbnail"
           />
         </a>
         <div class="flex mt-2 h-32">
           <a class="w-[calc(15%-4px)] mr-1" href="/creator/{{ .Creator.Slug }}">
             <img
-              src="/static/img/creator/{{ .Creator.ProfileImage }}"
+              src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
               class="rounded-full"
               alt="creator profile image"
             />

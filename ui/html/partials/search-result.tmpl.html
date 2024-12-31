@@ -6,7 +6,7 @@
           <div class="w-2/3">
             <a href="/{{ .Type }}/{{ .Slug }}">
               <img
-                src="/static/img/{{ .Type }}/{{ .Img }}"
+                src="{{ $.ImageBaseUrl }}/{{ .Type }}/{{ .Img }}"
                 class="rounded-full border border-gray-300"
               />
             </a>
@@ -19,22 +19,22 @@
       {{ end }}
     {{ end }}
   </div>
-  <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+  <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
     {{ range .SearchResults }}
       {{ if eq (derefString .Type) "video" }}
         <div class="w-full">
           <a href="/{{ .Type }}/{{ .Slug }}">
             <img
-              src="/static/img/{{ .Type }}/{{ .ID }}/{{ .Img }}"
+              src="{{ $.ImageBaseUrl }}/{{ .Type }}/{{ .ID }}/{{ .Img }}"
               class="w-full rounded-lg"
             />
           </a>
           <div class="flex w-full">
             {{ if and .CreatorSlug .CreatorImg }}
-              <div class="w-1/5 mt-2">
+              <div class="w-14 mt-2">
                 <a href="/creator/{{ .CreatorSlug }}">
                   <img
-                    src="/static/img/creator/{{ .CreatorImg }}"
+                    src="{{ $.ImageBaseUrl }}/creator/{{ .CreatorImg }}"
                     class="w-full rounded-full"
                     alt="creator profile image"
                   />

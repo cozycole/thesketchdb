@@ -7,12 +7,15 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *application) routes() http.Handler {
+func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) http.Handler {
 	router := chi.NewRouter()
 
-	dir := "./ui/static/"
-	fs := http.FileServer(http.Dir(dir))
+	fs := http.FileServer(http.Dir(staticRoute))
 	router.Handle("/static/*", http.StripPrefix("/static/", fs))
+
+	imgFs := http.FileServer(http.Dir(imageStorageRoot))
+	router.Handle("/images/*", http.StripPrefix(imageUrl, imgFs))
+
 	router.HandleFunc("/", app.home)
 
 	router.HandleFunc("/ping", ping)
