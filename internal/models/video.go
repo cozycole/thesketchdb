@@ -43,7 +43,8 @@ type VideoModelInterface interface {
 	Insert(video *Video) error
 	InsertVideoCreatorRelation(vidId, creatorId int) error
 	InsertVideoPersonRelation(vidId, personId, position int, characterId *int, imgName string) error
-	Search(search string, offset int) ([]*Video, error)
+	Search(search string, limit, offset int) ([]*Video, error)
+	SearchCount(query string) (int, error)
 }
 
 type VideoModel struct {
@@ -356,20 +357,28 @@ func (m *VideoModel) InsertVideoPersonRelation(vidId, personId, position int, ch
 	return err
 }
 
-func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
+func (m *VideoModel) Search(query string, limit, offset int) ([]*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.upload_date,
-		c.id, c.name, c.profile_img
-		FROM video AS v
+		SELECT v.id, 
+			v.title AS name, 
+			v.slug, 
+			v.thumbnail_name AS img, 
+			v.upload_date, 
+			c.name AS creator, 
+			c.slug AS creator_slug, 
+			c.profile_img AS creator_img,
+			ts_rank(v.search_vector, plainto_tsquery('english', $1)) AS rank
+		FROM video as v
 		LEFT JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id
 		LEFT JOIN creator as c
 		ON vcr.creator_id = c.id
-		WHERE search_vector @@ to_tsquery('english', $1)
+		WHERE v.search_vector @@ plainto_tsquery('english', $1)
+		ORDER BY rank DESC, name ASC
 		LIMIT $2
 		OFFSET $3;
 	`
-	rows, err := m.DB.Query(context.Background(), stmt, search, 16, 0)
+	rows, err := m.DB.Query(context.Background(), stmt, query, limit, offset)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -382,16 +391,39 @@ func (m *VideoModel) Search(search string, offset int) ([]*Video, error) {
 	videos := []*Video{}
 	for rows.Next() {
 		v := &Video{}
-		err := rows.Scan(&v.ID, &v.Title, &v.URL, &v.ThumbnailName)
+		c := &Creator{}
+		err := rows.Scan(
+			&v.ID, &v.Title, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&c.Name, &c.Slug, &c.ProfileImage, nil,
+		)
 		if err != nil {
 			return nil, err
 		}
+		v.Creator = c
 		videos = append(videos, v)
-
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 	return videos, nil
+}
+
+func (m *VideoModel) SearchCount(query string) (int, error) {
+	stmt := `
+		SELECT count(*)
+		FROM video as v
+		WHERE v.search_vector @@ plainto_tsquery('english', $1)
+	`
+	var count int
+	row := m.DB.QueryRow(context.Background(), stmt, query)
+	err := row.Scan(&count)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+	return count, nil
 }

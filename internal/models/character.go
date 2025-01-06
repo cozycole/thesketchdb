@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,6 +21,8 @@ type Character struct {
 type CharacterModelInterface interface {
 	Search(search string) ([]*Character, error)
 	Exists(id int) (bool, error)
+	SearchCount(query string) (int, error)
+	VectorSearch(query string, limit, offset int) ([]*ProfileResult, error)
 }
 
 type CharacterModel struct {
@@ -70,4 +73,64 @@ func (m *CharacterModel) Exists(id int) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func (m *CharacterModel) VectorSearch(query string, limit, offset int) ([]*ProfileResult, error) {
+	fmt.Printf("Got here %s %d %d\n", query, limit, offset)
+	stmt := `
+		SELECT id, name, img_name, slug, ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
+		FROM character
+		WHERE search_vector @@ plainto_tsquery('english', $1)
+		ORDER BY rank desc
+		LIMIT $2
+		OFFSET $3;
+	`
+
+	rows, err := m.DB.Query(context.Background(), stmt, query, limit, offset)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	results := []*ProfileResult{}
+	for rows.Next() {
+		pr := &ProfileResult{}
+		err := rows.Scan(
+			&pr.ID, &pr.Name, &pr.Img, &pr.Slug, &pr.Rank,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		resType := "character"
+		pr.Type = &resType
+
+		results = append(results, pr)
+	}
+
+	return results, nil
+}
+
+func (m *CharacterModel) SearchCount(query string) (int, error) {
+	stmt := `
+		SELECT count(*)
+		FROM character as c
+		WHERE c.search_vector @@ plainto_tsquery('english', $1)
+	`
+	var count int
+	row := m.DB.QueryRow(context.Background(), stmt, query)
+	err := row.Scan(&count)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+	return count, nil
 }

@@ -26,9 +26,14 @@ type application struct {
 	creators      models.CreatorModelInterface
 	people        models.PersonModelInterface
 	characters    models.CharacterModelInterface
-	search        models.SearchModelInterface
+	profile       models.ProfileModelInterface
 	debugMode     bool
 	formDecoder   *form.Decoder
+	settings      settings
+}
+
+type settings struct {
+	pageSize int
 }
 
 func main() {
@@ -92,9 +97,12 @@ func main() {
 		creators:      &models.CreatorModel{DB: dbpool},
 		people:        &models.PersonModel{DB: dbpool},
 		characters:    &models.CharacterModel{DB: dbpool},
-		search:        &models.SearchModel{DB: dbpool},
+		profile:       &models.ProfileModel{DB: dbpool},
 		debugMode:     *debug,
 		baseImgUrl:    imgBaseUrl,
+		settings: settings{
+			pageSize: 16,
+		},
 	}
 
 	srv := &http.Server{

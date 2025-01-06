@@ -23,7 +23,7 @@ type templateData struct {
 	Creator         *models.Creator
 	Person          *models.Person
 	DropdownResults dropdownSearchResults
-	SearchResults   []*models.SearchResult
+	SearchResults   *SearchResult
 	ImageBaseUrl    string
 	Form            any
 	Flash           string

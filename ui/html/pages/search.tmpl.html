@@ -1,20 +1,99 @@
 {{ define "title" }}Search Sketches{{ end }}
 
 {{ define "main" }}
-  <div class="w-full flex items-center justify-center p-4 bg-gray-100">
+  <div class="w-full flex justify-between items-center my-2">
     <input
-      type="search"
       id="searchInput"
+      type="search"
+      name="q"
+      value="{{ .SearchResults.Query }}"
       placeholder="Find videos, actors and characters"
-      class="w-full max-w-md py-2 px-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-      hx-post="/search"
-      hx-params="query"
+      class="htmxSearchPage flex-grow max-w-md min-w-0 p-1 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+      hx-get="/search"
       hx-trigger="keydown[key=='Enter']"
-      hx-swap="outerHTML"
+      hx-swap="innerHTML scroll:top"
       hx-target="#searchResults"
     />
+    <div class="flex flex-nowrap gap-2 w-auto p-2">
+      <button class="inline-block p-2 rounded-md hover:bg-gray-300">
+        <span class="hidden sm:inline mr-1 text-sm font-bold">Relevance</span>
+        <svg class="inline w-7" viewBox="0 0 24 24">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M3 5a1 1 0 0 1 1-1h16a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Zm0 7a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Zm14-1a1 1 0 0 1 1 1v5.586l1.293-1.293a1 1 0 0 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L16 17.586V12a1 1 0 0 1 1-1ZM3 19a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Z" fill="currentColor"></path>
+        </svg>
+      </button>
+      <div class="relative">
+        <button class="filterMenuToggle inline-block p-2 rounded-md hover:bg-gray-300">
+          <span class="hidden sm:inline mr-1 text-sm font-bold">Filters</span>
+          <svg class="inline w-7" viewBox="0 0 24 24">
+            <g fill-rule="evenodd" clip-rule="evenodd" fill="currentColor">
+              <path d="M13 8a1 1 0 1 1 0-2h7a1 1 0 1 1 0 2h-7Zm-1 9a1 1 0 0 1-1 1H4a1 1 0 1 1 0-2h7a1 1 0 0 1 1 1ZM6.5 10.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0-5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM17.5 20.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0-5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"></path>
+            </g>
+          </svg>
+        </button>
+        <menu id="filterMenu" class="hidden absolute left-auto right-0 w-56 bg-white p-4 rounded-md">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold">Fitlers</h3> 
+            <svg class="filterMenuToggle w-6 p-1 rounded-md hover:bg-gray-200 hover:cursor-pointer" viewBox="0 0 24 24" focusable="false">
+              <path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z" fill="currentColor"></path>
+            </svg>
+          </div>
+          <div class="bg-gray-100 p-2">
+            <div class="flex justify-between items-center">
+              <h4 class="font-bold">Type</h4>
+              <svg id="typeDropUp" class="w-5 hover:cursor-pointer" viewBox="0 0 24 24" focusable="false">
+                <path d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z" fill="currentColor"></path>
+              </svg>
+              <svg id="typeDropDown" class="hidden w-5 hover:cursor-pointer" viewBox="0 0 24 24" focusable="false">
+                <path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a.998.998 0 0 0 1.42 0L17 10.59a.997.997 0 0 0 .219-1.095.998.998 0 0 0-.22-.325Z" fill="currentColor"></path>
+              </svg>
+            </div>
+            <div id="typeMenu" class="mt-2">
+              <div>
+                <input type="radio" name="type" value="video" checked="true"
+                    hx-get="/search?q={{ $.SearchResults.Query }}&type=video"
+                    hx-swap="innerHTML"
+                    hx-target="#searchResults"
+                >
+                <label for="video">Videos</label>
+              </div>
+              <div>
+                <input type="radio" name="type" value="person"
+                    hx-get="/search?q={{ $.SearchResults.Query }}&type=person"
+                    hx-swap="innerHTML"
+                    hx-target="#searchResults"
+              >
+                <label for="person">People</label>
+              </div>
+              <div>
+                <input type="radio" name="type" value="character"
+                    hx-get="/search?q={{ $.SearchResults.Query }}&type=character"
+                    hx-swap="innerHTML"
+                    hx-target="#searchResults"
+              >
+                <label for="character">Characters</label>
+              </div>
+              <div>
+                <input type="radio" name="type" value="creator"
+                    hx-get="/search?q={{ $.SearchResults.Query }}&type=creator"
+                    hx-swap="innerHTML"
+                    hx-target="#searchResults"
+                >
+                <label for="creator">Creators</label>
+              </div>
+              <div>
+                <input type="radio" name="type" value="user">
+                <label for="user">Users</label>
+              </div>
+            </div>
+          </div>
+        </menu>
+      </div>
+        
+    </div>
   </div>
-  <div id="searchResults"></div>
+  <div id="searchResults" class="flex flex-col justify-between grow">
+    {{ template "search-result" . }}
+  </div>
 {{ end }}
 
 {{ define "scripts" }}

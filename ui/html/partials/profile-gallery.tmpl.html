@@ -1,0 +1,21 @@
+{{ define "profile-gallery"}}
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+    {{ range .Profiles }}
+        <div class="mx-1 my-3 flex flex-col items-center">
+          <div class="w-2/3">
+            <a href="/{{ .Type }}/{{ .Slug }}">
+              <img
+                src="{{ $.ImageBaseUrl }}/{{ .Type }}/{{ .Img }}"
+                class="rounded-full border border-gray-300"
+                onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+              />
+            </a>
+          </div>
+          <h3 class="mt-4 text-lg font-semibold text-gray-800">
+            <a href="/{{ .Type }}/{{ .Slug }}">{{ .Name }}</a>
+          </h3>
+          <h4>{{ .Type }}</h4>
+        </div>
+    {{ end }}
+  </div>
+{{ end }}

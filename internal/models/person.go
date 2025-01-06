@@ -25,6 +25,8 @@ type PersonModelInterface interface {
 	Exists(id int) (bool, error)
 	Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, string, error)
 	Search(query string) ([]*Person, error)
+	VectorSearch(query string) ([]*ProfileResult, error)
+	SearchCount(query string) (int, error)
 }
 
 type PersonModel struct {
@@ -140,4 +142,68 @@ func (m *PersonModel) Get(id int) (*Person, error) {
 	}
 
 	return p, nil
+}
+
+func (m *PersonModel) VectorSearch(query string) ([]*ProfileResult, error) {
+	stmt := `
+		SELECT id, first, last, profile_img, birthdate, slug, ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
+		FROM person
+		WHERE search_vector @@ plainto_tsquery('english', $1)
+		ORDER BY rank desc
+	`
+
+	rows, err := m.DB.Query(context.Background(), stmt, query)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	results := []*ProfileResult{}
+	for rows.Next() {
+		pr := &ProfileResult{}
+		var first, last *string
+		err := rows.Scan(
+			&pr.ID, &first, &last, &pr.Img, &pr.Date, &pr.Slug, &pr.Rank,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		name := *first + " " + *last
+		resType := "person"
+		pr.Name = &name
+		pr.Type = &resType
+
+		results = append(results, pr)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (m *PersonModel) SearchCount(query string) (int, error) {
+	stmt := `
+		SELECT count(*)
+		FROM person
+		WHERE search_vector @@ plainto_tsquery('english', $1)
+	`
+	var count int
+	row := m.DB.QueryRow(context.Background(), stmt, query)
+	err := row.Scan(&count)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+	return count, nil
 }

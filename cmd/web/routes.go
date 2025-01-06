@@ -13,6 +13,9 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 	fs := http.FileServer(http.Dir(staticRoute))
 	router.Handle("/static/*", http.StripPrefix("/static/", fs))
 
+	app.infoLog.Printf("Starting image file server rooted at %s\n", imageStorageRoot)
+	app.infoLog.Printf("Image Url: %s\n", imageUrl)
+
 	imgFs := http.FileServer(http.Dir(imageStorageRoot))
 	router.Handle("/images/*", http.StripPrefix(imageUrl, imgFs))
 
@@ -20,8 +23,7 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 	router.HandleFunc("/ping", ping)
 
-	router.Get("/search", app.searchPage)
-	router.Post("/search", app.searchPost)
+	router.Get("/search", app.search)
 
 	router.Get("/video/{slug}", app.videoView)
 	router.Get("/video/add", app.videoAdd)

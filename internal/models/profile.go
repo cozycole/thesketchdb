@@ -9,30 +9,28 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Logic for comprehensive search of all resources
+// A profile a generic struct that represents
+// either a person, character, creator or user
 
-type SearchResult struct {
-	Type        *string
-	ID          *int
-	Name        *string
-	Slug        *string
-	Img         *string
-	UploadDate  *time.Time
-	Creator     *string
-	CreatorSlug *string
-	CreatorImg  *string
-	Rank        *float32
+type ProfileResult struct {
+	Type *string
+	ID   *int
+	Name *string
+	Slug *string
+	Img  *string
+	Date *time.Time
+	Rank *float32
 }
 
-type SearchModel struct {
+type ProfileModel struct {
 	DB *pgxpool.Pool
 }
 
-type SearchModelInterface interface {
-	Search(query string) ([]*SearchResult, error)
+type ProfileModelInterface interface {
+	Search(query string) ([]*ProfileResult, error)
 }
 
-func (m *SearchModel) Search(query string) ([]*SearchResult, error) {
+func (m *ProfileModel) Search(query string) ([]*ProfileResult, error) {
 	stmt := `
 	SELECT 'person' AS type, 
        id, 
@@ -76,26 +74,6 @@ func (m *SearchModel) Search(query string) ([]*SearchResult, error) {
 		ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
 	FROM creator
 	WHERE search_vector @@ plainto_tsquery('english', $1)
-
-	UNION ALL
-
-	SELECT 'video' AS type, 
-		v.id, 
-		v.title AS name, 
-		v.slug, 
-		v.thumbnail_name AS img, 
-		v.upload_date, 
-		c.name AS creator, 
-		c.slug AS creator_slug, 
-		c.profile_img AS creator_img,
-		ts_rank(v.search_vector, plainto_tsquery('english', $1)) AS rank
-	FROM video as v
-	LEFT JOIN video_creator_rel as vcr
-	ON v.id = vcr.video_id
-	LEFT JOIN creator as c
-	ON vcr.creator_id = c.id
-	WHERE v.search_vector @@ plainto_tsquery('english', $1)
-	ORDER BY rank DESC, name ASC;
 	`
 
 	rows, err := m.DB.Query(context.Background(), stmt, query)
@@ -109,12 +87,11 @@ func (m *SearchModel) Search(query string) ([]*SearchResult, error) {
 	}
 	defer rows.Close()
 
-	results := []*SearchResult{}
+	results := []*ProfileResult{}
 	for rows.Next() {
-		sr := &SearchResult{}
+		sr := &ProfileResult{}
 		err := rows.Scan(
-			&sr.Type, &sr.ID, &sr.Name, &sr.Slug, &sr.Img, &sr.UploadDate,
-			&sr.Creator, &sr.CreatorSlug, &sr.CreatorImg, &sr.Rank,
+			&sr.Type, &sr.ID, &sr.Name, &sr.Slug, &sr.Img, &sr.Rank,
 		)
 		if err != nil {
 			return nil, err

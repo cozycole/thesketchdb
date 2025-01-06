@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 )
 
 var maxFileNameLength = 50
+var pageSize = 16
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	videos, err := app.videos.GetAll(8)
@@ -27,8 +30,39 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "home.tmpl.html", "base", data)
 }
 
-func (app *application) searchPage(w http.ResponseWriter, r *http.Request) {
+func (app *application) search(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	q, _ := url.QueryUnescape(r.Form.Get("q"))
+	htmxReq := r.Header.Get("HX-Request")
+	page := r.Form.Get("page")
+	assetType := r.Form.Get("type")
+	if assetType == "" {
+		assetType = "video"
+	}
+
+	currentPage, err := strconv.Atoi(page)
+	if err != nil || currentPage < 1 {
+		currentPage = 1
+	}
+
+	results, err := app.getSearchResults(q, currentPage, assetType)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	data := app.newTemplateData(r)
+	data.SearchResults = results
+	app.infoLog.Printf("%+v", results)
+
+	w.Header().Add("HX-Push-Url", fmt.Sprintf("/search?q=%s&type=%s&page=%d", url.QueryEscape(q), assetType, currentPage))
+
+	if htmxReq != "" {
+		app.render(w, http.StatusOK, "search-result.tmpl.html", "search-result", data)
+		return
+	}
+
 	app.render(w, http.StatusOK, "search.tmpl.html", "base", data)
 }
 
@@ -366,24 +400,6 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 	data.DropdownResults = results
 
 	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
-}
-
-func (app *application) searchPost(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-
-	q := r.Form.Get("query")
-	results, err := app.search.Search(q)
-	if err != nil {
-		if !errors.Is(err, models.ErrNoRecord) {
-			app.serverError(w, err)
-		}
-		return
-	}
-
-	data := app.newTemplateData(r)
-	data.SearchResults = results
-
-	app.render(w, http.StatusOK, "search-result.tmpl.html", "", data)
 }
 
 func ping(w http.ResponseWriter, _ *http.Request) {

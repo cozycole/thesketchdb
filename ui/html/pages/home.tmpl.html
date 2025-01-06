@@ -13,7 +13,13 @@
     </button>
   </div>
 
-  {{ template "thumbnail-gallery" (dict "ImageBaseUrl" .ImageBaseUrl "Videos" .Videos "Title" "Latest Sketches" "SeeMoreLink" "/categories/latest") }}
+  <h2 class="font-bold text-xl my-3">
+    <a href="/categories/latest" class="hover:underline">Latest Sketches</a>
+  </h2>
+  {{ template "thumbnail-gallery" . }}
+  <div class="flex justify-start">
+    <a class="text-left" href="/categories/latest">See More >></a>
+  </div>
 {{ end }}
 
 {{ define "scripts" }}{{ end }}
