@@ -231,7 +231,7 @@ func convertFormToVideo(form *addVideoForm) (models.Video, error) {
 
 	return models.Video{
 		Title:         form.Title,
-		URL:           form.URL,
+		URL:           &form.URL,
 		Slug:          slug,
 		ThumbnailFile: form.Thumbnail,
 		Rating:        form.Rating,
@@ -240,4 +240,3 @@ func convertFormToVideo(form *addVideoForm) (models.Video, error) {
 		Cast:          cast,
 	}, nil
 }
-

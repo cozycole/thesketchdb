@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS creator (
 CREATE TABLE IF NOT EXISTS video (
     id SERIAL PRIMARY KEY,
     title VARCHAR NOT NULL,
-    video_url VARCHAR NOT NULL,
+    video_url VARCHAR,
+    youtube_id VARCHAR, 
     slug VARCHAR NOT NULL,
     thumbnail_name VARCHAR,
     description VARCHAR,

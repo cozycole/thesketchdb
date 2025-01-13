@@ -1,0 +1,34 @@
+{{ define "cast-gallery"}}
+  <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+    {{ range .Video.Cast }}
+      {{ if .Actor.ID }}
+        <div class="relative w-full rounded-md">
+          <a href="/person/{{ .Actor.Slug }}">
+            <img
+              class="rounded-md w-full"
+              {{ if .ThumbnailName }}
+                src="{{ $.ImageBaseUrl }}/video/{{ $.ID }}/{{ .ThumbnailName }}"
+              {{ else }}
+                src="{{ $.ImageBaseUrl }}/person/{{ .Actor.ProfileImg }}"
+              {{ end }}
+            />
+          </a>
+            <div class="absolute bottom-0 left-0 right-0 px-2 pt-2 pb-1 bg-black bg-opacity-50 ">
+              {{ if .Character.ID }}
+                <h3 class="text-white hover:underline ">
+                  <a href="/person/{{ .Character.Slug }}"> {{ .Character.Name }}</a> 
+                </h3>
+                <h4 class=" text-white hover:underline" >
+                  <a href="/person/{{ .Actor.Slug }}" class="text-sm"> {{ .Actor.First }} {{ .Actor.Last }} </a>
+                </h4>
+              {{ else }}
+                <h3 class="text-white hover:underline">
+                  <a href="/person/{{ .Actor.Slug }}"> {{ .Actor.First }} {{ .Actor.Last }} </a>
+                </h3>
+              {{ end }}
+          </div>
+        </div>
+      {{ end }}
+    {{ end }}
+  </div>
+{{ end }}

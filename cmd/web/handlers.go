@@ -36,14 +36,14 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 	q, _ := url.QueryUnescape(r.Form.Get("q"))
 	htmxReq := r.Header.Get("HX-Request")
 	page := r.Form.Get("page")
-	assetType := r.Form.Get("type")
-	if assetType == "" {
-		assetType = "video"
-	}
-
 	currentPage, err := strconv.Atoi(page)
 	if err != nil || currentPage < 1 {
 		currentPage = 1
+	}
+
+	assetType := r.Form.Get("type")
+	if assetType == "" {
+		assetType = "video"
 	}
 
 	results, err := app.getSearchResults(q, currentPage, assetType)
@@ -79,6 +79,10 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
+	if video.YoutubeID != nil && *video.YoutubeID != "" {
+		videoUrl := fmt.Sprintf("https://www.youtube.com/watch?v=%s", *video.YoutubeID)
+		video.URL = &videoUrl
+	}
 	data.Video = video
 
 	app.render(w, http.StatusOK, "view-video.tmpl.html", "base", data)
