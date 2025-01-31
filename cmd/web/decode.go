@@ -15,7 +15,14 @@ import (
 // see ~/go/pkg/mod/github.com/go-playground/form/v4@v4.2.1/README.md
 // for doc on the form decoder
 func (app *application) decodePostForm(r *http.Request, dst any) error {
-	err := r.ParseMultipartForm(10 << 20)
+	var err error
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "multipart/form-data" {
+		err = r.ParseMultipartForm(10 << 20)
+	} else {
+		err = r.ParseForm()
+	}
+
 	if err != nil {
 		return err
 	}
@@ -31,34 +38,37 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 		return err
 	}
 
-	// checks if struct tag with key "img" exists
-	// If it does, we take the value of the struct tag and find any
-	// files headers within r.MultipartForm.File with key that either equals it
-	// (if the field with the struct is of type *multipart.FileHeader)
-	// or prefixed with it (if field is of type []*multipart.FileHeader and the form files
-	// are keyed with tag_value[x], see getIndexedValuesWithGaps for example)
-	// The file headers are then set as the value in the form struct
-	v := reflect.ValueOf(dst).Elem()
-	structType := v.Type()
-	fmt.Println(structType)
+	if contentType == "multipart/form-data" {
 
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		fieldType := structType.Field(i)
+		// checks if struct tag with key "img" exists
+		// If it does, we take the value of the struct tag and find any
+		// files headers within r.MultipartForm.File with key that either equals it
+		// (if the field with the struct is of type *multipart.FileHeader)
+		// or prefixed with it (if field is of type []*multipart.FileHeader and the form files
+		// are keyed with tag_value[x], see getIndexedValuesWithGaps for example)
+		// The file headers are then set as the value in the form struct
+		v := reflect.ValueOf(dst).Elem()
+		structType := v.Type()
+		fmt.Println(structType)
 
-		if tagValue := fieldType.Tag.Get("img"); tagValue != "" {
-			if field.Kind() == reflect.Slice {
-				fileHeaders, err := getIndexedValuesWithGaps(r.MultipartForm.File, tagValue)
-				if err != nil {
-					return err
-				}
+		for i := 0; i < v.NumField(); i++ {
+			field := v.Field(i)
+			fieldType := structType.Field(i)
 
-				field.Set(reflect.ValueOf(fileHeaders))
-			} else {
-				fileHeaders, ok := r.MultipartForm.File[tagValue]
-				if ok && len(fileHeaders) > 0 {
-					newVal := reflect.ValueOf(fileHeaders[0])
-					field.Set(newVal)
+			if tagValue := fieldType.Tag.Get("img"); tagValue != "" {
+				if field.Kind() == reflect.Slice {
+					fileHeaders, err := getIndexedValuesWithGaps(r.MultipartForm.File, tagValue)
+					if err != nil {
+						return err
+					}
+
+					field.Set(reflect.ValueOf(fileHeaders))
+				} else {
+					fileHeaders, ok := r.MultipartForm.File[tagValue]
+					if ok && len(fileHeaders) > 0 {
+						newVal := reflect.ValueOf(fileHeaders[0])
+						field.Set(newVal)
+					}
 				}
 			}
 		}

@@ -4,11 +4,14 @@ package validator
 import (
 	"mime/multipart"
 	"net/http"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
 )
+
+var EmailRegEx = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 type Validator struct {
 	NonFieldErrors []string
@@ -57,6 +60,14 @@ func ValidDate(value string) bool {
 
 func MaxChars(value string, n int) bool {
 	return utf8.RuneCountInString(value) <= n
+}
+
+func MinChars(value string, n int) bool {
+	return utf8.RuneCountInString(value) >= n
+}
+
+func Matches(value string, rx *regexp.Regexp) bool {
+	return rx.MatchString(value)
 }
 
 func IsMime(file multipart.File, mtypes ...string) bool {

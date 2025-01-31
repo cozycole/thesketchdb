@@ -184,6 +184,33 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 	// Might want to check dimension ratios to make sure they work?
 }
 
+type userSignupForm struct {
+	Username            string `form:"username"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateUserSignupForm(form *userSignupForm) {
+	form.CheckField(validator.NotBlank(form.Username), "username", "Field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Email), "email", "Field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRegEx), "email", "Please enter a valid email")
+	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "Must be 8-20 chararacters")
+	form.CheckField(validator.MaxChars(form.Password, 20), "password", "Must be 8-20 chararacters")
+}
+
+type userLoginForm struct {
+	Username            string `form:"username"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateUserLoginForm(form *userLoginForm) {
+	form.CheckField(validator.NotBlank(form.Username), "username", "Field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
+}
+
 func (f *addVideoForm) IsEmptyActorInput(index int) bool {
 	switch {
 	case f.PersonIDs[index] != 0:

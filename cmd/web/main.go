@@ -7,29 +7,33 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
-	"sketchdb.cozycole.net/internal/img"
-	"sketchdb.cozycole.net/internal/models"
-
+	"github.com/alexedwards/scs/pgxstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"sketchdb.cozycole.net/internal/img"
+	"sketchdb.cozycole.net/internal/models"
 )
 
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	templateCache map[string]*template.Template
-	fileStorage   img.FileStorageInterface
-	baseImgUrl    string
-	videos        models.VideoModelInterface
-	creators      models.CreatorModelInterface
-	people        models.PersonModelInterface
-	characters    models.CharacterModelInterface
-	profile       models.ProfileModelInterface
-	debugMode     bool
-	formDecoder   *form.Decoder
-	settings      settings
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	templateCache  map[string]*template.Template
+	fileStorage    img.FileStorageInterface
+	baseImgUrl     string
+	videos         models.VideoModelInterface
+	creators       models.CreatorModelInterface
+	people         models.PersonModelInterface
+	characters     models.CharacterModelInterface
+	profile        models.ProfileModelInterface
+	users          models.UserModelInterface
+	sessionManager *scs.SessionManager
+	debugMode      bool
+	formDecoder    *form.Decoder
+	settings       settings
 }
 
 type settings struct {
@@ -71,13 +75,17 @@ func main() {
 	if imgStoragePath == "" {
 		errorLog.Fatal("Storage path not defined")
 	}
-	infoLog.Println(imgStoragePath)
 
 	dbpool, err := openDB(dbUrl)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
 	defer dbpool.Close()
+
+	sessionManager := scs.New()
+	sessionManager.Store = pgxstore.New(dbpool)
+	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Cookie.Secure = true
 
 	templateCache, err := newTemplateCache()
 	if err != nil {
@@ -86,20 +94,21 @@ func main() {
 
 	formDecoder := form.NewDecoder()
 	fileStorage := img.FileStorage{Path: imgStoragePath}
-
 	app := &application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		templateCache: templateCache,
-		formDecoder:   formDecoder,
-		fileStorage:   &fileStorage,
-		videos:        &models.VideoModel{DB: dbpool},
-		creators:      &models.CreatorModel{DB: dbpool},
-		people:        &models.PersonModel{DB: dbpool},
-		characters:    &models.CharacterModel{DB: dbpool},
-		profile:       &models.ProfileModel{DB: dbpool},
-		debugMode:     *debug,
-		baseImgUrl:    imgBaseUrl,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		templateCache:  templateCache,
+		formDecoder:    formDecoder,
+		fileStorage:    &fileStorage,
+		videos:         &models.VideoModel{DB: dbpool},
+		creators:       &models.CreatorModel{DB: dbpool},
+		people:         &models.PersonModel{DB: dbpool},
+		characters:     &models.CharacterModel{DB: dbpool},
+		profile:        &models.ProfileModel{DB: dbpool},
+		users:          &models.UserModel{DB: dbpool},
+		sessionManager: sessionManager,
+		debugMode:      *debug,
+		baseImgUrl:     imgBaseUrl,
 		settings: settings{
 			pageSize: 16,
 		},

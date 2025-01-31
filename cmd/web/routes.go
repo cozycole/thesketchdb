@@ -3,42 +3,69 @@ package main
 import (
 	"net/http"
 
-	// "sketchdb.cozycole.net/ui"
 	"github.com/go-chi/chi/v5"
 )
 
 func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) http.Handler {
-	router := chi.NewRouter()
+	r := chi.NewRouter()
 
-	fs := http.FileServer(http.Dir(staticRoute))
-	router.Handle("/static/*", http.StripPrefix("/static/", fs))
+	r.Group(func(r chi.Router) {
+		fs := http.FileServer(http.Dir(staticRoute))
+		r.Handle("/static/*", http.StripPrefix("/static/", fs))
 
-	app.infoLog.Printf("Starting image file server rooted at %s\n", imageStorageRoot)
-	app.infoLog.Printf("Image Url: %s\n", imageUrl)
+		app.infoLog.Printf("Starting image file server rooted at %s\n", imageStorageRoot)
+		app.infoLog.Printf("Image Url: %s\n", imageUrl)
 
-	imgFs := http.FileServer(http.Dir(imageStorageRoot))
-	router.Handle("/images/*", http.StripPrefix(imageUrl, imgFs))
+		imgFs := http.FileServer(http.Dir(imageStorageRoot))
+		r.Handle("/images/*", http.StripPrefix(imageUrl, imgFs))
+	})
 
-	router.HandleFunc("/", app.home)
+	// public routes
+	r.Group(func(r chi.Router) {
+		r.Use(
+			app.sessionManager.LoadAndSave,
+			app.logRequest,
+			app.authenticate,
+		)
 
-	router.HandleFunc("/ping", ping)
+		r.HandleFunc("/ping", ping)
 
-	router.Get("/search", app.search)
+		r.HandleFunc("/", app.home)
+		r.Get("/video/{slug}", app.videoView)
+		r.Get("/creator/{slug}", app.creatorView)
+		r.Get("/person/{slug}", app.personView)
+		r.Get("/person/search", app.personSearch)
+		r.Get("/character/search", app.characterSearch)
+		r.Get("/user/{username}", app.userView)
 
-	router.Get("/video/{slug}", app.videoView)
-	router.Get("/video/add", app.videoAdd)
-	router.Post("/video/add", app.videoAddPost)
+		r.Get("/search", app.search)
 
-	router.Get("/creator/{slug}", app.creatorView)
-	router.Get("/creator/add", app.creatorAdd)
-	router.Post("/creator/add", app.creatorAddPost)
+		r.Get("/signup", app.userSignup)
+		r.Post("/signup", app.userSignupPost)
+		r.Get("/login", app.userLogin)
+		r.Post("/login", app.userLoginPost)
+		r.Post("/logout", app.userLogoutPost)
+	})
 
-	router.Get("/person/{slug}", app.personView)
-	router.Get("/person/add", app.personAdd)
-	router.Post("/person/add", app.personAddPost)
-	router.Get("/person/search", app.personSearch)
+	// role routes
+	r.Group(func(r chi.Router) {
+		r.Use(
+			app.sessionManager.LoadAndSave,
+			app.logRequest,
+			app.authenticate,
+		)
 
-	router.Get("/character/search", app.characterSearch)
+		editorAdmin := []string{"editor", "admin"}
+		// admin := []string{"admin"}
+		r.Get("/video/add", app.requireRoles(editorAdmin, app.videoAdd))
+		r.Post("/video/add", app.requireRoles(editorAdmin, app.videoAddPost))
 
-	return router
+		r.Get("/creator/add", app.requireRoles(editorAdmin, app.creatorAdd))
+		r.Post("/creator/add", app.requireRoles(editorAdmin, app.creatorAddPost))
+
+		r.Get("/person/add", app.requireRoles(editorAdmin, app.personAdd))
+		r.Post("/person/add", app.requireRoles(editorAdmin, app.personAddPost))
+	})
+
+	return r
 }

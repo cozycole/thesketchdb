@@ -1,0 +1,13 @@
+{{ define "title" }}{{ .User.Username }}{{ end }}
+
+{{ define "main" }}
+  {{ with .User }}
+    <div>
+      <h1 class="text-2xl font-bold my-1">{{ .Username }}</h1>
+      <p>Email: {{ .Email }}</p>
+      <p>Role: {{ .Role }}</p>
+    </div>     
+  {{ end }}
+{{ end }}
+
+

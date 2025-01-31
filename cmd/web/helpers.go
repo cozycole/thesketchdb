@@ -39,6 +39,10 @@ func (app *application) notFound(w http.ResponseWriter) {
 	app.clientError(w, http.StatusNotFound)
 }
 
+func (app *application) unauthorized(w http.ResponseWriter) {
+	app.clientError(w, http.StatusUnauthorized)
+}
+
 // For consistency, we'll also implement a notFound helper. This is simply a
 // convenience wrapper around clientError which sends a 404 Not Found response to
 // the user.
@@ -46,12 +50,12 @@ func (app *application) notFound(w http.ResponseWriter) {
 // 	app.clientError(w, http.StatusNotFound)
 // }
 
-func (app *application) newTemplateData(_ *http.Request) *templateData {
+func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
-		CurrentYear:  time.Now().Year(),
-		ImageBaseUrl: app.baseImgUrl,
-		// Flash:           app.sessionManager.PopString(r.Context(), "flash"),
-		// IsAuthenticated: app.isAutheticated(r),
+		CurrentYear:     time.Now().Year(),
+		ImageBaseUrl:    app.baseImgUrl,
+		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: app.isAuthenticated(r),
 		// CSRFToken:       nosurf.Token(r),
 	}
 }
@@ -83,4 +87,8 @@ func (app *application) render(w http.ResponseWriter, status int, page string, b
 	// If the template is written to the buffer
 	w.WriteHeader(status)
 	buf.WriteTo(w)
+}
+
+func (app *application) isAuthenticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }

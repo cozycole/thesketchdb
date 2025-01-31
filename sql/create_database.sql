@@ -5,6 +5,6 @@ CREATE DATABASE sketch_data_test
     CONNECTION LIMIT = -1
     IS_TEMPLATE = False;
 
-
+CREATE EXTENSION IF NOT EXISTS citext;
 CREATE TYPE IF NOT EXISTS rating AS ENUM ('PG', 'PG-13', 'R');
 CREATE TYPE IF NOT EXISTS vid_role AS ENUM ('Cast', 'Guest', 'Host');

@@ -35,19 +35,15 @@ CREATE TABLE IF NOT EXISTS creator (
     insert_timestamp timestamp DEFAULT now()
 );
 
---CREATE TABLE IF NOT EXISTS tag (
---    id serial primary key,
---    tag VARCHAR UNIQUE
---);
 
 CREATE TABLE IF NOT EXISTS video (
     id SERIAL PRIMARY KEY,
     title VARCHAR NOT NULL,
-    video_url VARCHAR,
+    video_url TEXT,
     youtube_id VARCHAR, 
-    slug VARCHAR NOT NULL,
-    thumbnail_name VARCHAR,
-    description VARCHAR,
+    slug TEXT NOT NULL,
+    thumbnail_name TEXT,
+    description TEXT,
     upload_date DATE,
     pg_rating rating,
     search_vector tsvector,
@@ -66,18 +62,41 @@ CREATE TABLE IF NOT EXISTS video_person_rel (
 );
 
 CREATE TABLE IF NOT EXISTS video_creator_rel (
-    creator_id int references creator(id),
-    video_id int references video(id),
-    position int,
+    creator_id INT references creator(id),
+    video_id INT references video(id),
+    position INT,
     insert_timestamp timestamp DEFAULT now(),
     PRIMARY KEY (creator_id, video_id)
 );
 
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
+    username VARCHAR(20) UNIQUE NOT NULL,
+    email CITEXT UNIQUE NOT NULL,
+    password_hash BYTEA NOT NULL,
+    activated BOOL NOT NULL,
+    role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('admin', 'editor', 'viewer'))
+);
+
+--CREATE TABLE IF NOT EXISTS tag (
+--    id SERIAL PRIMARY KEY,
+--    tag VARCHAR UNIQUE
+--);
+
 -- CREATE TABLE video_tag_rel (
---     id serial primary key,
---     video_id int references video(id),
---     tag_id int references tag(id),
+--     id serial PRIMARY KEY,
+--     video_id INT references video(id),
+--     tag_id INT references tag(id),
 --     UNIQUE (video_id, tag_id)
 -- );
+
+CREATE TABLE IF NOT EXISTS sessions (
+	token TEXT PRIMARY KEY,
+	data BYTEA NOT NULL,
+	expiry TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions (expiry);
 
 COMMIT;

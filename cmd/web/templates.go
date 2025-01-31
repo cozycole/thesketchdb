@@ -22,6 +22,7 @@ type templateData struct {
 	Video           *models.Video
 	Creator         *models.Creator
 	Person          *models.Person
+	User            *models.User
 	DropdownResults dropdownSearchResults
 	SearchResults   *SearchResult
 	ImageBaseUrl    string
@@ -30,8 +31,6 @@ type templateData struct {
 	IsAuthenticated bool
 	CSRFToken       string
 }
-
-// User            *models.User
 
 func humanDate(t time.Time) string {
 	if t.IsZero() {
