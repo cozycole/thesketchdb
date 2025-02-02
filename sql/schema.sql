@@ -79,6 +79,13 @@ CREATE TABLE IF NOT EXISTS users (
     role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('admin', 'editor', 'viewer'))
 );
 
+CREATE TABLE IF NOT EXISTS likes (
+    created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
+    user_id INT references users(id) NOT NULL,
+    video_id INT references video(id) NOT NULL,
+    PRIMARY KEY (user_id, video_id)
+);
+
 --CREATE TABLE IF NOT EXISTS tag (
 --    id SERIAL PRIMARY KEY,
 --    tag VARCHAR UNIQUE

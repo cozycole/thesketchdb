@@ -3,22 +3,6 @@
   {{ with .Video }}
     <div class="videoHeader my-2">
       <h1 class="text-2xl font-bold my-1">{{ .Title }}</h1>
-        <div class="flex flex-nowrap">
-          <a href="/creator/{{ .Creator.Slug }}">
-            <img
-              src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
-              class="rounded-full inline-block w-9"
-              alt="profile-img"
-            />
-          </a>
-          <div class="ml-2">
-            <a  href="/creator/{{ .Creator.Slug }}"
-              >{{ .Creator.Name }}</a
-            >
-            <time class="block">{{ humanDate .UploadDate }}</time>
-          </div>
-        </div>
-      </div>
       <div class="thumbnail inline-block my-2">
         <button class="relative" onclick="toggleWatchNow()">
           <img
@@ -28,6 +12,39 @@
           />
           <img class="absolute right-1 bottom-1 w-12" src="/static/img/play-button.svg">
         </button>
+      </div>
+        <div class="flex flex-nowrap">
+          <a href="/creator/{{ .Creator.Slug }}">
+            <img
+              src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
+              class="mt-0.5 rounded-full inline-block w-9"
+              alt="profile-img"
+            />
+          </a>
+          <div class="ml-2">
+            <a  href="/creator/{{ .Creator.Slug }}"
+              >{{ .Creator.Name }}</a
+            >
+            <time class="block">{{ humanDate .UploadDate }}</time>
+          </div>
+          <div id="buttonDiv" class="relative w-fit ml-3">
+          <!--  <div id="likePopup" class="absolute whitespace-nowrap left-1/2 -translate-x-1/2 -top-6 w-fit bg-black text-white text-xs px-2 py-1 rounded">-->
+          <!--    Sign in to like videos!-->
+          <!--  </div>-->
+            <button id="likeButton"
+                  class="{{ if .Liked }} hidden {{ else }} flex {{ end }}"
+                  onclick="toggleLike({{.ID}})"
+            >
+              <img src="/static/img/like.svg" class="w-10 self-start">
+            </button>
+            <button id="unlikeButton" 
+                  class="{{ if not .Liked }} hidden {{ end }}" 
+                  onclick="toggleLike({{.ID}})"
+            >
+              <img src="/static/img/unlike.svg" class="w-10 align-top">
+            </button>
+          </div>
+        </div>
       </div>
       <div class="watchOptions flex w-full my-1">
         <button class="p-2 border-2 border-black rounded-l-md bg-black text-white"

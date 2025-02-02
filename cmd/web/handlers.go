@@ -78,6 +78,12 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	if ok {
+		hasLike, _ := app.videos.HasLike(video.ID, user.ID)
+		video.Liked = hasLike
+	}
+
 	data := app.newTemplateData(r)
 	if video.YoutubeID != nil && *video.YoutubeID != "" {
 		videoUrl := fmt.Sprintf("https://www.youtube.com/watch?v=%s", *video.YoutubeID)
@@ -518,6 +524,49 @@ func (app *application) userView(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.User = user
 	app.render(w, http.StatusOK, "view-user.tmpl.html", "base", data)
+}
+
+func (app *application) videoAddLike(w http.ResponseWriter, r *http.Request) {
+	videoIdParam := r.PathValue("videoId")
+	videoId, err := strconv.Atoi(videoIdParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	if !ok || nil == user {
+		app.infoLog.Println("User not logged in!")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	err = app.users.AddLike(user.ID, videoId)
+	if err != nil {
+		// check if problem with primary key constraint
+		app.badRequest(w)
+		return
+	}
+}
+
+func (app *application) videoRemoveLike(w http.ResponseWriter, r *http.Request) {
+	videoIdParam := r.PathValue("videoId")
+	videoId, err := strconv.Atoi(videoIdParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	err = app.users.RemoveLike(user.ID, videoId)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
 }
 
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {

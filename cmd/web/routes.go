@@ -32,10 +32,16 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		r.HandleFunc("/", app.home)
 		r.Get("/video/{slug}", app.videoView)
+		r.Post("/video/like/{videoId}", app.videoAddLike)
+		r.Delete("/video/like/{videoId}", app.videoRemoveLike)
+
 		r.Get("/creator/{slug}", app.creatorView)
+
 		r.Get("/person/{slug}", app.personView)
 		r.Get("/person/search", app.personSearch)
+
 		r.Get("/character/search", app.characterSearch)
+
 		r.Get("/user/{username}", app.userView)
 
 		r.Get("/search", app.search)

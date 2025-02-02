@@ -24,13 +24,17 @@ document.addEventListener('DOMContentLoaded', () => {
   typeDropToggleUp.addEventListener('click', () => {
         typeDropToggleUp.classList.toggle('hidden');
         typeDropToggleDown.classList.toggle('hidden');
-        typeMenu.classList.toggle('hidden');
+        if (typeMenu) {
+          typeMenu.classList.toggle('hidden');
+        }
   });
 
   typeDropToggleDown.addEventListener('click', () => {
         typeDropToggleUp.classList.toggle('hidden');
         typeDropToggleDown.classList.toggle('hidden');
-        typeMenu.classList.toggle('hidden');
+        if (typeMenu) {
+          typeMenu.classList.toggle('hidden');
+        }
   });
 
 

@@ -54,10 +54,25 @@ func (p *password) Match(plaintext string) (bool, error) {
 }
 
 type UserModelInterface interface {
+	AddLike(userId, videoId int) error
 	Authenticate(username, password string) (int, error)
 	GetByUsername(username string) (*User, error)
 	GetById(id int) (*User, error)
 	Insert(user *User) error
+	RemoveLike(userId, videoId int) error
+}
+
+func (m *UserModel) AddLike(userId, videoId int) error {
+	stmt := `
+		INSERT INTO likes (user_id, video_id)
+		VALUES($1, $2)
+	`
+
+	_, err := m.DB.Exec(context.Background(), stmt, userId, videoId)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m *UserModel) Authenticate(username, password string) (int, error) {
@@ -177,5 +192,18 @@ func (m *UserModel) Insert(user *User) error {
 		}
 	}
 
+	return nil
+}
+
+func (m *UserModel) RemoveLike(userId, videoId int) error {
+	stmt := `
+		DELETE FROM likes 
+		WHERE user_id = $1 AND video_id = $2	
+	`
+
+	_, err := m.DB.Exec(context.Background(), stmt, userId, videoId)
+	if err != nil {
+		return err
+	}
 	return nil
 }
