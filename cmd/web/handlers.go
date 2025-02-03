@@ -521,8 +521,15 @@ func (app *application) userView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	videos, err := app.videos.GetByUserLikes(user.ID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	data := app.newTemplateData(r)
 	data.User = user
+	data.Videos = videos
 	app.render(w, http.StatusOK, "view-user.tmpl.html", "base", data)
 }
 
