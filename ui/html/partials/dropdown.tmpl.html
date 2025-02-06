@@ -5,8 +5,7 @@
   {{ with .DropdownResults }}
     {{ range .Results }}
       <li
-        class="hover:bg-gray-200 py-2 px-1 border"
-        onclick="insertDropdownItem(event)"
+        class="result hover:bg-gray-200 py-2 px-1 border"
         data-id="{{ .ID }}"
       >
         {{ .Text }}

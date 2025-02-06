@@ -1,136 +1,128 @@
 {{ define "title" }}Add Video{{ end }}
 
 {{ define "main" }}
-  <h1 class="my-5 text-xl font-bold">Add Video</h1>
-  <form
-    class="w-1/2"
-    enctype="multipart/form-data"
-    action="http://localhost:4000/video/add"
-    method="POST"
-  >
-    <div>
-      <label class="inline-block my-2">Video URL:</label>
-      {{ with .Form.FieldErrors.url }}
-        <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
-      <div class="flex w-full space-x-2 items-start">
+  <div data-page="addVideo">
+    <h1 class="my-5 text-xl font-bold">Add Video</h1>
+    <form
+      class="w-1/2"
+      enctype="multipart/form-data"
+      action="http://localhost:4000/video/add"
+      method="POST"
+    >
+      <div>
+        <label class="inline-block my-2">Video URL:</label>
+        {{ with .Form.FieldErrors.url }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <div class="flex w-full space-x-2 items-start">
+          <input
+            type="text"
+            name="url"
+            value="{{ .Form.URL }}"
+            class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+          />
+        </div>
+      </div>
+      <div>
+        <label class="inline-block my-2">Video Title</label>
+        {{ with .Form.FieldErrors.title }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
         <input
           type="text"
-          name="url"
-          value="{{ .Form.URL }}"
-          class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+          name="title"
+          value="{{ .Form.Title }}"
+          class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
         />
       </div>
-    </div>
-    <div>
-      <label class="inline-block my-2">Video Title</label>
-      {{ with .Form.FieldErrors.title }}
+      <div>
+        <label class="inline-block my-2">Upload Date</label>
+        {{ with .Form.FieldErrors.uploadDate }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <input
+          type="date"
+          name="uploadDate"
+          value="{{ .Form.UploadDate }}"
+          class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
+        />
+      </div>
+      <div>
+        {{ with .Form.FieldErrors.rating }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <label class="inline-block my-2">Rating</label>
+        <select
+          name="rating"
+          value="{{ .Form.Rating }}"
+          class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
+        >
+          <option value=""></option>
+          <option value="PG">PG</option>
+          <option value="PG-13">PG-13</option>
+          <option value="R">R</option>
+        </select>
+      </div>
+      {{ with .Form.FieldErrors.thumbnail }}
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
-      <input
-        type="text"
-        name="title"
-        value="{{ .Form.Title }}"
-        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-      />
-    </div>
-    <div>
-      <label class="inline-block my-2">Upload Date</label>
-      {{ with .Form.FieldErrors.uploadDate }}
-        <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
-      <input
-        type="date"
-        name="uploadDate"
-        value="{{ .Form.UploadDate }}"
-        class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
-      />
-    </div>
-    <div>
-      {{ with .Form.FieldErrors.rating }}
-        <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
-      <label class="inline-block my-2">Rating</label>
-      <select
-        name="rating"
-        value="{{ .Form.Rating }}"
-        class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
+      <label
+        class="imagePreview inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
       >
-        <option value=""></option>
-        <option value="PG">PG</option>
-        <option value="PG-13">PG-13</option>
-        <option value="R">R</option>
-      </select>
-    </div>
-    {{ with .Form.FieldErrors.thumbnail }}
-      <label class="block text-red-700">{{ . }}</label>
-    {{ end }}
-    <label
-      class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-    >
-      Upload Thumbnail
-      <input
-        type="file"
-        name="thumbnail"
-        accept="image/*"
-        onChange="previewImage(event)"
-        class="hidden"
-      />
-    </label>
-    <div id="imagePreview"></div>
-    <label class="inline-block my-2"> Video Tags </label>
-    <input
-      type="text"
-      name="tag"
-      class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-    />
-    <div>
-      <label class="inline-block my-2">Creator Name</label>
-      {{ with .Form.FieldErrors.creator }}
-        <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
+        Upload Thumbnail
+        <input
+          type="file"
+          name="thumbnail"
+          accept="image/*"
+          class="hidden"
+        />
+      </label>
+      <div id="imagePreview"></div>
+      <label class="inline-block my-2"> Video Tags </label>
       <input
         type="text"
-        name="creator"
-        value="{{ if .Form.CreatorID }}{{ .Form.CreatorID }}{{ end }}"
+        name="tag"
         class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
       />
-    </div>
-    <div id="personInputs">
-      {{ $Form := .Form }}
-      <label class="inline-block my-2">Actors</label>
-      {{ range $index, $personId := .Form.PersonIDs }}
-        {{ template "actor-input" (dict "Index" $index "Form" $Form) }}
-        <div>Filling w prev</div>
-      {{ else }}
-        {{ template "actor-input" (dict "Index" 0 "Form" $Form) }}
-      {{ end }}
+      <div>
+        <label class="inline-block my-2">Creator Name</label>
+        {{ with .Form.FieldErrors.creator }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <input
+          type="text"
+          name="creator"
+          value="{{ if .Form.CreatorID }}{{ .Form.CreatorID }}{{ end }}"
+          class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        />
+      </div>
+      <div id="personInputs">
+        {{ $Form := .Form }}
+        <label class="inline-block my-2">Actors</label>
+        {{ range $index, $personId := .Form.PersonIDs }}
+          {{ template "actor-input" (dict "Index" $index "Form" $Form) }}
+          <div>Filling w prev</div>
+        {{ else }}
+          {{ template "actor-input" (dict "Index" 0 "Form" $Form) }}
+        {{ end }}
+        <button
+          type="button"
+          id="addPersonButton"
+          class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        >
+          Add Person +
+        </button>
+      </div>
       <button
-        type="button"
-        id="addPersonButton"
+        type="submit"
         class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
       >
-        Add Person +
+        Submit
       </button>
-    </div>
-    <button
-      type="submit"
-      class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-    >
-      Submit
-    </button>
-  </form>
+    </form>
+  </div>
 
-  <template id="personInputTemplate">
-    {{ template "actor-input" (dict "Index" 0 "Form" .Form) }}
-  </template>
-{{ end }}
-
-{{ define "scripts" }}
-  <script src="/static/js/add.js"></script>
-  <script>
-    document.body.addEventListener("htmx:configRequest", function (evt) {
-      evt.detail.parameters["query"] = evt.detail.elt.value;
-    });
-  </script>
+    <template id="personInputTemplate">
+      {{ template "actor-input" (dict "Index" 0 "Form" .Form) }}
+    </template>
 {{ end }}

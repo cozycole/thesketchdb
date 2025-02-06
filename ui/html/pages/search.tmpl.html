@@ -1,7 +1,7 @@
 {{ define "title" }}Search Sketches{{ end }}
 
 {{ define "main" }}
-  <div class="w-full flex justify-between items-center my-2">
+  <div data-page="search" class="w-full flex justify-between items-center my-2">
     <input
       id="searchInput"
       type="search"
@@ -22,7 +22,7 @@
         </svg>
       </button>
       <div class="relative">
-        <button class="filterMenuToggle inline-block p-2 rounded-md hover:bg-gray-300">
+        <button class="filterMenuButton inline-block p-2 rounded-md hover:bg-gray-300">
           <span class="hidden sm:inline mr-1 text-sm font-bold">Filters</span>
           <svg class="inline w-7" viewBox="0 0 24 24">
             <g fill-rule="evenodd" clip-rule="evenodd" fill="currentColor">
@@ -33,15 +33,19 @@
         <menu id="filterMenu" class="hidden absolute left-auto right-0 w-56 bg-white p-4 rounded-md">
           <div class="flex justify-between items-center mb-3">
             <h3 class="font-bold">Fitlers</h3> 
-            <svg class="filterMenuToggle w-6 p-1 rounded-md hover:bg-gray-200 hover:cursor-pointer" viewBox="0 0 24 24" focusable="false">
-              <path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z" fill="currentColor"></path>
-            </svg>
+            <button class="filterMenuButton">
+              <svg class=" w-6 p-1 rounded-md hover:bg-gray-200 hover:cursor-pointer" viewBox="0 0 24 24" focusable="false">
+                <path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z" fill="currentColor"></path>
+              </svg>
+            </button>
           </div>
           <div class="bg-gray-100 p-2">
             <div class="flex justify-between items-center">
               <h4 class="font-bold">Type</h4>
-              <img id="typeDropUp" class="w-5 hover:cursor-pointer" src="/static/img/dropdown-arrow-up.svg">
-              <img id="typeDropDown" class="hidden w-5 hover:cursor-pointer" src="/static/img/dropdown-arrow-down.svg">
+              <button class="filterTypeButton">
+                <img class="filterTypeArrow w-5 hover:cursor-pointer" src="/static/img/dropdown-arrow-up.svg">
+                <img class="filterTypeArrow hidden w-5 hover:cursor-pointer" src="/static/img/dropdown-arrow-down.svg">
+              </button>
             </div>
             <div id="typeMenu" class="mt-2">
               <div>

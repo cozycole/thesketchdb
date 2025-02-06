@@ -370,6 +370,8 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.DropdownResults = results
 
+	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
+
 	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
 }
 
@@ -405,6 +407,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 			results.Results = res
 		}
 	}
+	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
 
 	data := app.newTemplateData(r)
 	data.DropdownResults = results

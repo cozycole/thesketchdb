@@ -1,10 +1,10 @@
 {{ define "title" }}{{ .Video.Title }}{{ end }}
 {{ define "main" }}
   {{ with .Video }}
-    <div class="videoHeader my-2">
+    <div data-page="view-video" class="videoHeader my-2">
       <h1 class="text-2xl font-bold my-1">{{ .Title }}</h1>
-      <div class="thumbnail inline-block my-2">
-        <button class="relative" onclick="toggleWatchNow()">
+      <div class="thumbnail toggleVideo inline-block my-2">
+        <button class="relative">
           <img
             class="rounded-lg"
             src="{{ $.ImageBaseUrl }}/video/{{ .ID }}/{{ .ThumbnailName }}"
@@ -27,28 +27,21 @@
             >
             <time class="block">{{ humanDate .UploadDate }}</time>
           </div>
-          <div id="buttonDiv" class="relative w-fit ml-3">
-          <!--  <div id="likePopup" class="absolute whitespace-nowrap left-1/2 -translate-x-1/2 -top-6 w-fit bg-black text-white text-xs px-2 py-1 rounded">-->
-          <!--    Sign in to like videos!-->
-          <!--  </div>-->
-            <button id="likeButton"
-                  class="{{ if .Liked }} hidden {{ else }} flex {{ end }}"
-                  onclick="toggleLike({{.ID}})"
-            >
-              <img src="/static/img/like.svg" class="w-10 self-start">
-            </button>
-            <button id="unlikeButton" 
-                  class="{{ if not .Liked }} hidden {{ end }}" 
-                  onclick="toggleLike({{.ID}})"
-            >
-              <img src="/static/img/unlike.svg" class="w-10 align-top">
-            </button>
-          </div>
+          <button id="likeButton"
+                class="relative w-fit ml-3"
+                data-id="{{.ID}}"
+          >
+            <img id="likeIcon" 
+                class="w-10 {{ if .Liked }} hidden {{ else }} flex {{ end }}"
+                src="/static/img/like.svg" >
+            <img id="unlikeIcon" 
+                class="w-10 {{ if not .Liked }} hidden {{ else }} flex {{ end }}"
+                src="/static/img/unlike.svg">
+          </button>
         </div>
       </div>
       <div class="watchOptions flex w-full my-1">
-        <button class="p-2 border-2 border-black rounded-l-md bg-black text-white"
-                onclick="toggleWatchNow()"
+        <button class="toggleVideo p-2 border-2 border-black rounded-l-md bg-black text-white"
         >WATCH NOW
         </button>
         {{ if .YoutubeID }}
@@ -67,10 +60,10 @@
             <img src="/static/img/cast-icon.svg" class="w-6" alt="cast icon" />
             <h2 class="ml-2 text-xl font-bold">Cast</h2>
           </div>
-          <div class="p-2 hover:cursor-pointer">
-            <img id="typeDropUp" class="w-6" onclick="toggleCastDropDown()" src="/static/img/dropdown-arrow-up.svg">
-            <img id="typeDropDown" class="hidden w-6" onclick="toggleCastDropDown()" src="/static/img/dropdown-arrow-down.svg">
-          </div>
+          <button class="castButton p-2">
+            <img class="galleryArrow w-6" src="/static/img/dropdown-arrow-up.svg">
+            <img class="galleryArrow hidden w-6" src="/static/img/dropdown-arrow-down.svg">
+          </button>
         </div>
         <div id="castGallery">
           {{ template "cast-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Video" .) }}
@@ -78,8 +71,7 @@
       </div>
       {{ if .YoutubeID }}
         <div id="watchNow" 
-            class="hidden items-center justify-center fixed inset-0"
-            onclick="toggleWatchNow()"
+            class="toggleVideo hidden items-center justify-center fixed inset-0"
             style="background-color: rgb(0,0,0,0.9)">
           <div class="w-full max-w-3xl">
             <div class="relative w-full h-0" style="padding-bottom:56.25%;">
@@ -97,9 +89,4 @@
         </div>
       {{ end }}
   {{ end }}
-
-{{ end }}
-
-{{ define "scripts" }}
-  <script src="/static/js/view-asset.js"></script>
 {{ end }}
