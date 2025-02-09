@@ -1,24 +1,39 @@
 {{ define "title" }}Home{{ end }}
 
 {{ define "main" }}
-  <div class="mt-10 mb-14 w-full">
-    <h1 class="font-bold text-4xl text-center">
-      The Internet's Sketch<br />
-      Comedy Database
-    </h1>
-    <button
-      class="block mx-auto my-7 bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition"
-    >
-      Browse Videos
-    </button>
+  <div data-page="home" class="px-0">
+    <div class="relative flex overflow-hidden items-center h-[438px] w-[1024px]">
+        <div class="flex h-full animate-scrollThumbnails">
+          <img class="-ml-[72px] flex-shrink-0 h-full object-cover" src="/static/img/scrollingThumbnails.png" alt="Thumbnails">
+          <img class="-ml-[72px] flex-shrink-0 h-full object-cover" src="/static/img/scrollingThumbnails.png" alt="Thumbnails">
+          <img class="-ml-[72px] flex-shrink-0 h-full object-cover" src="/static/img/scrollingThumbnails.png" alt="Thumbnails">
+        </div>
+        <div class="flex items-center justify-center absolute inset-0 mx-auto w-full max-w-screen-lg bg-black bg-opacity-80">
+          <div>
+            <h1 class="text-white font-bold text-4xl text-center">
+              The Internet's Sketch<br/>
+              Comedy Database
+            </h1>
+            <h2 class="text-white text-xl text-center">
+              Find videos, actors, characters and creators!
+            </h2>
+            <button
+              class="block mx-auto my-7 bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition"
+            >
+              Browse Videos
+            </button>
+          </div>
+        </div>
+    </div>
   </div>
-
-  <h2 class="font-bold text-xl my-3">
-    <a href="/categories/latest" class="hover:underline">Latest Sketches</a>
-  </h2>
-  {{ template "thumbnail-gallery" . }}
-  <div class="flex justify-start">
-    <a class="text-left" href="/categories/latest">See More >></a>
+  <div class="px-2">
+    <h2 class="font-bold text-xl my-3">
+      <a href="/categories/latest" class="hover:underline">Latest Sketches</a>
+    </h2>
+    {{ template "thumbnail-gallery" . }}
+    <div class="flex justify-start">
+      <a class="text-left" href="/categories/latest">See More >></a>
+    </div>
   </div>
 {{ end }}
 
