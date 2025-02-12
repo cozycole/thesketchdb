@@ -1,0 +1,15 @@
+{{ define "title"}}Browse{{ end }}
+
+{{ define "main" }}
+  <div data-page="browse">
+    <h1>Browse</h1>
+    {{ range $sectionName, $videos := .BrowseSections }}
+      <h2 class="text-xl font-bold">{{ $sectionName }}</h2>
+      {{ if $videos }}
+        {{ template "thumbnail-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Videos" $videos)}} 
+      {{ else }}
+        <p>Error fetching videos</p>
+      {{ end }}
+    {{ end }}
+  </div>
+{{ end }}
