@@ -30,13 +30,13 @@ func TestValidateAddCreatorForm(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		form           *addCreatorForm
+		form           *creatorForm
 		fieldErrors    map[string]string
 		nonFieldErrors []string
 	}{
 		{
 			name: "Valid Submission",
-			form: &addCreatorForm{
+			form: &creatorForm{
 				Name:            "Valid Title",
 				URL:             "https://validurl.com",
 				EstablishedDate: "2024-09-07",
@@ -47,7 +47,7 @@ func TestValidateAddCreatorForm(t *testing.T) {
 		},
 		{
 			name: "Invalid Image",
-			form: &addCreatorForm{
+			form: &creatorForm{
 				Name:            "Valid Title",
 				URL:             "https://validurl.com",
 				EstablishedDate: "2024-09-07",
@@ -60,7 +60,7 @@ func TestValidateAddCreatorForm(t *testing.T) {
 		},
 		{
 			name: "Blank fields",
-			form: &addCreatorForm{
+			form: &creatorForm{
 				Name:            "",
 				URL:             "",
 				EstablishedDate: "",
@@ -104,13 +104,13 @@ func TestValidateAddPersonForm(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		form           *addPersonForm
+		form           *personForm
 		fieldErrors    map[string]string
 		nonFieldErrors []string
 	}{
 		{
 			name: "Valid Submission",
-			form: &addPersonForm{
+			form: &personForm{
 				First:        "Brad",
 				Last:         "Pitt",
 				BirthDate:    "2024-09-07",
@@ -121,7 +121,7 @@ func TestValidateAddPersonForm(t *testing.T) {
 		},
 		{
 			name: "Invalid Image",
-			form: &addPersonForm{
+			form: &personForm{
 				First:        "Brad",
 				Last:         "Pitt",
 				BirthDate:    "2024-09-07",
@@ -134,7 +134,7 @@ func TestValidateAddPersonForm(t *testing.T) {
 		},
 		{
 			name: "Blank fields",
-			form: &addPersonForm{
+			form: &personForm{
 				First:        "",
 				Last:         "",
 				BirthDate:    "",
@@ -283,16 +283,16 @@ func TestConvertFormToVideo(t *testing.T) {
 	rating := "pg"
 	uploadDateStr := "2024-11-30"
 	vidForm := addVideoForm{
-		Title : title,
-		URL: url,
-		Rating: rating,
-		UploadDate: uploadDateStr,
-		Thumbnail: validThumbnail,
-		PersonIDs : []int{1,2},
-		PersonInputs: []string{"Tim", "James"},
-		CharacterIDs: []int{1,2},
-		CharacterInputs: []string{"Davey D", "Sammy S"},
-		CharacterThumbnails: []*multipart.FileHeader{validImg,validImg2},
+		Title:               title,
+		URL:                 url,
+		Rating:              rating,
+		UploadDate:          uploadDateStr,
+		Thumbnail:           validThumbnail,
+		PersonIDs:           []int{1, 2},
+		PersonInputs:        []string{"Tim", "James"},
+		CharacterIDs:        []int{1, 2},
+		CharacterInputs:     []string{"Davey D", "Sammy S"},
+		CharacterThumbnails: []*multipart.FileHeader{validImg, validImg2},
 	}
 
 	v, err := convertFormToVideo(&vidForm)
@@ -303,7 +303,7 @@ func TestConvertFormToVideo(t *testing.T) {
 	assert.Equal(t, v.Title, title)
 	assert.Equal(t, v.URL, url)
 	assert.Equal(t, v.Rating, rating)
-	assert.Equal(t, *v.UploadDate, time.Date(2024, 11, 30, 0,0,0,0, time.UTC))
+	assert.Equal(t, *v.UploadDate, time.Date(2024, 11, 30, 0, 0, 0, 0, time.UTC))
 	assert.Equal(t, *v.Cast[0].Actor.ID, 1)
 	assert.Equal(t, *v.Cast[0].Character.ID, 1)
 	assert.Equal(t, *v.Cast[1].Actor.ID, 2)
@@ -311,3 +311,4 @@ func TestConvertFormToVideo(t *testing.T) {
 	assert.Equal(t, v.Cast[0].ThumbnailFile.Filename, "test-img.jpg")
 	assert.Equal(t, v.Cast[1].ThumbnailFile.Filename, "test-img2.jpg")
 }
+

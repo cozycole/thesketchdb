@@ -37,17 +37,18 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view-video.tmpl.html", "base", data)
 }
 
-func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
+func (app *application) videoAddPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	// Need to initialize form data since the template needs it to
 	// render. It's a good place to put default values for the fields
-	data.Form = addVideoForm{}
+	data.Forms.Video = videoForm{}
+	data.Video = &models.Video{}
 	app.render(w, http.StatusOK, "add-video.tmpl.html", "base", data)
 }
 
-func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
-	var form addVideoForm
+func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
+	var form videoForm
 
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -55,11 +56,12 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		app.errorLog.Print(err)
 		return
 	}
+	app.infoLog.Printf("%+v", form)
 
 	app.validateAddVideoForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		data.Form = form
+		data.Forms.Video = form
 		app.render(w, http.StatusUnprocessableEntity, "add-video.tmpl.html", "base", data)
 		return
 	}
@@ -70,32 +72,106 @@ func (app *application) videoAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = addVideoImageNames(&video)
+	id, err := app.videos.Insert(&video)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	// NOTE: This mutates the video struct by adding the newly created db serial id
-	// to the id field
-	err = app.videos.Insert(&video)
+	if video.Creator.ID != nil {
+		err = app.videos.InsertVideoCreatorRelation(id, *video.Creator.ID)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+	}
+
+	thumbnailHash := generateThumbnailHash(id)
+	thumbnailExtension, err := getFileExtension(video.ThumbnailFile)
+	if err != nil {
+		// TODO: delete video entry here
+		app.serverError(w, err)
+		return
+	}
+
+	thumbnailName := thumbnailHash + thumbnailExtension
+	err = app.videos.InsertThumbnailName(id, thumbnailName)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	err = app.saveVideoImages(&video)
+	video.ThumbnailName = thumbnailName
+	err = app.saveVideoThumbnail(&video)
 	if err != nil {
 		app.serverError(w, err)
-		// TODO: delete video entry now
+		// TODO: delete video entry here
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/video/%d/%s", video.ID, video.Slug), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/video/%s", video.Slug), http.StatusSeeOther)
+}
+
+func (app *application) videoUpdatePage(w http.ResponseWriter, r *http.Request) {
+	videoIdParam := r.PathValue("id")
+	videoId, err := strconv.Atoi(videoIdParam)
+	if err != nil {
+		app.badRequest(w)
+		app.errorLog.Print(err)
+		return
+	}
+
+	video, err := app.videos.Get(videoId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Video = video
+	data.Forms.Video = videoForm{}
+	data.Forms.VideoActor = videoActorForm{}
+	app.render(w, http.StatusOK, "update-video.tmpl.html", "base", data)
+}
+
+func (app *application) videoUpdate(w http.ResponseWriter, r *http.Request) {
+	videoIdParam := r.PathValue("id")
+	videoId, err := strconv.Atoi(videoIdParam)
+	if err != nil {
+		app.badRequest(w)
+		app.errorLog.Print(err)
+		return
+	}
+
+	var form videoForm
+
+	err = app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		app.errorLog.Print(err)
+		return
+	}
+
+	video, err := convertFormToVideo(&form)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	video.ID = videoId
+	err = app.videos.Update(&video)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 }
 
 func (app *application) videoAddLike(w http.ResponseWriter, r *http.Request) {
-	videoIdParam := r.PathValue("videoId")
+	videoIdParam := r.PathValue("id")
 	videoId, err := strconv.Atoi(videoIdParam)
 	if err != nil {
 		app.badRequest(w)
@@ -118,7 +194,7 @@ func (app *application) videoAddLike(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) videoRemoveLike(w http.ResponseWriter, r *http.Request) {
-	videoIdParam := r.PathValue("videoId")
+	videoIdParam := r.PathValue("id")
 	videoId, err := strconv.Atoi(videoIdParam)
 	if err != nil {
 		app.badRequest(w)

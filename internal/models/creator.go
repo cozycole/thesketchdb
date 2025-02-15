@@ -10,7 +10,7 @@ import (
 )
 
 type Creator struct {
-	ID              int
+	ID              *int
 	Name            *string
 	URL             *string
 	ProfileImage    *string
@@ -23,6 +23,7 @@ type CreatorModelInterface interface {
 	Get(id int) (*Creator, error)
 	Exists(id int) (bool, error)
 	GetBySlug(slug string) (*Creator, error)
+	Search(query string) ([]*Creator, error)
 	SearchCount(query string) (int, error)
 	VectorSearch(query string) ([]*ProfileResult, error)
 }
@@ -68,6 +69,37 @@ func (m *CreatorModel) Insert(name, url, slug, imgExt string, establishedDate ti
 		return 0, "", "", err
 	}
 	return id, slug, fullImgName, err
+}
+
+func (m *CreatorModel) Search(query string) ([]*Creator, error) {
+	query = query + "%"
+	stmt := `SELECT c.id, c.slug, c.name, c.profile_img
+			FROM creator as c
+			WHERE name ILIKE $1
+			ORDER BY name`
+
+	rows, err := m.DB.Query(context.Background(), stmt, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	creators := []*Creator{}
+	for rows.Next() {
+		c := &Creator{}
+		err := rows.Scan(
+			&c.ID, &c.Slug, &c.Name, &c.ProfileImage,
+		)
+		if err != nil {
+			return nil, err
+		}
+		creators = append(creators, c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return creators, nil
 }
 
 func (m *CreatorModel) Get(id int) (*Creator, error) {

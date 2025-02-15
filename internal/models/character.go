@@ -33,7 +33,7 @@ func (m *CharacterModel) Search(query string) ([]*Character, error) {
 	query = query + "%"
 	stmt := `SELECT c.id, c.slug, c.name, c.img_name
 			FROM character as c
-			WHERE LOWER(name) LIKE LOWER($1)
+			WHERE name ILIKE $1
 			ORDER BY name`
 
 	rows, err := m.DB.Query(context.Background(), stmt, query)

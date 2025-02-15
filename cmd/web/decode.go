@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/go-playground/form/v4"
 )
@@ -17,7 +18,8 @@ import (
 func (app *application) decodePostForm(r *http.Request, dst any) error {
 	var err error
 	contentType := r.Header.Get("Content-Type")
-	if contentType == "multipart/form-data" {
+	isMultipart := strings.Contains(contentType, "multipart/form-data")
+	if isMultipart {
 		err = r.ParseMultipartForm(10 << 20)
 	} else {
 		err = r.ParseForm()
@@ -38,7 +40,7 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 		return err
 	}
 
-	if contentType == "multipart/form-data" {
+	if isMultipart {
 
 		// checks if struct tag with key "img" exists
 		// If it does, we take the value of the struct tag and find any

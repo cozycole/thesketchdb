@@ -9,7 +9,7 @@ import (
 
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
-	data.Form = userSignupForm{}
+	data.Forms.Signup = userSignupForm{}
 	app.render(w, http.StatusOK, "signup.tmpl.html", "base", data)
 }
 
@@ -25,7 +25,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 
 	if app.validateUserSignupForm(&form); !form.Valid() {
 		data := app.newTemplateData(r)
-		data.Form = form
+		data.Forms.Signup = form
 		app.render(w, http.StatusUnprocessableEntity, "signup.tmpl.html", "base", data)
 		return
 	}
@@ -47,7 +47,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, models.ErrDuplicateEmail) {
 			form.Validator.AddFieldError("email", "a user with this email address already exists")
 			data := app.newTemplateData(r)
-			data.Form = form
+			data.Forms.Signup = form
 			app.render(w, http.StatusUnprocessableEntity, "signup.tmpl.html", "base", data)
 			return
 		}
@@ -60,7 +60,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
-	data.Form = userSignupForm{}
+	data.Forms.Signup = userSignupForm{}
 	app.render(w, http.StatusOK, "login.tmpl.html", "base", data)
 }
 
@@ -75,7 +75,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	app.validateUserLoginForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		data.Form = form
+		data.Forms.Login = form
 		app.render(w, http.StatusUnprocessableEntity, "login.tmpl.html", "base", data)
 		return
 	}
@@ -85,7 +85,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, models.ErrInvalidCredentials) {
 			form.AddNonFieldError("Email or password is incorrect")
 			data := app.newTemplateData(r)
-			data.Form = form
+			data.Forms.Login = form
 			app.render(w, http.StatusUnprocessableEntity, "login.tmpl.html", "base", data)
 		} else {
 			app.serverError(w, err)

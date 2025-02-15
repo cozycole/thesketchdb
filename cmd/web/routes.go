@@ -30,12 +30,16 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		r.HandleFunc("/ping", ping)
 
+		r.HandleFunc("/browse", app.browse)
+
 		r.HandleFunc("/", app.home)
 		r.Get("/video/{slug}", app.videoView)
-		r.Post("/video/like/{videoId}", app.videoAddLike)
-		r.Delete("/video/like/{videoId}", app.videoRemoveLike)
+
+		r.Post("/video/like/{id}", app.videoAddLike)
+		r.Delete("/video/like/{id}", app.videoRemoveLike)
 
 		r.Get("/creator/{slug}", app.creatorView)
+		r.Get("/creator/search", app.creatorSearch)
 
 		r.Get("/person/{slug}", app.personView)
 		r.Get("/person/search", app.personSearch)
@@ -63,8 +67,14 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		editorAdmin := []string{"editor", "admin"}
 		// admin := []string{"admin"}
-		r.Get("/video/add", app.requireRoles(editorAdmin, app.videoAdd))
-		r.Post("/video/add", app.requireRoles(editorAdmin, app.videoAddPost))
+		r.Get("/video/add", app.requireRoles(editorAdmin, app.videoAddPage))
+		r.Post("/video/add", app.requireRoles(editorAdmin, app.videoAdd))
+
+		r.Get("/video/{id}/update", app.requireRoles(editorAdmin, app.videoUpdatePage))
+
+		r.Patch("/video/{id}", app.requireRoles(editorAdmin, app.videoUpdate))
+		r.Patch("/video/{id}/actor", app.requireRoles(editorAdmin, app.videoAdd))
+		r.Patch("/video/{id}/tag", app.requireRoles(editorAdmin, app.videoAdd))
 
 		r.Get("/creator/add", app.requireRoles(editorAdmin, app.creatorAdd))
 		r.Post("/creator/add", app.requireRoles(editorAdmin, app.creatorAddPost))

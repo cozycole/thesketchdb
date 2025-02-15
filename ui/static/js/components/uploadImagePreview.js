@@ -10,6 +10,10 @@ export class UploadImagePreview {
         if (!this.labels.length) {
             throw Error(`No label found with id ${labelClass}`)
         }
+        for (let label of this.labels) {
+            let input = label.querySelector('input[type=file]');
+            this.previewImage(input);
+        }
 
         this.addListeners();
     }
@@ -27,14 +31,14 @@ export class UploadImagePreview {
             this.input = this.label.querySelector('input[type=file]');
 
             if (this.input.getAttribute('uploadPreview') !== 'true') {
-                this.input.addEventListener('change', (e) => this.previewImage(e));
+                this.input.addEventListener('change', (e) => {this.previewImage(e.target)});
                 this.input.setAttribute('uploadPreview', 'true');
             }
         }
     }
 
-    previewImage(event) {
-        const file = event.target.files[0];
+    previewImage(input) {
+        const file = input.files[0];
 
         if (file) {
             const reader = new FileReader();

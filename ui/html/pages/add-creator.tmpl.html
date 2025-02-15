@@ -10,37 +10,37 @@
   >
     <div>
       <label class="block my-2">Name</label>
-      {{ with .Form.FieldErrors.name }}
+      {{ with .Forms.Creator.FieldErrors.name }}
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
       <input
         type="text"
         name="name"
-        value="{{ .Form.Name }}"
+        value="{{ .Forms.Creator.Name }}"
         class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
       />
     </div>
     <div>
       <label class="block my-2">Youtube Channel URL</label>
-      {{ with .Form.FieldErrors.url }}
+      {{ with .Forms.Creator.FieldErrors.url }}
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
       <input
         type="text"
         name="url"
-        value="{{ .Form.URL }}"
+        value="{{ .Forms.Creator.URL }}"
         class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
       />
     </div>
     <div>
       <label class="inline-block my-2">Established Date</label>
-      {{ with .Form.FieldErrors.establishedDate }}
+      {{ with .Forms.Creator.FieldErrors.establishedDate }}
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
       <input
         type="date"
         name="establishedDate"
-        value="{{ .Form.EstablishedDate }}"
+        value="{{ .Forms.Creator.EstablishedDate }}"
         class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
       />
     </div>
@@ -72,8 +72,4 @@
       Submit
     </button>
   </form>
-{{ end }}
-
-{{ define "scripts" }}
-  <script src="/static/js/add.js"></script>
 {{ end }}

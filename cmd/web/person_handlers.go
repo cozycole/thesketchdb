@@ -35,12 +35,12 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 func (app *application) personAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
-	data.Form = addPersonForm{}
+	data.Forms.Person = personForm{}
 	app.render(w, http.StatusOK, "add-person.tmpl.html", "base", data)
 }
 
 func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
-	var form addPersonForm
+	var form personForm
 
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -51,7 +51,7 @@ func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
 	app.validateAddPersonForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		data.Form = form
+		data.Forms.Person = form
 		app.render(w, http.StatusUnprocessableEntity, "add-person.tmpl.html", "base", data)
 		return
 	}

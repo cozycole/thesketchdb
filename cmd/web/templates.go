@@ -23,10 +23,11 @@ type templateData struct {
 	Creator         *models.Creator
 	Person          *models.Person
 	User            *models.User
+	BrowseSections  map[string][]*models.Video
 	DropdownResults dropdownSearchResults
 	SearchResults   *SearchResult
 	ImageBaseUrl    string
-	Form            any
+	Forms           Forms
 	Flash           string
 	IsAuthenticated bool
 	CSRFToken       string
@@ -37,6 +38,13 @@ func humanDate(t time.Time) string {
 		return ""
 	}
 	return t.UTC().Format("Jan 2, 2006")
+}
+
+func formDate(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.Format("2006-01-02")
 }
 
 func getYear(t time.Time) string {
@@ -77,6 +85,7 @@ var functions = template.FuncMap{
 	"getYear":     getYear,
 	"dict":        dict,
 	"derefString": derefString,
+	"formDate":    formDate,
 }
 
 // Getting mapping of html page filename to template set for the page

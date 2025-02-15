@@ -7,8 +7,8 @@
         <button class="relative">
           <img
             class="rounded-lg"
-            src="{{ $.ImageBaseUrl }}/video/{{ .ID }}/{{ .ThumbnailName }}"
-            alt="thumbnail"
+            src="{{ $.ImageBaseUrl }}/video/{{ .ThumbnailName }}"
+            onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
           />
           <img class="absolute right-1 bottom-1 w-12" src="/static/img/play-button.svg">
         </button>
@@ -18,7 +18,7 @@
             <img
               src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
               class="mt-0.5 rounded-full inline-block w-9"
-              alt="profile-img"
+              onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
             />
           </a>
           <div class="ml-2">

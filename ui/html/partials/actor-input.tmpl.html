@@ -11,21 +11,21 @@
   >
     <div class="htmxDropdown">
       <label>Name</label>
-      {{ with (index .Form.FieldErrors $idPeople) }}
+      {{ with (index .Forms.VideoActor.FieldErrors $idPeople) }}
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
       <input
         type="hidden"
         name="{{ $idPeople }}"
-        value="{{ if .Form.PersonIDs }}
-          {{ index .Form.PersonIDs .Index }}
+        value="{{ if .Forms.VideoActor.PersonIDs }}
+          {{ index .Forms.VideoActor.PersonIDs .Index }}
         {{ end }}"
       />
       <input
         type="search"
         name="{{ $textPeople }}"
-        value="{{ if .Form.PersonInputs }}
-          {{ index .Form.PersonInputs .Index }}
+        value="{{ if .Forms.VideoActor.PersonInputs }}
+          {{ index .Forms.VideoActor.PersonInputs .Index }}
         {{ end }}"
         class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
         placeholder="Enter person's name"
@@ -38,15 +38,15 @@
     </div>
     <div class="htmxDropdown">
       <label>Character Name (if applicable)</label>
-      {{ with (index .Form.FieldErrors $idCharacter) }}
+      {{ with (index .Forms.VideoActor.FieldErrors $idCharacter) }}
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
       <input type="hidden" name="{{ $idCharacter }}" />
       <input
         type="search"
         name="{{ $textCharacter }}"
-        value="{{ if .CharactersInputs }}
-          {{ index .CharactersInputs .Index }}
+        value="{{ with .Forms.VideoActor.CharacterInputs }}
+          {{ index .Forms.VideoActor.CharactersInputs .Index }}
         {{ end }}"
         class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
         placeholder="Enter character's name"

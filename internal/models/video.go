@@ -23,7 +23,8 @@ type CastMember struct {
 type Video struct {
 	ID            int
 	Title         string
-	URL           string
+	URL           *string
+	YoutubeID     *string
 	Slug          string
 	ThumbnailName string
 	ThumbnailFile *multipart.FileHeader
@@ -32,6 +33,7 @@ type Video struct {
 	UploadDate    *time.Time
 	Creator       *Creator
 	Cast          []*CastMember
+	Liked         bool
 }
 
 type VideoModelInterface interface {
@@ -40,11 +42,16 @@ type VideoModelInterface interface {
 	GetByCreator(id int) ([]*Video, error)
 	GetByPerson(id int) ([]*Video, error)
 	GetBySlug(slug string) (*Video, error)
-	Insert(video *Video) error
+	GetByUserLikes(id int) ([]*Video, error)
+	GetLatest(limit, offset int) ([]*Video, error)
+	HasLike(vidId, userId int) (bool, error)
+	Insert(video *Video) (int, error)
+	InsertThumbnailName(vidId int, name string) error
 	InsertVideoCreatorRelation(vidId, creatorId int) error
 	InsertVideoPersonRelation(vidId, personId, position int, characterId *int, imgName string) error
 	Search(search string, limit, offset int) ([]*Video, error)
 	SearchCount(query string) (int, error)
+	Update(video *Video) error
 }
 
 type VideoModel struct {
@@ -53,7 +60,7 @@ type VideoModel struct {
 
 func (m *VideoModel) Get(id int) (*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.thumbnail_name, v.upload_date, v.description, v.pg_rating,
+		SELECT v.id, v.title, v.video_url, v.youtube_id, v.thumbnail_name, v.upload_date, v.description, v.pg_rating,
 			c.id, c.name, c.slug, c.profile_img
 		FROM video AS v
 		LEFT JOIN video_creator_rel as vcr
@@ -68,7 +75,7 @@ func (m *VideoModel) Get(id int) (*Video, error) {
 	v := &Video{}
 	c := &Creator{}
 	err := row.Scan(
-		&v.ID, &v.Title, &v.URL, &v.ThumbnailName, &v.UploadDate, &v.Description, &v.Rating,
+		&v.ID, &v.Title, &v.URL, &v.YoutubeID, &v.ThumbnailName, &v.UploadDate, &v.Description, &v.Rating,
 		&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 	)
 	if err != nil {
@@ -209,6 +216,100 @@ func (m *VideoModel) GetIdBySlug(slug string) (int, error) {
 	return id, nil
 }
 
+func (m *VideoModel) GetByUserLikes(userId int) ([]*Video, error) {
+	stmt := `SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
+		c.id, c.name, c.page_url, c.slug, c.profile_img
+		FROM video AS v
+		JOIN video_creator_rel as vcr
+		ON v.id = vcr.video_id
+		JOIN creator as c
+		ON vcr.creator_id = c.id
+		JOIN likes as l
+		ON v.id = l.video_id
+		JOIN users as u
+		ON l.user_id = u.id
+		WHERE u.id = $1
+		ORDER BY l.created_at desc
+	`
+
+	rows, err := m.DB.Query(context.Background(), stmt, userId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	videos := []*Video{}
+	for rows.Next() {
+		v := &Video{}
+		c := &Creator{}
+		err := rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+		v.Creator = c
+		videos = append(videos, v)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return videos, nil
+}
+
+func (m *VideoModel) GetLatest(limit, offset int) ([]*Video, error) {
+	stmt := `
+		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
+		c.id, c.name, c.page_url, c.slug, c.profile_img
+		FROM video AS v
+		LEFT JOIN video_creator_rel as vcr
+		ON v.id = vcr.video_id
+		LEFT JOIN creator as c
+		ON vcr.creator_id = c.id
+		WHERE v.upload_date is NOT NULL
+		ORDER BY v.upload_date DESC
+		LIMIT $1
+		OFFSET $2;
+	`
+
+	rows, err := m.DB.Query(context.Background(), stmt, limit, offset)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	videos := []*Video{}
+	for rows.Next() {
+		v := &Video{}
+		c := &Creator{}
+		err := rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
+		)
+		if err != nil {
+			return nil, err
+		}
+		v.Creator = c
+		videos = append(videos, v)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return videos, nil
+}
+
 func (m *VideoModel) GetCastMembers(video_id int) ([]*CastMember, error) {
 	stmt := `
 		SELECT p.id, p.slug, p.first, p.last, p.birthdate,
@@ -298,55 +399,47 @@ func (m *VideoModel) GetAll(limit int) ([]*Video, error) {
 	return videos, nil
 }
 
-func (m *VideoModel) Insert(video *Video) error {
-	stmt := `
-	INSERT INTO video (title, video_url, upload_date, pg_rating, slug, thumbnail_name)
-	VALUES ($1,$2,$3,$4,$5,$6)
-	RETURNING id;`
-	tx, err := m.DB.Begin(context.Background())
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(context.Background())
+func (m *VideoModel) HasLike(vidId, userId int) (bool, error) {
+	var exists bool
 
-	result := tx.QueryRow(
+	stmt := "SELECT EXISTS(SELECT true FROM likes WHERE video_id = $1 AND user_id = $2)"
+	err := m.DB.QueryRow(context.Background(), stmt, vidId, userId).Scan(&exists)
+	return exists, err
+}
+
+func (m *VideoModel) Insert(video *Video) (int, error) {
+	stmt := `
+	INSERT INTO video (title, video_url, upload_date, pg_rating, slug)
+	VALUES ($1,$2,$3,$4,$5)
+	RETURNING id;`
+	result := m.DB.QueryRow(
 		context.Background(), stmt, video.Title,
 		video.URL, video.UploadDate, video.Rating,
-		video.Slug, video.ThumbnailName,
+		video.Slug,
 	)
 
 	var id int
-	err = result.Scan(&id)
+	err := result.Scan(&id)
 	if err != nil {
-		return err
+		return 0, err
 	}
+	return id, nil
+}
 
-	video.ID = id
-	stmt = `INSERT INTO video_creator_rel (video_id, creator_id) VALUES ($1, $2)`
-	_, err = tx.Exec(context.Background(), stmt, video.ID, video.Creator.ID)
-	if err != nil {
-		return err
-	}
-
-	stmt = `INSERT INTO video_person_rel (video_id, person_id, character_id, position, thumbnail) VALUES ($1, $2, $3, $4, $5)`
-	for i, v := range video.Cast {
-		fmt.Printf("Video:%d Person:%d Character:%d\n", video.ID, *v.Actor.ID, *v.Character.ID)
-		_, err = tx.Exec(context.Background(), stmt, video.ID, v.Actor.ID, v.Character.ID, i, v.ThumbnailName)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = tx.Commit(context.Background())
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (m *VideoModel) InsertThumbnailName(vidId int, name string) error {
+	stmt := `UPDATE video SET thumbnail_name = $1 WHERE id = $2`
+	_, err := m.DB.Exec(context.Background(), stmt, name, vidId)
+	return err
 }
 
 func (m *VideoModel) InsertVideoCreatorRelation(vidId, creatorId int) error {
 	stmt := `INSERT INTO video_creator_rel (video_id, creator_id) VALUES ($1, $2)`
+	_, err := m.DB.Exec(context.Background(), stmt, vidId, creatorId)
+	return err
+}
+
+func (m *VideoModel) UpdateCreatorRelation(vidId, creatorId int) error {
+	stmt := `UPDATE video_creator_rel SET creator_id = $1 WHERE video_id = $2`
 	_, err := m.DB.Exec(context.Background(), stmt, vidId, creatorId)
 	return err
 }
@@ -426,4 +519,51 @@ func (m *VideoModel) SearchCount(query string) (int, error) {
 		}
 	}
 	return count, nil
+}
+
+func (m *VideoModel) Update(video *Video) error {
+	stmt := `
+	UPDATE video SET title = $1, video_url = $2, upload_date = $3, 
+	pg_rating = $4, slug = $5, thumbnail_name = $6
+	WHERE id = $7`
+	tx, err := m.DB.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	result := tx.QueryRow(
+		context.Background(), stmt, video.Title,
+		video.URL, video.UploadDate, video.Rating,
+		video.Slug, video.ThumbnailName, video.ID,
+	)
+
+	var id int
+	err = result.Scan(&id)
+	if err != nil {
+		return err
+	}
+
+	video.ID = id
+	stmt = `INSERT INTO video_creator_rel (video_id, creator_id) VALUES ($1, $2)`
+	_, err = tx.Exec(context.Background(), stmt, video.ID, video.Creator.ID)
+	if err != nil {
+		return err
+	}
+
+	stmt = `INSERT INTO video_person_rel (video_id, person_id, character_id, position, thumbnail) VALUES ($1, $2, $3, $4, $5)`
+	for i, v := range video.Cast {
+		fmt.Printf("Video:%d Person:%d Character:%d\n", video.ID, *v.Actor.ID, *v.Character.ID)
+		_, err = tx.Exec(context.Background(), stmt, video.ID, v.Actor.ID, v.Character.ID, i, v.ThumbnailName)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

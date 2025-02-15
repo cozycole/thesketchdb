@@ -10,7 +10,7 @@ import (
 )
 
 // Checking that the decodePostForm function correctly
-// marshals the request object into a addCreatorForm struct
+// marshals the request object into a creatorForm struct
 func TestCreatorDecodePostForm(t *testing.T) {
 	fields := map[string]string{
 		"name":            "Test Name",
@@ -39,7 +39,7 @@ func TestCreatorDecodePostForm(t *testing.T) {
 	app := newTestApplication(t)
 
 	t.Run("CorrectForm ExtraFields", func(t *testing.T) {
-		var form addCreatorForm
+		var form creatorForm
 
 		app.decodePostForm(r, &form)
 		assert.Equal(t, form.Name, fields["name"])
@@ -68,7 +68,7 @@ func TestCreatorDecodePostForm(t *testing.T) {
 	r.Header.Add("content-type", contentType)
 
 	t.Run("No Image", func(t *testing.T) {
-		var form addCreatorForm
+		var form creatorForm
 
 		app.decodePostForm(r, &form)
 		assert.Equal(t, form.ProfileImage, nil)
@@ -146,3 +146,4 @@ func TestHash(t *testing.T) {
 	str := toURLSafeBase64MD5("1-2-2")
 	t.Logf("Hash (%d): %s\n", len(str), str)
 }
+

@@ -27,7 +27,7 @@ func (app *application) browse(w http.ResponseWriter, r *http.Request) {
 	limit := 8
 	offset := 0
 
-	// First add non category sections (latest, trending)
+	// First add non category sections (ex: latest, trending)
 	latest, err := app.videos.GetLatest(limit, offset)
 	if err != nil {
 		app.errorLog.Println(err)

@@ -1,0 +1,47 @@
+{{ define "title"}} Update Video {{ end }}
+{{ define "main" }}
+  <div data-page="update-video">
+    <h1 class="my-5 text-xl font-bold">Update Video</h1>
+    <form
+      class="w-1/2"
+      enctype="multipart/form-data"
+      hx-patch="/video/{{ .Video.ID }}/update"
+    >
+      {{ template "video-form" . }}
+      <button
+        type="submit"
+        class="my-2 p-1 bg-green-700 text-gray-100 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+      >
+        Update
+      </button>
+    </form>
+    <!--List already added people here in table format-->
+    <div id="personInputs">
+      <label class="inline-block my-2">Actors</label>
+      {{ range $index, $personId := .Forms.VideoActor.PersonIDs }}
+        {{ template "actor-input" (dict "Index" $index "Forms" $.Forms) }}
+        <div>Filling w prev</div>
+      {{ else }}
+        {{ template "actor-input" (dict "Index" 0 "Forms" $.Forms )}}
+      {{ end }}
+      <button
+        type="button"
+        id="addPersonButton"
+        class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+      >
+        Add Person +
+      </button>
+    </div>
+    <button
+      type="submit"
+      class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+    >
+      Submit
+    </button>
+  </div>
+  </div>
+
+    <template id="personInputTemplate">
+      {{ template "actor-input" (dict "Index" 0 "Forms" $.Forms )}}
+    </template>
+{{ end }}

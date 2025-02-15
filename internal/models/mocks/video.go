@@ -9,11 +9,11 @@ import (
 )
 
 var mockVideo = &models.Video{
-	ID:        1,
-	Title:     "Test Title",
-	URL:       "www.testvid.com",
+	ID:            1,
+	Title:         "Test Title",
+	URL:           "www.testvid.com",
 	ThumbnailName: "a-test-thumbnail-1.jpg",
-	Rating:    "g",
+	Rating:        "g",
 	Creator: &models.Creator{
 		ID:              1,
 		Name:            "Test Creator",
@@ -36,33 +36,27 @@ var mockVideo = &models.Video{
 
 type VideoModel struct {
 	// videoCreatorRel map[int][]int
-	videoPersonRel  map[int][]int
-}
-
-func (m *VideoModel) Insert(video *models.Video) error {
-	return nil
-}
-
-func (m *VideoModel) Search(search string, offset int) ([]*models.Video, error) {
-	t := time.Now()
-	mockVideo.UploadDate = &t
-	return []*models.Video{mockVideo}, nil
-}
-
-func (m *VideoModel) GetAll(offset int) ([]*models.Video, error) {
-	return []*models.Video{mockVideo}, nil
+	videoPersonRel map[int][]int
 }
 
 func (m *VideoModel) Get(id int) (*models.Video, error) {
 	return mockVideo, nil
 }
 
-func (m *VideoModel) GetBySlug(slug string) (*models.Video, error) {
-	return mockVideo, nil
+func (m *VideoModel) GetAll(offset int) ([]*models.Video, error) {
+	return []*models.Video{mockVideo}, nil
 }
 
 func (m *VideoModel) GetByCreator(id int) ([]*models.Video, error) {
 	return []*models.Video{mockVideo}, nil
+}
+
+func (m *VideoModel) GetBySlug(slug string) (*models.Video, error) {
+	return mockVideo, nil
+}
+
+func (m *VideoModel) Insert(video *models.Video) error {
+	return nil
 }
 
 func (m *VideoModel) InsertVideoCreatorRelation(vidId, creatorId int) error {
@@ -85,4 +79,10 @@ func (m *VideoModel) InsertVideoPersonRelation(vidId, personId, position int, ch
 		m.videoPersonRel[vidId] = []int{personId}
 	}
 	return nil
+}
+
+func (m *VideoModel) Search(search string, offset int) ([]*models.Video, error) {
+	t := time.Now()
+	mockVideo.UploadDate = &t
+	return []*models.Video{mockVideo}, nil
 }

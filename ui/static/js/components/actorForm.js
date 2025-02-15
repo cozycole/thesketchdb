@@ -23,21 +23,8 @@ export class ActorForm {
       })
     }
 
-    // remove dropdown if user clicks outside of dropdown
-    document.addEventListener("click", (e) => {
-        const dropdown = document.getElementById('dropdown');
-        if (!dropdown) {
-            return;
-        }
-        const input = dropdown.parentNode.previousElementSibling;
-
-        const isClickInside = input.contains(e.target) || dropdown.contains(e.target);
-        if (!isClickInside) {
-            dropdown.remove();
-        }
-    });
   }
-    
+
   addPersonDiv() {
     let personInputDivs = document.querySelectorAll(`#${this.divId} > div`);
 

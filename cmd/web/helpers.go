@@ -60,6 +60,7 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 		ImageBaseUrl:    app.baseImgUrl,
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
+		Forms:           Forms{},
 		// CSRFToken:       nosurf.Token(r),
 	}
 }

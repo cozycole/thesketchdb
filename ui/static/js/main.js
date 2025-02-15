@@ -1,9 +1,10 @@
 import { initHome } from './pages/home.js'
 import { initViewVideo } from './pages/viewVideo.js';
-import { initSearch } from './pages/search.js';
 import { initAddVideo } from './pages/addVideo.js';
+import { initUpdateVideo } from './pages/updateVideo.js';
+import { initSearch } from './pages/search.js';
 
-const firstDiv = document.querySelector('main > div')
+const firstDiv = document.querySelector('main > div');
 const pageType = firstDiv ? firstDiv.dataset.page : 'No page attribute found!';
 
 console.log(`On ${pageType} page`);
@@ -18,7 +19,10 @@ switch (pageType) {
   case 'search':
     initSearch();
     break;
-  case 'addVideo':
+  case 'add-video':
     initAddVideo();
+    break;
+  case 'update-video':
+    initUpdateVideo();
     break;
 }

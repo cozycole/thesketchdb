@@ -10,14 +10,18 @@ import (
 	"sketchdb.cozycole.net/internal/validator"
 )
 
-// Functions for form validation within handlers
-type FormInterface interface {
-	validator.Validator
+type Forms struct {
+	Creator    creatorForm
+	Login      userLoginForm
+	Person     personForm
+	Signup     userSignupForm
+	Video      videoForm
+	VideoActor videoActorForm
 }
 
 // Changes to the form fields must be updated in their respective
 // validate functions
-type addCreatorForm struct {
+type creatorForm struct {
 	Name                string                `form:"name"`
 	URL                 string                `form:"url"`
 	EstablishedDate     string                `form:"establishedDate"`
@@ -25,7 +29,7 @@ type addCreatorForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateAddCreatorForm(form *addCreatorForm) {
+func (app *application) validateAddCreatorForm(form *creatorForm) {
 	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.EstablishedDate), "establishedDate", "This field cannot be blank")
@@ -46,7 +50,7 @@ func (app *application) validateAddCreatorForm(form *addCreatorForm) {
 	form.CheckField(validator.IsMime(profileImg, "image/jpeg", "image/png"), "profileImg", "Uploaded file must be jpg or png")
 }
 
-type addPersonForm struct {
+type personForm struct {
 	First               string                `form:"first"`
 	Last                string                `form:"last"`
 	BirthDate           string                `form:"birthDate"`
@@ -54,7 +58,7 @@ type addPersonForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateAddPersonForm(form *addPersonForm) {
+func (app *application) validateAddPersonForm(form *personForm) {
 	form.CheckField(validator.NotBlank(form.First), "first", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Last), "last", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.BirthDate), "birthDate", "This field cannot be blank")
@@ -78,24 +82,20 @@ func (app *application) validateAddPersonForm(form *addPersonForm) {
 // PersonIDs have name form field names of form peopleId[i]
 // if there are spaces between indexes say peopleId[0] : 1, peopleId[2] : 3
 // the result is zero filled so []int{1,0,3}
-type addVideoForm struct {
-	Title               string                  `form:"title"`
-	URL                 string                  `form:"url"`
-	Rating              string                  `form:"rating"`
-	UploadDate          string                  `form:"uploadDate"`
-	Thumbnail           *multipart.FileHeader   `img:"thumbnail"`
-	CreatorID           int                     `form:"creator"`
-	PersonIDs           []int                   `form:"peopleId"`
-	PersonInputs        []string                `form:"peopleText"`
-	CharacterIDs        []int                   `form:"characterId"`
-	CharacterInputs     []string                `form:"characterText"`
-	CharacterThumbnails []*multipart.FileHeader `img:"characterThumbnail"`
+type videoForm struct {
+	Title               string                `form:"title"`
+	URL                 string                `form:"url"`
+	Rating              string                `form:"rating"`
+	UploadDate          string                `form:"uploadDate"`
+	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
+	CreatorID           int                   `form:"creatorId"`
+	CreatorInput        string                `form:"creatorInput"`
 	validator.Validator `form:"-"`
 }
 
 // We need this function to have access to the apps state
 // to validate based on database queries
-func (app *application) validateAddVideoForm(form *addVideoForm) {
+func (app *application) validateAddVideoForm(form *videoForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Rating), "rating", "This field cannot be blank")
@@ -121,7 +121,28 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 		return
 	}
 
-	// The following fields are slices are related records
+	thumbnail, err := form.Thumbnail.Open()
+	if err != nil {
+		form.AddFieldError("thumbnail", "Unable to open file, ensure it is a valid jpg or png")
+		return
+	}
+	defer thumbnail.Close()
+
+	form.CheckField(validator.IsMime(thumbnail, "image/jpeg", "image/png"), "thumbnail", "Uploaded file must be jpg or png")
+	// Might want to check dimension ratios to make sure they work?
+}
+
+type videoActorForm struct {
+	PersonIDs           []int                   `form:"peopleId"`
+	PersonInputs        []string                `form:"peopleText"`
+	CharacterIDs        []int                   `form:"characterId"`
+	CharacterInputs     []string                `form:"characterText"`
+	CharacterThumbnails []*multipart.FileHeader `img:"characterThumbnail"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateAddActor(form *videoActorForm) {
+	// The following fields are slices and are related records
 	// (PersondIDs[0], CharacterIDs[0], CharacterThumbnails[0])
 	minLength := min(len(form.PersonIDs), len(form.CharacterIDs), len(form.CharacterThumbnails))
 	for i := 0; i < minLength; i++ {
@@ -154,34 +175,20 @@ func (app *application) validateAddVideoForm(form *addVideoForm) {
 		}
 
 		thumb := form.CharacterThumbnails[i]
-		if thumb == nil {
-			// A character thumbnail should be eventually uploaded but may not be able to
-			// on intial upload of video so NO ERROR
-			// form.CheckField(true, htmlCharThumbField, "Please upload character thumbnail")
-			continue
+		form.CheckField(thumb != nil, htmlCharThumbField, "Please upload an image")
+		if thumb != nil {
+			thumbnail, err := thumb.Open()
+			if err != nil {
+				form.AddFieldError(htmlCharThumbField, "Unable to open file, ensure it is a jpg or png")
+				return
+			}
+
+			form.CheckField(validator.IsMime(thumbnail, "image/jpeg", "image/png"),
+				htmlCharThumbField, "Uploaded file must be jpg or png")
+
+			thumbnail.Close()
 		}
-
-		thumbnail, err := thumb.Open()
-		if err != nil {
-			form.AddFieldError(htmlCharThumbField, "Unable to open file, ensure it is a jpg or png")
-			return
-		}
-
-		form.CheckField(validator.IsMime(thumbnail, "image/jpeg", "image/png"),
-			htmlCharThumbField, "Uploaded file must be jpg or png")
-
-		thumbnail.Close()
 	}
-
-	thumbnail, err := form.Thumbnail.Open()
-	if err != nil {
-		form.AddFieldError("thumbnail", "Unable to open file, ensure it is a jpg or png")
-		return
-	}
-	defer thumbnail.Close()
-
-	form.CheckField(validator.IsMime(thumbnail, "image/jpeg", "image/png"), "thumbnail", "Uploaded file must be jpg or png")
-	// Might want to check dimension ratios to make sure they work?
 }
 
 type userSignupForm struct {
@@ -211,7 +218,7 @@ func (app *application) validateUserLoginForm(form *userLoginForm) {
 	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
 }
 
-func (f *addVideoForm) IsEmptyActorInput(index int) bool {
+func (f *videoActorForm) IsEmptyActorInput(index int) bool {
 	switch {
 	case f.PersonIDs[index] != 0:
 	case f.CharacterIDs[index] != 0:
@@ -222,39 +229,18 @@ func (f *addVideoForm) IsEmptyActorInput(index int) bool {
 	return false
 }
 
-func convertFormToVideo(form *addVideoForm) (models.Video, error) {
-	if len(form.PersonIDs) != len(form.CharacterIDs) {
-		return models.Video{}, fmt.Errorf("mismatched number of people and characters")
-	}
-
+func convertFormToVideo(form *videoForm) (models.Video, error) {
 	uploadDate, err := time.Parse(time.DateOnly, form.UploadDate)
 	if err != nil {
 		return models.Video{}, fmt.Errorf("unable to parse date")
 	}
 
 	creator := &models.Creator{
-		ID: form.CreatorID,
+		ID: &form.CreatorID,
 	}
 
 	slug := models.CreateSlugName(form.Title, maxFileNameLength)
-
-	var cast []*models.CastMember
-	for i := range form.PersonIDs {
-		p := &models.Person{ID: &form.PersonIDs[i]}
-		c := &models.Character{}
-		if form.CharacterIDs[i] != 0 {
-			c.ID = &form.CharacterIDs[i]
-		}
-
-		cm := &models.CastMember{
-			Position:      &i,
-			Actor:         p,
-			Character:     c,
-			ThumbnailFile: form.CharacterThumbnails[i],
-		}
-
-		cast = append(cast, cm)
-	}
+	slug = slug + "-" + models.GetTimeStampHash()
 
 	return models.Video{
 		Title:         form.Title,
@@ -264,6 +250,5 @@ func convertFormToVideo(form *addVideoForm) (models.Video, error) {
 		Rating:        form.Rating,
 		UploadDate:    &uploadDate,
 		Creator:       creator,
-		Cast:          cast,
 	}, nil
 }

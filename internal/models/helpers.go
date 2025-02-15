@@ -1,8 +1,12 @@
 package models
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func CreateSlugName(input string, maxLength int) string {
@@ -30,4 +34,11 @@ func CreateSlugName(input string, maxLength int) string {
 	}
 
 	return strings.Join(result, "-")
+}
+
+func GetTimeStampHash() string {
+	data := fmt.Sprintf("%d", time.Now().UnixNano())
+	hash := sha256.Sum256([]byte(data))
+	encoded := base64.URLEncoding.EncodeToString(hash[:])
+	return strings.TrimRight(encoded[:22], "=")
 }

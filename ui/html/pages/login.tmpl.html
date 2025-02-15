@@ -3,11 +3,11 @@
   <div class="flex justify-center">
     <div class="w-80 mt-7 p-3 border border-gray-300 bg-gray-100 rounded-md drop-shadow-lg">
       <form action="/login" method="POST" novalidate>
-        {{range .Form.NonFieldErrors}}
+        {{range .Forms.Login.NonFieldErrors}}
             <label class="error text-red-600">{{.}}</label>
         {{end}}
         <div>
-          {{ with .Form.FieldErrors.username }}
+          {{ with .Forms.Login.FieldErrors.username }}
             <label class="error text-red-600">{{ . }}</label>
           {{ end }}
           <input 
@@ -15,10 +15,10 @@
             name="username" 
             class="w-full my-2 p-3 rounded-md"
             placeholder="Username" 
-            value="{{ .Form.Username }}" />
+            value="{{ .Forms.Login.Username }}" />
         </div>
         <div>
-          {{ with .Form.FieldErrors.password }}
+          {{ with .Forms.Login.FieldErrors.password }}
             <label class="error text-red-600">{{ . }}</label>
           {{ end }}
           <input 

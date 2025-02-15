@@ -4,7 +4,7 @@
     <div class="w-80 mt-7 p-3 border border-gray-300 bg-gray-100 rounded-md drop-shadow-lg">
       <form action="/signup" method="POST" novalidate>
         <div>
-          {{ with .Form.FieldErrors.email }}
+          {{ with .Forms.Signup.FieldErrors.email }}
             <label class="error text-red-600">{{ . }}</label>
           {{ end }}
           <input 
@@ -12,10 +12,10 @@
             name="email" 
             class="w-full my-2 p-3 rounded-md"
             placeholder="Email" 
-            value="{{ .Form.Email }}" />
+            value="{{ .Forms.Signup.Email }}" />
         </div>
         <div>
-          {{ with .Form.FieldErrors.username }}
+          {{ with .Forms.Signup.FieldErrors.username }}
             <label class="error text-red-600">{{ . }}</label>
           {{ end }}
           <input 
@@ -23,10 +23,10 @@
             name="username" 
             class="w-full my-2 p-3 rounded-md"
             placeholder="Username" 
-            value="{{ .Form.Username }}" />
+            value="{{ .Forms.Signup.Username }}" />
         </div>
         <div>
-          {{ with .Form.FieldErrors.password }}
+          {{ with .Forms.Signup.FieldErrors.password }}
             <label class="error text-red-600">{{ . }}</label>
           {{ end }}
           <input 

@@ -139,3 +139,43 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 
 	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
 }
+
+func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("query")
+
+	redirLink := "/creator/add"
+	redirText := "Add Creator +"
+	results := dropdownSearchResults{
+		Redirect:     redirLink,
+		RedirectText: redirText,
+	}
+
+	if q != "" {
+		q = strings.Replace(q, " ", "", -1)
+		creators, err := app.creators.Search(q)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverError(w, err)
+			}
+			return
+		}
+
+		if creators != nil {
+			res := []result{}
+			for _, c := range creators {
+				r := result{}
+				r.Text = *c.Name
+				r.ID = *c.ID
+				res = append(res, r)
+			}
+
+			results.Results = res
+		}
+	}
+	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
+
+	data := app.newTemplateData(r)
+	data.DropdownResults = results
+
+	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
+}
