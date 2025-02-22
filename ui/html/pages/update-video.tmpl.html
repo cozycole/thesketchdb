@@ -1,47 +1,64 @@
 {{ define "title"}} Update Video {{ end }}
 {{ define "main" }}
-  <div data-page="update-video">
+  <div data-page="update-video" class="px-3">
     <h1 class="my-5 text-xl font-bold">Update Video</h1>
     <form
       class="w-1/2"
       enctype="multipart/form-data"
-      hx-patch="/video/{{ .Video.ID }}/update"
+      hx-patch="/video/{{ .Video.ID }}"
+      hx-target="find #videoForm"
+      hx-swap="outerHTML"
     >
+      <input
+        type="hidden"
+        name="vidId"
+        value="{{ with .Video }}{{ .ID }}{{ end }}"
+      />
       {{ template "video-form" . }}
       <button
         type="submit"
-        class="my-2 p-1 bg-green-700 text-gray-100 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        class="my-2 p-1 bg-green-700 text-gray-100 border border-gray-300 rounded-lg hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
       >
         Update
       </button>
     </form>
-    <!--List already added people here in table format-->
-    <div id="personInputs">
-      <label class="inline-block my-2">Actors</label>
-      {{ range $index, $personId := .Forms.VideoActor.PersonIDs }}
-        {{ template "actor-input" (dict "Index" $index "Forms" $.Forms) }}
-        <div>Filling w prev</div>
-      {{ else }}
-        {{ template "actor-input" (dict "Index" 0 "Forms" $.Forms )}}
-      {{ end }}
-      <button
-        type="button"
-        id="addPersonButton"
-        class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-      >
-        Add Person +
-      </button>
+    <div>
+    <div id="cast">
+      <div id="castTable">
+        <h2 class="inline-block my-2 text-lg font-bold">Cast</h2>
+        {{ template "cast-table" (dict "ImageBaseUrl" $.ImageBaseUrl "Cast" .Video.Cast) }}
+      </div>
+        <button
+          id="addCastButton"
+          class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        >
+          Add Cast
+        </button>
+      </div>
     </div>
-    <button
-      type="submit"
-      class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-    >
-      Submit
-    </button>
-  </div>
-  </div>
-
-    <template id="personInputTemplate">
-      {{ template "actor-input" (dict "Index" 0 "Forms" $.Forms )}}
+    <div 
+      id="addCastFormViewer"
+      class="hidden fixed inset-0 items-center justify-center bg-black bg-opacity-90">
+      <div class="max-w-96 p-3 bg-white rounded-md">
+        <h1 class="text-xl font-bold">Add Cast Member</h1>
+        <form
+          id="addCastForm"
+          enctype="multipart/form-data"
+          hx-post="/video/{{ .Video.ID }}/cast"
+          hx-target="#castTable"
+          hx-target-422="#addCastForm"
+        >
+          {{ template "actor-input" . }}
+          <button
+            type="submit"
+            class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
+            Submit
+          </button>
+        </form>
+      </div>
+    </div>
+    <template id="actorFormInputs">
+      {{ template "actor-input" . }}
     </template>
+  </div>
 {{ end }}

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"image"
+	"image/jpeg"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -16,6 +18,16 @@ import (
 	"sketchdb.cozycole.net/internal/utils"
 )
 
+const (
+	MinThumbnailWidth     = 480
+	MinThumbnailHeight    = 360
+	TargetThumbnailWidth  = 480
+	TargetThumbnailHeight = 360
+	FinalThumbnailHeight  = 270
+	MinProfileWidth       = 256
+	TargetProfileWidth    = 256
+)
+
 // Functions used within handlers that save images
 func (app *application) saveVideoThumbnail(video *models.Video) error {
 	file, err := video.ThumbnailFile.Open()
@@ -24,27 +36,14 @@ func (app *application) saveVideoThumbnail(video *models.Video) error {
 	}
 	defer file.Close()
 
-	width, height, err := utils.GetImageDimensions(file)
+	img, err := processThumbnailImage(file)
 	if err != nil {
 		return err
 	}
 
-	var dstFile io.Reader
-	dstFile = file
-
-	// This is stock youtube thumbnail dimensions but has black
-	// top/bottom borders that need to be removed
-	if width == 480 && height == 360 {
-		subStrs := strings.Split(video.ThumbnailName, ".")
-		ext := "." + subStrs[len(subStrs)-1]
-		rect := image.Rect(0, 45, 480, 315)
-		dstFile, err = utils.CropImg(file, ext, rect)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = app.fileStorage.SaveFile(path.Join("video", video.ThumbnailName), dstFile)
+	var dstFile bytes.Buffer
+	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
+	err = app.fileStorage.SaveFile(path.Join("video", video.ThumbnailName), &dstFile)
 	if err != nil {
 		return err
 	}
@@ -52,64 +51,92 @@ func (app *application) saveVideoThumbnail(video *models.Video) error {
 	return nil
 }
 
-// Generates names for video thumbnail and character thumbnails
-// func addVideoImageNames(video *models.Video) error {
-// 	file, err := video.ThumbnailFile.Open()
-// 	if err != nil {
-// 		return fmt.Errorf("unable to open file")
-// 	}
-// 	mimeType, err := utils.GetMultipartFileMime(file)
-// 	if err != nil {
-// 		return fmt.Errorf("unable to identify mime")
-// 	}
-// 	file.Close()
-// 	if video.Title == "" {
-// 		return fmt.Errorf("unable to name video thumbnail: title not defined")
-// 	}
-// 	slug := models.CreateSlugName(video.Title, maxFileNameLength)
-// 	video.ThumbnailName = fmt.Sprintf("%s-%d%s", slug, 1, mimeToExt[mimeType])
+func (app *application) deleteVideoThumbnail(video *models.Video) error {
+	// within wherever images are stored, you get video images by
+	// appending /video/ to the thumbnailName e.g. /video/asdasdfjkl.jpg
+	thumbnailSubPath := path.Join("video", video.ThumbnailName)
+	return app.fileStorage.DeleteFile(thumbnailSubPath)
+}
 
-// for _, c := range video.Cast {
-// 	file, err = c.ThumbnailFile.Open()
-// 	if err != nil {
-// 		return fmt.Errorf("unable to identify mime")
-// 	}
-//
-// 	mimeType, err = utils.GetMultipartFileMime(file)
-// 	file.Close()
-// 	if err != nil {
-// 		return fmt.Errorf("unable to identify mime")
-// 	}
-//
-// 	var thumbName string
-// 	if c.Character.ID != nil {
-// 		thumbName = fmt.Sprintf("%d-%d-%d", video.ID, *c.Actor.ID, *c.Character.ID)
-// 	} else {
-// 		thumbName = fmt.Sprintf("%d-%d", video.ID, *c.Actor.ID)
-// 	}
-//
-// 	thumbName = toURLSafeBase64MD5(thumbName) + mimeToExt[mimeType]
-// 	c.ThumbnailName = &thumbName
-// }
-// 	return nil
-// }
+func (app *application) saveCastImages(member *models.CastMember) error {
+	thumbFile, err := member.ThumbnailFile.Open()
+	if err != nil {
+		return err
+	}
+	defer thumbFile.Close()
 
-func generateThumbnailHash(videoID int) string {
-	data := fmt.Sprintf("%d-%d", videoID, time.Now().UnixNano())
+	img, err := processThumbnailImage(thumbFile)
+	if err != nil {
+		app.errorLog.Print("error processing thumbnail image")
+		return err
+	}
+
+	var dstFile bytes.Buffer
+	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
+	err = app.fileStorage.SaveFile(path.Join("cast", "thumbnail", *member.ThumbnailName), &dstFile)
+	if err != nil {
+		app.errorLog.Print("error saving thumbnail img")
+		return err
+	}
+
+	profileFile, err := member.ProfileFile.Open()
+	if err != nil {
+		return err
+	}
+	defer profileFile.Close()
+
+	img, err = processProfileImage(profileFile)
+	if err != nil {
+		app.errorLog.Print("error processing profile image")
+		return err
+	}
+
+	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
+	err = app.fileStorage.SaveFile(path.Join("cast", "profile", *member.ThumbnailName), &dstFile)
+	if err != nil {
+		app.errorLog.Print("error saving profile img")
+		return err
+	}
+	return nil
+}
+
+func generateThumbnailName(id int, fileHeader *multipart.FileHeader) (string, error) {
+	thumbnailHash := generateThumbnailHash(id)
+	thumbnailExtension, err := getFileExtension(fileHeader)
+	if err != nil {
+		return "", err
+	}
+	return thumbnailHash + thumbnailExtension, nil
+}
+
+func processThumbnailImage(file io.Reader) (image.Image, error) {
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return nil, err
+	}
+
+	img = utils.CenterCropToAspectRatio(img, 4.0/3.0)
+	img = utils.ResizeImage(img, TargetThumbnailWidth, TargetThumbnailHeight)
+	img = utils.CropFinalSize(img, FinalThumbnailHeight)
+	return img, nil
+}
+
+func processProfileImage(file io.Reader) (image.Image, error) {
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return nil, err
+	}
+
+	img = utils.CenterCropToAspectRatio(img, 1.0)
+	img = utils.ResizeImage(img, TargetProfileWidth, TargetProfileWidth)
+	return img, nil
+}
+
+func generateThumbnailHash(id int) string {
+	data := fmt.Sprintf("%d-%d", id, time.Now().UnixNano())
 	hash := sha256.Sum256([]byte(data))
 	encoded := base64.URLEncoding.EncodeToString(hash[:])
 	return strings.TrimRight(encoded[:22], "=")
-}
-
-func (app *application) saveCharacterThumbnail(header *multipart.FileHeader, path string) error {
-	file, err := header.Open()
-	if err != nil {
-		return fmt.Errorf("unable to open file: %s", path)
-	}
-	defer file.Close()
-
-	app.fileStorage.SaveFile(path, file)
-	return nil
 }
 
 func getFileExtension(header *multipart.FileHeader) (string, error) {
@@ -129,4 +156,3 @@ func getFileExtension(header *multipart.FileHeader) (string, error) {
 	}
 	return mime, nil
 }
-

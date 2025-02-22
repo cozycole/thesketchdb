@@ -1,73 +1,104 @@
 {{ define "actor-input" }}
-  {{ $idPeople := printf "peopleId[%d]" .Index }}
-  {{ $textPeople := printf "peopleText[%d]" .Index }}
-  {{ $idCharacter := printf "characterId[%d]" .Index }}
-  {{ $textCharacter := printf "characterText[%d]" .Index }}
-  {{ $thumbCharacter := printf "characterThumbnail[%d]" .Index }}
-
-  <div
-    id="people[{{ .Index }}]"
-    class="relative p-2 my-2 rounded-lg border-2 border-black"
-  >
-    <div class="htmxDropdown">
-      <label>Name</label>
-      {{ with (index .Forms.VideoActor.FieldErrors $idPeople) }}
+  <div>
+    <label class="inline-block my-2"> Thumbnail Image </label>
+    {{ with .Forms.Cast.FieldErrors.characterThumbnail }}
+      <label class="block text-red-700">{{ . }}</label>
+    {{ end }}
+    {{ with .CastMember.ThumbnailName -}}
+      <img 
+        src="{{$.ImageBaseUrl}}/cast/thumbnail/{{ . }}"
+        class="w-72"/>
+    {{- end }}
+    <label
+      id="actorThumbnailPreview"
+      class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+    >
+      Upload
+      <input
+        type="file"
+        name="characterThumbnail"
+        accept="image/*"
+        class="hidden"
+      />
+    </label>
+  </div>
+  <div>
+    <label class="inline-block my-2"> Profile Image </label>
+    {{ with .Forms.Cast.FieldErrors.characterProfile }}
+      <label class="block text-red-700">{{ . }}</label>
+    {{ end }}
+    {{ with .CastMember.ThumbnailName -}}
+      <img 
+        src="{{$.ImageBaseUrl}}/cast/profile/{{ . }}"
+        class="w-72"/>
+    {{- end }}
+    <label
+      id="actorProfilePreview"
+      class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+    >
+      Upload
+      <input
+        type="file"
+        name="characterProfile"
+        accept="image/*"
+        class="hidden"
+      />
+    </label>
+  </div>
+  <div id="personHtmxDropdown" class="relative w-full">
+    <label>Name</label>
+    {{ with .Forms.Cast.FieldErrors.personId }}
+      <label class="block text-red-700">{{ . }}</label>
+    {{ end }}
+    <input
+      type="hidden"
+      name="personId"
+      value="{{ with .Forms.Cast.PersonID }}{{ . }}{{ else with .CastMember.Actor }}{{ .ID }}{{ end }}"
+    />
+    <input
+      type="search"
+      name="personInput"
+      value="{{ with .Forms.Cast.PersonInput }}{{ . }}{{ else with .CastMember.Actor }}{{ printPersonName . }}{{ end }}"
+      class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+      placeholder="Search for person"
+      hx-get="/person/search"
+      hx-params="query"
+      hx-trigger="focus, input changed delay:500ms, search"
+      hx-target="next"
+    />
+    <div></div>
+  </div>
+  <div id="characterHtmxDropdown" class="relative w-full">
+    <label class="inline-block my-2">Character Name</label>
+      {{ with .Forms.Cast.FieldErrors.characterName }}
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
-      <input
-        type="hidden"
-        name="{{ $idPeople }}"
-        value="{{ if .Forms.VideoActor.PersonIDs }}
-          {{ index .Forms.VideoActor.PersonIDs .Index }}
-        {{ end }}"
-      />
-      <input
-        type="search"
-        name="{{ $textPeople }}"
-        value="{{ if .Forms.VideoActor.PersonInputs }}
-          {{ index .Forms.VideoActor.PersonInputs .Index }}
-        {{ end }}"
-        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-        placeholder="Enter person's name"
-        hx-get="/person/search"
-        hx-params="query"
-        hx-trigger="focus, input changed delay:500ms, search"
-        hx-target="next"
-      />
-      <div></div>
-    </div>
-    <div class="htmxDropdown">
-      <label>Character Name (if applicable)</label>
-      {{ with (index .Forms.VideoActor.FieldErrors $idCharacter) }}
-        <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
-      <input type="hidden" name="{{ $idCharacter }}" />
-      <input
-        type="search"
-        name="{{ $textCharacter }}"
-        value="{{ with .Forms.VideoActor.CharacterInputs }}
-          {{ index .Forms.VideoActor.CharactersInputs .Index }}
-        {{ end }}"
+      <input 
+        name="characterName"
+        value="{{ with .Forms.Cast.CharacterName }}{{ . }}{{ else with .CastMember.CharacterName }}{{ . }}{{ end }}"
         class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
         placeholder="Enter character's name"
+      />
+      <label class="inline-block my-2">Character Page</label>
+      {{ with .Forms.Cast.FieldErrors.characterID }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input 
+        type="hidden" 
+        name="characterId"
+        value="{{ with .Forms.Cast.CharacterID }}{{ . }}{{ else with .CastMember.Character }}{{ .ID }}{{ end }}"
+        />
+      <input
+        type="search"
+        name="characterInput"
+        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        value="{{ with .Forms.Cast.CharacterInput }}{{ . }}{{ else with .CastMember.Character }}{{ .Name }}{{ end }}"
+        placeholder="Search for character's page"
         hx-get="/character/search"
         hx-params="query"
         hx-trigger="focus, input changed delay:500ms, search"
         hx-target="next"
       />
       <div></div>
-    </div>
-    <label class="inline-block my-2"> Thumbnail </label>
-    <label
-      class="imagePreview inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-    >
-    Upload
-    <input
-      type="file"
-      name="{{ $thumbCharacter }}"
-      accept="image/*"
-      class="hidden"
-    />
-    </label>
   </div>
 {{ end }}

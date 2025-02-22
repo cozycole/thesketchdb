@@ -21,7 +21,9 @@ type templateData struct {
 	Videos          []*models.Video
 	Video           *models.Video
 	Creator         *models.Creator
+	CastMember      *models.CastMember
 	Person          *models.Person
+	Cast            *[]*models.CastMember
 	User            *models.User
 	BrowseSections  map[string][]*models.Video
 	DropdownResults dropdownSearchResults
@@ -54,6 +56,18 @@ func getYear(t time.Time) string {
 	return strconv.Itoa(t.Year())
 }
 
+func printPersonName(a *models.Person) string {
+	if a == nil || a.First == nil {
+		return ""
+	}
+
+	name := *a.First
+	if a.Last == nil {
+		return name
+	}
+	return name + " " + *a.Last
+}
+
 func dict(values ...any) map[string]any {
 	if len(values)%2 != 0 {
 		panic("invalid dict call")
@@ -81,11 +95,12 @@ func derefString(s *string) string {
 // functions from template). NOTE: The tempalte functions should only
 // return a single value
 var functions = template.FuncMap{
-	"humanDate":   humanDate,
-	"getYear":     getYear,
-	"dict":        dict,
-	"derefString": derefString,
-	"formDate":    formDate,
+	"humanDate":       humanDate,
+	"getYear":         getYear,
+	"dict":            dict,
+	"derefString":     derefString,
+	"formDate":        formDate,
+	"printPersonName": printPersonName,
 }
 
 // Getting mapping of html page filename to template set for the page

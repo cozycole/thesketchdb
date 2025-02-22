@@ -14,7 +14,7 @@
         </button>
       </div>
         <div class="flex flex-nowrap">
-          <a href="/creator/{{ .Creator.Slug }}">
+          <a href="/creator/{{ with .Creator.Slug }}{{ . }}{{ end }}">
             <img
               src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
               class="mt-0.5 rounded-full inline-block w-9"

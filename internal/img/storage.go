@@ -9,14 +9,15 @@ import (
 
 type FileStorageInterface interface {
 	SaveFile(string, io.Reader) error
+	DeleteFile(string) error
 }
 
 type FileStorage struct {
-	Path string
+	RootPath string
 }
 
 func (s *FileStorage) SaveFile(subPath string, file io.Reader) error {
-	imgPath := path.Join(s.Path, subPath)
+	imgPath := path.Join(s.RootPath, subPath)
 	imgDir := path.Dir(imgPath)
 	// Make the dir if it doesn't exist
 	if _, err := os.Stat(imgPath); errors.Is(err, os.ErrNotExist) {
@@ -36,4 +37,12 @@ func (s *FileStorage) SaveFile(subPath string, file io.Reader) error {
 		return err
 	}
 	return nil
+}
+
+func (s *FileStorage) DeleteFile(subPath string) error {
+	imgPath := path.Join(s.RootPath, subPath)
+	if _, err := os.Stat(imgPath); errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return os.Remove(imgPath)
 }

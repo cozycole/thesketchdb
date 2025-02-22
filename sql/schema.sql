@@ -35,7 +35,6 @@ CREATE TABLE IF NOT EXISTS creator (
     insert_timestamp timestamp DEFAULT now()
 );
 
-
 CREATE TABLE IF NOT EXISTS video (
     id SERIAL PRIMARY KEY,
     title VARCHAR NOT NULL,
@@ -50,15 +49,16 @@ CREATE TABLE IF NOT EXISTS video (
     insert_timestamp timestamp DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS video_person_rel (
+CREATE TABLE IF NOT EXISTS cast_members (
     id SERIAL PRIMARY KEY,
     video_id INT references video(id) NOT NULL,
     person_id INT references person(id) NOT NULL,
+    character_name text DEFAULT '',
     character_id INT references character(id),
     position INT,
-    img VARCHAR,
+    img_name TEXT,
     insert_timestamp timestamp DEFAULT now(),
-    CONSTRAINT unique_video_person_character UNIQUE(video_id, person_id, character_id)
+    CONSTRAINT unique_cast_character UNIQUE(video_id, person_id, character_id)
 );
 
 CREATE TABLE IF NOT EXISTS video_creator_rel (
@@ -86,17 +86,27 @@ CREATE TABLE IF NOT EXISTS likes (
     PRIMARY KEY (user_id, video_id)
 );
 
---CREATE TABLE IF NOT EXISTS tag (
---    id SERIAL PRIMARY KEY,
---    tag VARCHAR UNIQUE
---);
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    parent INT REFERENCES categories(id) ON DELETE SET NULL
+);
 
--- CREATE TABLE video_tag_rel (
---     id serial PRIMARY KEY,
---     video_id INT references video(id),
---     tag_id INT references tag(id),
---     UNIQUE (video_id, tag_id)
--- );
+CREATE TABLE IF NOT EXISTS tags (
+    id SERIAL PRIMARY KEY,
+    created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    category_id INT REFERENCES categories(id) ON DELETE SET NULL
+);
+
+CREATE TABLE video_tag_rel (
+    video_id INT references video(id),
+    tag_id INT references tags(id),
+    PRIMARY KEY (video_id, tag_id)
+);
 
 CREATE TABLE IF NOT EXISTS sessions (
 	token TEXT PRIMARY KEY,

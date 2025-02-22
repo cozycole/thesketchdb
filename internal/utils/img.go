@@ -7,6 +7,8 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+
+	"golang.org/x/image/draw"
 )
 
 func CropImg(file io.Reader, ext string, cropRect image.Rectangle) (io.Reader, error) {
@@ -36,6 +38,46 @@ func CropImg(file io.Reader, ext string, cropRect image.Rectangle) (io.Reader, e
 	}
 
 	return &buf, err
+}
+
+func CenterCropToAspectRatio(img image.Image, targetRatio float64) image.Image {
+	bounds := img.Bounds()
+	width, height := bounds.Dx(), bounds.Dy()
+
+	targetWidth := width
+	targetHeight := int(float64(width) / targetRatio)
+
+	if targetHeight > height {
+		targetHeight = height
+		targetWidth = int(float64(height) * targetRatio)
+	}
+
+	x0 := (width - targetWidth) / 2
+	y0 := (height - targetHeight) / 2
+	x1 := x0 + targetWidth
+	y1 := y0 + targetHeight
+
+	return img.(interface {
+		SubImage(r image.Rectangle) image.Image
+	}).SubImage(image.Rect(x0, y0, x1, y1))
+}
+
+func ResizeImage(img image.Image, width, height int) *image.RGBA {
+	dst := image.NewRGBA(image.Rect(0, 0, width, height))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), img, img.Bounds(), draw.Over, nil)
+	return dst
+}
+
+func CropFinalSize(img image.Image, finalHeight int) image.Image {
+	bounds := img.Bounds()
+	width, height := bounds.Dx(), bounds.Dy()
+
+	y0 := (height - finalHeight) / 2
+	y1 := y0 + finalHeight
+
+	return img.(interface {
+		SubImage(r image.Rectangle) image.Image
+	}).SubImage(image.Rect(0, y0, width, y1))
 }
 
 func GetImageDimensions(file io.ReadSeekCloser) (int, int, error) {

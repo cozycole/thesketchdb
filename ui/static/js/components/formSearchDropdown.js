@@ -1,22 +1,26 @@
-// class that implements search auto complete dropdown and fills in the input box on click
+// class that implements search auto complete dropdown 
+// and fills in the input box on click
 export class FormSearchDropdown {
-    constructor(divClass) {
-        this.divs = document.getElementsByClassName(divClass);
-        for (let div of this.divs) {
-          // this event gets triggered after every htmx request for this given search
-          div.addEventListener('insertDropdownItem', (e) => {
-            let dropDownItems = div.querySelectorAll('li.result');
+    // div contains two inputs, one hidden above a visible one
+    constructor(divId) {
+        console.log(`FormSearchDropdown constructed with div ${divId}`);
+        this.div = document.getElementById(divId);
+        // this custom event gets triggered after every 
+        // htmx request for this given search based on the server
+        // response header value
+        this.div.addEventListener('insertDropdownItem', (e) => {
+          let dropDownItems = this.div.querySelectorAll('li.result');
 
-            for (let el of dropDownItems) {
-              el.addEventListener('click', (e) => {
-                this.insertDropdownItem(e);
-              })
-            }
-          })
-        }
+          for (let el of dropDownItems) {
+            el.addEventListener('click', (e) => {
+              
+              this.insertDropdownItem(e);
+            })
+          }
+        })
 
         // remove dropdown if user clicks outside of dropdown
-        document.addEventListener("click", (e) => {
+        document.addEventListener('click', (e) => {
             const dropdown = document.getElementById('dropdown');
             if (!dropdown) {
                 return;
@@ -25,7 +29,7 @@ export class FormSearchDropdown {
 
             const isClickInside = input.contains(e.target) || dropdown.contains(e.target);
             if (!isClickInside) {
-                dropdown.remove();
+              dropdown.remove();
             }
         });
     }

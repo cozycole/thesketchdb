@@ -194,10 +194,10 @@ COPY public.video_creator_rel (creator_id, video_id, "position", insert_timestam
 
 
 --
--- Data for Name: video_person_rel; Type: TABLE DATA; Schema: public; Owner: colet
+-- Data for Name: cast; Type: TABLE DATA; Schema: public; Owner: colet
 --
 
-COPY public.video_person_rel (id, video_id, person_id, character_id, "position", img, insert_timestamp) FROM stdin;
+COPY public.cast (id, video_id, person_id, character_id, character_name, "position", img_name, insert_timestamp) FROM stdin;
 1	1	1	\N	2	\N	2025-01-31 14:31:12.730178
 2	1	2	1	1	\N	2025-01-31 14:31:12.730178
 \.
@@ -235,14 +235,14 @@ SELECT pg_catalog.setval('public.users_id_seq', 3, true);
 -- Name: video_id_seq; Type: SEQUENCE SET; Schema: public; Owner: colet
 --
 
-SELECT pg_catalog.setval('public.video_id_seq', 1, true);
+SELECT pg_catalog.setval('public.video_id_seq', 51, true);
 
 
 --
--- Name: video_person_rel_id_seq; Type: SEQUENCE SET; Schema: public; Owner: colet
+-- Name: cast_id_seq; Type: SEQUENCE SET; Schema: public; Owner: colet
 --
 
-SELECT pg_catalog.setval('public.video_person_rel_id_seq', 2, true);
+SELECT pg_catalog.setval('public.cast_id_seq', 2, true);
 
 
 --

@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS video_creator_rel;
-DROP TABLE IF EXISTS video_person_rel;
+DROP TABLE IF EXISTS cast;
 DROP TABLE IF EXISTS video_tag_rel;
 DROP TABLE IF EXISTS actor_creator_rel;
 DROP TABLE IF EXISTS likes;

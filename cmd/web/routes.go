@@ -71,9 +71,10 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Post("/video/add", app.requireRoles(editorAdmin, app.videoAdd))
 
 		r.Get("/video/{id}/update", app.requireRoles(editorAdmin, app.videoUpdatePage))
-
 		r.Patch("/video/{id}", app.requireRoles(editorAdmin, app.videoUpdate))
-		r.Patch("/video/{id}/actor", app.requireRoles(editorAdmin, app.videoAdd))
+		r.Get("/cast/add", app.requireRoles(editorAdmin, app.addCastPage))
+		r.Post("/video/{id}/cast", app.requireRoles(editorAdmin, app.addCast))
+		r.Patch("/video/{id}/cast/{castId}", app.requireRoles(editorAdmin, app.updateCast))
 		r.Patch("/video/{id}/tag", app.requireRoles(editorAdmin, app.videoAdd))
 
 		r.Get("/creator/add", app.requireRoles(editorAdmin, app.creatorAdd))

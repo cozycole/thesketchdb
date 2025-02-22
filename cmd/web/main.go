@@ -28,6 +28,7 @@ type application struct {
 	creators       models.CreatorModelInterface
 	people         models.PersonModelInterface
 	characters     models.CharacterModelInterface
+	cast           models.CastModelInterface
 	profile        models.ProfileModelInterface
 	users          models.UserModelInterface
 	sessionManager *scs.SessionManager
@@ -93,7 +94,7 @@ func main() {
 	}
 
 	formDecoder := form.NewDecoder()
-	fileStorage := img.FileStorage{Path: imgStoragePath}
+	fileStorage := img.FileStorage{RootPath: imgStoragePath}
 	app := &application{
 		errorLog:       errorLog,
 		infoLog:        infoLog,
@@ -104,6 +105,7 @@ func main() {
 		creators:       &models.CreatorModel{DB: dbpool},
 		people:         &models.PersonModel{DB: dbpool},
 		characters:     &models.CharacterModel{DB: dbpool},
+		cast:           &models.CastModel{DB: dbpool},
 		profile:        &models.ProfileModel{DB: dbpool},
 		users:          &models.UserModel{DB: dbpool},
 		sessionManager: sessionManager,

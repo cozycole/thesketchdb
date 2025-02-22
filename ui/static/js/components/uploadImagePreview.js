@@ -1,50 +1,27 @@
-// label must contain input of type file
+// We assume that we will have the following html
+// <img>
+// <label><input></label>
+// So label.prevElementSibling is where we will be placing the image
 export class UploadImagePreview {
-    constructor(labelClass) {
-        this.labelClass = labelClass;
-        this.init();
-    }
-
-    init() {
-        this.labels = document.getElementsByClassName(this.labelClass);
-        if (!this.labels.length) {
-            throw Error(`No label found with id ${labelClass}`)
-        }
-        for (let label of this.labels) {
-            let input = label.querySelector('input[type=file]');
-            this.previewImage(input);
+    constructor(labelId) {
+        this.label = document.getElementById(labelId);
+        if (!this.label) {
+            throw Error(`No label found with id ${labelId}`);
         }
 
-        this.addListeners();
+        this.input = this.label.querySelector('input[type=file]');
+        this.previewImage(this.input);
+        this.input.addEventListener('change', (e) => this.previewImage());
     }
 
-    refresh() {
-        // there is functionality to add labeled inputs to the form,
-        // so when you add one, you need to refresh this to include the
-        // newly added one
-        this.init();
-    }
-
-    addListeners() {
-        for (let label of this.labels) {
-            this.label = label;
-            this.input = this.label.querySelector('input[type=file]');
-
-            if (this.input.getAttribute('uploadPreview') !== 'true') {
-                this.input.addEventListener('change', (e) => {this.previewImage(e.target)});
-                this.input.setAttribute('uploadPreview', 'true');
-            }
-        }
-    }
-
-    previewImage(input) {
-        const file = input.files[0];
+    previewImage() {
+        const file = this.input.files[0];
 
         if (file) {
             const reader = new FileReader();
 
             reader.onload = (e) => {
-                let prevPreview = this.label.nextElementSibling;
+                let prevPreview = this.label.previousElementSibling;
                 if (prevPreview && prevPreview.nodeName == "IMG") {
                     prevPreview.remove();
                 }
@@ -52,8 +29,9 @@ export class UploadImagePreview {
                 const img = document.createElement('img');
                 img.src = e.target.result;
                 img.style.maxWidth = '300px'; 
+                img.style.maxWidth = '200px'; 
 
-                this.label.after(img);
+                this.label.before(img);
             };
 
             reader.readAsDataURL(file);

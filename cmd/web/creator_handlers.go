@@ -23,7 +23,7 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 	app.validateAddCreatorForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		data.Forms.Creator = form
+		data.Forms.Creator = &form
 		app.render(w, http.StatusUnprocessableEntity, "add-creator.tmpl.html", "base", data)
 		return
 	}
@@ -97,6 +97,6 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 func (app *application) creatorAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
-	data.Forms.Creator = creatorForm{}
+	data.Forms.Creator = &creatorForm{}
 	app.render(w, http.StatusOK, "add-creator.tmpl.html", "base", data)
 }

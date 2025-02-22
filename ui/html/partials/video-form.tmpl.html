@@ -1,108 +1,124 @@
 {{ define "video-form" }}
-  <div>
-    <label class="inline-block my-2">Video Title</label>
-    {{ with .Forms.Video.FieldErrors.title }}
-      <label class="block text-red-700">{{ . }}</label>
-    {{ end }}
-    <input
-      type="text"
-      name="title"
-    value="{{ with .Forms.Video.Title }}{{ .Forms.Video.Title }}{{ else with .Video.Title }}{{ . }}{{ end }}"
-      class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-    />
-  </div>
-  <div>
-    <label class="inline-block my-2">Video URL:</label>
-    {{ with .Forms.Video.FieldErrors.url }}
-      <label class="block text-red-700">{{ . }}</label>
-    {{ end }}
-    <input
-      type="text"
-      name="url"
-    value="{{with .Forms.Video.URL }}{{ .Forms.Video.URL }}{{ else with .Video.URL }}{{ . }}{{ end }}"
-      class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-    />
-  </div>
-  <div>
-    <label class="inline-block my-2">Upload Date</label>
-    {{ with .Forms.Video.FieldErrors.uploadDate }}
-      <label class="block text-red-700">{{ . }}</label>
-    {{ end }}
-    <input
-      type="date"
-      name="uploadDate"
-      value="{{with .Forms.Video.UploadDate }}{{ .Forms.Video.UploadDate }}{{ else with .Video.UploadDate }}{{ formDate . }}{{ end }}"
-      class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
-    />
-  </div>
-  <div>
-    {{ with .Forms.Video.FieldErrors.rating }}
-      <label class="block text-red-700">{{ . }}</label>
-    {{ end }}
-    <label class="inline-block my-2">Rating</label>
-    {{ $selection := "" }}
-    {{ with .Forms.Video.Rating }}
-      {{ $selection = .Forms.Video.Rating }}
-    {{ else }}
-      {{ $selection = .Video.Rating }}
-    {{ end }}
-    <select
-      name="rating"
-      class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
-    >
-      <option value=""></option>
-      <option value="PG" {{ if eq $selection "PG" }}selected{{ end }}>PG</option>
-      <option value="PG-13" {{ if eq $selection "PG-13" }}selected{{ end }}>PG-13</option>
-      <option value="R" {{ if eq $selection "R" }}selected{{ end }}>R</option>
-    </select>
-  </div>
-  <div>
-    {{ with .Forms.Video.FieldErrors.thumbnail }}
-      <label class="block text-red-700">{{ . }}</label>
-    {{ end }}
-    <h3>Video Thumbnail</h3>
-    <div id="imagePreview">
-      {{ with .Video.ThumbnailName }}
-        <img 
-          src="{{$.ImageBaseUrl}}/video//{{ . }}"
-          class="w-72">
-      {{ end }}
-    </div>
-    <label
-      class="imagePreview inline-block cursor-pointer my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-    >
-      Upload
-      <input
-        type="file"
-        name="thumbnail"
-        accept="image/*"
-        class="hidden"
-      />
-    </label>
-  </div>
-  <div>
-    <div class="htmxDropdown relative">
-      <label class="inline-block my-2">Creator Name</label>
-      {{ with .Forms.Video.FieldErrors.creatorId }}
+  <div id="videoForm">
+    <div>
+      <label class="inline-block my-2">Video Title</label>
+      {{ with .Forms.Video.FieldErrors.title }}
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
       <input
-        type="hidden"
-        name="creatorId"
-        value="{{ if .Forms.Video.CreatorID }}{{ .Forms.Video.CreatorID }}{{ else }}{{ with .Video.Creator }} {{ . }}{{ end }}{{ end }}"
-      />
-      <input
-        type="search"
-        name="creatorInput"
-        value="{{ if .Forms.Video.CreatorInput }}{{ .Forms.Video.CreatorInput }}{{ else }}{{ with .Video.Creator }}{{ .Name }}{{ end }}{{ end }}"
+        type="text"
+        name="title"
+        value="{{ with .Forms.Video.Title }}{{ . }}{{ else with .Video.Title }}{{ . }}{{ end }}"
         class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-        placeholder="Enter creator's name"
-        hx-get="/creator/search"
-        hx-params="query"
-        hx-trigger="focus, input changed delay:500ms, search"
-        hx-target="next"
       />
-      <div></div>
+    </div>
+    <div>
+      <label class="inline-block my-2">Video URL:</label>
+      {{ with .Forms.Video.FieldErrors.url }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="text"
+        name="url"
+      value="{{with .Forms.Video.URL }}{{ . }}{{ else with .Video.URL }}{{ . }}{{ end }}"
+        class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+      />
+    </div>
+    {{ if .Video.Slug }}
+    <div>
+      <label class="inline-block my-2">Slug</label>
+      {{ with .Forms.Video.FieldErrors.slug }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="text"
+        name="slug"
+        value="{{with .Forms.Video.Slug }}{{ . }}{{ else with .Video.Slug }}{{ . }}{{ end }}"
+        class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+      />
+    {{ end }}
+    </div>
+    <div>
+      <label class="inline-block my-2">Upload Date</label>
+      {{ with .Forms.Video.FieldErrors.uploadDate }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="date"
+        name="uploadDate"
+        value="{{with .Forms.Video.UploadDate }}{{ . }}{{ else with .Video.UploadDate }}{{ formDate . }}{{ end }}"
+        class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
+      />
+    </div>
+    <div>
+      {{- with .Forms.Video.FieldErrors.rating -}}
+        <label class="block text-red-700">{{- . -}}</label>
+      {{- end -}}
+      <label class="inline-block my-2">Rating</label>
+      {{- $selection := "" -}}
+      {{- with .Forms.Video.Rating -}}
+        {{ $selection = . }}
+      {{- else with .Video -}}
+        {{ $selection = .Rating }}
+      {{- end }}
+      <select
+        name="rating"
+        class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
+      >
+        <option value=""></option>
+        <option value="PG" {{ if eq $selection "PG" }}selected{{ end }}>PG</option>
+        <option value="PG-13" {{ if eq $selection "PG-13" }}selected{{ end }}>PG-13</option>
+        <option value="R" {{ if eq $selection "R" }}selected{{ end }}>R</option>
+      </select>
+    </div>
+    <div>
+      {{ with .Forms.Video.FieldErrors.thumbnail }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <h3>Video Thumbnail</h3>
+      {{ with .Video.ThumbnailName }}
+        <img 
+          src="{{$.ImageBaseUrl}}/video/{{ . }}"
+          class="w-72"/>
+      {{ end }}
+      <label
+        id="vidThumbPrev"
+        class="inline-block cursor-pointer my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+      >
+        Upload
+        <input
+          type="file"
+          name="thumbnail"
+          accept="image/*"
+          class="hidden"
+        />
+      </label>
+    </div>
+    <div>
+      <div id="creatorHtmxDropdown" class="relative">
+        <label class="inline-block my-2">Creator Name</label>
+        {{ with .Forms.Video.FieldErrors.creatorId }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <input
+          type="hidden"
+          name="creatorId"
+          value="{{ with .Forms.Video.CreatorID }}{{ . }}{{ else with .Video.Creator }}{{ .ID }}{{ end }}"
+        />
+        <input
+          type="search"
+          name="creatorInput"
+          value="{{ with .Forms.Video.CreatorInput }}{{ . }}{{ else with .Video.Creator }}{{ .Name }}{{ end }}"
+          class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+          placeholder="Enter creator's name"
+          hx-get="/creator/search"
+          hx-params="query"
+          hx-trigger="focus, input changed delay:500ms, search"
+          hx-target="next"
+          hx-swap="innerHTML"
+        />
+        <div></div>
+      </div>
     </div>
   </div>
 {{ end }}
