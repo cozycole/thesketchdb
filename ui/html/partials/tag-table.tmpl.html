@@ -1,0 +1,51 @@
+{{ define "tag-table" }}
+  {{ with .Flash }}
+      <h2 class="w-fit p-3 my-2 font-bold text-md text-green-600 border-green-700 bg-green-200 rounded-md">
+        {{ . }}
+      </h2>
+  {{ end }}
+  <table class="w-full">
+    <thead>
+      <tr>
+        <th scope="col" class="p-1 max-w-4 whitespace-nowrap border-b border-black text-left">ID</th>
+        <th scope="col" class="p-3 border-b border-black text-left">Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ $tags := .Tags}}
+      {{ with .Forms.VideoTags }}
+        {{ $tags = .TagInputs }}
+      {{ end }}
+      {{ range $index, $tag := $tags }} 
+        <tr>
+          <td scope="col" class="p-1 max-w-4 border-b border-black text-left">
+          {{- with $.Forms.VideoTags -}}{{- index .TagIds $index -}}{{- else -}}{{- $tag.ID -}}{{- end -}}
+          </td>
+          <td scope="col" class="border-b border-black p-2 text-left">
+          <div class="relative tagHtmxDropdown">
+            {{ with $.Forms.VideoTags }}
+              <label class="block text-red-700">{{ .MultiFieldErrors.tagId $index }}</label>
+            {{ end }}
+            <input
+              type="hidden"
+              name="tagId[]"
+              value="{{ with $.Forms.VideoTags }}{{ index .TagIds $index }}{{ else }}{{ $tag.ID -}}{{end}}"/>
+            <input
+              type="search"
+              name="tagName[]"
+              class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+              value="{{ with $.Forms.VideoTags }}{{ $tag }}{{ else }}{{ with $tag.Category.Name }}{{ . }} /{{ end }} {{ $tag.Name -}}{{end}}"
+              placeholder="Search for tag"
+              hx-get="/tag/search"
+              hx-params="query"
+              hx-trigger="focus, input changed delay:500ms, search"
+              hx-target="next"
+            />
+            <div></div>
+          </div>
+          </td>
+        </tr>
+      {{ end }}
+    </tbody>
+  </table>
+{{ end }}

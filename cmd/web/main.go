@@ -24,13 +24,15 @@ type application struct {
 	templateCache  map[string]*template.Template
 	fileStorage    img.FileStorageInterface
 	baseImgUrl     string
-	videos         models.VideoModelInterface
+	cast           models.CastModelInterface
+	categories     models.CategoryInterface
+	characters     models.CharacterModelInterface
 	creators       models.CreatorModelInterface
 	people         models.PersonModelInterface
-	characters     models.CharacterModelInterface
-	cast           models.CastModelInterface
 	profile        models.ProfileModelInterface
+	tags           models.TagModelInterface
 	users          models.UserModelInterface
+	videos         models.VideoModelInterface
 	sessionManager *scs.SessionManager
 	debugMode      bool
 	formDecoder    *form.Decoder
@@ -101,13 +103,15 @@ func main() {
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		fileStorage:    &fileStorage,
-		videos:         &models.VideoModel{DB: dbpool},
+		cast:           &models.CastModel{DB: dbpool},
+		categories:     &models.CategoryModel{DB: dbpool},
+		characters:     &models.CharacterModel{DB: dbpool},
 		creators:       &models.CreatorModel{DB: dbpool},
 		people:         &models.PersonModel{DB: dbpool},
-		characters:     &models.CharacterModel{DB: dbpool},
-		cast:           &models.CastModel{DB: dbpool},
 		profile:        &models.ProfileModel{DB: dbpool},
+		tags:           &models.TagModel{DB: dbpool},
 		users:          &models.UserModel{DB: dbpool},
+		videos:         &models.VideoModel{DB: dbpool},
 		sessionManager: sessionManager,
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,

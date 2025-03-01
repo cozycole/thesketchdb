@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
     name TEXT NOT NULL,
     slug TEXT UNIQUE NOT NULL,
-    parent INT REFERENCES categories(id) ON DELETE SET NULL
+    parent_id INT REFERENCES categories(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS tags (
@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS tags (
     category_id INT REFERENCES categories(id) ON DELETE SET NULL
 );
 
-CREATE TABLE video_tag_rel (
+CREATE TABLE video_tags (
     video_id INT references video(id),
     tag_id INT references tags(id),
     PRIMARY KEY (video_id, tag_id)

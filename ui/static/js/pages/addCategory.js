@@ -1,10 +1,7 @@
-import { UploadImagePreview } from '../components/uploadImagePreview.js'
 import { FormSearchDropdown } from '../components/formSearchDropdown.js'
 
-export function initAddVideo() {
-  let imgPreview = new UploadImagePreview('vidThumbPrev');
-
-  const htmxDropdown = document.getElementById('htmxDropdown')
+export function initAddCategory() {
+  const htmxDropdown = document.getElementById('categoryHtmxDropdown')
   let searchDropdown = new FormSearchDropdown(htmxDropdown);
 
   document.body.addEventListener("htmx:configRequest", function (evt) {

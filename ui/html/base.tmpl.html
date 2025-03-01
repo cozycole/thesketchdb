@@ -24,9 +24,6 @@
     <body hx-ext="response-targets" class="min-h-screen flex flex-col bg-gray-100 min-w-80">
       {{ template "nav" . }}
       <main class="flex flex-col grow w-full lg:max-w-screen-lg mx-auto">
-        {{with .Flash}}
-            <div class="flash">{{.}}</div>
-        {{end}}
         {{ template "main" . }}
       </main>
       {{ template "footer" . }}

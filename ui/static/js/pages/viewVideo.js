@@ -8,6 +8,11 @@ export function initViewVideo() {
         contentId: 'castGallery',
         arrowClass: 'galleryArrow',
     });
+    new Dropdown({
+        buttonClass: 'tagButton',
+        contentId: 'tags',
+        arrowClass: 'galleryArrow',
+    });
     new LikeButton('likeButton');
     new YoutubeEmbed('watchNow', 'toggleVideo');
 }

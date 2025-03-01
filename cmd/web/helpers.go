@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"runtime/debug"
 	"time"
+
+	"sketchdb.cozycole.net/internal/models"
 )
 
 var mimeToExt = map[string]string{
@@ -55,13 +57,20 @@ func (app *application) unauthorized(w http.ResponseWriter) {
 // }
 
 func (app *application) newTemplateData(r *http.Request) *templateData {
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	var isEditor bool
+	if ok {
+		isEditor = user.Role == "admin" || user.Role == "editor"
+	} else {
+		isEditor = false
+	}
 	return &templateData{
 		CurrentYear:     time.Now().Year(),
 		ImageBaseUrl:    app.baseImgUrl,
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
 		Forms:           Forms{},
-		// CSRFToken:       nosurf.Token(r),
+		IsEditor:        isEditor,
 	}
 }
 

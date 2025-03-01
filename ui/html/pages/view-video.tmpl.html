@@ -2,7 +2,13 @@
 {{ define "main" }}
   {{ with .Video }}
     <div data-page="view-video" class="videoHeader my-2">
-      <h1 class="text-2xl font-bold my-1">{{ .Title }}</h1>
+  <h1 class="text-2xl font-bold my-1">{{ .Title }}
+    {{- if $.IsEditor -}}
+      <span class="text-sm">
+        (<a href="/video/{{ .ID }}/update" class="hover:underline">Edit</a>)
+      </span>
+    {{- end -}}
+  </h1>
       <div class="thumbnail toggleVideo inline-block my-2">
         <button class="relative">
           <img
@@ -67,6 +73,27 @@
         </div>
         <div id="castGallery">
           {{ template "cast-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Video" .) }}
+        </div>
+      </div>
+      <div id="tagSection" class="w-full my-3 bg-gray-300 p-4 rounded-md">
+        <div class="flex items-center justify-between">
+          <div class="flex">
+            <img src="/static/img/tag-icon.svg" class="w-6" alt="cast icon" />
+            <h2 class="ml-2 text-xl font-bold">Tags</h2>
+          </div>
+          <button class="tagButton p-2">
+            <img class="tagArrow w-6" src="/static/img/dropdown-arrow-up.svg">
+            <img class="tagArrow hidden w-6" src="/static/img/dropdown-arrow-down.svg">
+          </button>
+        </div>
+        <div id="tags" class="my-5">
+          {{ range $tag := .Tags }}
+            {{- with $tag.Category.Name -}}
+              <span class="mx-1 p-3 font-bold rounded-2xl border-2 border-black hover:bg-gray-200 hover:cursor-pointer">{{ . }} / {{ $tag.Name }}</span>
+            {{- else -}}
+              <span class="mx-1 p-3 font-bold rounded-2xl border-2 border-black hover:bg-gray-200 hover:cursor-pointer">{{ $tag.Name}}</span>
+            {{- end -}}
+          {{ end }}
         </div>
       </div>
       {{ if .YoutubeID }}

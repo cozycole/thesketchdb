@@ -1,23 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"mime/multipart"
-	"strings"
-	"time"
-
-	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/utils"
 	"sketchdb.cozycole.net/internal/validator"
+	"strings"
 )
 
 type Forms struct {
-	Creator *creatorForm
-	Login   *userLoginForm
-	Person  *personForm
-	Signup  *userSignupForm
-	Video   *videoForm
-	Cast    *castForm
+	Cast      *castForm
+	Category  *categoryForm
+	Creator   *creatorForm
+	Login     *userLoginForm
+	Person    *personForm
+	Signup    *userSignupForm
+	Tag       *tagForm
+	Video     *videoForm
+	VideoTags *videoTagsForm
 }
 
 // Changes to the form fields must be updated in their respective
@@ -296,38 +295,57 @@ func (app *application) validateUserLoginForm(form *userLoginForm) {
 	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
 }
 
-func convertFormToVideo(form *videoForm) (models.Video, error) {
-	uploadDate, err := time.Parse(time.DateOnly, form.UploadDate)
-	if err != nil {
-		return models.Video{}, fmt.Errorf("unable to parse date")
-	}
-
-	creator := &models.Creator{
-		ID: &form.CreatorID,
-	}
-
-	return models.Video{
-		Title:         form.Title,
-		URL:           &form.URL,
-		Slug:          form.Slug,
-		ThumbnailFile: form.Thumbnail,
-		Rating:        form.Rating,
-		UploadDate:    &uploadDate,
-		Creator:       creator,
-	}, nil
+type categoryForm struct {
+	Name        string `form:"categoryName"`
+	ParentId    int    `form:"parentId"`
+	ParentInput string `form:"parentInput"`
+	// IconImage   *multipart.FileHeader `img:"iconImage"`
+	validator.Validator `form:"-"`
 }
 
-func convertFormtoCastMember(form *castForm) models.CastMember {
-	actor := models.Person{ID: &form.PersonID}
-	character := models.Character{}
-	if form.CharacterID != 0 {
-		character.ID = &form.CharacterID
+func (app *application) validateCategoryForm(form *categoryForm) {
+	form.CheckField(validator.NotBlank(form.Name), "categoryName", "Field cannot be blank")
+	if form.ParentId != 0 {
+		form.CheckField(
+			validator.BoolWithError(app.categories.Exists(form.ParentId)),
+			"parentId",
+			"Category does not exist. Please add it, then resubmit category!",
+		)
 	}
-	return models.CastMember{
-		Actor:         &actor,
-		Character:     &character,
-		CharacterName: &form.CharacterName,
-		ThumbnailFile: form.CharacterThumbnail,
-		ProfileFile:   form.CharacterProfile,
+}
+
+type tagForm struct {
+	Name                string `form:"tagName"`
+	CategoryId          int    `form:"categoryId"`
+	CategoryInput       string `form:"categoryInput"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateTagForm(form *tagForm) {
+	form.CheckField(validator.NotBlank(form.Name), "tagName", "Field cannot be blank")
+	if form.CategoryId != 0 {
+		form.CheckField(
+			validator.BoolWithError(app.categories.Exists(form.CategoryId)),
+			"categoryId",
+			"Category does not exist. Please add it, then resubmit tag!",
+		)
+	}
+}
+
+type videoTagsForm struct {
+	TagIds              []int    `form:"tagId"`
+	TagInputs           []string `form:"tagName"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateVideoTagsForm(form *videoTagsForm) {
+	for i, tagId := range form.TagIds {
+		if tagId == 0 {
+			form.AddMultiFieldError("tagId", i, "Please input tag")
+		}
+
+		if exists, _ := app.tags.Exists(tagId); !exists {
+			form.AddMultiFieldError("tagId", i, "Tag does not exist")
+		}
 	}
 }

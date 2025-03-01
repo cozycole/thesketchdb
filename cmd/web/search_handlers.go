@@ -179,3 +179,88 @@ func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 
 	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
 }
+
+func (app *application) categorySearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("query")
+
+	redirLink := "/category/add"
+	redirText := "Add Category +"
+	results := dropdownSearchResults{
+		Redirect:     redirLink,
+		RedirectText: redirText,
+	}
+
+	if q != "" {
+		q = strings.Replace(q, " ", "", -1)
+		categories, err := app.categories.Search(q)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverError(w, err)
+			}
+			return
+		}
+
+		if categories != nil {
+			res := []result{}
+			for _, c := range *categories {
+				r := result{}
+				r.Text = *c.Name
+				r.ID = *c.ID
+				res = append(res, r)
+			}
+
+			results.Results = res
+		}
+	}
+	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
+
+	data := app.newTemplateData(r)
+	data.DropdownResults = results
+
+	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
+}
+
+func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("query")
+
+	redirLink := "/tag/add"
+	redirText := "Add Tag +"
+	results := dropdownSearchResults{
+		Redirect:     redirLink,
+		RedirectText: redirText,
+	}
+
+	if q != "" {
+		q = strings.Replace(q, " ", "", -1)
+		tags, err := app.tags.Search(q)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverError(w, err)
+				return
+			}
+		}
+
+		if tags != nil {
+			res := []result{}
+			for _, t := range *tags {
+				r := result{}
+				var text string
+				if t.Category.Name != nil {
+					text += *t.Category.Name + " / "
+				}
+				text += *t.Name
+				r.Text = text
+				r.ID = *t.ID
+				res = append(res, r)
+			}
+
+			results.Results = res
+		}
+	}
+	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
+
+	data := app.newTemplateData(r)
+	data.DropdownResults = results
+
+	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
+}

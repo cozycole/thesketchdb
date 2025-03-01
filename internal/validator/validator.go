@@ -14,8 +14,9 @@ import (
 var EmailRegEx = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 type Validator struct {
-	NonFieldErrors []string
-	FieldErrors    map[string]string
+	NonFieldErrors   []string
+	FieldErrors      map[string]string
+	MultiFieldErrors map[string]map[int]string
 }
 
 func (v *Validator) Valid() bool {
@@ -34,7 +35,24 @@ func (v *Validator) AddFieldError(key, message string) {
 		v.FieldErrors[key] = message
 	}
 }
+
+// For any slices of form inputs due to inputs have same name (e.g tags[])
+func (v *Validator) AddMultiFieldError(key string, index int, message string) {
+	if v.MultiFieldErrors == nil {
+		v.MultiFieldErrors = map[string]map[int]string{}
+	}
+	if _, exists := v.MultiFieldErrors[key][index]; !exists {
+		v.MultiFieldErrors[key][index] = message
+	}
+}
+
 func (v *Validator) CheckField(ok bool, key, message string) {
+	if !ok {
+		v.AddFieldError(key, message)
+	}
+}
+
+func (v *Validator) CheckMultiField(ok bool, key string, index int, message string) {
 	if !ok {
 		v.AddFieldError(key, message)
 	}
@@ -76,6 +94,7 @@ func IsMime(file multipart.File, mtypes ...string) bool {
 	if _, err := file.Read(buf); err != nil {
 		return false
 	}
+	defer file.Seek(0, 0)
 	return slices.Contains(mtypes, http.DetectContentType(buf))
 }
 

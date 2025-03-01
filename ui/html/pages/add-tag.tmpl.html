@@ -1,0 +1,58 @@
+{{ define "title"}}Add Tag{{ end }}
+
+{{ define "main" }}
+  <div data-page="add-tag">
+    <h1 class="font-bold text-xl">Add Tag</h1>
+    {{ with .Flash }}
+      <h2 class="w-fit p-3 my-2 font-bold text-md text-green-600 border-green-700 bg-green-200 rounded-md">
+        {{ . }}
+      </h2>
+    {{ end }}
+    <form
+      class="max-w-md"
+      method="POST"
+      action="/tag/add">
+      <div>
+        <label class="inline-block my-2">Tag Name</label>
+          {{ with .Forms.Tag.FieldErrors.tagName }}
+            <label class="block text-red-700">{{ . }}</label>
+          {{ end }}
+          <input 
+            name="tagName"
+            value="{{ with .Forms.Tag.Name }}{{ . }}{{ end }}"
+            class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            placeholder="Enter tag name"
+          />
+      </div>
+      <div id="categoryHtmxDropdown" class="relative w-full">
+        <label>Category</label>
+        {{ with .Forms.Tag.FieldErrors.categoryId }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <input
+          type="hidden"
+          name="categoryId"
+          value="{{ with .Forms.Tag.CategoryId }}{{ . }}{{ end }}"
+        />
+        <input
+          type="search"
+          name="categoryInput"
+          value="{{ with .Forms.Tag.CategoryInput }}{{ . }}{{ end }}"
+          class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+          placeholder="Search for category"
+          hx-get="/category/search"
+          hx-params="query"
+          hx-trigger="focus, input changed delay:500ms, search"
+          hx-target="next"
+        />
+        <div></div>
+      </div>
+        <button
+          type="submit"
+          class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        >
+          Submit
+        </button>
+    </form>
+  </div>
+{{ end }}

@@ -25,6 +25,7 @@ type templateData struct {
 	Person          *models.Person
 	Cast            *[]*models.CastMember
 	User            *models.User
+	Tags            *[]*models.Tag
 	BrowseSections  map[string][]*models.Video
 	DropdownResults dropdownSearchResults
 	SearchResults   *SearchResult
@@ -33,6 +34,7 @@ type templateData struct {
 	Flash           string
 	IsAuthenticated bool
 	CSRFToken       string
+	IsEditor        bool
 }
 
 func humanDate(t time.Time) string {

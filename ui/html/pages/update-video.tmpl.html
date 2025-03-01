@@ -1,7 +1,9 @@
 {{ define "title"}} Update Video {{ end }}
 {{ define "main" }}
   <div data-page="update-video" class="px-3">
-    <h1 class="my-5 text-xl font-bold">Update Video</h1>
+    <h1 class="my-5 text-xl font-bold">
+      Update Video <a class="text-sm hover:underline" href="/video/{{ .Video.Slug }}">(View Video)</a>
+    </h1>
     <form
       class="w-1/2"
       enctype="multipart/form-data"
@@ -12,7 +14,7 @@
       <input
         type="hidden"
         name="vidId"
-        value="{{ with .Video }}{{ .ID }}{{ end }}"
+        value="{{ .Video.ID }}"
       />
       {{ template "video-form" . }}
       <button
@@ -35,6 +37,28 @@
           Add Cast
         </button>
       </div>
+    </div>
+    <div class="my-3">
+      <h2 class="inline-block my-2 text-lg font-bold">Tags</h2>
+      <form
+        hx-put="/video/{{ .Video.ID }}/tag"
+        hx-target="#tagTable"
+        enctype="application/x-www-form-urlencoded">
+        <div id="tagTable">
+          {{ template "tag-table" (dict "Tags" .Video.Tags "Flash" .Flash "Forms" .Forms) }}
+        </div>
+        <button 
+          type="button"
+          id="addTagButton"
+          class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
+          Add Tag
+        </button> 
+        <button 
+          type="submit"
+          class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500">
+          Save Changes
+        </button>
+      </form>
     </div>
     <div 
       id="addCastFormViewer"
@@ -59,6 +83,30 @@
     </div>
     <template id="actorFormInputs">
       {{ template "actor-input" . }}
+    </template>
+    <template id="tagInput">
+      <tr>
+        <td scope="col" class="p-1 max-w-4 border-b border-black text-left"></td>
+        <td scope="col" class="p-2 border-b border-black text-left">
+          <div class="relative tagHtmxDropdown">
+            <input
+              type="hidden"
+              name="tagId[]"
+              value=""/>
+            <input
+              type="search"
+              name="tagName[]"
+              class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+              value=""
+              placeholder="Search for tag"
+              hx-get="/tag/search"
+              hx-params="query"
+              hx-trigger="focus, input changed delay:500ms, search"
+              hx-target="next"
+            />
+            <div></div>
+        </td>
+      </tr>
     </template>
   </div>
 {{ end }}

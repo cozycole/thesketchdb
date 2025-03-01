@@ -27,6 +27,12 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tags, err := app.tags.GetByVideo(video.ID)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		app.serverError(w, err)
+		return
+	}
+
 	video.Cast = cast
 
 	user, ok := r.Context().Value(userContextKey).(*models.User)
@@ -42,7 +48,7 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.Video = video
-	app.infoLog.Printf("VIDEO: %+v\n", data.Video)
+	data.Video.Tags = tags
 
 	app.render(w, http.StatusOK, "view-video.tmpl.html", "base", data)
 }
@@ -153,12 +159,21 @@ func (app *application) videoUpdatePage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	video.Cast = cast
+	tags, err := app.tags.GetByVideo(video.ID)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		app.serverError(w, err)
+		return
+	}
 
+	video.Cast = cast
+	video.Tags = tags
+	app.infoLog.Printf("%+v", video.Tags)
 	data := app.newTemplateData(r)
 	data.Video = video
 	data.Forms.Video = &videoForm{}
 	data.Forms.Cast = &castForm{}
+	// data.Forms.VideoTags = &videoTagsForm{}
+
 	// need to instantiate empty struct to load
 	// castUpdate form on the page
 	data.CastMember = &models.CastMember{}
@@ -288,4 +303,61 @@ func (app *application) videoRemoveLike(w http.ResponseWriter, r *http.Request) 
 		app.badRequest(w)
 		return
 	}
+}
+
+func (app *application) videoUpdateTags(w http.ResponseWriter, r *http.Request) {
+	videoIdParam := r.PathValue("id")
+	videoId, err := strconv.Atoi(videoIdParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	var form videoTagsForm
+	r.ParseForm()
+	tagStrIds, ok := r.Form["tagId[]"]
+	tagNames, ok1 := r.Form["tagName[]"]
+	app.infoLog.Print(tagStrIds)
+	if !(ok && ok1) {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	var tagIds []int
+	for _, strId := range tagStrIds {
+		id, err := strconv.Atoi(strId)
+		if err != nil {
+			app.clientError(w, http.StatusBadRequest)
+			return
+		}
+		tagIds = append(tagIds, id)
+	}
+
+	form.TagIds = tagIds
+	form.TagInputs = tagNames
+
+	app.validateVideoTagsForm(&form)
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Forms.VideoTags = &form
+		data.Tags = &[]*models.Tag{}
+		app.render(w, http.StatusUnprocessableEntity, "tag-table.tmpl.html", "tag-table", data)
+		return
+	}
+
+	tags, err := app.convertFormtoVideoTags(&form)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = app.videos.BatchUpdateTags(videoId, &tags)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Tags = &tags
+	app.render(w, http.StatusOK, "tag-table.tmpl.html", "tag-table", data)
 }
