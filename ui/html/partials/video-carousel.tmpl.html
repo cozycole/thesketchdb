@@ -1,0 +1,18 @@
+{{ define "video-carousel" }}
+  <div class="carouselSection relative w-full">
+    <div class="carousel flex md:mx-6 overflow-x-auto scroll-smooth space-x-4 scrollbar-hide">
+      {{ range .Videos }}
+        <div class="flex-shrink-0 w-52 md:w-60">
+          {{ template "video-thumbnail" (dict "Video" . "ImageBaseUrl" $.ImageBaseUrl)}}
+        </div>
+      {{ end }}
+    </div>
+    <button class="carouselPrevBtn hidden md:flex absolute left-0 top-1/4 -translate-y-1/2">
+      <img src="/static/img/arrow-back.svg" class="w-4"/>
+    </button>
+
+    <button class="carouselNextBtn hidden md:flex absolute right-0 top-1/4 -translate-y-1/2">
+      <img src="/static/img/arrow-forward.svg" class="w-4"/>
+    </button>
+  </div>
+{{ end }}

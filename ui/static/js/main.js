@@ -5,6 +5,7 @@ import { initUpdateVideo } from './pages/updateVideo.js';
 import { initAddTag } from './pages/addTag.js';
 import { initAddCategory } from './pages/addCategory.js';
 import { initSearch } from './pages/search.js';
+import { initBrowse } from './pages/browse.js';
 
 const firstDiv = document.querySelector('main > div');
 const pageType = firstDiv ? firstDiv.dataset.page : 'No page attribute found!';
@@ -14,6 +15,9 @@ console.log(`On ${pageType} page`);
 switch (pageType) {
   case 'home':
     initHome();
+    break;
+  case 'browse':
+    initBrowse();
     break;
   case 'view-video':
     initViewVideo();

@@ -232,7 +232,7 @@ func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 }
 
 func (m *VideoModel) GetByPerson(id int) ([]*Video, error) {
-	stmt := `SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
+	stmt := `SELECT DISTINCT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
 		c.id, c.name, c.page_url, c.slug, c.profile_img
 		FROM video AS v
 		JOIN video_creator_rel as vcr
