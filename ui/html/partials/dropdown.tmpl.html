@@ -1,20 +1,16 @@
-<ul
-  class="list-none cursor-pointer absolute left-0 min-w-full bg-white border border-gray-300 rounded shadow-lg z-10"
-  id="dropdown"
->
-  {{ with .DropdownResults }}
-    {{ range .Results }}
-      <li
-        class="result hover:bg-gray-200 py-2 px-1 border"
-        data-id="{{ .ID }}"
-      >
-        {{ .Text }}
-      </li>
-    {{ end }}
-    <a href="{{ .Redirect }}" target="blank_">
-      <li class="hover:bg-gray-200 py-2 px-1 border">
-        {{ .RedirectText }}
-      </li>
-    </a>
+{{ with .DropdownResults }}
+  {{ range .Results }}
+    <li
+      class="result hover:bg-gray-200 border flex items-center"
+      data-id="{{ .ID }}"
+    >
+      <img class="inline-block w-11" src="{{ $.ImageBaseUrl}}/person/{{ .Image }}"/>
+      <p class="py-2 px-1">{{ .Text }}</p>
+    </li>
   {{ end }}
-</ul>
+  <a href="{{ .Redirect }}" target="blank_">
+    <li class="hover:bg-gray-200 py-2 px-1 border">
+      {{ .RedirectText }}
+    </li>
+  </a>
+{{ end }}

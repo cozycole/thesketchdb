@@ -6,6 +6,7 @@ import { initAddTag } from './pages/addTag.js';
 import { initAddCategory } from './pages/addCategory.js';
 import { initSearch } from './pages/search.js';
 import { initBrowse } from './pages/browse.js';
+import { initViewCatalog } from './pages/viewCatalog.js';
 
 (function() {
   const firstDiv = document.querySelector('main > div');
@@ -82,6 +83,9 @@ import { initBrowse } from './pages/browse.js';
       break;
     case 'browse':
       initBrowse();
+      break;
+    case 'catalog':
+      initViewCatalog();
       break;
     case 'view-video':
       initViewVideo();

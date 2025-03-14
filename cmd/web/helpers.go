@@ -65,12 +65,12 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 		isEditor = false
 	}
 	return &templateData{
-		CurrentYear:     time.Now().Year(),
-		ImageBaseUrl:    app.baseImgUrl,
-		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
-		IsAuthenticated: app.isAuthenticated(r),
-		Forms:           Forms{},
-		IsEditor:        isEditor,
+		CurrentYear:  time.Now().Year(),
+		ImageBaseUrl: app.baseImgUrl,
+		Flash:        app.sessionManager.PopString(r.Context(), "flash"),
+		Forms:        Forms{},
+		User:         user,
+		IsEditor:     isEditor,
 	}
 }
 
@@ -101,8 +101,4 @@ func (app *application) render(w http.ResponseWriter, status int, page string, b
 	// If the template is written to the buffer
 	w.WriteHeader(status)
 	buf.WriteTo(w)
-}
-
-func (app *application) isAuthenticated(r *http.Request) bool {
-	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }

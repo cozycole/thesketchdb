@@ -3,6 +3,8 @@ package models
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -22,6 +24,7 @@ type Person struct {
 type PersonModelInterface interface {
 	GetBySlug(slug string) (*Person, error)
 	Get(id int) (*Person, error)
+	GetPeople(ids *[]int) ([]*Person, error)
 	Exists(id int) (bool, error)
 	Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, string, error)
 	Search(query string) ([]*Person, error)
@@ -142,6 +145,50 @@ func (m *PersonModel) Get(id int) (*Person, error) {
 	}
 
 	return p, nil
+}
+
+func (m *PersonModel) GetPeople(ids *[]int) ([]*Person, error) {
+	if ids != nil && len(*ids) < 1 {
+		return nil, nil
+	}
+
+	stmt := `SELECT id, first, last, profile_img, birthdate, slug 
+			FROM person
+			WHERE id IN (%s)`
+
+	args := []interface{}{}
+	queryPlaceholders := []string{}
+	for i, id := range *ids {
+		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
+		args = append(args, id)
+	}
+
+	stmt = fmt.Sprintf(stmt, strings.Join(queryPlaceholders, ","))
+	rows, err := m.DB.Query(context.Background(), stmt, args...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	var people []*Person
+	for rows.Next() {
+		p := Person{}
+		err := rows.Scan(&p.ID, &p.First, &p.Last, &p.ProfileImg, &p.BirthDate, &p.Slug)
+		if err != nil {
+			return nil, err
+		}
+		people = append(people, &p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return people, nil
 }
 
 func (m *PersonModel) VectorSearch(query string) ([]*ProfileResult, error) {

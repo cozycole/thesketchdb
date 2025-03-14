@@ -23,7 +23,7 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videos, err := app.videos.GetByPerson(*person.ID)
+	videos, err := app.videos.GetByPerson(*person.ID, 16, 0)
 
 	data := app.newTemplateData(r)
 	data.Person = person

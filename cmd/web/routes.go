@@ -31,8 +31,9 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.HandleFunc("/ping", ping)
 
 		r.HandleFunc("/browse", app.browse)
-
 		r.HandleFunc("/", app.home)
+
+		r.Get("/catalog", app.catalogView)
 		r.Get("/video/{slug}", app.videoView)
 
 		r.Post("/video/like/{id}", app.videoAddLike)

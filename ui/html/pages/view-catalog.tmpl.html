@@ -1,0 +1,70 @@
+{{ define "title" }}Search Sketches{{ end }}
+
+{{ define "main" }}
+  <div data-page="catalog" class="flex flex-col grow w-full my-4 px-2 text-slate-950 ">
+    <h1 class="w-full my-3 text-2xl font-bold">Title Goes Here</h1>
+    <section class="flex grow">
+      <div id="filterSection" class="w-80 border border-slate-950 rounded-md">
+        <div class="flex items-center justify-between border-b border-slate-950">
+          <h2 class="font-bold text-xl p-4">Filters</h2>
+          <button class="castButton p-2">
+            <img class="galleryArrow w-6" src="/static/img/dropdown-arrow-up.svg">
+            <img class="galleryArrow hidden w-6" src="/static/img/dropdown-arrow-down.svg">
+          </button>
+        </div>
+        <div id="filters" class="p-2">
+          <div>
+            <h3 class="font-bold p-1">Actor</h3>
+            <catalog-filter
+              id="person-filter"
+              data-type="person"
+              data-selected='[
+                {{- range $i, $p := .SearchResults.Filter.People -}}
+                  {{- if ne $i 0 -}},{{- end -}}
+                  {"id": "{{ $p.ID }}", 
+                  "name": "{{ $p.First }} {{ $p.Last }}",
+                  "image": "{{ $.ImageBaseUrl }}/person/{{ $p.ProfileImg }}"}
+                {{- end -}}
+            ]'>
+            </catalog-filter>
+          </div>
+        </div>
+      </div>
+      <div id="results" 
+          class="flex flex-col grow w-full ml-4 border-slate-950"
+          hx-trigger="filter-change"
+        >
+        {{ template "catalog-result" . }}
+      </div>
+    </section>
+  </div>
+
+  <template id="filterTemplate">
+    <div class="relative">
+      <input
+        type="search"
+        name="actorNameFilter"
+        class="filterSearch w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        placeholder="Enter actor's name"
+        hx-get="/person/search"
+        hx-params="query"
+        hx-trigger="focus, input changed delay:400ms, search"
+        hx-target="next"
+        hx-swap="innerHTML"
+      />
+      <ul class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-gray-300 rounded shadow-lg z-10 empty:hidden"></ul>
+      <div class="filters flex flex-col gap-1 my-1"></div>
+    </div>
+  </template>
+  <template id="filterProfile">
+    <div class="flex justify-between items-center rounded-full bg-slate-200">
+      <div class="flex items-center">
+        <img class="rounded-full w-8"/>
+        <h4 class="pl-1"></h4>
+      </div>
+      <button>
+        <img class="p-1 rounded-full hover:bg-slate-300" src="/static/img/close.svg"/>
+      </button>
+    </div>
+  </template>
+{{ end }}

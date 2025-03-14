@@ -143,7 +143,7 @@ func (app *application) videoUpdatePage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	video, err := app.videos.Get(videoId)
+	video, err := app.videos.GetById(videoId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -195,7 +195,7 @@ func (app *application) videoUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oldVideo, err := app.videos.Get(videoId)
+	oldVideo, err := app.videos.GetById(videoId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)

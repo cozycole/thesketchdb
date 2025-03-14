@@ -5,11 +5,37 @@ import (
 	"errors"
 	"fmt"
 	"mime/multipart"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type Filter struct {
+	People []*Person
+	SortBy string
+	Limit  int
+	Offset int
+}
+
+func (f *Filter) ParamsString() string {
+	params := url.Values{}
+
+	if f.SortBy != "" {
+		params.Add("sort", f.SortBy)
+	}
+
+	for _, p := range f.People {
+		if p.ID != nil {
+			params.Add("person", strconv.Itoa(*p.ID))
+		}
+	}
+
+	return params.Encode()
+}
 
 type Video struct {
 	ID            int
@@ -30,10 +56,12 @@ type Video struct {
 
 type VideoModelInterface interface {
 	BatchUpdateTags(vidId int, tags *[]*Tag) error
-	Get(id int) (*Video, error)
+	Get(filter *Filter) ([]*Video, error)
+	GetById(id int) (*Video, error)
+	GetCount(filter *Filter) (int, error)
 	GetAll(limit int) ([]*Video, error)
 	GetByCreator(id int) ([]*Video, error)
-	GetByPerson(id int) ([]*Video, error)
+	GetByPerson(id, limit, offset int) ([]*Video, error)
 	GetBySlug(slug string) (*Video, error)
 	GetByUserLikes(id int) ([]*Video, error)
 	GetLatest(limit, offset int) ([]*Video, error)
@@ -146,7 +174,80 @@ func (m *VideoModel) BatchUpdateTags(vidId int, tags *[]*Tag) error {
 
 	return nil
 }
-func (m *VideoModel) Get(id int) (*Video, error) {
+
+func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
+	query := `
+		SELECT DISTINCT v.id, v.title, v.video_url, v.slug, 
+		v.thumbnail_name, v.upload_date, c.id, c.name, c.page_url, 
+		c.slug, c.profile_img
+		FROM video as v
+		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
+		LEFT JOIN creator as c ON vcr.creator_id = c.id
+		LEFT JOIN cast_members as cm ON v.id = cm.video_id
+		WHERE 1=1
+	`
+
+	args := []interface{}{}
+	argIndex := 1
+
+	if len(filter.People) > 0 {
+		peoplePlaceholders := []string{}
+		for _, person := range filter.People {
+			peoplePlaceholders = append(peoplePlaceholders, fmt.Sprintf("$%d", argIndex))
+			args = append(args, person.ID)
+			argIndex++
+		}
+
+		query += fmt.Sprintf(" AND cm.person_id IN (%s)", strings.Join(peoplePlaceholders, ","))
+		query += `
+		GROUP BY v.id, v.title, v.video_url, v.slug, 
+		         v.thumbnail_name, v.upload_date, 
+		         c.id, c.name, c.page_url, c.slug, c.profile_img
+		`
+		if len(filter.People) > 1 {
+			query += fmt.Sprintf("HAVING COUNT(DISTINCT cm.person_id) = $%d ", argIndex)
+			args = append(args, len(filter.People))
+			argIndex++
+		}
+	}
+
+	query += " ORDER BY v.id asc"
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
+	args = append(args, filter.Limit, filter.Offset)
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	videos := []*Video{}
+	for rows.Next() {
+		v := &Video{}
+		c := &Creator{}
+		err := rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
+		)
+		if err != nil {
+			return nil, err
+		}
+		v.Creator = c
+		videos = append(videos, v)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return videos, nil
+}
+
+func (m *VideoModel) GetById(id int) (*Video, error) {
 	stmt := `
 		SELECT v.id, v.title, v.slug, v.video_url, v.youtube_id, v.thumbnail_name, v.upload_date, v.description, v.pg_rating,
 			c.id, c.name, c.slug, c.profile_img
@@ -228,10 +329,51 @@ func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 		return nil, err
 	}
 
-	return m.Get(id)
+	return m.GetById(id)
 }
 
-func (m *VideoModel) GetByPerson(id int) ([]*Video, error) {
+func (m *VideoModel) GetCount(filter *Filter) (int, error) {
+	query := `
+		SELECT count(*)
+		FROM video as v
+		LEFT JOIN video_creator_rel as vcr
+		ON v.id = vcr.video_id
+		LEFT JOIN creator as c
+		ON vcr.creator_id = c.id
+		LEFT JOIN cast_members as cm
+		ON v.id = cm.video_id
+		WHERE 1=1
+	`
+
+	args := []interface{}{}
+	argIndex := 1
+
+	if len(filter.People) > 0 {
+		peoplePlaceholders := []string{}
+		for _, person := range filter.People {
+			peoplePlaceholders = append(peoplePlaceholders, fmt.Sprintf("$%d", argIndex))
+			args = append(args, person.ID)
+			argIndex++
+		}
+
+		query += fmt.Sprintf(" AND cm.person_id IN (%s)", strings.Join(peoplePlaceholders, ","))
+	}
+
+	var count int
+	err := m.DB.QueryRow(context.Background(), query, args...).Scan(&count)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+
+	return count, nil
+}
+
+func (m *VideoModel) GetByPerson(id, limit, offset int) ([]*Video, error) {
 	stmt := `SELECT DISTINCT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
 		c.id, c.name, c.page_url, c.slug, c.profile_img
 		FROM video AS v

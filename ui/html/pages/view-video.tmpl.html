@@ -1,119 +1,123 @@
 {{ define "title" }}{{ .Video.Title }}{{ end }}
 {{ define "main" }}
+  <div data-page="view-video" class="px-2 my-2 text-slate-950">
   {{ with .Video }}
-    <div data-page="view-video" class="videoHeader my-2">
-  <h1 class="text-2xl font-bold my-1">{{ .Title }}
-    {{- if $.IsEditor -}}
-      <span class="text-sm">
-        (<a href="/video/{{ .ID }}/update" class="hover:underline">Edit</a>)
-      </span>
-    {{- end -}}
-  </h1>
-      <div class="thumbnail toggleVideo inline-block my-2">
-        <button class="relative">
-          <img
-            class="rounded-lg"
-            src="{{ $.ImageBaseUrl }}/video/{{ .ThumbnailName }}"
-            onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
-          />
-          <img class="absolute right-1 bottom-1 w-12" src="/static/img/play-button.svg">
-        </button>
-      </div>
-        <div class="flex flex-nowrap">
-          <a href="/creator/{{ with .Creator.Slug }}{{ . }}{{ end }}">
-            <img
-              src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
-              class="mt-0.5 rounded-full inline-block w-9"
-              onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
-            />
-          </a>
-          <div class="ml-2">
-            <a  href="/creator/{{ .Creator.Slug }}"
-              >{{ .Creator.Name }}</a
-            >
-            <time class="block">{{ humanDate .UploadDate }}</time>
-          </div>
-          <button id="likeButton"
-                class="relative w-fit ml-3"
-                data-id="{{.ID}}"
-          >
-            <img id="likeIcon" 
-                class="w-10 {{ if .Liked }} hidden {{ else }} flex {{ end }}"
-                src="/static/img/like.svg" >
-            <img id="unlikeIcon" 
-                class="w-10 {{ if not .Liked }} hidden {{ else }} flex {{ end }}"
-                src="/static/img/unlike.svg">
-          </button>
-        </div>
-      </div>
-      <div class="watchOptions flex w-full my-1">
-        <button class="toggleVideo p-2 border-2 border-black rounded-l-md bg-black text-white"
-        >WATCH NOW
-        </button>
-        {{ if .YoutubeID }}
-          <a class="p-2 border-2 border-black rounded-r-md"
-            href="{{ .URL }}"
-            target="_blank"  
-          >
-            WATCH ON 
-            <img class="inline-block w-8" src="/static/img/youtube-icon.svg">
-          </a>
+    <div>
+      <h1 class="text-2xl font-bold my-1">{{ .Title }}
+        {{- if $.IsEditor -}}
+          <span class="text-sm">
+            (<a href="/video/{{ .ID }}/update" class="hover:underline">Edit</a>)
+          </span>
+        {{- end -}}
+      </h1>
+    </div>
+    <div class="thumbnail toggleVideo inline-block my-2">
+      <button class="relative">
+        <img
+          class="rounded-lg"
+          src="{{ $.ImageBaseUrl }}/video/{{ .ThumbnailName }}"
+          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+        />
+        <img class="absolute right-1 bottom-1 w-12" src="/static/img/play-button.svg">
+      </button>
+    </div>
+    <div class="flex flex-nowrap">
+      <a href="/creator/{{ with .Creator.Slug }}{{ . }}{{ end }}">
+        <img
+          src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
+          class="mt-0.5 rounded-full inline-block w-9"
+          onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+        />
+      </a>
+      <div class="ml-2">
+        <a  href="/creator/{{ .Creator.Slug }}"
+          >{{ .Creator.Name }}</a
+        >
+        {{ with .UploadDate}}
+          <time class="block">{{ humanDate . }}</time>
         {{ end }}
       </div>
-      <div id="castSection" class="w-full my-3 bg-gray-300 p-4 rounded-md">
-        <div class="castHeader flex items-center justify-between">
-          <div class="flex">
-            <img src="/static/img/cast-icon.svg" class="w-6" alt="cast icon" />
-            <h2 class="ml-2 text-xl font-bold">Cast</h2>
-          </div>
-          <button class="castButton p-2">
-            <img class="galleryArrow w-6" src="/static/img/dropdown-arrow-up.svg">
-            <img class="galleryArrow hidden w-6" src="/static/img/dropdown-arrow-down.svg">
-          </button>
-        </div>
-        <div id="castGallery">
-          {{ template "cast-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Video" .) }}
-        </div>
-      </div>
-      <div id="tagSection" class="w-full my-3 bg-gray-300 p-4 rounded-md">
-        <div class="flex items-center justify-between">
-          <div class="flex">
-            <img src="/static/img/tag-icon.svg" class="w-6" alt="cast icon" />
-            <h2 class="ml-2 text-xl font-bold">Tags</h2>
-          </div>
-          <button class="tagButton p-2">
-            <img class="tagArrow w-6" src="/static/img/dropdown-arrow-up.svg">
-            <img class="tagArrow hidden w-6" src="/static/img/dropdown-arrow-down.svg">
-          </button>
-        </div>
-        <div id="tags" class="my-5">
-          {{ range $tag := .Tags }}
-            {{- with $tag.Category.Name -}}
-              <span class="mx-1 p-3 font-bold rounded-2xl border-2 border-black hover:bg-gray-200 hover:cursor-pointer">{{ . }} / {{ $tag.Name }}</span>
-            {{- else -}}
-              <span class="mx-1 p-3 font-bold rounded-2xl border-2 border-black hover:bg-gray-200 hover:cursor-pointer">{{ $tag.Name}}</span>
-            {{- end -}}
-          {{ end }}
-        </div>
-      </div>
+      <button id="likeButton"
+            class="relative w-fit ml-3"
+            data-id="{{.ID}}"
+      >
+        <img id="likeIcon" 
+            class="w-10 {{ if .Liked }} hidden {{ else }} flex {{ end }}"
+            src="/static/img/like.svg" >
+        <img id="unlikeIcon" 
+            class="w-10 {{ if not .Liked }} hidden {{ else }} flex {{ end }}"
+            src="/static/img/unlike.svg">
+      </button>
+    </div>
+    <div class="watchOptions flex w-full my-1">
+      <button class="toggleVideo p-2 border-2 border-black rounded-l-md bg-slate-950 text-white"
+      >WATCH NOW
+      </button>
       {{ if .YoutubeID }}
-        <div id="watchNow" 
-            class="toggleVideo hidden items-center justify-center fixed inset-0"
-            style="background-color: rgb(0,0,0,0.9)">
-          <div class="w-full max-w-3xl">
-            <div class="relative w-full h-0" style="padding-bottom:56.25%;">
-              <iframe 
-                id="watchNowIframe"
-                src="https://www.youtube.com/embed/{{ .YoutubeID}}?enablejsapi=1"
-                title="YouTube video player"
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen
-                allowscriptaccess="always"
-                class="absolute top-0 left-0 w-full h-full"></iframe>
-            </div>
+        <a class="p-2 border-2 border-black rounded-r-md"
+          href="{{ .URL }}"
+          target="_blank"  
+        >
+          WATCH ON 
+          <img class="inline-block w-8" src="/static/img/youtube-icon.svg">
+        </a>
+      {{ end }}
+    </div>
+    <div id="castSection" class="w-full my-3 bg-slate-300 p-4 rounded-md">
+      <div class="castHeader flex items-center justify-between">
+        <div class="flex">
+          <img src="/static/img/cast-icon.svg" class="w-6" alt="cast icon" />
+          <h2 class="ml-2 text-xl font-bold">Cast</h2>
+        </div>
+        <button class="castButton p-2">
+          <img class="galleryArrow w-6" src="/static/img/dropdown-arrow-up.svg">
+          <img class="galleryArrow hidden w-6" src="/static/img/dropdown-arrow-down.svg">
+        </button>
+      </div>
+      <div id="castGallery">
+        {{ template "cast-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Video" .) }}
+      </div>
+    </div>
+    <div id="tagSection" class="w-full my-3 bg-slate-300 p-4 rounded-md">
+      <div class="flex items-center justify-between">
+        <div class="flex">
+          <img src="/static/img/tag-icon.svg" class="w-6" alt="cast icon" />
+          <h2 class="ml-2 text-xl font-bold">Tags</h2>
+        </div>
+        <button class="tagButton p-2">
+          <img class="tagArrow w-6" src="/static/img/dropdown-arrow-up.svg">
+          <img class="tagArrow hidden w-6" src="/static/img/dropdown-arrow-down.svg">
+        </button>
+      </div>
+      <div id="tags" class="my-5">
+        {{ range $tag := .Tags }}
+          {{- with $tag.Category.Name -}}
+            <span class="mx-1 p-3 font-bold rounded-2xl border-2 border-black hover:bg-slate-200 hover:cursor-pointer">{{ . }} / {{ $tag.Name }}</span>
+          {{- else -}}
+            <span class="mx-1 p-3 font-bold rounded-2xl border-2 border-black hover:bg-slate-200 hover:cursor-pointer">{{ $tag.Name}}</span>
+          {{- end -}}
+        {{ end }}
+      </div>
+    </div>
+    {{ if .YoutubeID }}
+      <div id="watchNow" 
+          class="toggleVideo hidden items-center justify-center fixed inset-0"
+          style="background-color: rgb(0,0,0,0.9)">
+        <div class="w-full max-w-3xl">
+          <div class="relative w-full h-0" style="padding-bottom:56.25%;">
+            <iframe 
+              id="watchNowIframe"
+              src="https://www.youtube.com/embed/{{ .YoutubeID}}?enablejsapi=1"
+              title="YouTube video player"
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              allowscriptaccess="always"
+              class="absolute top-0 left-0 w-full h-full"></iframe>
           </div>
         </div>
-      {{ end }}
+      </div>
+    </div>
+    {{ end }}
   {{ end }}
 {{ end }}

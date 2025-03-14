@@ -12,13 +12,14 @@ type SearchResult struct {
 	Query          string
 	ProfileResults []*models.ProfileResult
 	VideoResults   []*models.Video
+	Filter         *models.Filter
 	NoResults      bool
+	PageURLParams  string
 	CurrentPage    int
 	Pages          []int
 }
 
 func (app *application) getSearchResults(query string, currentPage int, searchType string) (*SearchResult, error) {
-
 	limit := app.settings.pageSize
 	offset := (currentPage - 1) * limit
 

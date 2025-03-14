@@ -116,7 +116,7 @@ func main() {
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,
 		settings: settings{
-			pageSize: 16,
+			pageSize: 24,
 		},
 	}
 

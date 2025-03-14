@@ -24,8 +24,8 @@ const (
 	TargetThumbnailWidth  = 480
 	TargetThumbnailHeight = 360
 	FinalThumbnailHeight  = 270
-	MinProfileWidth       = 256
-	TargetProfileWidth    = 256
+	MinProfileWidth       = 176
+	TargetProfileWidth    = 176
 )
 
 // Functions used within handlers that save images

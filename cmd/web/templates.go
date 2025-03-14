@@ -17,24 +17,24 @@ import (
 // struct for inserting data and data can come from many sources,
 // you need to combine it all into one
 type templateData struct {
-	CurrentYear     int
-	Videos          []*models.Video
-	Video           *models.Video
-	Creator         *models.Creator
-	CastMember      *models.CastMember
-	Person          *models.Person
-	Cast            *[]*models.CastMember
-	User            *models.User
-	Tags            *[]*models.Tag
 	BrowseSections  map[string][]*models.Video
-	DropdownResults dropdownSearchResults
-	SearchResults   *SearchResult
-	ImageBaseUrl    string
-	Forms           Forms
-	Flash           string
-	IsAuthenticated bool
 	CSRFToken       string
+	Cast            *[]*models.CastMember
+	CastMember      *models.CastMember
+	Creator         *models.Creator
+	CurrentYear     int
+	DropdownResults dropdownSearchResults
+	Flash           string
+	Forms           Forms
+	ImageBaseUrl    string
+	IsAuthenticated bool
 	IsEditor        bool
+	Person          *models.Person
+	SearchResults   *SearchResult
+	Tags            *[]*models.Tag
+	User            *models.User
+	Video           *models.Video
+	Videos          []*models.Video
 }
 
 func humanDate(t time.Time) string {

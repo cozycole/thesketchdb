@@ -54,9 +54,9 @@ type dropdownSearchResults struct {
 }
 
 type result struct {
-	ID   int
-	Text string
-	Img  string
+	ID    int
+	Text  string
+	Image string
 }
 
 func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
@@ -85,6 +85,9 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 				r := result{}
 				r.Text = *row.First + " " + *row.Last
 				r.ID = *row.ID
+				if row.ProfileImg != nil {
+					r.Image = *row.ProfileImg
+				}
 				res = append(res, r)
 			}
 
