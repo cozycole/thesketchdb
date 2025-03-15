@@ -3,6 +3,8 @@ package models
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -19,10 +21,11 @@ type Creator struct {
 }
 
 type CreatorModelInterface interface {
-	Insert(name, url, imgName, imgExt string, establishedDate time.Time) (int, string, string, error)
-	Get(id int) (*Creator, error)
 	Exists(id int) (bool, error)
+	Get(id int) (*Creator, error)
 	GetBySlug(slug string) (*Creator, error)
+	GetCreators(*[]int) ([]*Creator, error)
+	Insert(name, url, imgName, imgExt string, establishedDate time.Time) (int, string, string, error)
 	Search(query string) ([]*Creator, error)
 	SearchCount(query string) (int, error)
 	VectorSearch(query string) ([]*ProfileResult, error)
@@ -52,6 +55,50 @@ func (m *CreatorModel) GetBySlug(slug string) (*Creator, error) {
 	return c, nil
 }
 
+func (m *CreatorModel) GetCreators(ids *[]int) ([]*Creator, error) {
+	if ids != nil && len(*ids) < 1 {
+		return nil, nil
+	}
+
+	stmt := `SELECT id, name, slug, profile_img, date_established
+			FROM creator
+			WHERE id IN (%s)`
+
+	args := []interface{}{}
+	queryPlaceholders := []string{}
+	for i, id := range *ids {
+		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
+		args = append(args, id)
+	}
+
+	stmt = fmt.Sprintf(stmt, strings.Join(queryPlaceholders, ","))
+	rows, err := m.DB.Query(context.Background(), stmt, args...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	var creators []*Creator
+	for rows.Next() {
+		c := Creator{}
+		err := rows.Scan(&c.ID, &c.Name, &c.Slug, &c.ProfileImage, &c.EstablishedDate)
+		if err != nil {
+			return nil, err
+		}
+		creators = append(creators, &c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return creators, nil
+}
+
 func (m *CreatorModel) Insert(name, url, slug, imgExt string, establishedDate time.Time) (int, string, string, error) {
 	stmt := `
 	INSERT INTO creator (name, page_url, date_established, slug, profile_img)
@@ -68,6 +115,7 @@ func (m *CreatorModel) Insert(name, url, slug, imgExt string, establishedDate ti
 	if err != nil {
 		return 0, "", "", err
 	}
+
 	return id, slug, fullImgName, err
 }
 

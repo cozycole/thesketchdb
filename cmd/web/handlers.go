@@ -12,7 +12,12 @@ var maxFileNameLength = 50
 var pageSize = 16
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	videos, err := app.videos.GetAll(8)
+	filter := models.Filter{
+		Limit:  8,
+		Offset: 0,
+	}
+
+	videos, err := app.videos.Get(&filter)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -57,6 +62,11 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		currentPage = 1
 	}
 
+	sort := r.Form.Get("sort")
+	if sort == "" {
+		sort = "latest"
+	}
+
 	personIdParams := r.URL.Query()["person"]
 
 	var personIds []int
@@ -72,13 +82,32 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		peopleFilter, err = app.people.GetPeople(&personIds)
 	}
 
+	creatorIdParams := r.URL.Query()["creator"]
+
+	var creatorIds []int
+	for _, idStr := range creatorIdParams {
+		id, err := strconv.Atoi(idStr)
+		if nil == err && id > 0 {
+			creatorIds = append(creatorIds, id)
+		}
+	}
+
+	var creatorFilter []*models.Creator
+	if len(creatorIds) > 0 {
+		creatorFilter, err = app.creators.GetCreators(&creatorIds)
+		app.errorLog.Println(err)
+	}
+
 	limit := app.settings.pageSize
 	offset := (currentPage - 1) * limit
 	filter := &models.Filter{
-		People: peopleFilter,
-		Limit:  limit,
-		Offset: offset,
+		SortBy:   sort,
+		Creators: creatorFilter,
+		People:   peopleFilter,
+		Limit:    limit,
+		Offset:   offset,
 	}
+	app.infoLog.Printf("FILTER: %+v\n", filter)
 
 	results, err := app.getCatalogResults(currentPage, "video", filter)
 	if err != nil {
@@ -115,13 +144,8 @@ func buildURL(baseURL string, result *SearchResult) (string, error) {
 		return "", err
 	}
 
-	params := url.Values{}
-
+	params := result.Filter.Params()
 	params.Add("page", strconv.Itoa(result.CurrentPage))
-
-	for _, p := range result.Filter.People {
-		params.Add("person", strconv.Itoa(*p.ID))
-	}
 
 	u.RawQuery = params.Encode()
 

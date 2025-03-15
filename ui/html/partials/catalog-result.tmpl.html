@@ -1,7 +1,12 @@
 {{ define "catalog-result" }}
   <div>
-    {{ template "profile-gallery" (dict "ImageBaseUrl" .ImageBaseUrl "Profiles" .SearchResults.ProfileResults) }}
-    {{ template "thumbnail-gallery" (dict "ImageBaseUrl" .ImageBaseUrl "Videos" .SearchResults.VideoResults) }}
+    {{- if ne (len .SearchResults.VideoResults) 0 -}}
+      {{- template "thumbnail-gallery" (dict "ImageBaseUrl" .ImageBaseUrl "Videos" .SearchResults.VideoResults) -}}
+    {{- else -}}
+    <div class="text-center p-6">
+      <p class="text-lg font-bold">No results found.</p>
+    </div>
+    {{- end -}}
   </div>
   <div class="flex justify-center gap-x-2.5 mt-auto mb-2">
         {{ range .SearchResults.Pages }}
@@ -17,6 +22,8 @@
                   hx-target="#results"
                 >{{ . }}</a>
             {{ end }}
+        {{ else }}
+          <span class="inline-block leading-8 h-8 font-bold px-3 rounded-md bg-gray-300">0</span>
         {{ end }}
   </div>
 {{ end }}

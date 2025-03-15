@@ -10,6 +10,10 @@ export class CatalogFilter extends HTMLElement {
     this.filterProfileTemplate = document.getElementById("filterProfile");
 
     this.input = this.querySelector(".filterSearch");
+
+    this.input.setAttribute("hx-get", this.dataset.url);
+    this.input.setAttribute("placeholder", this.dataset.placeholder);
+
     this.dropdown = this.querySelector(".dropdown");
     this.filtersDiv = this.querySelector(".filters"); 
 
@@ -102,7 +106,6 @@ export class CatalogFilter extends HTMLElement {
 
       htmx.process(resultsDiv);
       htmx.trigger(resultsDiv, "filter-change");
-
     })
   }
 

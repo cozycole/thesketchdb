@@ -54,6 +54,7 @@ type dropdownSearchResults struct {
 }
 
 type result struct {
+	Type  string
 	ID    int
 	Text  string
 	Image string
@@ -83,6 +84,7 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 			res := []result{}
 			for _, row := range dbResults {
 				r := result{}
+				r.Type = "person"
 				r.Text = *row.First + " " + *row.Last
 				r.ID = *row.ID
 				if row.ProfileImg != nil {
@@ -127,6 +129,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 			res := []result{}
 			for _, row := range dbResults {
 				r := result{}
+				r.Type = "character"
 				r.Text = *row.Name
 				r.ID = *row.ID
 				res = append(res, r)
@@ -167,8 +170,14 @@ func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 			res := []result{}
 			for _, c := range creators {
 				r := result{}
-				r.Text = *c.Name
+				r.Type = "creator"
 				r.ID = *c.ID
+				r.Text = *c.Name
+				if c.ProfileImage != nil {
+					r.Image = *c.ProfileImage
+				} else {
+					r.Image = "missing-profile.jpg"
+				}
 				res = append(res, r)
 			}
 
