@@ -98,12 +98,29 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		app.errorLog.Println(err)
 	}
 
+	tagIdParams := r.URL.Query()["tag"]
+
+	var tagIds []int
+	for _, idStr := range tagIdParams {
+		id, err := strconv.Atoi(idStr)
+		if nil == err && id > 0 {
+			tagIds = append(tagIds, id)
+		}
+	}
+
+	var tagFilter []*models.Tag
+	if len(tagIds) > 0 {
+		tagFilter, err = app.tags.GetTags(&tagIds)
+		app.errorLog.Println(err)
+	}
+
 	limit := app.settings.pageSize
 	offset := (currentPage - 1) * limit
 	filter := &models.Filter{
-		SortBy:   sort,
 		Creators: creatorFilter,
 		People:   peopleFilter,
+		Tags:     tagFilter,
+		SortBy:   sort,
 		Limit:    limit,
 		Offset:   offset,
 	}

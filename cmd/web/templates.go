@@ -18,6 +18,7 @@ import (
 // you need to combine it all into one
 type templateData struct {
 	BrowseSections  map[string][]*models.Video
+	Categories      *[]*models.Category
 	CSRFToken       string
 	Cast            *[]*models.CastMember
 	CastMember      *models.CastMember

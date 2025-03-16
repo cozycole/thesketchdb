@@ -8,9 +8,12 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) categoryViewPage(w http.ResponseWriter, r *http.Request) {
-	slug := r.PathValue("slug")
-	category, err := app.categories.GetBySlug(slug)
+func (app *application) categoriesView(w http.ResponseWriter, r *http.Request) {
+	categories, err := app.categories.GetAll()
+	for _, c := range categories {
+
+		app.infoLog.Printf("%s\n", *c.Name)
+	}
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -21,12 +24,8 @@ func (app *application) categoryViewPage(w http.ResponseWriter, r *http.Request)
 	}
 
 	data := app.newTemplateData(r)
-
-	if category.Subcategories != nil {
-		app.render(w, http.StatusOK, "view-categories.tmpl.html", "base", data)
-	} else {
-		app.render(w, http.StatusOK, "view-tags.tmpl.html", "base", data)
-	}
+	data.Categories = &categories
+	app.render(w, http.StatusOK, "view-categories.tmpl.html", "base", data)
 }
 
 func (app *application) categoryAddPage(w http.ResponseWriter, r *http.Request) {

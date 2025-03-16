@@ -44,13 +44,8 @@ func convertFormtoCastMember(form *castForm) models.CastMember {
 }
 
 func convertFormtoCategory(form *categoryForm) models.Category {
-	var parentId *int
-	if form.ParentId != 0 {
-		parentId = &form.ParentId
-	}
 	return models.Category{
-		Name:     &form.Name,
-		ParentID: parentId,
+		Name: &form.Name,
 	}
 }
 

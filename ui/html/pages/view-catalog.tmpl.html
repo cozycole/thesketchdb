@@ -1,4 +1,4 @@
-{{ define "title" }}Search Sketches{{ end }}
+{{ define "title" }}Catalog{{ end }}
 
 {{ define "main" }}
   <div data-page="catalog" class="flex flex-col grow w-full my-4 px-2 text-slate-950 ">
@@ -20,8 +20,10 @@
                 id="sortDropdown"
                 class="block w-full appearance-none bg-slate-50 border border-slate-300 hover:border-slate-400 px-3 py-1.5 rounded-lg shadow-sm focus:outline-none"
               >
-                <option class="hover:bg-slate-200" value="latest">Latest</option>
+                <option value="latest">Latest</option>
                 <option value="oldest">Oldest</option>
+                <option value="az">A-Z</option>
+                <option value="za">Z-A</option>
               </select>
               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
                 ▼
@@ -62,6 +64,23 @@
             ]'>
             </catalog-filter>
           </div>
+          <div>
+            <h3 class="font-bold p-1">Tags</h3>
+            <catalog-filter
+              id="tags-filter"
+              data-type="tag"
+              data-url="/tag/search"
+              data-placeholder="Search categories / tags"
+              data-display-img="false"
+              data-selected='[
+                {{- range $i, $t := .SearchResults.Filter.Tags -}}
+                  {{- if ne $i 0 -}},{{- end -}}
+                  {"id": "{{ $t.ID }}", 
+                  "name": "{{ with $t.Category }}{{ .Name }} / {{ end }}{{ $t.Name }}"}
+                {{- end -}}
+            ]'>
+            </catalog-filter>
+          </div>
         </div>
       </div>
       <div id="results" 
@@ -92,7 +111,7 @@
     <div class="flex justify-between items-center mt-1 rounded-full bg-slate-200">
       <div class="flex items-center overflow-hidden">
         <img class="rounded-full w-8"/>
-        <h4 class="pl-1 overflow-hidden text-ellipsis whitespace-nowrap"></h4>
+        <h4 class="pl-2 overflow-hidden text-ellipsis whitespace-nowrap"></h4>
       </div>
       <button class="flex-shrink-0">
         <img class="p-1 rounded-full hover:bg-slate-300" src="/static/img/close.svg"/>

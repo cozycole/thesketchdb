@@ -1,0 +1,28 @@
+{{ define "title" }}Categories{{ end }}
+
+{{ define "main" }}
+  <div data-page="categories" class="p-3 text-slate-950">
+    <h1 class="my-3 text-xl font-bold">Sketch Categories</h1>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+      {{ range .Categories}}
+        <div class="border p-3 rounded-2xl shadow-md">
+          <div class="flex justify-between">
+            <h2 class="text-lg font-bold">{{ .Name }}</h2>
+            <img class="w-6" src="/static/img/dropdown-arrow-up.svg"/>
+          </div>
+          <div>
+            <ul>
+              {{- range .Tags -}} 
+                <a href="/catalog?tag={{ .ID }}">
+                  <li class="px-3 py-1 hover:underline">
+                    {{- .Name -}}
+                  </li>
+                </a>
+              {{- end -}}
+            </ul>
+          </div>
+        </div>
+      {{- end -}}
+    </div>
+  </div>
+{{ end }}

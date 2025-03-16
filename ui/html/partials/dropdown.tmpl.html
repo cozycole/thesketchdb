@@ -4,8 +4,10 @@
       class="result hover:bg-gray-200 border flex items-center"
       data-id="{{ .ID }}"
     >
-      <img class="inline-block w-12" src="{{ $.ImageBaseUrl}}/{{ .Type }}/{{ .Image }}"/>
-      <p class="px-1 line-clamp-2">{{ .Text }}</p>
+      {{ if ne .Image "" }}
+        <img class="inline-block w-12" src="{{ $.ImageBaseUrl}}/{{ .Type }}/{{ .Image }}"/>
+      {{ end }}
+      <p class="px-1 py-3 line-clamp-2">{{ .Text }}</p>
     </li>
   {{ end }}
   <a href="{{ .Redirect }}" target="blank_">

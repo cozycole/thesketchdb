@@ -17,6 +17,7 @@ import (
 type Filter struct {
 	People   []*Person
 	Creators []*Creator
+	Tags     []*Tag
 	SortBy   string
 	Limit    int
 	Offset   int
@@ -25,6 +26,8 @@ type Filter struct {
 var sortMap = map[string]string{
 	"latest": "v.upload_date DESC, v.title ASC",
 	"oldest": "v.upload_date ASC, v.title ASC",
+	"az":     "v.title ASC",
+	"za":     "v.title DESC",
 }
 
 func (f *Filter) Params() url.Values {
@@ -199,12 +202,14 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
 		LEFT JOIN cast_members as cm ON v.id = cm.video_id
+		LEFT JOIN video_tags as vt ON v.id = vt.video_id
 		WHERE 1=1
 	`
 
 	args := []interface{}{}
 	argIndex := 1
 
+	// NOTE: Creators / tags filters use OR opeartions
 	if len(filter.Creators) > 0 {
 		creatorPlaceholders := []string{}
 		for _, creator := range filter.Creators {
@@ -216,6 +221,18 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 		query += fmt.Sprintf(" AND c.id IN (%s)", strings.Join(creatorPlaceholders, ","))
 	}
 
+	if len(filter.Tags) > 0 {
+		tagPlaceholders := []string{}
+		for _, tag := range filter.Tags {
+			tagPlaceholders = append(tagPlaceholders, fmt.Sprintf("$%d", argIndex))
+			args = append(args, tag.ID)
+			argIndex++
+		}
+
+		query += fmt.Sprintf(" AND vt.tag_id IN (%s)", strings.Join(tagPlaceholders, ","))
+	}
+
+	// NOTE: People filter use AND operation
 	if len(filter.People) > 0 {
 		peoplePlaceholders := []string{}
 		for _, person := range filter.People {
@@ -374,6 +391,7 @@ func (m *VideoModel) GetCount(filter *Filter) (int, error) {
 			LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
 			LEFT JOIN creator as c ON vcr.creator_id = c.id
 			LEFT JOIN cast_members as cm ON v.id = cm.video_id
+			LEFT JOIN video_tags as vt ON v.id = vt.video_id
 			WHERE 1=1
 	`
 
@@ -389,6 +407,17 @@ func (m *VideoModel) GetCount(filter *Filter) (int, error) {
 		}
 
 		query += fmt.Sprintf(" AND c.id IN (%s)", strings.Join(creatorPlaceholders, ","))
+	}
+
+	if len(filter.Tags) > 0 {
+		tagPlaceholders := []string{}
+		for _, tag := range filter.Tags {
+			tagPlaceholders = append(tagPlaceholders, fmt.Sprintf("$%d", argIndex))
+			args = append(args, tag.ID)
+			argIndex++
+		}
+
+		query += fmt.Sprintf(" AND vt.tag_id IN (%s)", strings.Join(tagPlaceholders, ","))
 	}
 
 	if len(filter.People) > 0 {

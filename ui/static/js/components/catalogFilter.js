@@ -44,7 +44,6 @@ export class CatalogFilter extends HTMLElement {
   }
 
   connectedCallback() {
-    console.log("connected");
     const selectedData = this.dataset.selected;
     console.log(selectedData);
     if (selectedData) {
@@ -65,8 +64,6 @@ export class CatalogFilter extends HTMLElement {
 
   updateUI() {
     const currentURL = new URL(window.location.href);
-    //console.log(currentURL);
-    //console.log(this.selectedFilters);
     for (let filter of this.selectedFilters) {
       let validFilter = currentURL.searchParams.has(this.dataset.type, filter.id);
       if (!filter.applied && validFilter) {
@@ -92,7 +89,7 @@ export class CatalogFilter extends HTMLElement {
       let img = ele.querySelector("img");
       let text = ele.querySelector("p").textContent;
 
-      this.addFilter(id, text, img.src);
+      this.addFilter(id, text, img?.src);
       this.displayFilter(id);
       this.dropdown.innerHTML = '';
       this.input.value = "";
@@ -134,13 +131,17 @@ export class CatalogFilter extends HTMLElement {
     }
 
     let filterElement = this.filterProfileTemplate.content.cloneNode(true);
-    let img = filterElement.querySelector('img');
-    img.src = filter.image;
+    let img = filterElement.querySelector("img");
+    if (this.dataset.displayImg === "false") {
+      img.remove();
+    } else {
+      img.src = filter.image;
+    }
 
-    let title = filterElement.querySelector('h4');
+    let title = filterElement.querySelector("h4");
     title.textContent = filter.name;
 
-    let deleteButton = filterElement.querySelector('button');
+    let deleteButton = filterElement.querySelector("button");
     let insertedFilter = filterElement.firstElementChild;
     insertedFilter.dataset.id = id;
 

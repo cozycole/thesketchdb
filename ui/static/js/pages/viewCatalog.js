@@ -4,6 +4,8 @@ export function initViewCatalog() {
   document.querySelector("#sortDropdown").addEventListener("change", (e) => {
     let currentURL = new URL(window.location.href);
     currentURL.searchParams.set("sort", e.target.value);
+    currentURL.searchParams.set("page", 1);
+
     let newURL = currentURL.toString();
     
     let resultsDiv = document.getElementById("results");

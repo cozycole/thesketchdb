@@ -3,24 +3,23 @@ package models
 import (
 	"context"
 	"errors"
+	"sort"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Category struct {
-	ID            *int
-	Name          *string
-	Slug          *string
-	ParentID      *int
-	Subcategories []*Category
-	Tags          []*Tag
+	ID   *int
+	Name *string
+	Slug *string
+	Tags []*Tag
 }
 
 type CategoryInterface interface {
 	Exists(id int) (bool, error)
 	Get(id int) (*Category, error)
-	GetBySlug(slug string) (*Category, error)
+	GetAll() ([]*Category, error)
 	Insert(category *Category) (int, error)
 	Search(query string) (*[]*Category, error)
 }
@@ -45,25 +44,12 @@ func (m *CategoryModel) Exists(id int) (bool, error) {
 	return true, nil
 }
 
-// Gets one layer of sub categories
 func (m *CategoryModel) Get(id int) (*Category, error) {
-	var c Category
 	stmt := `
-        SELECT id, name, slug, parent_id 
-        FROM categories 
-        WHERE id = $1
-    `
-
-	err := m.DB.QueryRow(context.Background(), stmt, id).
-		Scan(&c.ID, &c.Name, &c.Slug, &c.ParentID)
-	if err != nil {
-		return nil, err
-	}
-
-	stmt = `
-        SELECT id, name, slug 
-        FROM categories 
-        WHERE parent_id = $1
+        SELECT DISTINCT c.id, c.name, t.id, t.name
+        FROM categories as c
+				LEFT JOIN tags as t ON c.id = t.category_id
+				WHERE c.id = $1
     `
 	rows, err := m.DB.Query(context.Background(), stmt, id)
 	if err != nil {
@@ -71,61 +57,86 @@ func (m *CategoryModel) Get(id int) (*Category, error) {
 	}
 	defer rows.Close()
 
+	var c Category
 	for rows.Next() {
-		var subCat Category
-		if err := rows.Scan(&subCat.ID, &subCat.Name, &subCat.Slug); err != nil {
-			return nil, err
-		}
-		subCat.ParentID = c.ID
-		c.Subcategories = append(c.Subcategories, &subCat)
-	}
-
-	stmt = `
-        SELECT id, name, slug 
-        FROM tags 
-        WHERE category_id = $1
-    `
-	tagRows, err := m.DB.Query(context.Background(), stmt, id)
-	if err != nil {
-		return nil, err
-	}
-	defer tagRows.Close()
-
-	for tagRows.Next() {
 		var t Tag
-		if err := tagRows.Scan(&t.ID, &t.Name, &t.Slug); err != nil {
-			return nil, err
+		if c.ID == nil {
+			if err := rows.Scan(&c.ID, &c.Name, &t.ID, &t.Name); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := rows.Scan(nil, nil, &t.ID, &t.Name); err != nil {
+				return nil, err
+			}
 		}
+
 		c.Tags = append(c.Tags, &t)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return &c, nil
 }
 
-func (m *CategoryModel) GetBySlug(slug string) (*Category, error) {
-	stmt := `SELECT id FROM categories WHERE slug = $1`
-	var id int
-	err := m.DB.QueryRow(context.Background(), stmt, slug).Scan(&id)
+func (m *CategoryModel) GetAll() ([]*Category, error) {
+	stmt := `
+			SELECT DISTINCT c.id, c.name, t.id, t.name
+			FROM categories as c
+			LEFT JOIN tags as t ON c.id = t.category_id
+			ORDER BY c.name DESC
+    `
+	rows, err := m.DB.Query(context.Background(), stmt)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNoRecord
-		} else {
+		return nil, err
+	}
+	defer rows.Close()
+
+	categoryMap := make(map[int]*Category)
+	for rows.Next() {
+		var c Category
+		var t Tag
+		if err := rows.Scan(&c.ID, &c.Name, &t.ID, &t.Name); err != nil {
 			return nil, err
+		}
+
+		if _, ok := categoryMap[*c.ID]; !ok {
+			categoryMap[*c.ID] = &c
+		}
+
+		if t.ID != nil {
+			mappedCategory := categoryMap[*c.ID]
+			mappedCategory.Tags = append(mappedCategory.Tags, &t)
 		}
 	}
 
-	return m.Get(id)
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	var categories []*Category
+	for _, c := range categoryMap {
+		categories = append(categories, c)
+	}
+
+	// Sort it alphabetically
+	sort.Slice(categories, func(i, j int) bool {
+		return *categories[i].Name < *categories[j].Name
+	})
+
+	return categories, nil
 }
 
 func (m *CategoryModel) Insert(category *Category) (int, error) {
 	stmt := `
-	INSERT INTO categories (name, slug, parent_id)
+	INSERT INTO categories (name, slug)
 	VALUES ($1,$2,$3)
 	RETURNING id;
 	`
 	var id int
 	err := m.DB.QueryRow(
-		context.Background(), stmt, category.Name, category.Slug, category.ParentID,
+		context.Background(), stmt, category.Name, category.Slug,
 	).Scan(&id)
 	if err != nil {
 		return 0, err
@@ -136,7 +147,7 @@ func (m *CategoryModel) Insert(category *Category) (int, error) {
 
 func (m *CategoryModel) Search(query string) (*[]*Category, error) {
 	query = "%" + query + "%"
-	stmt := `SELECT c.id, c.slug, c.name, c.parent_id
+	stmt := `SELECT c.id, c.slug, c.name,
 			FROM categories as c
 			WHERE name ILIKE $1
 			ORDER BY name`
@@ -151,7 +162,7 @@ func (m *CategoryModel) Search(query string) (*[]*Category, error) {
 	for rows.Next() {
 		c := &Category{}
 		err := rows.Scan(
-			&c.ID, &c.Slug, &c.Name, &c.ParentID,
+			&c.ID, &c.Slug, &c.Name,
 		)
 		if err != nil {
 			return nil, err

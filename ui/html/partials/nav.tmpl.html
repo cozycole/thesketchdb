@@ -2,50 +2,47 @@
   <div class="bg-slate-900">
     <nav class="w-full text-white px-3 py-3 lg:max-w-screen-lg mx-auto flex items-center justify-between">
       <a href="/" class="shrink-0 text-xl font-bold mr-4">SketchDB</a>
-
-
-
+      <!--Center Search-->
       <div class="hidden sm:flex grow relative w-full">
           <input type="text" placeholder="Search SketchDB" 
               class="w-full px-4 py-2 text-black rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
       </div>
       <div id="mobileSearch" class="hidden z-20 absolute top-12 left-0 w-full bg-slate-900 p-2 shadow-lg">
-          <input type="text" placeholder="Search SketchDB" class="w-full px-3 py-2 rounded bg-slate-800 border border-gray-700 focus:outline-none">
+          <input type="text" placeholder="Search SketchDB" class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700 focus:outline-none">
       </div>
-
-
       <!-- Right Side Menus -->
-      <div class="pl-4 flex shrink-0">
-        <div class="hidden md:flex space-x-6">
-            <!-- Browse Dropdown -->
+      <div class="pl-6 flex shrink-0">
+        <div class="hidden md:flex items-center space-x-6">
+            <button class="hover:text-slate-200">
+                <a href="/browse">Browse</a>
+            </button>
+            <!-- Catalog Dropdown -->
             <div class="relative z-20">
-                <button class="dropdownBtn flex items-center space-x-2 hover:text-gray-300">
-                    <span>Browse</span>
+                <button class="dropdownBtn flex items-center space-x-2 hover:text-slate-200">
+                    <span>Catalog</span>
                     <svg class="w-4 h-4 transition-transform transform rotate-0 group-hover:rotate-180" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                     </svg>
                 </button>
                 <div class="dropdownMenu absolute right-0 mt-2 w-48 bg-white text-black rounded-md shadow-lg opacity-0 scale-95 transform origin-top transition-all pointer-events-none">
-                    <a  class="block px-4 py-2 hover:bg-gray-200 rounded-md">Latest</a>
-                    <a  class="block px-4 py-2 hover:bg-gray-200 rounded-md">Trending</a>
-                    <a  class="block px-4 py-2 hover:bg-gray-200 rounded-md">Categories</a>
+                    <a href="/catalog/sketches" class="block px-4 py-2 hover:bg-slate-200 rounded-md">Sketches</a>
+                    <a href="/categories" class="block px-4 py-2 hover:bg-slate-200 rounded-md">Categories</a>
                 </div>
             </div>
-
             <!-- Account Dropdown -->
             <div class="relative z-20">
-                <button class="dropdownBtn flex items-center space-x-2 hover:text-gray-300">
+                <button class="dropdownBtn flex items-center space-x-2 hover:text-slate-300">
                   <img class="w-7" src="/static/img/account-icon.svg"/>
                 </button>
                 <div class="dropdownMenu absolute right-0 mt-2 w-48 bg-white text-black rounded-md shadow-lg opacity-0 scale-95 transform origin-top transition-all pointer-events-none">
                     {{ with .User }}
-                      <a href="/user/{{ .Username}}" class="block px-4 py-2 hover:bg-gray-200">View Account</a>
+                      <a href="/user/{{ .Username}}" class="block px-4 py-2 hover:bg-slate-200">View Account</a>
                       <form class="block" action='/logout' method='POST'>
-                        <button class="w-full px-4 py-2 text-left hover:bg-gray-200">Logout</button>
+                        <button class="w-full px-4 py-2 text-left hover:bg-slate-200">Logout</button>
                       </form>
                     {{ else }}
-                      <a href="/signup" class="block px-4 py-2 hover:bg-gray-200 rounded-md">Signup</a>
-                      <a href="/login" class="block px-4 py-2 hover:bg-gray-200 rounded-md">Login</a>
+                      <a href="/signup" class="block px-4 py-2 hover:bg-slate-200 rounded-md">Signup</a>
+                      <a href="/login" class="block px-4 py-2 hover:bg-slate-200 rounded-md">Login</a>
                     {{ end }}
                 </div>
             </div>

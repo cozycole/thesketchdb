@@ -33,13 +33,15 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.HandleFunc("/browse", app.browse)
 		r.HandleFunc("/", app.home)
 
+		r.Get("/search", app.search)
 		r.Get("/catalog", app.catalogView)
+		r.Get("/catalog/sketches", app.catalogView)
+		r.Get("/categories", app.categoriesView)
+
 		r.Get("/video/{slug}", app.videoView)
 
 		r.Post("/video/like/{id}", app.videoAddLike)
 		r.Delete("/video/like/{id}", app.videoRemoveLike)
-
-		r.Get("/category/{slug}", app.categoryViewPage)
 
 		r.Get("/creator/{slug}", app.creatorView)
 		r.Get("/creator/search", app.creatorSearch)
@@ -53,8 +55,6 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Get("/tag/search", app.tagSearch)
 
 		r.Get("/user/{username}", app.userView)
-
-		r.Get("/search", app.search)
 
 		r.Get("/signup", app.userSignup)
 		r.Post("/signup", app.userSignupPost)
