@@ -31,6 +31,7 @@ type templateData struct {
 	IsAuthenticated bool
 	IsEditor        bool
 	Person          *models.Person
+	Query           string
 	SearchResults   *SearchResult
 	Tags            *[]*models.Tag
 	User            *models.User

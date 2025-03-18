@@ -23,7 +23,9 @@ type Person struct {
 
 type PersonModelInterface interface {
 	GetBySlug(slug string) (*Person, error)
-	Get(id int) (*Person, error)
+	Get(filter *Filter) ([]*Person, error)
+	GetById(id int) (*Person, error)
+	GetCount(filter *Filter) (int, error)
 	GetPeople(ids *[]int) ([]*Person, error)
 	Exists(id int) (bool, error)
 	Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, string, error)
@@ -53,37 +55,6 @@ func (m *PersonModel) Insert(first, last, imgName, imgExt string, birthDate time
 	return id, slug, fullImgName, err
 }
 
-func (m *PersonModel) Search(query string) ([]*Person, error) {
-	query = query + "%"
-	stmt := `SELECT id, slug, first, last, profile_img, birthdate
-			FROM person
-			WHERE CONCAT(LOWER(first), LOWER(last)) LIKE LOWER($1)
-			OR LOWER(last) LIKE LOWER($1)`
-
-	rows, err := m.DB.Query(context.Background(), stmt, query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	people := []*Person{}
-	for rows.Next() {
-		p := &Person{}
-		err := rows.Scan(
-			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg, &p.BirthDate,
-		)
-		if err != nil {
-			return nil, err
-		}
-		people = append(people, p)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return people, nil
-}
-
 func (m *PersonModel) Exists(id int) (bool, error) {
 	stmt := `SELECT id FROM person WHERE id = $1`
 	row := m.DB.QueryRow(context.Background(), stmt, id)
@@ -99,13 +70,76 @@ func (m *PersonModel) Exists(id int) (bool, error) {
 	return true, nil
 }
 
+func (m *PersonModel) Get(filter *Filter) ([]*Person, error) {
+	query := `SELECT p.id, p.first, p.last, p.profile_img, p.birthdate, p.slug%s
+			FROM person as p
+			WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+
+	if filter.Query != "" {
+		rankParam := fmt.Sprintf(`
+		, ts_rank(
+			setweight(to_tsvector('simple', p.first), 'A') ||
+			setweight(to_tsvector('simple', p.last), 'A'),
+			to_tsquery('simple', $%d)
+		) AS rank
+		`, argIndex)
+
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`AND
+            to_tsvector('simple', p.first || ' ' ||
+            p.last
+		) @@ to_tsquery('simple', $%d)
+		`, argIndex)
+
+		args = append(args, filter.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var people []*Person
+	for rows.Next() {
+		var p Person
+		destinations := []any{
+			&p.ID, &p.First, &p.Last, &p.ProfileImg, &p.BirthDate, &p.Slug,
+		}
+
+		var rank *float32
+		if filter.Query != "" {
+			destinations = append(destinations, &rank)
+		}
+		err := rows.Scan(destinations...)
+		if err != nil {
+			return nil, err
+		}
+
+		people = append(people, &p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return people, nil
+}
+
 func (m *PersonModel) GetBySlug(slug string) (*Person, error) {
 	person_id, err := m.GetIdBySlug(slug)
 	if err != nil {
 		return nil, err
 	}
 
-	return m.Get(person_id)
+	return m.GetById(person_id)
 
 }
 
@@ -126,7 +160,7 @@ func (m *PersonModel) GetIdBySlug(slug string) (int, error) {
 	return id, nil
 }
 
-func (m *PersonModel) Get(id int) (*Person, error) {
+func (m *PersonModel) GetById(id int) (*Person, error) {
 	stmt := `SELECT id, first, last, profile_img, birthdate, slug 
 			FROM person
 			WHERE id = $1`
@@ -191,11 +225,98 @@ func (m *PersonModel) GetPeople(ids *[]int) ([]*Person, error) {
 	return people, nil
 }
 
+func (m *PersonModel) GetCount(filter *Filter) (int, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM (
+			SELECT p.id, p.first, p.last, p.profile_img, p.birthdate, p.slug
+			FROM person as p
+			WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+
+	if filter.Query != "" {
+		query += fmt.Sprintf(`AND
+            to_tsvector('simple', COALESCE(p.first,'') || ' ' || COALESCE(p.last,'')) @@ to_tsquery('simple', $%d)
+		`, argIndex)
+
+		args = append(args, filter.Query)
+		argIndex++
+	}
+
+	query += " ) as grouped_count"
+
+	var count int
+	err := m.DB.QueryRow(context.Background(), query, args...).Scan(&count)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+
+	return count, nil
+}
+
+func (m *PersonModel) Search(query string) ([]*Person, error) {
+	query = query + "%"
+	stmt := `SELECT id, slug, first, last, profile_img, birthdate
+			FROM person
+			WHERE CONCAT(LOWER(first), LOWER(last)) LIKE LOWER($1)
+			OR LOWER(last) LIKE LOWER($1)`
+
+	rows, err := m.DB.Query(context.Background(), stmt, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	people := []*Person{}
+	for rows.Next() {
+		p := &Person{}
+		err := rows.Scan(
+			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg, &p.BirthDate,
+		)
+		if err != nil {
+			return nil, err
+		}
+		people = append(people, p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return people, nil
+}
+
+func (m *PersonModel) SearchCount(query string) (int, error) {
+	stmt := `
+		SELECT count(*)
+		FROM person
+		WHERE search_vector @@ websearch_to_tsquery('english', $1)
+	`
+	var count int
+	row := m.DB.QueryRow(context.Background(), stmt, query)
+	err := row.Scan(&count)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+	return count, nil
+}
+
 func (m *PersonModel) VectorSearch(query string) ([]*ProfileResult, error) {
 	stmt := `
-		SELECT id, first, last, profile_img, birthdate, slug, ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
+		SELECT id, first, last, profile_img, birthdate, slug, ts_rank(search_vector, websearch_to_tsquery('english', $1)) AS rank
 		FROM person
-		WHERE search_vector @@ plainto_tsquery('english', $1)
+		WHERE search_vector @@ websearch_to_tsquery('english', $1)
 		ORDER BY rank desc
 	`
 
@@ -234,23 +355,4 @@ func (m *PersonModel) VectorSearch(query string) ([]*ProfileResult, error) {
 	}
 
 	return results, nil
-}
-
-func (m *PersonModel) SearchCount(query string) (int, error) {
-	stmt := `
-		SELECT count(*)
-		FROM person
-		WHERE search_vector @@ plainto_tsquery('english', $1)
-	`
-	var count int
-	row := m.DB.QueryRow(context.Background(), stmt, query)
-	err := row.Scan(&count)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrNoRecord
-		} else {
-			return 0, err
-		}
-	}
-	return count, nil
 }

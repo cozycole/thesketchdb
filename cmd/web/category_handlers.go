@@ -10,10 +10,6 @@ import (
 
 func (app *application) categoriesView(w http.ResponseWriter, r *http.Request) {
 	categories, err := app.categories.GetAll()
-	for _, c := range categories {
-
-		app.infoLog.Printf("%s\n", *c.Name)
-	}
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)

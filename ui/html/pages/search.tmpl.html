@@ -1,101 +1,64 @@
-{{ define "title" }}Search Sketches{{ end }}
+{{ define "title" }}Search SketchDB{{ end }}
 
 {{ define "main" }}
-  <div data-page="search" class="w-full flex justify-between items-center my-2">
-    <input
-      id="searchInput"
-      type="search"
-      name="q"
-      value="{{ .SearchResults.Query }}"
-      placeholder="Find videos, actors and characters"
-      class="htmxSearchPage flex-grow max-w-md min-w-0 p-1 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-      hx-get="/search"
-      hx-trigger="keydown[key=='Enter']"
-      hx-swap="innerHTML scroll:top"
-      hx-target="#searchResults"
-    />
-    <div class="flex flex-nowrap gap-2 w-auto p-2">
-      <button class="inline-block p-2 rounded-md hover:bg-gray-300">
-        <span class="hidden sm:inline mr-1 text-sm font-bold">Relevance</span>
-        <svg class="inline w-7" viewBox="0 0 24 24">
-          <path fill-rule="evenodd" clip-rule="evenodd" d="M3 5a1 1 0 0 1 1-1h16a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Zm0 7a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Zm14-1a1 1 0 0 1 1 1v5.586l1.293-1.293a1 1 0 0 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 1.414-1.414L16 17.586V12a1 1 0 0 1 1-1ZM3 19a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Z" fill="currentColor"></path>
-        </svg>
-      </button>
-      <div class="relative">
-        <button class="filterMenuButton inline-block p-2 rounded-md hover:bg-gray-300">
-          <span class="hidden sm:inline mr-1 text-sm font-bold">Filters</span>
-          <svg class="inline w-7" viewBox="0 0 24 24">
-            <g fill-rule="evenodd" clip-rule="evenodd" fill="currentColor">
-              <path d="M13 8a1 1 0 1 1 0-2h7a1 1 0 1 1 0 2h-7Zm-1 9a1 1 0 0 1-1 1H4a1 1 0 1 1 0-2h7a1 1 0 0 1 1 1ZM6.5 10.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0-5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM17.5 20.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm0-5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"></path>
-            </g>
-          </svg>
-        </button>
-        <menu id="filterMenu" class="hidden absolute left-auto right-0 w-56 bg-white p-4 rounded-md">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="font-bold">Fitlers</h3> 
-            <button class="filterMenuButton">
-              <svg class=" w-6 p-1 rounded-md hover:bg-gray-200 hover:cursor-pointer" viewBox="0 0 24 24" focusable="false">
-                <path d="m13.41 12 6.3-6.29a1.004 1.004 0 1 0-1.42-1.42L12 10.59l-6.29-6.3a1.004 1.004 0 0 0-1.42 1.42l6.3 6.29-6.3 6.29a1 1 0 0 0 0 1.42.998.998 0 0 0 1.42 0l6.29-6.3 6.29 6.3a.999.999 0 0 0 1.42 0 1 1 0 0 0 0-1.42L13.41 12Z" fill="currentColor"></path>
-              </svg>
-            </button>
+  <div data-page="search" class="w-full my-4 px-2 text-slate-950 ">
+    <h1 class="w-full my-3 text-2xl font-bold line-clamp-1">Search "{{ .Query }}"</h1>
+    <section class="flex">
+      <div id="resultsSummary" class="w-72 h-fit border border-slate-950 rounded-md">
+        <a href="/catalog/sketches?query={{ .SearchResults.Query }}">
+          <div class="flex items-center justify-between p-2 font-bold border-slate-950 hover:bg-slate-200 rounded-md cursor-pointer">
+            <h2 class="text-xl p-2">Sketches</h2>
+            <p class="p-2 rounded-full text-slate-50 min-w-11 text-center bg-slate-950">{{ .SearchResults.TotalVideoCount}}</p>
           </div>
-          <div class="bg-gray-100 p-2">
-            <div class="flex justify-between items-center">
-              <h4 class="font-bold">Type</h4>
-              <button class="filterTypeButton">
-                <img class="filterTypeArrow w-5 hover:cursor-pointer" src="/static/img/dropdown-arrow-up.svg">
-                <img class="filterTypeArrow hidden w-5 hover:cursor-pointer" src="/static/img/dropdown-arrow-down.svg">
-              </button>
-            </div>
-            <div id="typeMenu" class="mt-2">
-              <div>
-                <input type="radio" name="type" value="video" checked="true"
-                    hx-get="/search?q={{ $.SearchResults.Query }}&type=video"
-                    hx-swap="innerHTML"
-                    hx-target="#searchResults"
-                >
-                <label for="video">Videos</label>
-              </div>
-              <div>
-                <input type="radio" name="type" value="person"
-                    hx-get="/search?q={{ $.SearchResults.Query }}&type=person"
-                    hx-swap="innerHTML"
-                    hx-target="#searchResults"
-              >
-                <label for="person">People</label>
-              </div>
-              <div>
-                <input type="radio" name="type" value="character"
-                    hx-get="/search?q={{ $.SearchResults.Query }}&type=character"
-                    hx-swap="innerHTML"
-                    hx-target="#searchResults"
-              >
-                <label for="character">Characters</label>
-              </div>
-              <div>
-                <input type="radio" name="type" value="creator"
-                    hx-get="/search?q={{ $.SearchResults.Query }}&type=creator"
-                    hx-swap="innerHTML"
-                    hx-target="#searchResults"
-                >
-                <label for="creator">Creators</label>
-              </div>
-              <div>
-                <input type="radio" name="type" value="user">
-                <label for="user">Users</label>
-              </div>
-            </div>
+        </a>
+        <a href="/catalog/people?query={{ .SearchResults.Query }}">
+          <div class="flex items-center justify-between p-2 font-bold border-slate-950 hover:bg-slate-200 rounded-md cursor-pointer">
+            <h2 class="text-xl p-2">People</h2>
+            <p class="p-2 rounded-full text-slate-50 min-w-11 text-center bg-slate-950">{{ .SearchResults.TotalPersonCount}}</p>
           </div>
-        </menu>
+        </a>
+        <div class="flex items-center justify-between p-2 font-bold border-slate-950 hover:bg-slate-200 rounded-md cursor-pointer">
+          <h2 class="text-xl p-2">Creators</h2>
+          <p class="p-2 rounded-full text-slate-50 min-w-11 text-center bg-slate-950">{{ .SearchResults.TotalCreatorCount }}</p>
+        </div>
+        <div class="flex items-center justify-between p-2 font-bold border-slate-950 hover:bg-slate-200 rounded-md cursor-pointer">
+          <h2 class="text-xl p-2">Characters</h2>
+          <p class="p-2 rounded-full text-slate-50 min-w-11 text-center bg-slate-950">0</p>
+        </div>
+        <!--<div class="flex items-center justify-between p-2 font-bold border-slate-950 hover:bg-slate-200 rounded-md cursor-pointer"> <h2 class="text-xl p-2">Shows</h2>-->
+        <!--  <p class="p-2 rounded-full text-slate-50 min-w-11 text-center bg-slate-950">1</p>-->
+        <!--</div>-->
       </div>
-        
-    </div>
+      <div id="results" class="flex flex-col gap-4 flex-grow w-full ml-4 p-4 rounded-md border shadow-lg">
+        {{- if eq .SearchResults.NoResults false -}} 
+          {{- with .SearchResults.PersonResults -}}
+          <div>
+            <a href="/catalog/people?query={{ $.SearchResults.Query }}">
+              <h2 class="font-bold text-2xl mb-3 hover:underline">People</h2>
+            </a>
+            {{- template "person-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "People" .) -}}
+          </div>
+          {{- end -}}
+          {{- with .SearchResults.CreatorResults -}}
+          <div>
+            <a href="/catalog/creators?query={{ $.SearchResults.Query }}">
+              <h2 class="font-bold text-2xl mb-3 hover:underline">Creators</h2>
+            </a>
+            {{- template "creator-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Creators" .) -}}
+          </div>
+          {{- end -}}
+          {{- with .SearchResults.VideoResults -}}
+            <a href="/catalog/sketches?query={{ $.SearchResults.Query }}">
+              <h2 class="font-bold text-2xl hover:underline">Sketches</h2>
+            </a>
+            {{- template "thumbnail-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Videos" .) -}}
+          {{- end -}}
+        {{- else -}}
+          <div class="text-center p-6">
+            <p class="text-lg font-bold">No results found.</p>
+          </div>
+        {{- end -}}
+      </div>
+    </section>
   </div>
-  <div id="searchResults" class="flex flex-col justify-between grow">
-    {{ template "search-result" . }}
-  </div>
-{{ end }}
-
-{{ define "scripts" }}
-  <script src="/static/js/search.js"></script>
 {{ end }}

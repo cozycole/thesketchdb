@@ -2,10 +2,8 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"sketchdb.cozycole.net/internal/models"
@@ -13,36 +11,26 @@ import (
 
 func (app *application) search(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
+	query, _ := url.QueryUnescape(r.Form.Get("query"))
+	filterQuery := strings.Join(strings.Fields(query), " | ")
 
-	q, _ := url.QueryUnescape(r.Form.Get("q"))
-	htmxReq := r.Header.Get("HX-Request")
-	page := r.Form.Get("page")
-	currentPage, err := strconv.Atoi(page)
-	if err != nil || currentPage < 1 {
-		currentPage = 1
+	filter := &models.Filter{
+		Query:  filterQuery,
+		Limit:  8,
+		Offset: 0,
 	}
 
-	assetType := r.Form.Get("type")
-	if assetType == "" {
-		assetType = "video"
-	}
-
-	results, err := app.getSearchResults(q, currentPage, assetType)
+	results, err := app.getSearchResults(filter)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
+	data.Query = query
 	data.SearchResults = results
-	app.infoLog.Printf("%+v", results)
-
-	w.Header().Add("HX-Push-Url", fmt.Sprintf("/search?q=%s&type=%s&page=%d", url.QueryEscape(q), assetType, currentPage))
-
-	if htmxReq != "" {
-		app.render(w, http.StatusOK, "search-result.tmpl.html", "search-result", data)
-		return
-	}
+	data.SearchResults.Query = url.QueryEscape(query)
+	data.SearchResults.Filter = filter
 
 	app.render(w, http.StatusOK, "search.tmpl.html", "base", data)
 }
@@ -275,4 +263,14 @@ func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
 	data.DropdownResults = results
 
 	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
+}
+
+func getFormattedQueries(query string) (string, string, string) {
+	// to be used in the ui
+	rawQuery, _ := url.QueryUnescape(query)
+	// to be uised in urls
+	urlQuery := url.QueryEscape(strings.Replace(query, "|", "", -1))
+	// to be used in database query
+	filterQuery := strings.Join(strings.Fields(rawQuery), " | ")
+	return rawQuery, urlQuery, filterQuery
 }

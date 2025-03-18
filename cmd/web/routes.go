@@ -34,7 +34,6 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.HandleFunc("/", app.home)
 
 		r.Get("/search", app.search)
-		r.Get("/catalog", app.catalogView)
 		r.Get("/catalog/sketches", app.catalogView)
 		r.Get("/categories", app.categoriesView)
 

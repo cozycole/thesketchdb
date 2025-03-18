@@ -1,80 +1,76 @@
 package main
 
 import (
-	"fmt"
-	"math"
+	"errors"
 
 	"sketchdb.cozycole.net/internal/models"
 )
 
+// NOTE: Query is defined on the Filter, SearchResult and templateData structs
+// Given the search term: kenan snl
+// - Filter.Query -> "kenan | snl"
+// - SearchResult.Query -> "kenan+snl"
+// - templateData.Query -> "kenan snl" (i.e. user facing)
 type SearchResult struct {
-	Type           string
-	Query          string
-	ProfileResults []*models.ProfileResult
-	VideoResults   []*models.Video
-	Filter         *models.Filter
-	NoResults      bool
-	PageURLParams  string
-	CurrentPage    int
-	Pages          []int
+	Type                string
+	Query               string
+	VideoResults        []*models.Video
+	TotalVideoCount     int
+	PersonResults       []*models.Person
+	TotalPersonCount    int
+	CreatorResults      []*models.Creator
+	TotalCreatorCount   int
+	CharacterResults    []*models.Character
+	TotalCharacterCount int
+	Filter              *models.Filter
+	NoResults           bool
+	PageURLParams       string
+	CurrentPage         int
+	Pages               []int
 }
 
-func (app *application) getSearchResults(query string, currentPage int, searchType string) (*SearchResult, error) {
-	limit := app.settings.pageSize
-	offset := (currentPage - 1) * limit
+func (app *application) getSearchResults(filter *models.Filter) (*SearchResult, error) {
 
-	var videos []*models.Video
-	var profiles []*models.ProfileResult
-	var searchErr, countErr error
-	var resultCount, totalCount int
-	switch searchType {
-	case "character":
-		profiles, searchErr = app.characters.VectorSearch(query, limit, offset)
-		totalCount, countErr = app.characters.SearchCount(query)
-		resultCount = len(profiles)
-	case "creator":
-		profiles, searchErr = app.creators.VectorSearch(query)
-		totalCount, countErr = app.creators.SearchCount(query)
-		resultCount = len(profiles)
-	case "person":
-		app.infoLog.Println("searching person table...")
-		profiles, searchErr = app.people.VectorSearch(query)
-		totalCount, countErr = app.people.SearchCount(query)
-		resultCount = len(profiles)
-	// case "user":
-	// 	app.infoLog.Println("searching user table...")
-	default:
-		// TODO: have the default be all and mix them together somehow
-		app.infoLog.Println("searching video table...")
-		videos, searchErr = app.videos.Search(query, limit, offset)
-		totalCount, countErr = app.videos.SearchCount(query)
-		resultCount = len(videos)
-		searchType = "video"
+	videos, err := app.videos.Get(filter)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		return nil, err
 	}
 
-	if searchErr != nil {
-		return nil, fmt.Errorf("%s search error: %w", searchType, searchErr)
+	videoCount, err := app.videos.GetCount(filter)
+	if err != nil {
+		return nil, err
 	}
 
-	if countErr != nil {
-		return nil, fmt.Errorf("%s search count error: %w", searchType, countErr)
+	people, err := app.people.Get(filter)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		return nil, err
 	}
 
-	totalPages := int(math.Ceil(float64(totalCount) / float64(app.settings.pageSize)))
-	pageList := paginate(currentPage, totalPages)
-	app.infoLog.Println(pageList)
-	if app.debugMode {
-		app.infoLog.Printf("Query: %s Page: %d Offset: %d Limit: %d | Total Count: %d\n", query, currentPage, offset, limit, totalCount)
+	peopleCount, err := app.people.GetCount(filter)
+	if err != nil {
+		return nil, err
 	}
+
+	creators, err := app.creators.Get(filter)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		return nil, err
+	}
+
+	creatorCount, err := app.creators.GetCount(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	noResults := peopleCount == 0 && videoCount == 0
 
 	return &SearchResult{
-		Type:           searchType,
-		Query:          query,
-		ProfileResults: profiles,
-		VideoResults:   videos,
-		NoResults:      resultCount == 0,
-		CurrentPage:    currentPage,
-		Pages:          pageList,
+		VideoResults:      videos,
+		TotalVideoCount:   videoCount,
+		PersonResults:     people,
+		TotalPersonCount:  peopleCount,
+		CreatorResults:    creators,
+		TotalCreatorCount: creatorCount,
+		NoResults:         noResults,
 	}, nil
 }
 

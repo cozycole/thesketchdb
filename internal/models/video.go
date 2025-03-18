@@ -15,6 +15,7 @@ import (
 )
 
 type Filter struct {
+	Query    string
 	People   []*Person
 	Creators []*Creator
 	Tags     []*Tag
@@ -37,6 +38,10 @@ func (f *Filter) Params() url.Values {
 		params.Add("sort", f.SortBy)
 	}
 
+	if f.Query != "" {
+		params.Add("query", url.QueryEscape(f.Query))
+	}
+
 	for _, p := range f.People {
 		if p.ID != nil {
 			params.Add("person", strconv.Itoa(*p.ID))
@@ -49,7 +54,18 @@ func (f *Filter) Params() url.Values {
 		}
 	}
 
+	for _, p := range f.Tags {
+		if p.ID != nil {
+			params.Add("tag", strconv.Itoa(*p.ID))
+		}
+	}
+
 	return params
+}
+
+func (f *Filter) GetVectorQueryString() string {
+	query := strings.Replace(f.Query, "|", "", -1)
+	return strings.Join(strings.Fields(query), " | ")
 }
 
 func (f *Filter) ParamsString() string {
@@ -159,7 +175,7 @@ func (m *VideoModel) BatchUpdateTags(vidId int, tags *[]*Tag) error {
 		query := "INSERT INTO video_tags (video_id, tag_id) VALUES "
 		values := []interface{}{}
 		for i, tag := range tagsToInsert {
-			query += fmt.Sprintf("($1, $%d),", i+2)
+			query += fmt.Sprintf("($1, $d),", i+2)
 			values = append(values, tag)
 		}
 		query = query[:len(query)-1] // Trim last comma
@@ -197,7 +213,7 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 	query := `
 		SELECT DISTINCT v.id, v.title, v.video_url, v.slug, 
 		v.thumbnail_name, v.upload_date, c.id, c.name, c.page_url, 
-		c.slug, c.profile_img
+		c.slug, c.profile_img%s
 		FROM video as v
 		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
@@ -208,6 +224,66 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 
 	args := []interface{}{}
 	argIndex := 1
+
+	if filter.Query != "" {
+		rankParam := fmt.Sprintf(`
+			 , ts_rank(
+				setweight(to_tsvector('english', v.title), 'A') ||
+				setweight(to_tsvector('english', c.name), 'B') ||
+				setweight(to_tsvector('english', array_to_string(ARRAY(
+					SELECT a.first
+					FROM cast_members AS cm 
+					JOIN person AS a ON cm.person_id = a.id 
+					WHERE cm.video_id = v.id
+				), ' ')), 'B') ||
+				setweight(to_tsvector('english', array_to_string(ARRAY(
+					SELECT a.last
+					FROM cast_members AS cm 
+					JOIN person AS a ON cm.person_id = a.id 
+					WHERE cm.video_id = v.id
+				), ' ')), 'B') ||
+				setweight(to_tsvector('english', array_to_string(ARRAY(
+					SELECT t.name 
+					FROM video_tags AS vt 
+					JOIN tags AS t ON vt.tag_id = t.id 
+					WHERE vt.video_id = v.id
+				), ' ')), 'C'),
+				to_tsquery('english', $%d)
+				) AS rank
+			`, argIndex)
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`
+			AND
+            to_tsvector(
+				'english',
+				COALESCE(v.title, '') || ' ' || COALESCE(c.name, '') || ' ' ||
+				COALESCE(array_to_string(ARRAY(
+					SELECT a.first
+					FROM cast_members AS cm 
+					JOIN person AS a ON cm.person_id = a.id 
+					WHERE cm.video_id = v.id
+				), ' '),'') || ' ' ||
+				COALESCE(array_to_string(ARRAY(
+					SELECT a.last
+					FROM cast_members AS cm 
+					JOIN person AS a ON cm.person_id = a.id 
+					WHERE cm.video_id = v.id
+				), ' '),'') || ' ' ||
+				COALESCE(array_to_string(ARRAY(
+					SELECT t.name 
+					FROM video_tags AS vt 
+					JOIN tags AS t ON vt.tag_id = t.id 
+					WHERE vt.video_id = v.id
+				), ' '),'')) @@ to_tsquery('english', $%d)
+		
+		`, argIndex)
+
+		args = append(args, filter.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
 
 	// NOTE: Creators / tags filters use OR opeartions
 	if len(filter.Creators) > 0 {
@@ -262,6 +338,8 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 	query += fmt.Sprintf(" ORDER BY %s", sort)
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
 	args = append(args, filter.Limit, filter.Offset)
+	// fmt.Println(query)
+	// fmt.Printf("ARGS: %+v\n", args)
 
 	rows, err := m.DB.Query(context.Background(), query, args...)
 	if err != nil {
@@ -274,13 +352,19 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 	defer rows.Close()
 
 	videos := []*Video{}
+
 	for rows.Next() {
 		v := &Video{}
 		c := &Creator{}
-		err := rows.Scan(
+		destinations := []any{
 			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
 			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
-		)
+		}
+		var rank *float32
+		if filter.Query != "" {
+			destinations = append(destinations, &rank)
+		}
+		err := rows.Scan(destinations...)
 		if err != nil {
 			return nil, err
 		}
@@ -420,6 +504,36 @@ func (m *VideoModel) GetCount(filter *Filter) (int, error) {
 		query += fmt.Sprintf(" AND vt.tag_id IN (%s)", strings.Join(tagPlaceholders, ","))
 	}
 
+	if filter.Query != "" {
+		query += fmt.Sprintf(`
+			AND
+            to_tsvector(
+				'english',
+				COALESCE(v.title, '') || ' ' || COALESCE(c.name, '') || ' ' ||
+				COALESCE(array_to_string(ARRAY(
+					SELECT a.first
+					FROM cast_members AS cm 
+					JOIN person AS a ON cm.person_id = a.id 
+					WHERE cm.video_id = v.id
+				), ' '),'') || ' ' ||
+				COALESCE(array_to_string(ARRAY(
+					SELECT a.last
+					FROM cast_members AS cm 
+					JOIN person AS a ON cm.person_id = a.id 
+					WHERE cm.video_id = v.id
+				), ' '),'') || ' ' ||
+				COALESCE(array_to_string(ARRAY(
+					SELECT t.name 
+					FROM video_tags AS vt 
+					JOIN tags AS t ON vt.tag_id = t.id 
+					WHERE vt.video_id = v.id
+				), ' '),'')) @@ to_tsquery('english', $%d)
+		`, argIndex)
+
+		args = append(args, filter.Query)
+		argIndex++
+	}
+
 	if len(filter.People) > 0 {
 		peoplePlaceholders := []string{}
 		for _, person := range filter.People {
@@ -442,6 +556,7 @@ func (m *VideoModel) GetCount(filter *Filter) (int, error) {
 	}
 
 	query += " ) as grouped_count"
+
 	var count int
 	err := m.DB.QueryRow(context.Background(), query, args...).Scan(&count)
 
@@ -668,13 +783,13 @@ func (m *VideoModel) Search(query string, limit, offset int) ([]*Video, error) {
 			c.name AS creator, 
 			c.slug AS creator_slug, 
 			c.profile_img AS creator_img,
-			ts_rank(v.search_vector, plainto_tsquery('english', $1)) AS rank
+			ts_rank(v.search_vector, websearch_to_tsquery('english', $1)) AS rank
 		FROM video as v
 		LEFT JOIN video_creator_rel as vcr
 		ON v.id = vcr.video_id
 		LEFT JOIN creator as c
 		ON vcr.creator_id = c.id
-		WHERE v.search_vector @@ plainto_tsquery('english', $1)
+		WHERE v.search_vector @@ websearch_to_tsquery('english', $1)
 		ORDER BY rank DESC, name ASC
 		LIMIT $2
 		OFFSET $3;
@@ -714,7 +829,7 @@ func (m *VideoModel) SearchCount(query string) (int, error) {
 	stmt := `
 		SELECT count(*)
 		FROM video as v
-		WHERE v.search_vector @@ plainto_tsquery('english', $1)
+		WHERE v.search_vector @@ websearch_to_tsquery('english', $1)
 	`
 	var count int
 	row := m.DB.QueryRow(context.Background(), stmt, query)

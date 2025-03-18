@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime"
 	"strings"
 	"time"
 
@@ -22,7 +23,9 @@ type Creator struct {
 
 type CreatorModelInterface interface {
 	Exists(id int) (bool, error)
-	Get(id int) (*Creator, error)
+	Get(filter *Filter) ([]*Creator, error)
+	GetCount(filter *Filter) (int, error)
+	GetById(id int) (*Creator, error)
 	GetBySlug(slug string) (*Creator, error)
 	GetCreators(*[]int) ([]*Creator, error)
 	Insert(name, url, imgName, imgExt string, establishedDate time.Time) (int, string, string, error)
@@ -53,6 +56,110 @@ func (m *CreatorModel) GetBySlug(slug string) (*Creator, error) {
 	}
 
 	return c, nil
+}
+
+func (m *CreatorModel) Get(filter *Filter) ([]*Creator, error) {
+	query := `SELECT c.id, c.name, c.slug, c.page_url, c.profile_img, c.date_established%s
+			FROM creator as c
+			WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+
+	if filter.Query != "" {
+		rankParam := fmt.Sprintf(`
+		, ts_rank(
+			setweight(to_tsvector('english', c.name), 'A'),
+			to_tsquery('english', $%d)
+		) AS rank
+		`, argIndex)
+
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`AND
+            to_tsvector('english', c.name) @@ to_tsquery('english', $%d)
+		`, argIndex)
+
+		args = append(args, filter.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		_, file, line, _ := runtime.Caller(0)
+		return nil, fmt.Errorf("%s:%d: %w", file, line, err)
+	}
+
+	var creators []*Creator
+	for rows.Next() {
+		var c Creator
+		destinations := []any{
+			&c.ID, &c.Name, &c.Slug, &c.URL, &c.ProfileImage, &c.EstablishedDate,
+		}
+
+		var rank *float32
+		if filter.Query != "" {
+			destinations = append(destinations, &rank)
+		}
+		err := rows.Scan(destinations...)
+		if err != nil {
+			_, file, line, _ := runtime.Caller(0)
+			return nil, fmt.Errorf("%s:%d: %w", file, line, err)
+		}
+
+		creators = append(creators, &c)
+	}
+
+	if err = rows.Err(); err != nil {
+		_, file, line, _ := runtime.Caller(0)
+		return nil, fmt.Errorf("%s:%d: %w", file, line, err)
+	}
+
+	return creators, nil
+}
+
+func (m *CreatorModel) GetCount(filter *Filter) (int, error) {
+	query := `
+			SELECT COUNT(*)
+			FROM (
+				SELECT c.id, c.name, c.slug, c.page_url, c.profile_img, c.date_established
+				FROM creator as c
+				WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+
+	if filter.Query != "" {
+
+		query += fmt.Sprintf(`AND
+            to_tsvector('english', c.name) @@ to_tsquery('english', $%d)
+		`, argIndex)
+
+		args = append(args, filter.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	query += " ) as grouped_count"
+
+	var count int
+	err := m.DB.QueryRow(context.Background(), query, args...).Scan(&count)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+
+	return count, nil
+
 }
 
 func (m *CreatorModel) GetCreators(ids *[]int) ([]*Creator, error) {
@@ -150,7 +257,7 @@ func (m *CreatorModel) Search(query string) ([]*Creator, error) {
 	return creators, nil
 }
 
-func (m *CreatorModel) Get(id int) (*Creator, error) {
+func (m *CreatorModel) GetById(id int) (*Creator, error) {
 	stmt := `SELECT id, name, slug, page_url, profile_img, date_established FROM creator
 	WHERE id = $1`
 
@@ -186,9 +293,9 @@ func (m *CreatorModel) Exists(id int) (bool, error) {
 
 func (m *CreatorModel) VectorSearch(query string) ([]*ProfileResult, error) {
 	stmt := `
-		SELECT id, name, profile_img, slug, date_established, ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
+		SELECT id, name, profile_img, slug, date_established, ts_rank(search_vector, websearch_to_tsquery('english', $1)) AS rank
 		FROM creator
-		WHERE search_vector @@ plainto_tsquery('english', $1)
+		WHERE search_vector @@ websearch_to_tsquery('english', $1)
 		ORDER BY rank desc
 	`
 
@@ -230,7 +337,7 @@ func (m *CreatorModel) SearchCount(query string) (int, error) {
 	stmt := `
 		SELECT count(*)
 		FROM creator
-		WHERE search_vector @@ plainto_tsquery('english', $1)
+		WHERE search_vector @@ websearch_to_tsquery('english', $1)
 	`
 	var count int
 	row := m.DB.QueryRow(context.Background(), stmt, query)

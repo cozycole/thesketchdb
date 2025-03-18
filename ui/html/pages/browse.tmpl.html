@@ -8,9 +8,7 @@
       <div class="my-4">
         <h2 class="my-2 text-2xl font-bold">{{ $sectionName }}</h2>
         {{ if $videos }}
-          <div class="flex">
             {{ template "video-carousel" (dict "ImageBaseUrl" $.ImageBaseUrl "Videos" $videos)}} 
-          </div>
         {{ else }}
           <p>Error fetching videos</p>
         {{ end }}

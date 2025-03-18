@@ -17,7 +17,7 @@
             {{ else }}
                 <a 
                   class="htmxSearchPage inline-block leading-8 h-8 text-gray-600 px-3 rounded-md bg-gray-300 hover:cursor-pointer hover:bg-gray-400" 
-                  hx-get="/catalog?page={{ . }}&{{ $.SearchResults.Filter.ParamsString }}"
+                  hx-get="/catalog/sketches?page={{ . }}&{{ $.SearchResults.Filter.ParamsString }}"
                   hx-swap="innerHTML"
                   hx-target="#results"
                 >{{ . }}</a>

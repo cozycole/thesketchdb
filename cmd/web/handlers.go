@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"sketchdb.cozycole.net/internal/models"
 )
@@ -66,6 +67,9 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	if sort == "" {
 		sort = "latest"
 	}
+	query, _ := url.QueryUnescape(r.Form.Get("query"))
+	filterQuery := strings.Join(strings.Fields(query), " | ")
+	app.infoLog.Printf("\nQUERY PARAMS:\nQUERY:%s\nDB QUERY:%s", query, filterQuery)
 
 	personIdParams := r.URL.Query()["person"]
 
@@ -111,12 +115,12 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	var tagFilter []*models.Tag
 	if len(tagIds) > 0 {
 		tagFilter, err = app.tags.GetTags(&tagIds)
-		app.errorLog.Println(err)
 	}
 
 	limit := app.settings.pageSize
 	offset := (currentPage - 1) * limit
 	filter := &models.Filter{
+		Query:    filterQuery,
 		Creators: creatorFilter,
 		People:   peopleFilter,
 		Tags:     tagFilter,
@@ -124,7 +128,6 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		Limit:    limit,
 		Offset:   offset,
 	}
-	app.infoLog.Printf("FILTER: %+v\n", filter)
 
 	results, err := app.getCatalogResults(currentPage, "video", filter)
 	if err != nil {
@@ -136,14 +139,17 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 
 	results.Filter = filter
 	data.SearchResults = results
+	data.SearchResults.Query = url.QueryEscape(query)
+	data.Query = query
 
-	url, err := buildURL("/catalog", results)
+	url, err := buildURL("/catalog/sketches", results)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
 	w.Header().Add("HX-Push-Url", url)
+	app.infoLog.Println(url)
 
 	isHxRequest := r.Header.Get("HX-Request") == "true"
 	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
@@ -163,6 +169,7 @@ func buildURL(baseURL string, result *SearchResult) (string, error) {
 
 	params := result.Filter.Params()
 	params.Add("page", strconv.Itoa(result.CurrentPage))
+	params.Set("query", result.Query)
 
 	u.RawQuery = params.Encode()
 
