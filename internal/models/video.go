@@ -217,8 +217,6 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 		FROM video as v
 		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
-		LEFT JOIN cast_members as cm ON v.id = cm.video_id
-		LEFT JOIN video_tags as vt ON v.id = vt.video_id
 		WHERE 1=1
 	`
 
@@ -243,7 +241,18 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 					WHERE cm.video_id = v.id
 				), ' ')), 'B') ||
 				setweight(to_tsvector('english', array_to_string(ARRAY(
-					SELECT t.name 
+					SELECT cm.character_name
+					FROM cast_members AS cm 
+					WHERE cm.video_id = v.id
+				), ' ')), 'B') ||
+				setweight(to_tsvector('english', array_to_string(ARRAY(
+					SELECT cm.character_name
+					FROM cast_members AS cm 
+					JOIN character AS c ON cm.character_id = c.id 
+					WHERE cm.video_id = v.id
+				), ' ')), 'B') ||
+				setweight(to_tsvector('english', array_to_string(ARRAY(
+					SELECT t.name
 					FROM video_tags AS vt 
 					JOIN tags AS t ON vt.tag_id = t.id 
 					WHERE vt.video_id = v.id
@@ -275,6 +284,17 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 					FROM video_tags AS vt 
 					JOIN tags AS t ON vt.tag_id = t.id 
 					WHERE vt.video_id = v.id
+				), ' '),'') || ' ' ||
+				COALESCE(array_to_string(ARRAY(
+					SELECT cm.character_name
+					FROM cast_members AS cm 
+					WHERE cm.video_id = v.id
+				), ' '),'') || ' ' ||
+				COALESCE(array_to_string(ARRAY(
+					SELECT c.name
+					FROM cast_members AS cm 
+					JOIN character as c ON cm.character_id = c.id
+					WHERE cm.video_id = v.id
 				), ' '),'')) @@ to_tsquery('english', $%d)
 		
 		`, argIndex)
@@ -527,7 +547,19 @@ func (m *VideoModel) GetCount(filter *Filter) (int, error) {
 					FROM video_tags AS vt 
 					JOIN tags AS t ON vt.tag_id = t.id 
 					WHERE vt.video_id = v.id
+				), ' '),'') || ' ' ||
+				COALESCE(array_to_string(ARRAY(
+					SELECT cm.character_name
+					FROM cast_members AS cm 
+					WHERE cm.video_id = v.id
+				), ' '),'') || ' ' ||
+				COALESCE(array_to_string(ARRAY(
+					SELECT c.name
+					FROM cast_members AS cm 
+					JOIN character as c ON cm.character_id = c.id
+					WHERE cm.video_id = v.id
 				), ' '),'')) @@ to_tsquery('english', $%d)
+		
 		`, argIndex)
 
 		args = append(args, filter.Query)

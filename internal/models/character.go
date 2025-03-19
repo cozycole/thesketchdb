@@ -19,14 +19,126 @@ type Character struct {
 }
 
 type CharacterModelInterface interface {
-	Search(search string) ([]*Character, error)
 	Exists(id int) (bool, error)
+	Get(filter *Filter) ([]*Character, error)
+	GetCount(filter *Filter) (int, error)
+	Search(search string) ([]*Character, error)
 	SearchCount(query string) (int, error)
 	VectorSearch(query string, limit, offset int) ([]*ProfileResult, error)
 }
 
 type CharacterModel struct {
 	DB *pgxpool.Pool
+}
+
+func (m *CharacterModel) Get(filter *Filter) ([]*Character, error) {
+
+	query := `SELECT c.id, c.slug, c.name, c.img_name,
+			p.id, p.slug, p.first, p.last, p.profile_img, p.birthdate%s
+			FROM character as c
+			LEFT JOIN person as p ON c.person_id = p.id
+			WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+
+	if filter.Query != "" {
+		rankParam := fmt.Sprintf(`
+		, ts_rank(
+			setweight(to_tsvector('english', c.name), 'A') ||
+			setweight(to_tsvector('simple', p.first), 'B') ||
+			setweight(to_tsvector('simple', p.last), 'B'),
+			to_tsquery('english', $%d)
+		) AS rank
+		`, argIndex)
+
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`AND
+            to_tsvector('english', COALESCE(c.name, '') || ' ' || COALESCE(p.first,'') 
+				|| ' ' || COALESCE(p.last,'')) @@ to_tsquery('english', $%d)
+		`, argIndex)
+
+		args = append(args, filter.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	fmt.Println(query)
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var characters []*Character
+	for rows.Next() {
+		var c Character
+		var p Person
+		destinations := []any{
+			&c.ID, &c.Slug, &c.Name, &c.Image, &p.ID, &p.First,
+			&p.Last, &p.ProfileImg, &p.BirthDate, &p.Slug,
+		}
+
+		var rank *float32
+		if filter.Query != "" {
+			destinations = append(destinations, &rank)
+		}
+		err := rows.Scan(destinations...)
+		if err != nil {
+			return nil, err
+		}
+
+		characters = append(characters, &c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return characters, nil
+}
+
+func (m *CharacterModel) GetCount(filter *Filter) (int, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM (
+			SELECT c.id, c.slug, c.name, c.img_name,
+			p.id, p.slug, p.first, p.last, p.profile_img, p.birthdate
+			FROM character as c
+			LEFT JOIN person as p ON c.person_id = p.id
+			WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+
+	if filter.Query != "" {
+		query += fmt.Sprintf(`AND
+            to_tsvector('english', COALESCE(c.name, '') || ' ' || COALESCE(p.first,'') 
+				|| ' ' || COALESCE(p.last,'')) @@ to_tsquery('english', $%d)
+		`, argIndex)
+
+		args = append(args, filter.Query)
+		argIndex++
+	}
+
+	query += " ) as grouped_count"
+
+	var count int
+	err := m.DB.QueryRow(context.Background(), query, args...).Scan(&count)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+
+	return count, nil
 }
 
 func (m *CharacterModel) Search(query string) ([]*Character, error) {

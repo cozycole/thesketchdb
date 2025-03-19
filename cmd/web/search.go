@@ -61,16 +61,31 @@ func (app *application) getSearchResults(filter *models.Filter) (*SearchResult, 
 		return nil, err
 	}
 
-	noResults := peopleCount == 0 && videoCount == 0
+	characters, err := app.characters.Get(filter)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		return nil, err
+	}
+
+	characterCount, err := app.characters.GetCount(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	noResults := peopleCount == 0 &&
+		videoCount == 0 &&
+		creatorCount == 0 &&
+		characterCount == 0
 
 	return &SearchResult{
-		VideoResults:      videos,
-		TotalVideoCount:   videoCount,
-		PersonResults:     people,
-		TotalPersonCount:  peopleCount,
-		CreatorResults:    creators,
-		TotalCreatorCount: creatorCount,
-		NoResults:         noResults,
+		VideoResults:        videos,
+		TotalVideoCount:     videoCount,
+		PersonResults:       people,
+		TotalPersonCount:    peopleCount,
+		CreatorResults:      creators,
+		TotalCreatorCount:   creatorCount,
+		CharacterResults:    characters,
+		TotalCharacterCount: characterCount,
+		NoResults:           noResults,
 	}, nil
 }
 

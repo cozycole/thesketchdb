@@ -23,14 +23,15 @@
         </div>
         <div class="flex items-center justify-between p-2 font-bold border-slate-950 hover:bg-slate-200 rounded-md cursor-pointer">
           <h2 class="text-xl p-2">Characters</h2>
-          <p class="p-2 rounded-full text-slate-50 min-w-11 text-center bg-slate-950">0</p>
+          <p class="p-2 rounded-full text-slate-50 min-w-11 text-center bg-slate-950">{{ .SearchResults.TotalCharacterCount }}</p>
         </div>
-        <!--<div class="flex items-center justify-between p-2 font-bold border-slate-950 hover:bg-slate-200 rounded-md cursor-pointer"> <h2 class="text-xl p-2">Shows</h2>-->
-        <!--  <p class="p-2 rounded-full text-slate-50 min-w-11 text-center bg-slate-950">1</p>-->
-        <!--</div>-->
       </div>
       <div id="results" class="flex flex-col gap-4 flex-grow w-full ml-4 p-4 rounded-md border shadow-lg">
-        {{- if eq .SearchResults.NoResults false -}} 
+        {{- if eq .Query "" }}
+          <div class="text-center p-6">
+            <p class="text-lg font-bold">Search SketchDB by typing a word or phrase in the search box above.</p>
+          </div>
+        {{- else if eq .SearchResults.NoResults false -}} 
           {{- with .SearchResults.PersonResults -}}
           <div>
             <a href="/catalog/people?query={{ $.SearchResults.Query }}">
@@ -45,6 +46,14 @@
               <h2 class="font-bold text-2xl mb-3 hover:underline">Creators</h2>
             </a>
             {{- template "creator-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Creators" .) -}}
+          </div>
+          {{- end -}}
+          {{- with .SearchResults.CharacterResults -}}
+          <div>
+            <a href="/catalog/characters?query={{ $.SearchResults.Query }}">
+              <h2 class="font-bold text-2xl mb-3 hover:underline">Characters</h2>
+            </a>
+            {{- template "character-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Characters" .) -}}
           </div>
           {{- end -}}
           {{- with .SearchResults.VideoResults -}}

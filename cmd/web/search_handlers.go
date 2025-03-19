@@ -12,25 +12,30 @@ import (
 func (app *application) search(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	query, _ := url.QueryUnescape(r.Form.Get("query"))
-	filterQuery := strings.Join(strings.Fields(query), " | ")
-
-	filter := &models.Filter{
-		Query:  filterQuery,
-		Limit:  8,
-		Offset: 0,
-	}
-
-	results, err := app.getSearchResults(filter)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
 
 	data := app.newTemplateData(r)
-	data.Query = query
-	data.SearchResults = results
-	data.SearchResults.Query = url.QueryEscape(query)
-	data.SearchResults.Filter = filter
+	if query != "" {
+		filterQuery := strings.Join(strings.Fields(query), " | ")
+
+		filter := &models.Filter{
+			Query:  filterQuery,
+			Limit:  8,
+			Offset: 0,
+		}
+
+		results, err := app.getSearchResults(filter)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		data.Query = query
+		data.SearchResults = results
+		data.SearchResults.Query = url.QueryEscape(query)
+		data.SearchResults.Filter = filter
+	} else {
+		data.SearchResults = &SearchResult{}
+	}
 
 	app.render(w, http.StatusOK, "search.tmpl.html", "base", data)
 }
