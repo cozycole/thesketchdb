@@ -36,18 +36,31 @@ func (app *application) browse(w http.ResponseWriter, r *http.Request) {
 	offset := 0
 
 	// First add "custom" sections (ex: latest, trending, recommended/because you liked X)
-	latest, err := app.videos.GetLatest(limit, offset)
+	latest, err := app.videos.Get(
+		&models.Filter{
+			Limit:  limit,
+			Offset: offset,
+			SortBy: "latest"})
 	if err != nil {
 		app.errorLog.Println(err)
 	}
 	browseSections["Latest"] = latest
 
-	jamesId := 3
-	actorVideos, err := app.videos.GetByPerson(jamesId, limit, offset)
+	kyleId := 1
+	actorVideos, err := app.videos.Get(
+		&models.Filter{
+			Limit:  limit,
+			Offset: offset,
+			SortBy: "az",
+			People: []*models.Person{
+				&models.Person{ID: &kyleId},
+			},
+		},
+	)
 	if err != nil {
 		app.errorLog.Println(err)
 	}
-	browseSections["Sketches Featuring James Hartnett"] = actorVideos
+	browseSections["Sketches Featuring Kyle Mooney"] = actorVideos
 
 	data := app.newTemplateData(r)
 	data.BrowseSections = browseSections
@@ -69,7 +82,6 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	}
 	query, _ := url.QueryUnescape(r.Form.Get("query"))
 	filterQuery := strings.Join(strings.Fields(query), " | ")
-	app.infoLog.Printf("\nQUERY PARAMS:\nQUERY:%s\nDB QUERY:%s", query, filterQuery)
 
 	personIdParams := r.URL.Query()["person"]
 

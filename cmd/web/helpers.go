@@ -58,9 +58,10 @@ func (app *application) unauthorized(w http.ResponseWriter) {
 
 func (app *application) newTemplateData(r *http.Request) *templateData {
 	user, ok := r.Context().Value(userContextKey).(*models.User)
-	var isEditor bool
+	var isEditor, isAdmin bool
 	if ok {
 		isEditor = user.Role == "admin" || user.Role == "editor"
+		isAdmin = user.Role == "admin"
 	} else {
 		isEditor = false
 	}
@@ -71,6 +72,7 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 		Forms:        Forms{},
 		User:         user,
 		IsEditor:     isEditor,
+		IsAdmin:      isAdmin,
 	}
 }
 

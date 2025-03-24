@@ -23,7 +23,16 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videos, err := app.videos.GetByPerson(*person.ID, 16, 0)
+	videos, err := app.videos.Get(
+		&models.Filter{
+			Limit:  16,
+			Offset: 0,
+			SortBy: "az",
+			People: []*models.Person{
+				&models.Person{ID: person.ID},
+			},
+		},
+	)
 
 	data := app.newTemplateData(r)
 	data.Person = person

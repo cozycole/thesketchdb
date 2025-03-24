@@ -21,13 +21,13 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cast, err := app.cast.GetCastMembers(video.ID)
+	cast, err := app.cast.GetCastMembers(*video.ID)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(w, err)
 		return
 	}
 
-	tags, err := app.tags.GetByVideo(video.ID)
+	tags, err := app.tags.GetByVideo(*video.ID)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(w, err)
 		return
@@ -37,7 +37,7 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 
 	user, ok := r.Context().Value(userContextKey).(*models.User)
 	if ok {
-		hasLike, _ := app.videos.HasLike(video.ID, user.ID)
+		hasLike, _ := app.videos.HasLike(*video.ID, user.ID)
 		video.Liked = hasLike
 	}
 
@@ -98,7 +98,7 @@ func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	video.ID = id
+	*video.ID = id
 
 	if video.Creator.ID != nil {
 		err = app.videos.InsertVideoCreatorRelation(id, *video.Creator.ID)
@@ -153,13 +153,13 @@ func (app *application) videoUpdatePage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	cast, err := app.cast.GetCastMembers(video.ID)
+	cast, err := app.cast.GetCastMembers(*video.ID)
 	if err != nil && errors.Is(err, models.ErrNoRecord) {
 		app.serverError(w, err)
 		return
 	}
 
-	tags, err := app.tags.GetByVideo(video.ID)
+	tags, err := app.tags.GetByVideo(*video.ID)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(w, err)
 		return
@@ -223,7 +223,7 @@ func (app *application) videoUpdate(w http.ResponseWriter, r *http.Request) {
 	thumbnailName := oldVideo.ThumbnailName
 	if video.ThumbnailFile != nil {
 		var err error
-		thumbnailName, err = generateThumbnailName(video.ID, video.ThumbnailFile)
+		thumbnailName, err = generateThumbnailName(*video.ID, video.ThumbnailFile)
 		if err != nil {
 			app.serverError(w, err)
 			return
@@ -242,7 +242,7 @@ func (app *application) videoUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	video.ID = videoId
+	*video.ID = videoId
 	video.ThumbnailName = thumbnailName
 	err = app.videos.Update(&video)
 	if err != nil {
@@ -250,7 +250,7 @@ func (app *application) videoUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.videos.UpdateCreatorRelation(video.ID, *video.Creator.ID)
+	err = app.videos.UpdateCreatorRelation(*video.ID, *video.Creator.ID)
 	if err != nil {
 		app.serverError(w, err)
 		return

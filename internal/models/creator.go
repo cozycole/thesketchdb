@@ -21,6 +21,10 @@ type Creator struct {
 	EstablishedDate *time.Time
 }
 
+func (c *Creator) HasId() bool {
+	return c.ID != nil
+}
+
 type CreatorModelInterface interface {
 	Exists(id int) (bool, error)
 	Get(filter *Filter) ([]*Creator, error)

@@ -77,7 +77,16 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videos, err := app.videos.GetByCreator(*creator.ID)
+	videos, err := app.videos.Get(
+		&models.Filter{
+			Limit:  16,
+			Offset: 0,
+			SortBy: "az",
+			People: []*models.Person{
+				&models.Person{ID: creator.ID},
+			},
+		},
+	)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)

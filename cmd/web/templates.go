@@ -28,11 +28,13 @@ type templateData struct {
 	Flash           string
 	Forms           Forms
 	ImageBaseUrl    string
-	IsAuthenticated bool
+	IsAdmin         bool
 	IsEditor        bool
 	Person          *models.Person
+	People          []*models.Person
 	Query           string
 	SearchResults   *SearchResult
+	Show            *models.Show
 	Tags            *[]*models.Tag
 	User            *models.User
 	Video           *models.Video
@@ -58,6 +60,35 @@ func getYear(t time.Time) string {
 		return ""
 	}
 	return strconv.Itoa(t.Year())
+}
+
+func getSeasonSketchCount(season *models.Season) int {
+	var count int
+	for _, ep := range season.Episodes {
+		count += len(ep.Videos)
+	}
+
+	return count
+}
+
+func getShowEpisodeCount(show *models.Show) int {
+	var count int
+	for _, season := range show.Seasons {
+		count += len(season.Episodes)
+	}
+
+	return count
+}
+
+func getShowSketchCount(show *models.Show) int {
+	var count int
+	for _, season := range show.Seasons {
+		for _, ep := range season.Episodes {
+			count += len(ep.Videos)
+		}
+	}
+
+	return count
 }
 
 func printPersonName(a *models.Person) string {
@@ -99,12 +130,15 @@ func derefString(s *string) string {
 // functions from template). NOTE: The tempalte functions should only
 // return a single value
 var functions = template.FuncMap{
-	"humanDate":       humanDate,
-	"getYear":         getYear,
-	"dict":            dict,
-	"derefString":     derefString,
-	"formDate":        formDate,
-	"printPersonName": printPersonName,
+	"humanDate":            humanDate,
+	"getYear":              getYear,
+	"dict":                 dict,
+	"derefString":          derefString,
+	"formDate":             formDate,
+	"printPersonName":      printPersonName,
+	"getSeasonSketchCount": getSeasonSketchCount,
+	"getShowEpisodeCount":  getShowEpisodeCount,
+	"getShowSketchCount":   getShowSketchCount,
 }
 
 // Getting mapping of html page filename to template set for the page

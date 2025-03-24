@@ -18,6 +18,7 @@ type Filter struct {
 	Query    string
 	People   []*Person
 	Creators []*Creator
+	Shows    []*Show
 	Tags     []*Tag
 	SortBy   string
 	Limit    int
@@ -54,6 +55,12 @@ func (f *Filter) Params() url.Values {
 		}
 	}
 
+	for _, p := range f.Shows {
+		if p.ID != nil {
+			params.Add("show", strconv.Itoa(*p.ID))
+		}
+	}
+
 	for _, p := range f.Tags {
 		if p.ID != nil {
 			params.Add("tag", strconv.Itoa(*p.ID))
@@ -63,17 +70,12 @@ func (f *Filter) Params() url.Values {
 	return params
 }
 
-func (f *Filter) GetVectorQueryString() string {
-	query := strings.Replace(f.Query, "|", "", -1)
-	return strings.Join(strings.Fields(query), " | ")
-}
-
 func (f *Filter) ParamsString() string {
 	return f.Params().Encode()
 }
 
 type Video struct {
-	ID            int
+	ID            *int
 	Title         string
 	URL           *string
 	YoutubeID     *string
@@ -86,6 +88,8 @@ type Video struct {
 	Creator       *Creator
 	Cast          *[]*CastMember
 	Tags          *[]*Tag
+	Episode       *Episode
+	Number        *int
 	Liked         bool
 }
 
@@ -94,11 +98,8 @@ type VideoModelInterface interface {
 	Get(filter *Filter) ([]*Video, error)
 	GetById(id int) (*Video, error)
 	GetCount(filter *Filter) (int, error)
-	GetByCreator(id int) ([]*Video, error)
-	GetByPerson(id, limit, offset int) ([]*Video, error)
 	GetBySlug(slug string) (*Video, error)
 	GetByUserLikes(id int) ([]*Video, error)
-	GetLatest(limit, offset int) ([]*Video, error)
 	HasLike(vidId, userId int) (bool, error)
 	Insert(video *Video) (int, error)
 	InsertThumbnailName(vidId int, name string) error
@@ -205,7 +206,6 @@ func (m *VideoModel) BatchUpdateTags(vidId int, tags *[]*Tag) error {
 	}
 
 	tx.Commit(context.Background())
-
 	return nil
 }
 
@@ -217,6 +217,11 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 		FROM video as v
 		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
+		LEFT JOIN cast_members as cm ON v.id = cm.video_id
+		LEFT JOIN video_tags as vt ON v.id = vt.video_id
+		LEFT JOIN episode as e ON v.episode_id = e.id
+		LEFT JOIN season as se ON e.season_id = se.id
+		LEFT JOIN show as sh ON se.show_id = sh.id
 		WHERE 1=1
 	`
 
@@ -305,7 +310,7 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 		query = fmt.Sprintf(query, "")
 	}
 
-	// NOTE: Creators / tags filters use OR opeartions
+	// NOTE: Creators, shows, tags filters use OR opeartions
 	if len(filter.Creators) > 0 {
 		creatorPlaceholders := []string{}
 		for _, creator := range filter.Creators {
@@ -315,6 +320,17 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 		}
 
 		query += fmt.Sprintf(" AND c.id IN (%s)", strings.Join(creatorPlaceholders, ","))
+	}
+
+	if len(filter.Shows) > 0 {
+		showPlaceholders := []string{}
+		for _, show := range filter.Shows {
+			showPlaceholders = append(showPlaceholders, fmt.Sprintf("$%d", argIndex))
+			args = append(args, show.ID)
+			argIndex++
+		}
+
+		query += fmt.Sprintf(" AND sh.id IN (%s)", strings.Join(showPlaceholders, ","))
 	}
 
 	if len(filter.Tags) > 0 {
@@ -358,8 +374,8 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 	query += fmt.Sprintf(" ORDER BY %s", sort)
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
 	args = append(args, filter.Limit, filter.Offset)
-	// fmt.Println(query)
-	// fmt.Printf("ARGS: %+v\n", args)
+	fmt.Println(query)
+	fmt.Printf("ARGS: %+v\n", args)
 
 	rows, err := m.DB.Query(context.Background(), query, args...)
 	if err != nil {
@@ -432,49 +448,6 @@ func (m *VideoModel) GetById(id int) (*Video, error) {
 	return v, nil
 }
 
-func (m *VideoModel) GetByCreator(id int) ([]*Video, error) {
-	stmt := `
-		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
-		c.id, c.name, c.page_url, c.slug, c.profile_img
-		FROM video AS v
-		JOIN video_creator_rel as vcr
-		ON v.id = vcr.video_id
-		JOIN creator as c
-		ON vcr.creator_id = c.id
-		WHERE c.id = $1
-	`
-	rows, err := m.DB.Query(context.Background(), stmt, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
-	defer rows.Close()
-
-	videos := []*Video{}
-	for rows.Next() {
-		v := &Video{}
-		c := &Creator{}
-		err := rows.Scan(
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
-			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-		v.Creator = c
-		videos = append(videos, v)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return videos, nil
-}
-
 func (m *VideoModel) GetBySlug(slug string) (*Video, error) {
 	id, err := m.GetIdBySlug(slug)
 	if err != nil {
@@ -511,6 +484,17 @@ func (m *VideoModel) GetCount(filter *Filter) (int, error) {
 		}
 
 		query += fmt.Sprintf(" AND c.id IN (%s)", strings.Join(creatorPlaceholders, ","))
+	}
+
+	if len(filter.Shows) > 0 {
+		showPlaceholders := []string{}
+		for _, show := range filter.Shows {
+			showPlaceholders = append(showPlaceholders, fmt.Sprintf("$%d", argIndex))
+			args = append(args, show.ID)
+			argIndex++
+		}
+
+		query += fmt.Sprintf(" AND sh.id IN (%s)", strings.Join(showPlaceholders, ","))
 	}
 
 	if len(filter.Tags) > 0 {
@@ -559,7 +543,6 @@ func (m *VideoModel) GetCount(filter *Filter) (int, error) {
 					JOIN character as c ON cm.character_id = c.id
 					WHERE cm.video_id = v.id
 				), ' '),'')) @@ to_tsquery('english', $%d)
-		
 		`, argIndex)
 
 		args = append(args, filter.Query)
@@ -601,52 +584,6 @@ func (m *VideoModel) GetCount(filter *Filter) (int, error) {
 	}
 
 	return count, nil
-}
-
-func (m *VideoModel) GetByPerson(id, limit, offset int) ([]*Video, error) {
-	stmt := `SELECT DISTINCT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
-		c.id, c.name, c.page_url, c.slug, c.profile_img
-		FROM video AS v
-		JOIN video_creator_rel as vcr
-		ON v.id = vcr.video_id
-		JOIN creator as c
-		ON vcr.creator_id = c.id
-		JOIN cast_members as vpl
-		ON v.id = vpl.video_id
-		JOIN person as p
-		ON vpl.person_id = p.id
-		WHERE p.id = $1`
-
-	rows, err := m.DB.Query(context.Background(), stmt, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
-	defer rows.Close()
-
-	videos := []*Video{}
-	for rows.Next() {
-		v := &Video{}
-		c := &Creator{}
-		err := rows.Scan(
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
-			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-		v.Creator = c
-		videos = append(videos, v)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return videos, nil
 }
 
 func (m *VideoModel) GetIdBySlug(slug string) (int, error) {
@@ -701,52 +638,6 @@ func (m *VideoModel) GetByUserLikes(userId int) ([]*Video, error) {
 			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
 		)
 
-		if err != nil {
-			return nil, err
-		}
-		v.Creator = c
-		videos = append(videos, v)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return videos, nil
-}
-
-func (m *VideoModel) GetLatest(limit, offset int) ([]*Video, error) {
-	stmt := `
-		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
-		c.id, c.name, c.page_url, c.slug, c.profile_img
-		FROM video AS v
-		LEFT JOIN video_creator_rel as vcr
-		ON v.id = vcr.video_id
-		LEFT JOIN creator as c
-		ON vcr.creator_id = c.id
-		WHERE v.upload_date is NOT NULL
-		ORDER BY v.upload_date DESC
-		LIMIT $1
-		OFFSET $2;
-	`
-
-	rows, err := m.DB.Query(context.Background(), stmt, limit, offset)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
-	defer rows.Close()
-
-	videos := []*Video{}
-	for rows.Next() {
-		v := &Video{}
-		c := &Creator{}
-		err := rows.Scan(
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
-			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
-		)
 		if err != nil {
 			return nil, err
 		}

@@ -30,6 +30,7 @@ type application struct {
 	creators       models.CreatorModelInterface
 	people         models.PersonModelInterface
 	profile        models.ProfileModelInterface
+	shows          models.ShowModelInterface
 	tags           models.TagModelInterface
 	users          models.UserModelInterface
 	videos         models.VideoModelInterface
@@ -109,6 +110,7 @@ func main() {
 		creators:       &models.CreatorModel{DB: dbpool},
 		people:         &models.PersonModel{DB: dbpool},
 		profile:        &models.ProfileModel{DB: dbpool},
+		shows:          &models.ShowModel{DB: dbpool},
 		tags:           &models.TagModel{DB: dbpool},
 		users:          &models.UserModel{DB: dbpool},
 		videos:         &models.VideoModel{DB: dbpool},

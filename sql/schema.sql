@@ -35,6 +35,34 @@ CREATE TABLE IF NOT EXISTS creator (
     insert_timestamp timestamp DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS show (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    profile_img TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS show_creator (
+    show_id INTEGER REFERENCES show(id),
+    creator_id INTEGER REFERENCES creator(id),
+    PRIMARY KEY (show_id, creator_id)
+);
+
+CREATE TABLE IF NOT EXISTS season (
+    id SERIAL PRIMARY KEY,
+    show_id INTEGER REFERENCES show(id),
+    season_number INTEGER NOT NULL,
+    air_date DATE,
+    CONSTRAINT unique_show_season UNIQUE(show_id, season_number)
+);
+
+CREATE TABLE IF NOT EXISTS episode (
+    id SERIAL PRIMARY KEY,
+    season_id INTEGER REFERENCES season(id),
+    episode_number INTEGER NOT NULL,
+    air_date DATE
+);
+
 CREATE TABLE IF NOT EXISTS video (
     id SERIAL PRIMARY KEY,
     title VARCHAR NOT NULL,
@@ -45,6 +73,9 @@ CREATE TABLE IF NOT EXISTS video (
     description TEXT,
     upload_date DATE,
     pg_rating rating,
+    episode_id int REFERENCES episode(id),
+    part_number int,
+    sketch_number int,
     search_vector tsvector,
     insert_timestamp timestamp DEFAULT now()
 );
@@ -57,6 +88,7 @@ CREATE TABLE IF NOT EXISTS cast_members (
     character_id INT references character(id),
     position INT,
     img_name TEXT,
+    role TEXT CHECK (role IN ('host', 'cast', 'guest')),
     insert_timestamp timestamp DEFAULT now(),
     CONSTRAINT unique_cast_character UNIQUE(video_id, person_id, character_id)
 );
