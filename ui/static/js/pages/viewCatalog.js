@@ -7,7 +7,7 @@ export function initViewCatalog() {
     currentURL.searchParams.set("page", 1);
 
     let newURL = currentURL.toString();
-    
+
     let resultsDiv = document.getElementById("results");
     resultsDiv.setAttribute("hx-get", newURL);
 

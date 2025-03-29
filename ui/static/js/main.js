@@ -7,6 +7,7 @@ import { initAddCategory } from './pages/addCategory.js';
 import { initSearch } from './pages/search.js';
 import { initBrowse } from './pages/browse.js';
 import { initViewCatalog } from './pages/viewCatalog.js';
+import { CollapsibleContent } from './components/collapseContent.js';
 
 (function() {
   const firstDiv = document.querySelector('main > div');
@@ -76,6 +77,8 @@ import { initViewCatalog } from './pages/viewCatalog.js';
       mobileSearch.classList.toggle('hidden');
     });
   });
+
+  customElements.define("collapse-content", CollapsibleContent);
 
   switch (pageType) {
     case 'home':

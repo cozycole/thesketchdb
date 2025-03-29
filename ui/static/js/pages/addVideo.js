@@ -4,8 +4,7 @@ import { FormSearchDropdown } from '../components/formSearchDropdown.js'
 export function initAddVideo() {
   let imgPreview = new UploadImagePreview('vidThumbPrev');
 
-  const htmxDropdown = document.getElementById('htmxDropdown')
-  let searchDropdown = new FormSearchDropdown(htmxDropdown);
+  customElements.define("form-search", FormSearchDropdown);
 
   document.body.addEventListener("htmx:configRequest", function (evt) {
     // this adds the value of the triggering element to the query parameter of the 

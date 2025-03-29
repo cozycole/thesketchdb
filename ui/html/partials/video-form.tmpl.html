@@ -95,30 +95,33 @@
       </label>
     </div>
     <div>
-      <div id="creatorHtmxDropdown" class="relative">
+      <form-search>
         <label class="inline-block my-2">Creator Name</label>
         {{ with .Forms.Video.FieldErrors.creatorId }}
           <label class="block text-red-700">{{ . }}</label>
         {{ end }}
-        <input
-          type="hidden"
-          name="creatorId"
-          value="{{ with .Forms.Video.CreatorID }}{{ . }}{{ else with .Video.Creator }}{{ .ID }}{{ end }}"
-        />
-        <input
-          type="search"
-          name="creatorInput"
-          value="{{ with .Forms.Video.CreatorInput }}{{ . }}{{ else with .Video.Creator }}{{ .Name }}{{ end }}"
-          class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-          placeholder="Enter creator's name"
-          hx-get="/creator/search"
-          hx-params="query"
-          hx-trigger="focus, input changed delay:500ms, search"
-          hx-target="next"
-          hx-swap="innerHTML"
-        />
-        <div></div>
-      </div>
+        <div class="relative">
+          <input
+            type="hidden"
+            name="creatorId"
+            value="{{ with .Forms.Video.CreatorID }}{{ . }}{{ else with .Video.Creator }}{{ .ID }}{{ end }}"
+          />
+          <input
+            type="search"
+            name="creatorInput"
+            value="{{ with .Forms.Video.CreatorInput }}{{ . }}{{ else with .Video.Creator }}{{ .Name }}{{ end }}"
+            class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            placeholder="Enter creator's name"
+            hx-get="/creator/search"
+            hx-params="query"
+            hx-trigger="focus, input changed delay:500ms, search"
+            hx-target="next"
+            hx-swap="innerHTML"
+          />
+          <ul class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-gray-300 rounded shadow-lg z-10 empty:hidden"></ul>
+        </div>
+      </form-search>
+
     </div>
   </div>
 {{ end }}

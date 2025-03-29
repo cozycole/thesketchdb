@@ -9,7 +9,17 @@
         />
       </a>
       <div class="flex h-32">
-        {{ if and .Creator.Slug .Creator.ProfileImage }}
+        {{ if and .Show .Show.ID }}
+          <div class="w-8 mt-2">
+            <a href="/show/{{ .Show.Slug }}">
+              <img
+                src="{{ $.ImageBaseUrl }}/show/{{ .Show.ProfileImg }}"
+                class="w-full rounded-full"
+                onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+              />
+            </a>
+          </div>
+        {{ else if and .Creator .Creator.ID }}
           <div class="w-8 mt-2">
             <a href="/creator/{{ .Creator.Slug }}">
               <img
@@ -24,7 +34,11 @@
           <h3 class="font-bold line-clamp-2">
             <a href="/video/{{ .Slug }}">{{ .Title }}</a>
           </h3>
-          {{ if and .Creator.Slug .Creator.Name }}
+          {{ if and .Show .Show.Slug }}
+            <a href="/show/{{ .Show.Slug }}">
+              <p class="font-medium text-base line-clamp-2">{{ .Show.Name }}</p>
+            </a>
+          {{ else if and .Creator .Creator.Slug }}
             <a href="/creator/{{ .Creator.Slug }}">
               <p class="font-medium text-base line-clamp-2">{{ .Creator.Name }}</p>
             </a>

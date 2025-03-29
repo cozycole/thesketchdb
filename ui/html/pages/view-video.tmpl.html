@@ -64,40 +64,50 @@
       {{ end }}
     </div>
     <div id="castSection" class="w-full my-3 bg-slate-300 p-4 rounded-md">
-      <div class="castHeader flex items-center justify-between">
-        <div class="flex">
-          <img src="/static/img/cast-icon.svg" class="w-6" alt="cast icon" />
-          <h2 class="ml-2 text-xl font-bold">Cast</h2>
+      <collapse-content>
+        <div class="castHeader flex items-center justify-between">
+          <div class="flex">
+            <img src="/static/img/cast-icon.svg" class="w-6" alt="cast icon" />
+            <h2 class="ml-2 text-xl font-bold">Cast</h2>
+          </div>
+          <button class="toggleBtn transition-all">
+            <svg class="arrow stroke-slate-950 w-7 transform transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
+                <path d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z" fill="currentColor"></path>
+            </svg>
+          </button>
         </div>
-        <button class="castButton p-2">
-          <img class="galleryArrow w-6" src="/static/img/dropdown-arrow-up.svg">
-          <img class="galleryArrow hidden w-6" src="/static/img/dropdown-arrow-down.svg">
-        </button>
-      </div>
-      <div id="castGallery">
-        {{ template "cast-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Video" .) }}
-      </div>
+        <div id="castGallery" class="content overflow-hidden transition-all duration-500 ease-in-out">
+          {{ template "cast-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Video" .) }}
+        </div>
+      </collapse-content>
     </div>
     <div id="tagSection" class="w-full my-3 bg-slate-300 p-4 rounded-md">
-      <div class="flex items-center justify-between">
-        <div class="flex">
-          <img src="/static/img/tag-icon.svg" class="w-6" alt="cast icon" />
-          <h2 class="ml-2 text-xl font-bold">Tags</h2>
+      <collapse-content>
+        <div class="flex items-center justify-between">
+          <div class="flex">
+            <img src="/static/img/tag-icon.svg" class="w-6" alt="cast icon" />
+            <h2 class="ml-2 text-xl font-bold">Tags</h2>
+          </div>
+          <button class="toggleBtn transition-all">
+            <svg class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
+                <path  d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z" fill="currentColor"></path>
+            </svg>
+          </button>
         </div>
-        <button class="tagButton p-2">
-          <img class="tagArrow w-6" src="/static/img/dropdown-arrow-up.svg">
-          <img class="tagArrow hidden w-6" src="/static/img/dropdown-arrow-down.svg">
-        </button>
-      </div>
-      <div id="tags" class="my-5">
-        {{ range $tag := .Tags }}
-          {{- with $tag.Category.Name -}}
-            <span class="mx-1 p-3 font-bold rounded-2xl border-2 border-black hover:bg-slate-200 hover:cursor-pointer">{{ . }} / {{ $tag.Name }}</span>
-          {{- else -}}
-            <span class="mx-1 p-3 font-bold rounded-2xl border-2 border-black hover:bg-slate-200 hover:cursor-pointer">{{ $tag.Name}}</span>
-          {{- end -}}
-        {{ end }}
-      </div>
+        <div id="tags" class="content overflow-hidden transition-all duration-300 ease-in-out">
+          <div class=" flex flex-wrap gap-2 mt-4 text-slate-50 text-sm">
+            {{ range $tag := .Tags }}
+              <a href="/catalog/sketches?tag={{ .ID }}">
+                {{- with $tag.Category.Name -}}
+                  <div class="p-3 font-bold rounded-full bg-slate-950 hover:bg-slate-850 hover:cursor-pointer">{{ . }} / {{ $tag.Name }}</div>
+                {{- else -}}
+                  <div class="p-3 font-bold rounded-full bg-slate-950 hover:bg-slate-850 hover:cursor-pointer">{{ $tag.Name}}</div>
+                {{- end -}}
+              </a>
+            {{ end }}
+          </div>
+        </div>
+      </collapse-content>
     </div>
     {{ if .YoutubeID }}
       <div id="watchNow" 

@@ -1,47 +1,48 @@
 // class that implements search auto complete dropdown 
 // and fills in the input box on click
-export class FormSearchDropdown {
-    constructor(divElement) {
-        if (!(divElement instanceof HTMLElement)) {
-            throw new Error("Expected an HTML element as the constructor argument");
-        }
+export class FormSearchDropdown extends HTMLElement {
+  constructor() {
+    super();
 
-        this.div = divElement;
+    this.idInput = this.querySelector('input[type="hidden"]')
+    this.searchInput = this.querySelector('input[type="search"]')
+    this.dropdown = this.querySelector(".dropdown");
 
-        this.div.addEventListener('insertDropdownItem', (e) => {
-            let dropDownItems = this.div.querySelectorAll('li.result');
+    this.addEventListener('insertDropdownItem', (e) => {
+      let dropDownItems = this.querySelectorAll('li.result');
 
-            for (let el of dropDownItems) {
-                el.addEventListener('click', (e) => this.insertDropdownItem(e));
-            }
-        });
+      for (let el of dropDownItems) {
+          el.addEventListener('click', (e) => this.insertDropdownItem(e));
+      }
+    });
+    
+    document.body.addEventListener("click", (e) => {
+      if (!(this.dropdown.contains(e.target) || this.searchInput.contains(e.target))) {
+        this.dropdown.innerHTML = '';
+      }
 
-        // Remove dropdown if user clicks outside
-        document.addEventListener('click', (e) => {
-            const dropdown = document.getElementById('dropdown');
-            if (!dropdown) {
-                return;
-            }
-            const input = dropdown.parentNode.previousElementSibling;
+    })
 
-            const isClickInside = input.contains(e.target) || dropdown.contains(e.target);
-            if (!isClickInside) {
-                dropdown.remove();
-            }
-        });
-    }
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.removeDropdown();
+      }
+    });
+  }
 
-    insertDropdownItem(e) {
-        const text = e.target.outerText;
-        const id = e.target.dataset.id;
+  insertDropdownItem(e) {
+    const text = e.currentTarget.outerText;
+    const id = e.currentTarget.dataset.id;
 
-        let dropDownList = e.target.parentNode;
-        let searchInput = dropDownList.parentNode.previousElementSibling;
-        searchInput.value = text;
+    this.searchInput.value = text;
+    this.idInput.value = id;
 
-        let idInput = searchInput.previousElementSibling;
-        idInput.value = id;
+    this.removeDropdown();
+  }
 
-        dropDownList.remove();
-    }
+  removeDropdown() {
+    this.dropdown.innerHTML = '';
+    this.searchInput.blur();
+  }
 }
+
