@@ -46,7 +46,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 		user, err := app.users.GetById(id)
 		if err != nil && err != models.ErrNoRecord {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 			return
 		}
 

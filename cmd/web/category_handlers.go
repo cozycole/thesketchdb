@@ -14,20 +14,20 @@ func (app *application) categoriesView(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
 		} else {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 		}
 		return
 	}
 
 	data := app.newTemplateData(r)
 	data.Categories = &categories
-	app.render(w, http.StatusOK, "view-categories.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "view-categories.tmpl.html", "base", data)
 }
 
 func (app *application) categoryAddPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.Category = &categoryForm{}
-	app.render(w, http.StatusOK, "add-category.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-category.tmpl.html", "base", data)
 }
 
 func (app *application) categoryAdd(w http.ResponseWriter, r *http.Request) {
@@ -44,16 +44,16 @@ func (app *application) categoryAdd(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Forms.Category = &form
-		app.render(w, http.StatusUnprocessableEntity, "add-category.tmpl.html", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "add-category.tmpl.html", "base", data)
 		return
 	}
 
 	category := convertFormtoCategory(&form)
-	slug := models.CreateSlugName(*category.Name, maxFileNameLength)
+	slug := models.CreateSlugName(*category.Name)
 	category.Slug = &slug
 	_, err = app.categories.Insert(&category)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
@@ -61,5 +61,5 @@ func (app *application) categoryAdd(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Forms.Category = &categoryForm{}
-	app.render(w, http.StatusOK, "add-category.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-category.tmpl.html", "base", data)
 }

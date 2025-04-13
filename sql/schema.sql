@@ -2,74 +2,94 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS person (
     id SERIAL PRIMARY KEY,
-    slug VARCHAR NOT NULL,
-    first VARCHAR NOT NULL,
-    last VARCHAR NOT NULL,
-    description VARCHAR,
+    slug TEXT NOT NULL,
+    first TEXT NOT NULL,
+    last TEXT NOT NULL,
+    description TEXT,
     birthdate DATE, 
-    profile_img VARCHAR NOT NULL,
+    profile_img TEXT,
     search_vector tsvector,
-    insert_timestamp timestamp DEFAULT now()
+    insert_timestamp TIMESTAMP DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS character (
     id SERIAL PRIMARY KEY, 
-    slug VARCHAR NOT NULL,
-    name VARCHAR NOT NULL, 
-    description VARCHAR, 
-    img_name VARCHAR,
-    insert_timestamp timestamp DEFAULT now(),
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL, 
+    description TEXT, 
+    img_name TEXT,
+    insert_timestamp TIMESTAMP DEFAULT now(),
     search_vector tsvector,
     person_id INT REFERENCES person(id)
 );
 
 CREATE TABLE IF NOT EXISTS creator (
-    id serial primary key,
-    name VARCHAR NOT NULL,
-    slug VARCHAR NOT NULL,
-    page_url VARCHAR NOT NULL,
-    description VARCHAR,
-    profile_img VARCHAR, 
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    page_url TEXT NOT NULL,
+    description TEXT,
+    profile_img TEXT, 
     date_established DATE,
     search_vector tsvector,
-    insert_timestamp timestamp DEFAULT now()
+    insert_timestamp TIMESTAMP DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS show (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    profile_img TEXT NOT NULL,
+    profile_img TEXT,
     slug TEXT UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS show_creator (
+    id SERIAL PRIMARY KEY,
     show_id INTEGER REFERENCES show(id),
     creator_id INTEGER REFERENCES creator(id),
-    PRIMARY KEY (show_id, creator_id)
+    person_id INTEGER REFERENCES person(id),
+    CONSTRAINT unique_show_creator UNIQUE(show_id, creator_id),
+    CONSTRAINT unique_show_person UNIQUE(show_id, person_id),
+    CONSTRAINT at_least_one_creator CHECK(
+	creator_id IS NOT NULL OR person_id IS NOT NULL
+    )
+);
+
+CREATE TABLE IF NOT EXISTS network (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    profile_img TEXT
+);
+
+CREATE TABLE IF NOT EXISTS show_network (
+    show_id INTEGER REFERENCES show(id),
+    network_id INTEGER REFERENCES network(id),
+    PRIMARY KEY(show_id, network_id)
 );
 
 CREATE TABLE IF NOT EXISTS season (
     id SERIAL PRIMARY KEY,
     show_id INTEGER REFERENCES show(id),
     season_number INTEGER NOT NULL,
-    air_date DATE,
     CONSTRAINT unique_show_season UNIQUE(show_id, season_number)
 );
 
 CREATE TABLE IF NOT EXISTS episode (
     id SERIAL PRIMARY KEY,
     season_id INTEGER REFERENCES season(id),
+    title TEXT,
     episode_number INTEGER NOT NULL,
-    air_date DATE
+    thumbnail_name TEXT UNIQUE,
+    air_date DATE,
+    CONSTRAINT unique_season_episode UNIQUE(season_id, episode_number)
 );
 
 CREATE TABLE IF NOT EXISTS video (
     id SERIAL PRIMARY KEY,
-    title VARCHAR NOT NULL,
+    title TEXT NOT NULL,
     video_url TEXT,
-    youtube_id VARCHAR, 
+    youtube_id TEXT, 
     slug TEXT NOT NULL,
-    thumbnail_name TEXT,
+    thumbnail_name TEXT UNIQUE,
     description TEXT,
     upload_date DATE,
     pg_rating rating,
@@ -104,7 +124,7 @@ CREATE TABLE IF NOT EXISTS video_creator_rel (
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
-    username VARCHAR(20) UNIQUE NOT NULL,
+    username TEXT(20) UNIQUE NOT NULL,
     email CITEXT UNIQUE NOT NULL,
     password_hash BYTEA NOT NULL,
     activated BOOL NOT NULL,

@@ -17,13 +17,25 @@ var mimeToExt = map[string]string{
 
 // The serverError helper writes an error message and stack trace to the errorLog,
 // then sends a generic 500 Internal Server Error response to the user.
-func (app *application) serverError(w http.ResponseWriter, err error) {
+func (app *application) serverError(r *http.Request, w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
 	// 2 is inputed to look at the second frame for determining the Llongfile/Lshortfile and line number
 	// for the logged output (since we don't want to log the line number here, but wherever it is called)
 	app.errorLog.Output(2, trace)
 
-	if app.debugMode {
+	isHxRequest := r.Header.Get("HX-Request") == "true"
+	if isHxRequest {
+		data := app.newTemplateData(r)
+		data.Flash = flashMessage{
+			Level:   "error",
+			Message: "500 Internal Server Error",
+		}
+		app.render(r, w,
+			http.StatusInternalServerError,
+			"flash-message.tmpl.html",
+			"flash-message",
+			data)
+	} else if app.debugMode {
 		http.Error(w, trace, http.StatusInternalServerError)
 	} else {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -68,7 +80,6 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
 		CurrentYear:  time.Now().Year(),
 		ImageBaseUrl: app.baseImgUrl,
-		Flash:        app.sessionManager.PopString(r.Context(), "flash"),
 		Forms:        Forms{},
 		User:         user,
 		IsEditor:     isEditor,
@@ -76,11 +87,12 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	}
 }
 
-func (app *application) render(w http.ResponseWriter, status int, page string, baseTemplate string, data *templateData) {
+func (app *application) render(r *http.Request, w http.ResponseWriter, status int, page string, baseTemplate string, data *templateData) {
 	ts, ok := app.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
-		app.serverError(w, err)
+		r.Header.Set("HX-Request", "false")
+		app.serverError(r, w, err)
 		return
 	}
 
@@ -96,7 +108,8 @@ func (app *application) render(w http.ResponseWriter, status int, page string, b
 	}
 
 	if err != nil {
-		app.serverError(w, err)
+		r.Header.Set("HX-Request", "false")
+		app.serverError(r, w, err)
 		return
 	}
 

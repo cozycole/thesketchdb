@@ -6,8 +6,11 @@ import { initAddTag } from './pages/addTag.js';
 import { initAddCategory } from './pages/addCategory.js';
 import { initSearch } from './pages/search.js';
 import { initBrowse } from './pages/browse.js';
+import { initUpdateShow } from './pages/updateShow.js';
 import { initViewCatalog } from './pages/viewCatalog.js';
 import { CollapsibleContent } from './components/collapseContent.js';
+
+import './components/flashMessage.js';
 
 (function() {
   const firstDiv = document.querySelector('main > div');
@@ -107,6 +110,9 @@ import { CollapsibleContent } from './components/collapseContent.js';
       break;
     case 'add-category':
       initAddCategory();
+      break;
+    case 'update-show':
+      initUpdateShow();
       break;
   }
 

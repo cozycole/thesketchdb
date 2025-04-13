@@ -18,11 +18,11 @@ func convertFormToVideo(form *videoForm) (models.Video, error) {
 	}
 
 	return models.Video{
-		Title:         form.Title,
+		Title:         &form.Title,
 		URL:           &form.URL,
-		Slug:          form.Slug,
+		Slug:          &form.Slug,
 		ThumbnailFile: form.Thumbnail,
-		Rating:        form.Rating,
+		Rating:        &form.Rating,
 		UploadDate:    &uploadDate,
 		Creator:       creator,
 	}, nil
@@ -72,4 +72,23 @@ func (app *application) convertFormtoVideoTags(form *videoTagsForm) ([]*models.T
 	}
 
 	return tags, nil
+}
+
+func (app *application) convertFormtoShow(form *showForm) models.Show {
+	return models.Show{
+		Name: &form.Name,
+		Slug: &form.Slug,
+	}
+
+}
+
+func (app *application) convertFormtoEpisode(form *episodeForm) models.Episode {
+	airDate, _ := time.Parse(time.DateOnly, form.AirDate)
+	return models.Episode{
+		ID:       &form.ID,
+		Title:    &form.Title,
+		Number:   &form.Number,
+		AirDate:  &airDate,
+		SeasonId: &form.SeasonId,
+	}
 }

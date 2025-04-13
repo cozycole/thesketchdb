@@ -1,40 +1,66 @@
-// We assume that we will have the following html
-// <img>
-// <label><input></label>
-// So label.prevElementSibling is where we will be placing the image
-export class UploadImagePreview {
-    constructor(labelId) {
-        this.label = document.getElementById(labelId);
-        if (!this.label) {
-            throw Error(`No label found with id ${labelId}`);
+export class UploadImagePreview extends HTMLElement {
+  constructor() {
+    super();
+    this.preview = this.querySelector('.imagePreview');
+    if (!this.preview) {
+      throw Error(`No image preview div`);
+    }
+
+    if (this.preview.firstElementChild) {
+      this.originalImg = this.preview.firstElementChild;
+    }
+
+    this.input = this.querySelector('input[type=file]');
+    this.input.addEventListener('change', (e) => this.previewImage());
+
+    this.removeButton = this.querySelector('.remove');
+    if (this.removeButton) {
+      this.removeButton.addEventListener('click', () => {
+        this.input.value = "";
+
+        this.removePreviewImages();
+
+        if (this.originalImg) {
+          this.originalImg.style.display = "";
         }
-
-        this.input = this.label.querySelector('input[type=file]');
-        this.previewImage(this.input);
-        this.input.addEventListener('change', (e) => this.previewImage());
+      })
     }
+  }
 
-    previewImage() {
-        const file = this.input.files[0];
+  connectedCallback() {
+    this.input.value = "";
+  }
 
-        if (file) {
-            const reader = new FileReader();
+  previewImage() {
+    const file = this.input.files[0];
 
-            reader.onload = (e) => {
-                let prevPreview = this.label.previousElementSibling;
-                if (prevPreview && prevPreview.nodeName == "IMG") {
-                    prevPreview.remove();
-                }
+    if (file) {
+      const reader = new FileReader();
 
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.style.maxWidth = '300px'; 
-                img.style.maxWidth = '200px'; 
+      reader.onload = (e) => {
+        this.removePreviewImages();
 
-                this.label.before(img);
-            };
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.maxWidth = '300px'; 
+        img.style.maxHeight = '300px'; 
 
-            reader.readAsDataURL(file);
-        } 
+        this.preview.appendChild(img);
+      };
+
+      reader.readAsDataURL(file);
+    } 
+  }
+
+  removePreviewImages() {
+    for (const child of this.preview.children) {
+      if (!child.isEqualNode(this.originalImg)) {
+        child.remove();
+      }
+      
+      if (this.originalImg) {
+        this.originalImg.style.display = "none";
+      }
     }
+  }
 }

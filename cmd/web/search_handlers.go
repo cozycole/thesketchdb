@@ -25,7 +25,7 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 
 		results, err := app.getSearchResults(filter)
 		if err != nil {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 			return
 		}
 
@@ -37,7 +37,7 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 		data.SearchResults = &SearchResult{}
 	}
 
-	app.render(w, http.StatusOK, "search.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "search.tmpl.html", "base", data)
 }
 
 type dropdownSearchResults struct {
@@ -68,7 +68,7 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 		dbResults, err := app.people.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
-				app.serverError(w, err)
+				app.serverError(r, w, err)
 			}
 			return
 		}
@@ -95,7 +95,7 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
 
-	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
+	app.render(r, w, http.StatusOK, "dropdown.tmpl.html", "", data)
 }
 
 func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +113,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 		dbResults, err := app.characters.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
-				app.serverError(w, err)
+				app.serverError(r, w, err)
 			}
 			return
 		}
@@ -136,7 +136,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 	data := app.newTemplateData(r)
 	data.DropdownResults = results
 
-	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
+	app.render(r, w, http.StatusOK, "dropdown.tmpl.html", "", data)
 }
 
 func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +154,7 @@ func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 		creators, err := app.creators.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
-				app.serverError(w, err)
+				app.serverError(r, w, err)
 			}
 			return
 		}
@@ -182,7 +182,7 @@ func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.DropdownResults = results
 
-	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
+	app.render(r, w, http.StatusOK, "dropdown.tmpl.html", "", data)
 }
 
 func (app *application) categorySearch(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +200,7 @@ func (app *application) categorySearch(w http.ResponseWriter, r *http.Request) {
 		categories, err := app.categories.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
-				app.serverError(w, err)
+				app.serverError(r, w, err)
 			}
 			return
 		}
@@ -222,7 +222,7 @@ func (app *application) categorySearch(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.DropdownResults = results
 
-	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
+	app.render(r, w, http.StatusOK, "dropdown.tmpl.html", "", data)
 }
 
 func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
@@ -240,7 +240,7 @@ func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
 		tags, err := app.tags.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
-				app.serverError(w, err)
+				app.serverError(r, w, err)
 				return
 			}
 		}
@@ -267,7 +267,7 @@ func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.DropdownResults = results
 
-	app.render(w, http.StatusOK, "dropdown.tmpl.html", "", data)
+	app.render(r, w, http.StatusOK, "dropdown.tmpl.html", "", data)
 }
 
 func getFormattedQueries(query string) (string, string, string) {

@@ -16,20 +16,20 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
 		} else {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 		}
 		return
 	}
 
 	cast, err := app.cast.GetCastMembers(*video.ID)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	tags, err := app.tags.GetByVideo(*video.ID)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
@@ -50,7 +50,7 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 	data.Video = video
 	data.Video.Tags = tags
 
-	app.render(w, http.StatusOK, "view-video.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "view-video.tmpl.html", "base", data)
 }
 
 func (app *application) videoAddPage(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +60,7 @@ func (app *application) videoAddPage(w http.ResponseWriter, r *http.Request) {
 	// render. It's a good place to put default values for the fields
 	data.Forms.Video = &videoForm{}
 	data.Video = &models.Video{}
-	app.render(w, http.StatusOK, "add-video.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-video.tmpl.html", "base", data)
 }
 
 func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
@@ -78,24 +78,24 @@ func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
 		data := app.newTemplateData(r)
 		data.Forms.Video = &form
 		data.Video = &models.Video{}
-		app.render(w, http.StatusUnprocessableEntity, "add-video.tmpl.html", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "add-video.tmpl.html", "base", data)
 		return
 	}
 
 	video, err := convertFormToVideo(&form)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
-	slug := models.CreateSlugName(form.Title, maxFileNameLength)
+	slug := models.CreateSlugName(form.Title)
 	slug = slug + "-" + models.GetTimeStampHash()
 
-	video.Slug = slug
+	video.Slug = &slug
 
 	id, err := app.videos.Insert(&video)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 	*video.ID = id
@@ -103,30 +103,22 @@ func (app *application) videoAdd(w http.ResponseWriter, r *http.Request) {
 	if video.Creator.ID != nil {
 		err = app.videos.InsertVideoCreatorRelation(id, *video.Creator.ID)
 		if err != nil {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 			return
 		}
 	}
 
-	thumbnailHash := generateThumbnailHash(id)
-	thumbnailExtension, err := getFileExtension(video.ThumbnailFile)
-	if err != nil {
-		// TODO: delete video entry here
-		app.serverError(w, err)
-		return
-	}
-
-	thumbnailName := thumbnailHash + thumbnailExtension
+	thumbnailName, err := generateThumbnailName(form.Thumbnail)
 	err = app.videos.InsertThumbnailName(id, thumbnailName)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
-	video.ThumbnailName = thumbnailName
-	err = app.saveVideoThumbnail(&video)
+	video.ThumbnailName = &thumbnailName
+	err = app.saveThumbnail(*video.ThumbnailName, "video", form.Thumbnail)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		// TODO: delete video entry here
 		return
 	}
@@ -148,20 +140,20 @@ func (app *application) videoUpdatePage(w http.ResponseWriter, r *http.Request) 
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
 		} else {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 		}
 		return
 	}
 
 	cast, err := app.cast.GetCastMembers(*video.ID)
 	if err != nil && errors.Is(err, models.ErrNoRecord) {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	tags, err := app.tags.GetByVideo(*video.ID)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
@@ -177,7 +169,7 @@ func (app *application) videoUpdatePage(w http.ResponseWriter, r *http.Request) 
 	// need to instantiate empty struct to load
 	// castUpdate form on the page
 	data.CastMember = &models.CastMember{}
-	app.render(w, http.StatusOK, "update-video.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "update-video.tmpl.html", "base", data)
 }
 
 func (app *application) videoUpdate(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +192,7 @@ func (app *application) videoUpdate(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
 		} else {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 		}
 		return
 	}
@@ -210,56 +202,62 @@ func (app *application) videoUpdate(w http.ResponseWriter, r *http.Request) {
 		data := app.newTemplateData(r)
 		data.Video = oldVideo
 		data.Forms.Video = &form
-		app.render(w, http.StatusUnprocessableEntity, "video-form.tmpl.html", "video-form", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "video-form.tmpl.html", "video-form", data)
 		return
 	}
 
 	video, err := convertFormToVideo(&form)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
+	var thumbnailName string
+	if oldVideo.ThumbnailName != nil {
+		thumbnailName = *oldVideo.ThumbnailName
+	} else {
+		thumbnailName = ""
+	}
 
-	thumbnailName := oldVideo.ThumbnailName
-	if video.ThumbnailFile != nil {
+	if form.Thumbnail != nil {
 		var err error
-		thumbnailName, err = generateThumbnailName(*video.ID, video.ThumbnailFile)
+		thumbnailName, err = generateThumbnailName(video.ThumbnailFile)
 		if err != nil {
-			app.serverError(w, err)
-			return
-		}
-		video.ThumbnailName = thumbnailName
-		err = app.saveVideoThumbnail(&video)
-		if err != nil {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 			return
 		}
 
-		err = app.deleteVideoThumbnail(oldVideo)
+		err = app.saveThumbnail(thumbnailName, "video", form.Thumbnail)
 		if err != nil {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 			return
 		}
 	}
 
 	*video.ID = videoId
-	video.ThumbnailName = thumbnailName
+	video.ThumbnailName = &thumbnailName
 	err = app.videos.Update(&video)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	err = app.videos.UpdateCreatorRelation(*video.ID, *video.Creator.ID)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
+	}
+	if form.Thumbnail != nil && oldVideo.ThumbnailName != nil {
+		err = app.deleteImage("video", *oldVideo.ThumbnailName)
+		if err != nil {
+			app.serverError(r, w, err)
+			return
+		}
 	}
 
 	data := app.newTemplateData(r)
 	data.Video = &video
 	data.Forms.Video = &form
-	app.render(w, http.StatusOK, "video-form.tmpl.html", "video-form", data)
+	app.render(r, w, http.StatusOK, "video-form.tmpl.html", "video-form", data)
 }
 
 func (app *application) videoAddLike(w http.ResponseWriter, r *http.Request) {
@@ -341,23 +339,23 @@ func (app *application) videoUpdateTags(w http.ResponseWriter, r *http.Request) 
 		data := app.newTemplateData(r)
 		data.Forms.VideoTags = &form
 		data.Tags = &[]*models.Tag{}
-		app.render(w, http.StatusUnprocessableEntity, "tag-table.tmpl.html", "tag-table", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "tag-table.tmpl.html", "tag-table", data)
 		return
 	}
 
 	tags, err := app.convertFormtoVideoTags(&form)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	err = app.videos.BatchUpdateTags(videoId, &tags)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
 	data.Tags = &tags
-	app.render(w, http.StatusOK, "tag-table.tmpl.html", "tag-table", data)
+	app.render(r, w, http.StatusOK, "tag-table.tmpl.html", "tag-table", data)
 }

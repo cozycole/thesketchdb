@@ -9,7 +9,6 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-var maxFileNameLength = 50
 var pageSize = 16
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -20,14 +19,14 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	videos, err := app.videos.Get(&filter)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
 	data.Videos = videos
 
-	app.render(w, http.StatusOK, "home.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "home.tmpl.html", "base", data)
 }
 
 func (app *application) browse(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +63,7 @@ func (app *application) browse(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.BrowseSections = browseSections
-	app.render(w, http.StatusOK, "browse.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "browse.tmpl.html", "base", data)
 }
 
 func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
@@ -143,7 +142,7 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 
 	results, err := app.getCatalogResults(currentPage, "video", filter)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
@@ -156,7 +155,7 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 
 	url, err := buildURL("/catalog/sketches", results)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
@@ -166,11 +165,11 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	isHxRequest := r.Header.Get("HX-Request") == "true"
 	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
 	if isHxRequest && !isHistoryRestore {
-		app.render(w, http.StatusOK, "catalog-result.tmpl.html", "catalog-result", data)
+		app.render(r, w, http.StatusOK, "catalog-result.tmpl.html", "catalog-result", data)
 		return
 	}
 
-	app.render(w, http.StatusOK, "view-catalog.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "view-catalog.tmpl.html", "base", data)
 }
 
 func buildURL(baseURL string, result *SearchResult) (string, error) {

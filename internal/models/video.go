@@ -76,19 +76,19 @@ func (f *Filter) ParamsString() string {
 
 type Video struct {
 	ID            *int
-	Title         string
+	Title         *string
 	URL           *string
 	YoutubeID     *string
-	Slug          string
-	ThumbnailName string
+	Slug          *string
+	ThumbnailName *string
 	ThumbnailFile *multipart.FileHeader
-	Rating        string
+	Rating        *string
 	Description   *string
 	UploadDate    *time.Time
 	Creator       *Creator
 	Cast          *[]*CastMember
 	Tags          *[]*Tag
-	Episode       *Episode
+	Show          *Show
 	Number        *int
 	Liked         bool
 }
@@ -211,9 +211,10 @@ func (m *VideoModel) BatchUpdateTags(vidId int, tags *[]*Tag) error {
 
 func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 	query := `
-		SELECT DISTINCT v.id, v.title, v.video_url, v.slug, 
-		v.thumbnail_name, v.upload_date, c.id, c.name, c.page_url, 
-		c.slug, c.profile_img%s
+		SELECT DISTINCT 
+		v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date, 
+		c.id, c.name, c.page_url, c.slug, c.profile_img,
+		sh.id, sh.name, sh.profile_img, sh.slug%s
 		FROM video as v
 		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
@@ -357,7 +358,8 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 		query += `
 		GROUP BY v.id, v.title, v.video_url, v.slug, 
 		         v.thumbnail_name, v.upload_date, 
-		         c.id, c.name, c.page_url, c.slug, c.profile_img
+		         c.id, c.name, c.page_url, c.slug, c.profile_img,
+				sh.id, sh.name, sh.profile_img, sh.slug
 		`
 		if len(filter.People) > 1 {
 			query += fmt.Sprintf("HAVING COUNT(DISTINCT cm.person_id) = $%d ", argIndex)
@@ -392,9 +394,11 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 	for rows.Next() {
 		v := &Video{}
 		c := &Creator{}
+		sh := &Show{}
 		destinations := []any{
 			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
 			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
 		}
 		var rank *float32
 		if filter.Query != "" {
@@ -405,6 +409,7 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 			return nil, err
 		}
 		v.Creator = c
+		v.Show = sh
 		videos = append(videos, v)
 	}
 

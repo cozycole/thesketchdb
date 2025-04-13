@@ -2,8 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -11,8 +9,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"path"
-	"strings"
-	"time"
+
+	"github.com/google/uuid"
 
 	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/utils"
@@ -29,33 +27,10 @@ const (
 )
 
 // Functions used within handlers that save images
-func (app *application) saveVideoThumbnail(video *models.Video) error {
-	file, err := video.ThumbnailFile.Open()
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	img, err := processThumbnailImage(file)
-	if err != nil {
-		return err
-	}
-
-	var dstFile bytes.Buffer
-	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
-	err = app.fileStorage.SaveFile(path.Join("video", video.ThumbnailName), &dstFile)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (app *application) deleteVideoThumbnail(video *models.Video) error {
-	// within wherever images are stored, you get video images by
-	// appending /video/ to the thumbnailName e.g. /video/asdasdfjkl.jpg
-	thumbnailSubPath := path.Join("video", video.ThumbnailName)
-	return app.fileStorage.DeleteFile(thumbnailSubPath)
+func (app *application) deleteImage(prefix, imgName string) error {
+	imgSubPath := path.Join(prefix, imgName)
+	app.infoLog.Printf("Deleting %s\n", imgSubPath)
+	return app.fileStorage.DeleteFile(imgSubPath)
 }
 
 func (app *application) saveCastImages(member *models.CastMember) error {
@@ -100,13 +75,60 @@ func (app *application) saveCastImages(member *models.CastMember) error {
 	return nil
 }
 
-func generateThumbnailName(id int, fileHeader *multipart.FileHeader) (string, error) {
-	thumbnailHash := generateThumbnailHash(id)
+func (app *application) saveThumbnail(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
+	file, err := fileHeader.Open()
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	img, err := processThumbnailImage(file)
+	if err != nil {
+		return err
+	}
+
+	var dstFile bytes.Buffer
+	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
+	err = app.fileStorage.SaveFile(path.Join(prefix, imgName), &dstFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (app *application) saveProfileImage(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
+	if imgName == "" {
+		return fmt.Errorf("Image name cannot be blank")
+	}
+
+	profileFile, err := fileHeader.Open()
+	if err != nil {
+		return err
+	}
+	defer profileFile.Close()
+
+	img, err := processProfileImage(profileFile)
+	if err != nil {
+		return err
+	}
+
+	var dstFile bytes.Buffer
+	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
+	err = app.fileStorage.SaveFile(path.Join(prefix, imgName), &dstFile)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func generateThumbnailName(fileHeader *multipart.FileHeader) (string, error) {
+	thumbnailId := uuid.New().String()
 	thumbnailExtension, err := getFileExtension(fileHeader)
 	if err != nil {
 		return "", err
 	}
-	return thumbnailHash + thumbnailExtension, nil
+	return thumbnailId + thumbnailExtension, nil
 }
 
 func processThumbnailImage(file io.Reader) (image.Image, error) {
@@ -132,13 +154,6 @@ func processProfileImage(file io.Reader) (image.Image, error) {
 	return img, nil
 }
 
-func generateThumbnailHash(id int) string {
-	data := fmt.Sprintf("%d-%d", id, time.Now().UnixNano())
-	hash := sha256.Sum256([]byte(data))
-	encoded := base64.URLEncoding.EncodeToString(hash[:])
-	return strings.TrimRight(encoded[:22], "=")
-}
-
 func getFileExtension(header *multipart.FileHeader) (string, error) {
 	file, err := header.Open()
 	if err != nil {
@@ -149,10 +164,11 @@ func getFileExtension(header *multipart.FileHeader) (string, error) {
 	if _, err := file.Read(buf); err != nil {
 		return "", err
 	}
+	defer file.Seek(0, 0)
 
 	mime, ok := mimeToExt[http.DetectContentType(buf)]
 	if !ok {
-		return "", fmt.Errorf("Mime does not exists in extension table, bad file")
+		return "", fmt.Errorf("Mime does not exist in extension table, bad file")
 	}
 	return mime, nil
 }

@@ -11,6 +11,11 @@ import (
 	"sketchdb.cozycole.net/ui"
 )
 
+type flashMessage struct {
+	Message string
+	Level   string
+}
+
 // Define a templateData type to act as the holding
 // struct for any dynamic data we want to pass to the
 // HTML templates. Since the ExecuteTemplate only accepts one
@@ -25,7 +30,8 @@ type templateData struct {
 	Creator         *models.Creator
 	CurrentYear     int
 	DropdownResults dropdownSearchResults
-	Flash           string
+	Episode         *models.Episode
+	Flash           flashMessage
 	Forms           Forms
 	ImageBaseUrl    string
 	IsAdmin         bool
@@ -34,6 +40,7 @@ type templateData struct {
 	People          []*models.Person
 	Query           string
 	SearchResults   *SearchResult
+	Season          *models.Season
 	Show            *models.Show
 	Tags            *[]*models.Tag
 	User            *models.User

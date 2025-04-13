@@ -10,7 +10,7 @@ import (
 func (app *application) tagAddPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.Tag = &tagForm{}
-	app.render(w, http.StatusOK, "add-tag.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-tag.tmpl.html", "base", data)
 }
 
 func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Forms.Tag = &form
-		app.render(w, http.StatusUnprocessableEntity, "add-tag.tmpl.html", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "add-tag.tmpl.html", "base", data)
 		return
 	}
 
@@ -36,16 +36,16 @@ func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 	if tag.Category != nil && tag.Category.ID != nil {
 		category, err := app.categories.Get(*tag.Category.ID)
 		if err != nil {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 			return
 		}
 		tagSlug = *category.Name + " " + tagSlug
 	}
-	slug := models.CreateSlugName(tagSlug, maxFileNameLength)
+	slug := models.CreateSlugName(tagSlug)
 	tag.Slug = &slug
 	_, err = app.tags.Insert(&tag)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
@@ -53,5 +53,5 @@ func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Forms.Tag = &tagForm{}
-	app.render(w, http.StatusOK, "add-tag.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-tag.tmpl.html", "base", data)
 }

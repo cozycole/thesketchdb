@@ -9,31 +9,24 @@ import (
 	"time"
 )
 
-func CreateSlugName(input string, maxLength int) string {
-	formatted := strings.ToLower(input)
-	re := regexp.MustCompile(`[^a-zA-Z0-9\-\ ]+`)
-	formatted = re.ReplaceAllString(formatted, "")
+func CreateSlugName(text string) string {
+	// Convert to lowercase
+	slug := strings.ToLower(text)
 
-	words := strings.Split(formatted, " ")
+	// Remove special characters (keep only letters, numbers, spaces, and dashes)
+	re := regexp.MustCompile(`[^a-zA-Z0-9\s-]`)
+	slug = re.ReplaceAllString(slug, "")
 
-	// Rebuild string without exceeding maxLength,
-	// and avoid cutting off words
-	var result []string
-	currentLength := 0
+	// Replace spaces with hyphens
+	slug = strings.ReplaceAll(slug, " ", "-")
 
-	for _, word := range words {
-		wordLength := len(word)
+	// Remove duplicate hyphens
+	slug = regexp.MustCompile(`-+`).ReplaceAllString(slug, "-")
 
-		if currentLength+wordLength+1 > maxLength {
-			break
-		}
+	// Trim leading/trailing hyphens
+	slug = strings.Trim(slug, "-")
 
-		result = append(result, word)
-		// include the space between words in count
-		currentLength += wordLength + 1
-	}
-
-	return strings.Join(result, "-")
+	return slug
 }
 
 func GetTimeStampHash() string {

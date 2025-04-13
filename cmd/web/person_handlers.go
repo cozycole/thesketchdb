@@ -18,7 +18,7 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
 		} else {
-			app.serverError(w, err)
+			app.serverError(r, w, err)
 		}
 		return
 	}
@@ -38,14 +38,14 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 	data.Person = person
 	data.Videos = videos
 
-	app.render(w, http.StatusOK, "view-person.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "view-person.tmpl.html", "base", data)
 }
 
 func (app *application) personAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	data.Forms.Person = &personForm{}
-	app.render(w, http.StatusOK, "add-person.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-person.tmpl.html", "base", data)
 }
 
 func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
@@ -61,23 +61,23 @@ func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Forms.Person = &form
-		app.render(w, http.StatusUnprocessableEntity, "add-person.tmpl.html", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "add-person.tmpl.html", "base", data)
 		return
 	}
 
 	date, _ := time.Parse(time.DateOnly, form.BirthDate)
-	imgName := models.CreateSlugName(form.First+" "+form.Last, maxFileNameLength)
+	imgName := models.CreateSlugName(form.First + " " + form.Last)
 
 	file, err := form.ProfileImage.Open()
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 	defer file.Close()
 
 	mimeType, err := utils.GetMultipartFileMime(file)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
@@ -87,14 +87,14 @@ func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
 			mimeToExt[mimeType], date,
 		)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	err = app.fileStorage.SaveFile(path.Join("person", fullImgName), file)
 	if err != nil {
 		// TODO: We gotta remove the db record on this error
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 

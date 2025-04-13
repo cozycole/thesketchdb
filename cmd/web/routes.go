@@ -50,7 +50,7 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		r.Get("/character/search", app.characterSearch)
 
-		r.Get("/show/{slug}", app.viewShow)
+		r.Get("/show/{id}/{slug}", app.viewShow)
 
 		r.Get("/category/search", app.categorySearch)
 		r.Get("/tag/search", app.tagSearch)
@@ -73,6 +73,7 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		)
 
 		editorAdmin := []string{"editor", "admin"}
+		admin := []string{"admin"}
 		r.Get("/video/add", app.requireRoles(editorAdmin, app.videoAddPage))
 		r.Post("/video/add", app.requireRoles(editorAdmin, app.videoAdd))
 		r.Get("/video/{id}/update", app.requireRoles(editorAdmin, app.videoUpdatePage))
@@ -83,6 +84,18 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Post("/video/{id}/cast", app.requireRoles(editorAdmin, app.addCast))
 		r.Patch("/video/{id}/cast/{castId}", app.requireRoles(editorAdmin, app.updateCast))
 		r.Patch("/video/{id}/tag", app.requireRoles(editorAdmin, app.videoAdd))
+
+		r.Get("/show/add", app.requireRoles(editorAdmin, app.addShowPage))
+		r.Post("/show/add", app.requireRoles(editorAdmin, app.addShow))
+		r.Get("/show/{id}/update", app.requireRoles(editorAdmin, app.updateShowPage))
+		r.Patch("/show/{id}/update", app.requireRoles(editorAdmin, app.updateShow))
+
+		r.Post("/show/{id}/season/add", app.requireRoles(editorAdmin, app.addSeason))
+		r.Delete("/show/{id}/season/add", app.requireRoles(admin, app.updateShow))
+
+		r.Post("/episode/add", app.requireRoles(editorAdmin, app.addEpisode))
+		r.Patch("/episode/{id}", app.requireRoles(editorAdmin, app.updateEpisode))
+		r.Delete("/episode/{id}", app.requireRoles(admin, app.deleteEpisode))
 
 		r.Get("/creator/add", app.requireRoles(editorAdmin, app.creatorAdd))
 		r.Post("/creator/add", app.requireRoles(editorAdmin, app.creatorAddPost))
@@ -95,8 +108,6 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		r.Get("/tag/add", app.requireRoles(editorAdmin, app.tagAddPage))
 		r.Post("/tag/add", app.requireRoles(editorAdmin, app.tagAdd))
-
-		// admin := []string{"admin"}
 	})
 
 	return r

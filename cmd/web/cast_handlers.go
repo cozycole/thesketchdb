@@ -15,7 +15,7 @@ func (app *application) addCastPage(w http.ResponseWriter, r *http.Request) {
 	// this is a sub template used by htmx to insert into update page. If you want
 	// to make a separate page for it, check the headers and have different template loaded
 	// based on whether htmx requested it or not
-	app.render(w, http.StatusOK, "actor-input.tmpl.html", "actor-input", data)
+	app.render(r, w, http.StatusOK, "actor-input.tmpl.html", "actor-input", data)
 }
 
 func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +38,7 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 		data := app.newTemplateData(r)
 		data.CastMember = &models.CastMember{}
 		data.Forms.Cast = &form
-		app.render(w, http.StatusUnprocessableEntity, "actor-input.tmpl.html", "actor-input", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "actor-input.tmpl.html", "actor-input", data)
 		return
 	}
 
@@ -46,34 +46,34 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 
 	castId, err := app.cast.Insert(videoId, &castMember)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	castMember.ID = castId
-	thumbName, err := generateThumbnailName(castMember.ID, castMember.ThumbnailFile)
+	thumbName, err := generateThumbnailName(castMember.ThumbnailFile)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	castMember.ThumbnailName = &thumbName
 	err = app.cast.InsertThumbnailName(castMember.ID, *castMember.ThumbnailName)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	err = app.saveCastImages(&castMember)
 	if err != nil {
-		app.serverError(w, err)
+		app.serverError(r, w, err)
 		return
 	}
 
 	cast, _ := app.cast.GetCastMembers(videoId)
 	data := app.newTemplateData(r)
 	data.Cast = cast
-	app.render(w, http.StatusOK, "cast-table.tmpl.html", "cast-table", data)
+	app.render(r, w, http.StatusOK, "cast-table.tmpl.html", "cast-table", data)
 }
 
 func (app *application) updateCast(w http.ResponseWriter, r *http.Request) {
