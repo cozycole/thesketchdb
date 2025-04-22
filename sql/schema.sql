@@ -42,29 +42,29 @@ CREATE TABLE IF NOT EXISTS show (
     slug TEXT UNIQUE NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS show_creator (
-    id SERIAL PRIMARY KEY,
-    show_id INTEGER REFERENCES show(id),
-    creator_id INTEGER REFERENCES creator(id),
-    person_id INTEGER REFERENCES person(id),
-    CONSTRAINT unique_show_creator UNIQUE(show_id, creator_id),
-    CONSTRAINT unique_show_person UNIQUE(show_id, person_id),
-    CONSTRAINT at_least_one_creator CHECK(
-	creator_id IS NOT NULL OR person_id IS NOT NULL
-    )
-);
+-- CREATE TABLE IF NOT EXISTS show_creator (
+--     id SERIAL PRIMARY KEY,
+--     show_id INTEGER REFERENCES show(id),
+--     creator_id INTEGER REFERENCES creator(id),
+--     person_id INTEGER REFERENCES person(id),
+--     CONSTRAINT unique_show_creator UNIQUE(show_id, creator_id),
+--     CONSTRAINT unique_show_person UNIQUE(show_id, person_id),
+--     CONSTRAINT at_least_one_creator CHECK(
+-- 	creator_id IS NOT NULL OR person_id IS NOT NULL
+--     )
+-- );
 
-CREATE TABLE IF NOT EXISTS network (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    profile_img TEXT
-);
+-- CREATE TABLE IF NOT EXISTS network (
+--     id SERIAL PRIMARY KEY,
+--     name TEXT NOT NULL,
+--     profile_img TEXT
+-- );
 
-CREATE TABLE IF NOT EXISTS show_network (
-    show_id INTEGER REFERENCES show(id),
-    network_id INTEGER REFERENCES network(id),
-    PRIMARY KEY(show_id, network_id)
-);
+-- CREATE TABLE IF NOT EXISTS show_network (
+--     show_id INTEGER REFERENCES show(id),
+--     network_id INTEGER REFERENCES network(id),
+--     PRIMARY KEY(show_id, network_id)
+-- );
 
 CREATE TABLE IF NOT EXISTS season (
     id SERIAL PRIMARY KEY,
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS video (
     video_url TEXT,
     youtube_id TEXT, 
     slug TEXT NOT NULL,
-    thumbnail_name TEXT UNIQUE,
+    thumbnail_name TEXT,
     description TEXT,
     upload_date DATE,
     pg_rating rating,
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS video_creator_rel (
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
-    username TEXT(20) UNIQUE NOT NULL,
+    username VARCHAR(20) UNIQUE NOT NULL,
     email CITEXT UNIQUE NOT NULL,
     password_hash BYTEA NOT NULL,
     activated BOOL NOT NULL,

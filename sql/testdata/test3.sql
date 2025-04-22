@@ -107,17 +107,17 @@ COPY public.show (id, name, profile_img, slug) FROM stdin;
 -- Data for Name: season; Type: TABLE DATA; Schema: public; Owner: colet
 --
 
-COPY public.season (id, show_id, season_number, air_date) FROM stdin;
-1	1	1	1975-01-01
-2	1	2	1976-01-01
-3	1	3	1977-01-01
-4	1	4	\N
-5	4	1	\N
-6	4	2	\N
-7	4	3	\N
-8	4	4	\N
-9	4	5	\N
-10	4	6	\N
+COPY public.season (id, show_id, season_number) FROM stdin;
+1	1	1
+2	1	2
+3	1	3
+4	1	4
+5	4	1
+6	4	2
+7	4	3
+8	4	4
+9	4	5
+10	4	6
 \.
 
 
@@ -231,14 +231,6 @@ COPY public.creator (id, name, slug, page_url, description, profile_img, date_es
 
 
 --
--- Data for Name: episode_cast; Type: TABLE DATA; Schema: public; Owner: colet
---
-
-COPY public.episode_cast (episode_id, person_id) FROM stdin;
-\.
-
-
---
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: colet
 --
 
@@ -260,27 +252,11 @@ COPY public.likes (created_at, user_id, video_id) FROM stdin;
 
 
 --
--- Data for Name: season_cast; Type: TABLE DATA; Schema: public; Owner: colet
---
-
-COPY public.season_cast (season_id, person_id) FROM stdin;
-\.
-
-
---
 -- Data for Name: sessions; Type: TABLE DATA; Schema: public; Owner: colet
 --
 
 COPY public.sessions (token, data, expiry) FROM stdin;
 6MGUSzIHCjUuxRF5dVW_MZybHWbDF3TYfNA5No7fFHo	\\x257f030102ff800001020108446561646c696e6501ff8200010656616c75657301ff8400000010ff810501010454696d6501ff8200000027ff83040101176d61705b737472696e675d696e74657266616365207b7d01ff8400010c0110000032ff80010f010000000edf8e87871d3e2849ffff01011361757468656e7469636174656455736572494403696e740402000200	2025-04-13 21:35:19.490612-07
-\.
-
-
---
--- Data for Name: show_creator; Type: TABLE DATA; Schema: public; Owner: colet
---
-
-COPY public.show_creator (show_id, creator_id) FROM stdin;
 \.
 
 

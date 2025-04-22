@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -25,7 +26,26 @@ type Season struct {
 	Number   *int
 	ShowId   *int
 	Episodes []*Episode
-	AirDate  *time.Time
+}
+
+func (s *Season) AirYear() string {
+	var airDates []time.Time
+	for _, e := range s.Episodes {
+		if e.AirDate != nil {
+			airDates = append(airDates, *e.AirDate)
+		}
+	}
+	if len(airDates) == 0 {
+		return ""
+	}
+
+	min := airDates[0]
+	for _, t := range airDates[1:] {
+		if t.Before(min) {
+			min = t
+		}
+	}
+	return strconv.Itoa(min.Year())
 }
 
 type Episode struct {
@@ -121,7 +141,7 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 
 func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 	stmt := `
-		SELECT DISTINCT se.id, se.season_number, se.air_date,
+		SELECT DISTINCT se.id, se.season_number, 
 		e.id, e.episode_number, e.air_date, e.thumbnail_name, e.title, v.id
 		FROM season as se 
 		LEFT JOIN episode as e ON se.id = e.season_id
@@ -144,7 +164,7 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 		e := &Episode{}
 		v := &Video{}
 		err := rows.Scan(
-			&s.ID, &s.Number, &s.AirDate,
+			&s.ID, &s.Number,
 			&e.ID, &e.Number, &e.AirDate,
 			&e.Thumbnail, &e.Title, &v.ID,
 		)
@@ -236,7 +256,7 @@ func (m *ShowModel) Get(filter *Filter) ([]*Show, error) {
 func (m *ShowModel) GetById(id int) (*Show, error) {
 	stmt := `
 		SELECT DISTINCT s.id, s.name, s.profile_img, s.slug,
-		se.id, se.season_number, se.air_date,
+		se.id, se.season_number, 
 		e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name,
 		v.id
 		FROM show as s
@@ -265,7 +285,7 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 		v := &Video{}
 		err := rows.Scan(
 			&show.ID, &show.Name, &show.ProfileImg, &show.Slug,
-			&s.ID, &s.Number, &s.AirDate,
+			&s.ID, &s.Number,
 			&e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&v.ID,
 		)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
 	// "path"
 	// "time"
 	"sketchdb.cozycole.net/internal/models"
@@ -22,11 +23,10 @@ func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
 
 	show, err := app.shows.GetById(showId)
 	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			app.notFound(w)
-		} else {
-			app.serverError(r, w, err)
-		}
+		app.serverError(r, w, err)
+		return
+	} else if show.ID == nil {
+		app.notFound(w)
 		return
 	}
 
@@ -248,6 +248,10 @@ func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
 	}
 
 	season, err := app.shows.GetSeason(seasonId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
 
 	data := app.newTemplateData(r)
 	data.Season = season
