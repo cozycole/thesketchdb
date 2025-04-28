@@ -12,6 +12,35 @@ import (
 var pageSize = 16
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
+	featured, err := app.videos.GetById(1)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+	featured2, err := app.videos.GetById(2)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+	featured3, err := app.videos.GetById(3)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+	featured4, err := app.videos.GetById(4)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	members, err := app.cast.GetCastMembers(1)
+	if err != nil && err != models.ErrNoRecord {
+		app.serverError(r, w, err)
+		return
+	}
+
+	featured.Cast = members
+
 	filter := models.Filter{
 		Limit:  8,
 		Offset: 0,
@@ -25,6 +54,11 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Videos = videos
+	data.Featured = []*models.Video{featured, featured2, featured3, featured4}
+
+	for _, f := range data.Featured {
+		app.infoLog.Printf("%s\n", *f.Title)
+	}
 
 	app.render(r, w, http.StatusOK, "home.tmpl.html", "base", data)
 }

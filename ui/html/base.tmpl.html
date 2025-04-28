@@ -13,7 +13,7 @@
         crossorigin="anonymous"
       ></script>
       <script
-        src="/static/js/htmx-response-targets.js"
+        src="/static/js/dist/htmx-response-targets.js"
         type="text/javascript"
       ></script>
       <link rel="stylesheet" href="/static/css/styles.css" />
@@ -22,27 +22,22 @@
         href="/static/img/favicon.ico"
         type="image/x-icon"
       />
-      <link
-        href="http://fonts.googleapis.com/css?family=Roboto"
-        rel="stylesheet"
-        type="text/css"
-      />
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+      <link rel="stylesheet" href="/static/css/glide.core.min.css">
     </head>
 
     <body
       hx-ext="response-targets"
-      class="min-h-screen flex flex-col bg-slate-100 min-w-80"
+      class="min-h-screen flex flex-col bg-slate-100 min-w-80 font-sans"
     >
       {{ template "nav" . }}
-      <main class="flex flex-col grow w-full max-w-screen-xl mx-auto">
+      <main class="flex flex-col grow w-full mx-auto">
         {{ template "main" . }}
       </main>
       {{ template "footer" . }}
-      <script
-        type="module"
-        src="/static/js/main.js"
-        type="text/javascript"
-      ></script>
+      <script src="/static/js/dist/main.js"></script>
     </body>
   </html>
 {{ end }}

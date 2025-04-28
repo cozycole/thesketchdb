@@ -31,6 +31,7 @@ type templateData struct {
 	CurrentYear     int
 	DropdownResults dropdownSearchResults
 	Episode         *models.Episode
+	Featured        []*models.Video
 	Flash           flashMessage
 	Forms           Forms
 	ImageBaseUrl    string

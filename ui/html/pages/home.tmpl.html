@@ -4,142 +4,70 @@
   <div class="w-full" data-page="home">
     <div
       id="heroSection"
-      class="w-full flex flex-col md:flex-row md:items-center justify-between bg-slate-800 md:py-12 md:px-6 px-3 py-8 gap-8"
+      class="bg-slate-800"
     >
-      <!-- Hero Text -->
-      <div id="heroText" class="flex-1 min-w-[280px] max-w-xl">
-        <h1 class="text-white font-bold text-5xl mb-4">
-          The Internet Sketch Comedy Database
-        </h1>
-        <h2 class="text-white text-lg">
-          Discover new sketches, actors, and characters or find sketches from
-          creators / shows you know and love!
-        </h2>
-        <a href="/browse">
-          <button
-            class="my-7 bg-slate-500 text-white font-bold py-2 px-4 rounded hover:bg-slate-600"
-          >
-            Browse Videos
-          </button>
-        </a>
-      </div>
-
-      <!-- Hero Image -->
-      <!-- <div id="heroThumbnailPreview" class="flex-shrink basis-[680px]">
-        <div id="heroThumbnail" class="rounded-md">
-          <img
-            src="/images/test/video/goodpals_fullpreview.jpg"
-            class="w-full object-cover rounded-md"
-            alt="Hero Thumbnail"
-          />
+      <div
+        class="w-full max-w-screen-xl mx-auto md:flex md:items-center md:justify-between md:py-12 md:px-6 px-3 py-8 gap-8"
+      >
+        <!-- Hero Text -->
+        <div id="heroText" class="flex-1 min-w-[290px] max-w-xl">
+          <h1 class="text-white font-bold text-5xl mb-4">
+            The Sketch Comedy Database
+          </h1>
+          <h2 class="text-white text-lg">
+            Discover new sketches, actors, and characters or find sketches from
+            creators / shows you know and love!
+          </h2>
+          <a href="/browse">
+            <button
+              class="w-fit my-7 bg-orange-600 text-white font-bold align-middle py-2 px-4 rounded-full hover:bg-orange-500"
+            >
+              Browse Sketches
+            </button>
+          </a>
         </div>
-      </div> -->
-      <!-- <div class="md:flex-shrink md:basis-[680px] h-fit">
-        <div class="relative w-full overflow-hidden">
-          <div
-            id="carousel-track"
-            class="flex transition-transform duration-500 ease-in-out h-full"
-          >
-            <div class="flex-shrink-0 w-full h-full">
-              <img
-                src="/images/test/video/goodpals_fullpreview.jpg"
-                class="w-full h-full object-cover"
-                alt="Slide 1"
-              />
-            </div>
-            <div class="flex-shrink-0 w-full h-full">
-              <img
-                src="/images/test/video/goodpals_fullpreview.jpg"
-                class="w-full h-full object-cover"
-                alt="Slide 2"
-              />
-            </div>
-            <div class="flex-shrink-0 w-full h-full">
-              <img
-                src="/images/test/video/goodpals_fullpreview.jpg"
-                class="w-full object-cover"
-                alt="Slide 3"
-              />
-            </div>
-          </div>
 
-          <button
-            id="prev"
-            class="absolute top-1/2 left-4 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 rounded-full"
-          >
-            ←
-          </button>
-          <button
-            id="next"
-            class="absolute top-1/2 right-4 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-2 rounded-full"
-          >
-            →
-          </button>
-        </div>
-      </div>
-    </div> -->
-      <div class="md:flex-shrink md:basis-[680px] h-fit">
-        <div
-          class="relative overflow-hidden w-full max-w-4xl mx-auto"
-          id="carousel"
-        >
-          <div
-            id="carousel-track"
-            class="flex transition-transform duration-500 ease-in-out"
-          >
-            <div class="flex-shrink-0 w-full">
-              <img
-                src="/images/test/video/goodpals_fullpreview.jpg"
-                class="w-full h-auto"
-                alt="Clone Last"
-              />
+      <!-- Hero Carousel -->
+      <div class="md:flex-shrink md:basis-[640px] h-fit min-w-0">
+        <div class="relative">
+          <div class="glide w-full">
+            <div class="glide__track" data-glide-el="track">
+              <div class="glide__slides">
+                  {{ range .Featured }}
+                    <div class="glide__slide">
+                      {{ template "featured-thumbnail" (dict "ImageBaseUrl" $.ImageBaseUrl "Video" .)}}
+                    </div>
+                  {{ end }}
+                </div>
+              </div>
+
+               <!--Navigation Buttons -->
+              <div class="glide__arrows" data-glide-el="controls">
+                <button
+                  id="prevBtn"
+                  class="glide__arrow glide__arrow--left absolute top-1/2 left-1 -translate-y-1/2 bg-white bg-opacity-70 rounded-full p-2 shadow z-10"
+                  data-glide-dir="<"
+                >
+                  ⬅
+                </button>
+                <button
+                  id="nextBtn"
+                  class="glide__arrow glide__arrow--right absolute top-1/2 right-1 -translate-y-1/2 bg-white bg-opacity-70 rounded-full p-2 shadow z-10"
+                  data-glide-dir=">"
+                >
+                  ➡
+                </button>
+              </div>
             </div>
-            <div class="flex-shrink-0 w-full">
-              <img
-                src="/images/test/video/goodpals_fullpreview.jpg"
-                class="w-full h-auto"
-                alt="1"
-              />
-            </div>
-            <div class="flex-shrink-0 w-full">
-              <img
-                src="/images/test/video/goodpals_fullpreview.jpg"
-                class="w-full h-auto"
-                alt="2"
-              />
-            </div>
-            <div class="flex-shrink-0 w-full">
-              <img
-                src="/images/test/video/goodpals_fullpreview.jpg"
-                class="w-full h-auto"
-                alt="3"
-              />
-            </div>
-            <div class="flex-shrink-0 w-full">
-              <img
-                src="/images/test/video/goodpals_fullpreview.jpg"
-                class="w-full h-auto"
-                alt="Clone First"
-              />
-            </div>
+            <!--Offset Title -->
+            <span class="absolute -top-10 right-[clamp(1rem,2.5vw,1.6rem)] p-3 sm:p-4 rounded-lg text-slate-50 font-bold sm:text-[clamp(1rem,2.5vw,1.6rem)] text-[clamp(1.3rem, 3.5vw, 1.7)] bg-slate-900">
+              Featured
+            </span>
           </div>
-          <!-- Navigation Buttons -->
-          <button
-            id="prevBtn"
-            class="absolute top-1/2 left-4 -translate-y-1/2 bg-white bg-opacity-70 rounded-full p-2 shadow z-10"
-          >
-            ⬅
-          </button>
-          <button
-            id="nextBtn"
-            class="absolute top-1/2 right-4 -translate-y-1/2 bg-white bg-opacity-70 rounded-full p-2 shadow z-10"
-          >
-            ➡
-          </button>
         </div>
       </div>
     </div>
-    <div class="px-2">
+    <div class="px-2 max-w-screen-xl mx-auto">
       <h2 class="font-bold text-xl my-3">
         <a href="/catalog/sketches?sort=oldest" class="hover:underline"
           >Latest Sketches</a
@@ -147,108 +75,6 @@
       </h2>
       {{ template "video-carousel" (dict "ImageBaseUrl" $.ImageBaseUrl "Videos" .Videos) }}
     </div>
+
   </div>
-  <script>
-    const track = document.getElementById("carousel-track");
-    const slides = track.children;
-    const prevBtn = document.getElementById("prevBtn");
-    const nextBtn = document.getElementById("nextBtn");
-    const carousel = document.getElementById("carousel");
-
-    let index = 1;
-    let isDragging = false;
-    let startPos = 0;
-    let currentTranslate = 0;
-    let prevTranslate = 0;
-    let animationID;
-    let autoplayInterval;
-    let slideWidth = slides[0].clientWidth;
-    const intervalLength = 6000;
-
-    window.addEventListener("resize", () => {
-      slideWidth = slides[0].clientWidth;
-      track.style.transition = "none"; // remove transition during resize
-      setPosition();
-      prevTranslate = -slideWidth * index;
-      currentTranslate = prevTranslate;
-    });
-
-    function setPosition() {
-      track.style.transform = `translateX(${-slideWidth * index}px)`;
-    }
-
-    function nextSlide() {
-      if (index >= slides.length - 1) return;
-      index++;
-      track.style.transition = "transform 0.5s ease-in-out";
-      setPosition();
-    }
-
-    function prevSlide() {
-      if (index <= 0) return;
-      index--;
-      track.style.transition = "transform 0.5s ease-in-out";
-      setPosition();
-    }
-
-    function startAutoplay() {
-      autoplayInterval = setInterval(() => {
-        nextSlide();
-      }, intervalLength);
-    }
-
-    function stopAutoplay() {
-      clearInterval(autoplayInterval);
-    }
-
-    nextBtn.addEventListener("click", () => {
-      stopAutoplay();
-      nextSlide();
-      startAutoplay();
-    });
-
-    prevBtn.addEventListener("click", () => {
-      stopAutoplay();
-      prevSlide();
-      startAutoplay();
-    });
-
-    track.addEventListener("transitionend", () => {
-      if (slides[index].alt === "Clone First") {
-        track.style.transition = "none";
-        index = 1;
-        setPosition();
-      }
-      if (slides[index].alt === "Clone Last") {
-        track.style.transition = "none";
-        index = slides.length - 2;
-        setPosition();
-      }
-    });
-
-    // Initialize
-    track.style.transform = `translateX(${-slideWidth * index}px)`;
-    startAutoplay();
-  </script>
-  <!-- <script>
-    const track = document.getElementById("carousel-track");
-    const slides = track.children;
-    const totalSlides = slides.length;
-    let currentSlide = 0;
-
-    function updateCarousel() {
-      const offset = -(currentSlide * 100);
-      track.style.transform = `translateX(${offset}%)`;
-    }
-
-    document.getElementById("prev").addEventListener("click", () => {
-      currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-      updateCarousel();
-    });
-
-    document.getElementById("next").addEventListener("click", () => {
-      currentSlide = (currentSlide + 1) % totalSlides;
-      updateCarousel();
-    });
-  </script> -->
 {{ end }}
