@@ -41,16 +41,7 @@
               </a>
             {{ end }}
             <div class="line-clamp-1">
-              {{ with .Cast }}
-                {{- range $i, $c  := . -}} 
-                  {{- if ne $i 0 -}}, {{ end -}}
-                  <a href="/person/{{ $c.Actor.Slug }}" class="hover:underline">
-                    {{- $c.Actor.First }}
-                      
-                    {{ $c.Actor.Last -}}
-                  </a>
-                  {{- end -}}
-              {{- end -}}
+              {{ printCast .Cast }}
              </div>
           </div>
         </div>

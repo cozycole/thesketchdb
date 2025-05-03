@@ -1,0 +1,20 @@
+{{ define "person-card" }}
+  {{ with .Person }}
+  <a href="/person/{{ .Slug }}">
+    <div class="bg-slate-50 p-4 border-t-4 border-orange-600 rounded-lg">
+      <div class="flex flex-col items-center">
+        <div class="w-fit">
+          <img
+            src="{{ $.ImageBaseUrl }}/person/{{ .ProfileImg }}"
+            class="w-36 rounded-full border-4 border-slate-300 shadow-lg"
+            onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+          />
+        </div>
+        <h3 class="mt-4 font-semibold text-slate-950 line-clamp-2">
+          {{ printPersonName . }} 
+        </h3>
+      </div>
+    </div>
+    </a>
+  {{ end }}
+{{ end }}

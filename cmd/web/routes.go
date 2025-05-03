@@ -29,6 +29,7 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		)
 
 		r.HandleFunc("/ping", ping)
+		r.HandleFunc("/testing", app.testing)
 
 		r.HandleFunc("/browse", app.browse)
 		r.HandleFunc("/", app.home)

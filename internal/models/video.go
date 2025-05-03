@@ -86,7 +86,7 @@ type Video struct {
 	Description   *string
 	UploadDate    *time.Time
 	Creator       *Creator
-	Cast          *[]*CastMember
+	Cast          []*CastMember
 	Tags          *[]*Tag
 	Show          *Show
 	Number        *int
@@ -422,25 +422,26 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 
 func (m *VideoModel) GetById(id int) (*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.slug, v.video_url, v.youtube_id, v.thumbnail_name, v.upload_date, v.description, v.pg_rating,
-			c.id, c.name, c.slug, c.profile_img
+		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
+			c.id, c.name, c.profile_img,
+			sh.id, sh.name, sh.profile_img, sh.slug,
+			p.id, p.slug, p.first, p.last, p.birthdate,
+			p.description, p.profile_img,
+			cm.id, cm.position, cm.img_name, cm.character_name,
+			ch.id, ch.slug, ch.name, ch.img_name
 		FROM video AS v
-		LEFT JOIN video_creator_rel as vcr
-		ON v.id = vcr.video_id
-		LEFT JOIN creator as c
-		ON vcr.creator_id = c.id
+		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
+		LEFT JOIN creator as c ON vcr.creator_id = c.id
+		LEFT JOIN episode as e ON v.episode_id = e.id
+		LEFT JOIN season as se ON e.season_id = se.id
+		LEFT JOIN show as sh ON se.show_id = sh.id
+		LEFT JOIN cast_members as cm ON v.id = cm.video_id
+		LEFT JOIN person as p ON cm.person_id = p.id
+		LEFT JOIN character as ch ON cm.character_id = ch.id
 		WHERE v.id = $1
 	`
 
-	row := m.DB.QueryRow(context.Background(), stmt, id)
-
-	v := &Video{}
-	c := &Creator{}
-	err := row.Scan(
-		&v.ID, &v.Title, &v.Slug, &v.URL, &v.YoutubeID,
-		&v.ThumbnailName, &v.UploadDate, &v.Description,
-		&v.Rating, &c.ID, &c.Name, &c.Slug, &c.ProfileImage,
-	)
+	rows, err := m.DB.Query(context.Background(), stmt, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -449,7 +450,44 @@ func (m *VideoModel) GetById(id int) (*Video, error) {
 		}
 	}
 
+	v := &Video{}
+	c := &Creator{}
+	sh := &Show{}
+	members := []*CastMember{}
+	hasRows := false
+	for rows.Next() {
+		p := &Person{}
+		ch := &Character{}
+		cm := &CastMember{}
+		hasRows = true
+		err := rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&c.ID, &c.Name, &c.ProfileImage,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
+			&p.ID, &p.Slug, &p.First, &p.Last, &p.BirthDate, &p.Description, &p.ProfileImg,
+			&cm.ID, &cm.Position, &cm.ThumbnailName, &cm.CharacterName,
+			&ch.ID, &ch.Slug, &ch.Name, &ch.Image,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if cm.ID != nil {
+			cm.Actor = p
+			cm.Character = ch
+			members = append(members, cm)
+		}
+	}
+
+	if !hasRows {
+		return nil, ErrNoRecord
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	v.Show = sh
 	v.Creator = c
+	v.Cast = members
 	return v, nil
 }
 

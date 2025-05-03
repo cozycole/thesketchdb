@@ -117,3 +117,12 @@ func (app *application) render(r *http.Request, w http.ResponseWriter, status in
 	w.WriteHeader(status)
 	buf.WriteTo(w)
 }
+
+func intSliceContains(list []int, value int) bool {
+	for _, n := range list {
+		if n == value {
+			return true
+		}
+	}
+	return false
+}

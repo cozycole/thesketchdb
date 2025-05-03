@@ -50,7 +50,7 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	castMember.ID = castId
+	castMember.ID = &castId
 	thumbName, err := generateThumbnailName(castMember.ThumbnailFile)
 	if err != nil {
 		app.serverError(r, w, err)
@@ -58,7 +58,7 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 	}
 
 	castMember.ThumbnailName = &thumbName
-	err = app.cast.InsertThumbnailName(castMember.ID, *castMember.ThumbnailName)
+	err = app.cast.InsertThumbnailName(*castMember.ID, *castMember.ThumbnailName)
 	if err != nil {
 		app.serverError(r, w, err)
 		return

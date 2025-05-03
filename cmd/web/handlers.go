@@ -11,7 +11,34 @@ import (
 
 var pageSize = 16
 
+type HomeData struct {
+	Featured        []*models.Video
+	Latest          []*models.Video
+	PopularSketches []*models.Video
+	Actors          []*models.Person
+}
+
+func (app *application) testing(w http.ResponseWriter, r *http.Request) {
+	filter := models.Filter{
+		Limit:  8,
+		Offset: 0,
+		SortBy: "latest",
+	}
+
+	latest, err := app.videos.Get(&filter)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Videos = latest
+
+	app.render(r, w, http.StatusOK, "carousel-testing.tmpl.html", "base", data)
+}
+
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
+	// this will get replaced by a playlist at some point
 	featured, err := app.videos.GetById(1)
 	if err != nil {
 		app.serverError(r, w, err)
@@ -32,29 +59,46 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.serverError(r, w, err)
 		return
 	}
-
-	members, err := app.cast.GetCastMembers(1)
-	if err != nil && err != models.ErrNoRecord {
+	featured5, err := app.videos.GetById(5)
+	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	featured.Cast = members
-
 	filter := models.Filter{
+		Limit:  8,
+		Offset: 0,
+		SortBy: "latest",
+	}
+
+	latest, err := app.videos.Get(&filter)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	popularFilter := models.Filter{
 		Limit:  8,
 		Offset: 0,
 	}
 
-	videos, err := app.videos.Get(&filter)
+	popularSketches, err := app.videos.Get(&popularFilter)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	people, err := app.people.GetPeople(&[]int{1, 2, 3, 4, 5, 6, 7, 8})
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	data.Videos = videos
-	data.Featured = []*models.Video{featured, featured2, featured3, featured4}
+	data.Home.Featured = []*models.Video{featured, featured2, featured3, featured4, featured5}
+	data.Home.Latest = latest
+	data.Home.PopularSketches = popularSketches
+	data.Home.Actors = people
 
 	for _, f := range data.Featured {
 		app.infoLog.Printf("%s\n", *f.Title)

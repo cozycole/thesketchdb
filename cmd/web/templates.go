@@ -25,7 +25,7 @@ type templateData struct {
 	BrowseSections  map[string][]*models.Video
 	Categories      *[]*models.Category
 	CSRFToken       string
-	Cast            *[]*models.CastMember
+	Cast            []*models.CastMember
 	CastMember      *models.CastMember
 	Creator         *models.Creator
 	CurrentYear     int
@@ -34,6 +34,7 @@ type templateData struct {
 	Featured        []*models.Video
 	Flash           flashMessage
 	Forms           Forms
+	Home            HomeData
 	ImageBaseUrl    string
 	IsAdmin         bool
 	IsEditor        bool
@@ -111,6 +112,28 @@ func printPersonName(a *models.Person) string {
 	return name + " " + *a.Last
 }
 
+func printCast(cast []*models.CastMember) string {
+	castList := ""
+	var personIds []int
+	for i, cm := range cast {
+		if cm.Actor.ID == nil || intSliceContains(personIds, *cm.Actor.ID) {
+			continue
+		}
+
+		name := printPersonName(cm.Actor)
+		if name != "" {
+			if i != 0 {
+				name = ", " + name
+			}
+			castList += name
+		}
+
+		personIds = append(personIds, *cm.Actor.ID)
+	}
+
+	return castList
+}
+
 func dict(values ...any) map[string]any {
 	if len(values)%2 != 0 {
 		panic("invalid dict call")
@@ -144,6 +167,7 @@ var functions = template.FuncMap{
 	"derefString":          derefString,
 	"formDate":             formDate,
 	"printPersonName":      printPersonName,
+	"printCast":            printCast,
 	"getSeasonSketchCount": getSeasonSketchCount,
 	"getShowEpisodeCount":  getShowEpisodeCount,
 	"getShowSketchCount":   getShowSketchCount,
