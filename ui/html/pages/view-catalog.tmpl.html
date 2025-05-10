@@ -1,10 +1,25 @@
 {{ define "title" }}Catalog{{ end }}
 
 {{ define "main" }}
-  <div data-page="catalog" class="flex flex-col grow w-full my-4 px-2 text-slate-950 ">
-    <h1 class="w-full my-3 text-2xl font-bold">Sketch Catalog</h1>
+  <div data-page="catalog" class="max-w-screen-xl mx-auto flex flex-col grow w-full my-4 px-2 text-slate-950 ">
+    <div class="flex justify-between my-3">
+      <h1 class="w-full  text-2xl font-bold">Sketch Catalog</h1>
+      <div class="block lg:hidden relative">
+        <button id="mobileFilterMenu"
+            class="flex p-3 gap-2 rounded-md bg-orange-600 hover:bg-orange-500">
+          <p class="font-bold text-white tx-lg">Filters</p>
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" fill="#FFFFFF">
+            <path d="M440-120v-240h80v80h320v80H520v80h-80Zm-320-80v-80h240v80H120Zm160-160v-80H120v-80h160v-80h80v240h-80Zm160-80v-80h400v80H440Zm160-160v-240h80v80h160v80H680v80h-80Zm-480-80v-80h400v80H120Z"/>
+          </svg>
+        </button>
+        <div id="mobileFilters" class="absolute top-12 right-0 
+                  opacity-0 rounded-md bg-slate-50 gap-2 w-72 p-3
+                  scale-95 transform origin-top transition-all pointer-events-none">
+        </div>
+      </div>
+    </div>
     <section class="flex grow">
-      <div id="filterSection" class="w-80 border border-slate-950 rounded-md">
+      <div id="filterSection" class="hidden lg:block w-80 border border-slate-950 rounded-md">
         <div class="flex items-center justify-between border-b border-slate-950">
           <h2 class="font-bold text-xl p-4">Filters</h2>
           <button class="castButton p-2">
@@ -12,92 +27,36 @@
             <img class="galleryArrow hidden w-6" src="/static/img/dropdown-arrow-down.svg">
           </button>
         </div>
-        <div id="filters" class="flex flex-col gap-2 w-72 p-2">
-          <div>
-            <h3 class="font-bold p-1">Sort By</h3>
-            <div class="relative w-full">
-              <select
-                id="sortDropdown"
-                class="block w-full appearance-none bg-slate-50 border border-slate-300 hover:border-slate-400 px-3 py-1.5 rounded-lg shadow-sm focus:outline-none"
-              >
-                <option value="latest">Latest</option>
-                <option value="oldest">Oldest</option>
-                <option value="az">A-Z</option>
-                <option value="za">Z-A</option>
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                ▼
-              </div>
-            </div>
-          </div>
-          <div>
-            <h3 class="font-bold p-1">Actor</h3>
-            <catalog-filter
-              id="person-filter"
-              data-type="person"
-              data-url="/person/search"
-              data-placeholder="Enter actor's name"
-              data-selected='[
-                {{- range $i, $p := .SearchResults.Filter.People -}}
-                  {{- if ne $i 0 -}},{{- end -}}
-                  {"id": "{{ $p.ID }}", 
-                  "name": "{{ $p.First }} {{ $p.Last }}",
-                  "image": "{{ $.ImageBaseUrl }}/person/{{ $p.ProfileImg }}"}
-                {{- end -}}
-            ]'>
-            </catalog-filter>
-          </div>
-          <div>
-            <h3 class="font-bold p-1">Creator</h3>
-            <catalog-filter
-              id="creator-filter"
-              data-type="creator"
-              data-url="/creator/search"
-              data-placeholder="Enter creator's name"
-              data-selected='[
-                {{- range $i, $c := .SearchResults.Filter.Creators -}}
-                  {{- if ne $i 0 -}},{{- end -}}
-                  {"id": "{{ $c.ID }}", 
-                  "name": "{{ $c.Name }}",
-                  "image": "{{ $.ImageBaseUrl }}/creator/{{ $c.ProfileImage }}"}
-                {{- end -}}
-            ]'>
-            </catalog-filter>
-          </div>
-          <div>
-            <h3 class="font-bold p-1">Tags</h3>
-            <catalog-filter
-              id="tags-filter"
-              data-type="tag"
-              data-url="/tag/search"
-              data-placeholder="Search categories / tags"
-              data-display-img="false"
-              data-selected='[
-                {{- range $i, $t := .SearchResults.Filter.Tags -}}
-                  {{- if ne $i 0 -}},{{- end -}}
-                  {"id": "{{ $t.ID }}", 
-                  "name": "{{ with $t.Category }}{{ .Name }} / {{ end }}{{ $t.Name }}"}
-                {{- end -}}
-            ]'>
-            </catalog-filter>
-          </div>
-        </div>
+        <div id="desktopFilters" class="flex flex-col gap-2 w-72 p-2"></div>
       </div>
       <div id="results" 
-          class="flex flex-col grow w-full ml-4 border-slate-950"
+          class="flex flex-col grow w-full lg:ml-2 border-slate-950"
           hx-trigger="filter-change"
         >
         {{ template "catalog-result" . }}
       </div>
     </section>
   </div>
+  
+  <filter-content>
+    <div id="filters" class="flex flex-col gap-2">
+      {{ template "video-catalog-filter" (dict "SearchResults" .SearchResults "ImageBaseUrl" $.ImageBaseUrl)}}
+      <button id="filterApply" class="mt-1 w-full p-2 rounded-full
+                    bg-orange-600 hover:bg-orange-500
+                    text-white font-bold"
+      >Apply</button>
+    </div>
+  </filter-content>
 
   <template id="filterTemplate">
     <div class="relative">
       <input
         type="search"
         name="actorNameFilter"
-        class="filterSearch w-full px-3 py-1.5 border border-gray-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none"
+        class="filterSearch w-full px-3 py-1.5 
+                border border-gray-300 rounded-lg 
+                bg-slate-50 text-slate-700 shadow-sm
+                placeholder-slate-400 focus:outline-none"
         hx-params="query"
         hx-trigger="focus, input changed delay:400ms, search"
         hx-target="next"

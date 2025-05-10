@@ -16,10 +16,9 @@ import './components/flashMessage.js';
   const firstDiv = document.querySelector('main > div');
   const pageType = firstDiv ? firstDiv.dataset.page : 'No page attribute found!';
 
-  console.log(`On ${pageType} page`);
-
   const dropdownMenuButtons = document.querySelectorAll(".dropdownBtn");
   const dropdownMenus = document.querySelectorAll(".dropdownMenu");
+
   document.addEventListener("DOMContentLoaded", () => {
     dropdownMenuButtons.forEach(button => {
         button.addEventListener("click", function () {

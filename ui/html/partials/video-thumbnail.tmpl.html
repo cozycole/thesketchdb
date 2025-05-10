@@ -11,7 +11,7 @@
       <div class="flex h-32">
         {{ if and .Show .Show.ID }}
           <div class="w-8 min-w-8 mt-2">
-            <a href="/show/{{ .Show.Slug }}">
+              <a href="/show/{{ .Show.ID }}/{{ .Show.Slug }}">
               <img
                 src="{{ $.ImageBaseUrl }}/show/{{ .Show.ProfileImg }}"
                 class="w-full rounded-full"
@@ -35,7 +35,7 @@
             <a href="/video/{{ .Slug }}">{{ .Title }}</a>
           </h3>
           {{ if and .Show .Show.Slug }}
-            <a href="/show/{{ .Show.Slug }}">
+              <a href="/show/{{ .Show.ID }}{{ .Show.Slug }}">
               <p class="font-medium text-base line-clamp-2 break-words whitespace-normal">{{ .Show.Name }}</p>
             </a>
           {{ else if and .Creator .Creator.Slug }}

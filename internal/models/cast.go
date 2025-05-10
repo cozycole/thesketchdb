@@ -10,7 +10,7 @@ import (
 )
 
 type CastMember struct {
-	ID            int
+	ID            *int
 	Position      *int
 	Actor         *Person
 	Character     *Character // if not nil, means character connected to a character's page
@@ -24,7 +24,7 @@ type CastMember struct {
 type CastModelInterface interface {
 	Insert(vidId int, member *CastMember) (int, error)
 	InsertThumbnailName(vidId int, name string) error
-	GetCastMembers(vidId int) (*[]*CastMember, error)
+	GetCastMembers(vidId int) ([]*CastMember, error)
 }
 
 type CastModel struct {
@@ -56,7 +56,7 @@ func (m *CastModel) InsertThumbnailName(castId int, name string) error {
 	return err
 }
 
-func (m *CastModel) GetCastMembers(vidId int) (*[]*CastMember, error) {
+func (m *CastModel) GetCastMembers(vidId int) ([]*CastMember, error) {
 	stmt := `
 		SELECT p.id, p.slug, p.first, p.last, p.birthdate,
 			p.description, p.profile_img, 
@@ -99,5 +99,5 @@ func (m *CastModel) GetCastMembers(vidId int) (*[]*CastMember, error) {
 		members = append(members, cm)
 	}
 
-	return &members, nil
+	return members, nil
 }

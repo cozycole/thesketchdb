@@ -258,7 +258,9 @@ func buildURL(baseURL string, result *SearchResult) (string, error) {
 
 	params := result.Filter.Params()
 	params.Add("page", strconv.Itoa(result.CurrentPage))
-	params.Set("query", result.Query)
+	if result.Query != "" {
+		params.Set("query", result.Query)
+	}
 
 	u.RawQuery = params.Encode()
 

@@ -1,0 +1,74 @@
+{{ define "video-catalog-filter" }}
+  <div>
+    <h3 class="font-bold p-1">Sort By</h3>
+    <div class="relative w-full">
+      <select
+        id="sortDropdown"
+        data-type="sort"
+        class="block w-full appearance-none bg-slate-50 
+              border border-slate-300 hover:border-slate-400 
+              px-3 py-1.5 rounded-lg shadow-sm focus:outline-none"
+      >
+        <option value="latest">Latest</option>
+        <option value="oldest">Oldest</option>
+        <option value="az">A-Z</option>
+        <option value="za">Z-A</option>
+      </select>
+      <div class="pointer-events-none absolute inset-y-0 right-0 
+                  flex items-center px-2 text-slate-500">
+        ▼
+      </div>
+    </div>
+  </div>
+  <div>
+    <h3 class="font-bold p-1">Actor</h3>
+    <catalog-filter
+      id="person-filter"
+      data-type="person"
+      data-url="/person/search"
+      data-placeholder="Enter actor's name"
+      data-selected='[
+        {{- range $i, $p := .SearchResults.Filter.People -}}
+          {{- if ne $i 0 -}},{{- end -}}
+          {"id": "{{ $p.ID }}", 
+          "name": "{{ $p.First }} {{ $p.Last }}",
+          "image": "{{ $.ImageBaseUrl }}/person/{{ $p.ProfileImg }}"}
+        {{- end -}}
+    ]'>
+    </catalog-filter>
+  </div>
+  <div>
+    <h3 class="font-bold p-1">Creator</h3>
+    <catalog-filter
+      id="creator-filter"
+      data-type="creator"
+      data-url="/creator/search"
+      data-placeholder="Enter creator's name"
+      data-selected='[
+        {{- range $i, $c := .SearchResults.Filter.Creators -}}
+          {{- if ne $i 0 -}},{{- end -}}
+          {"id": "{{ $c.ID }}", 
+          "name": "{{ $c.Name }}",
+          "image": "{{ $.ImageBaseUrl }}/creator/{{ $c.ProfileImage }}"}
+        {{- end -}}
+    ]'>
+    </catalog-filter>
+  </div>
+  <div>
+    <h3 class="font-bold p-1">Tags</h3>
+    <catalog-filter
+      id="tags-filter"
+      data-type="tag"
+      data-url="/tag/search"
+      data-placeholder="Search categories / tags"
+      data-display-img="false"
+      data-selected='[
+        {{- range $i, $t := .SearchResults.Filter.Tags -}}
+          {{- if ne $i 0 -}},{{- end -}}
+          {"id": "{{ $t.ID }}", 
+          "name": "{{ with $t.Category }}{{ .Name }} / {{ end }}{{ $t.Name }}"}
+        {{- end -}}
+    ]'>
+    </catalog-filter>
+  </div>
+{{ end }}
