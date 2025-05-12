@@ -1,4 +1,4 @@
-{{ define "catalog-result" }}
+{{ define "video-catalog-result" }}
   <div>
     {{- if ne (len .SearchResults.VideoResults) 0 -}}
       {{- template "thumbnail-gallery" (dict "ImageBaseUrl" .ImageBaseUrl "Videos" .SearchResults.VideoResults) -}}

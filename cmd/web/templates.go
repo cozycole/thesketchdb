@@ -27,6 +27,7 @@ type templateData struct {
 	CSRFToken       string
 	Cast            []*models.CastMember
 	CastMember      *models.CastMember
+	CatalogType     string
 	Creator         *models.Creator
 	CurrentYear     int
 	DropdownResults dropdownSearchResults

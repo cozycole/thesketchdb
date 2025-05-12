@@ -17,11 +17,13 @@ export class CatalogFilter extends HTMLElement {
     this.dropdown = this.querySelector(".dropdown");
     this.filtersDiv = this.querySelector(".filters"); 
 
-    // close dropdown on events
+    // close dropdown on click outside and escape
     document.body.addEventListener("click", (e) => {
-      if (!(this.dropdown.contains(e.target) || this.input.contains(e.target))) {
-        this.dropdown.innerHTML = '';
-      }
+      setTimeout(() => {
+        if (!(this.dropdown.contains(e.target) || this.input.contains(e.target))) {
+          this.dropdown.innerHTML = '';
+        }
+      }, 100);
     });
 
     document.addEventListener("keydown", (e) => {
@@ -31,83 +33,78 @@ export class CatalogFilter extends HTMLElement {
       }
     });
 
+    // Once search results are inserted into the dropdown,
+    // add the dropdownItemEvent to each child
     this.dropdown.addEventListener("htmx:afterSwap", (e) => {
       let dropdownItems = e.detail.target.children;
-      for (const child of dropdownItems) {
+
+      // clear an empty response such that there isnt a gray
+      // little line below on empty query
+      if (!dropdownItems.length) {
+        e.detail.target.innerHTML = '';
+      }
+
+      for (let child of dropdownItems) {
         this.dropdownItemEvent(child);
       }
     });
 
+    // only add the query param for dropdown search
     this.input.addEventListener("htmx:configRequest", (e) => {
-      e.detail.parameters["query"] = e.detail.elt.value;
+      if (e.detail.target.classList.contains("dropdown")) {
+        if (!e.detail.elt.value) {
+          this.dropdown.innerHTML = '';
+          e.preventDefault();
+          return;
+        }
+        e.detail.parameters["query"] = e.detail.elt.value;
+      }
     })
-  }
 
-  connectedCallback() {
+    this.filterType = this.dataset.type;
     const selectedData = this.dataset.selected;
-    console.log(selectedData);
     if (selectedData) {
       try {
         this.selectedFilters = JSON.parse(selectedData);
-        this.updateUI();
       } catch (error) {
         console.error("Error parsing selected persons:", error);
       }
     }
-
-    this.filterType = this.dataset.type;
   }
 
-  disconnectedCallback() {
-    console.log("Disconnected")
-  }
-
-  updateUI() {
-    const currentURL = new URL(window.location.href);
+  connectedCallback() {
     for (let filter of this.selectedFilters) {
-      let validFilter = currentURL.searchParams.has(this.dataset.type, filter.id);
-      if (!filter.applied && validFilter) {
+      if (!this.filterIsDisplayed(filter.id)) {
         this.displayFilter(filter.id);
-        filter.applied = true;
-      } else if (filter.applied && !validFilter) {
-        this.hideFilter(filter);
-        filter.applied = false;
       }
     }
   }
 
   dropdownItemEvent(ele) {
     ele.addEventListener("click", (e) => {
-      let currentURL = new URL(window.location.href);
-      let id = ele.dataset.id;
-      if (currentURL.searchParams.has(this.dataset.type, id)) {
+      setTimeout(() => {
+        let currentURL = new URL(window.location.href);
+        let id = ele.dataset.id;
+        if (currentURL.searchParams.has(this.dataset.type, id)) {
+          this.dropdown.innerHTML = '';
+          this.input.value = "";
+          return
+        }
+
+        let img = ele.querySelector("img");
+        let text = ele.querySelector("p").textContent;
+
+        this.addFilter(id, text, img?.src);
+        this.displayFilter(id);
         this.dropdown.innerHTML = '';
         this.input.value = "";
-        return
-      }
-
-      let img = ele.querySelector("img");
-      let text = ele.querySelector("p").textContent;
-
-      this.addFilter(id, text, img?.src);
-      this.displayFilter(id);
-      this.dropdown.innerHTML = '';
-      this.input.value = "";
-
-      currentURL.searchParams.append(this.dataset.type, id);
-      currentURL.searchParams.set("page", 1);
-      let newURL = currentURL.toString();
-
-      let resultsDiv = document.getElementById("results");
-      resultsDiv.setAttribute("hx-get", newURL);
-
-      htmx.process(resultsDiv);
-      htmx.trigger(resultsDiv, "filter-change");
-    })
+      }, 100);
+    });
   }
-
+  
   addFilter(id, text, imgSrc) {
     let filter = this.selectedFilters.filter(e => e.id === id);
+    // guard against adding the same filter twice
     if (!filter.length) {
       let newFilter = {};
       newFilter.id = id;
@@ -125,8 +122,9 @@ export class CatalogFilter extends HTMLElement {
       throw Error(`No filter with id ${id}`);
     }
 
+    // guard against adding the same filter twice
     filter = filter[0];
-    if (filter.applied) {
+    if (this.filterIsDisplayed(filter.id)) {
       return
     }
 
@@ -147,13 +145,18 @@ export class CatalogFilter extends HTMLElement {
 
     this.filtersDiv.appendChild(insertedFilter);
     deleteButton.addEventListener("click", (e) => {
-      this.hideFilter(filter);
+      setTimeout(() => {
+        this.removeFilter(filter);
+
+      },100)
     });
+
+    console.log(this.filtersDiv.children);
 
     filter.applied = true;
   }
 
-  hideFilter(filter) {
+  removeFilter(filter) {
     let filterElement = null;
     for (let e of this.filtersDiv.children) {
       if (e.dataset.id == filter.id) {
@@ -165,17 +168,27 @@ export class CatalogFilter extends HTMLElement {
       throw Error(`Cannot hide filter with id ${filter.id}`);
     }
 
-    let currentURL = new URL(window.location.href);
-    currentURL.searchParams.delete(this.dataset.type, filter.id);
-    let newURL = currentURL.toString();
-
-    let resultsDiv = document.getElementById("results");
-    resultsDiv.setAttribute("hx-get", newURL);
-
-    htmx.process(resultsDiv);
-    htmx.trigger(resultsDiv, "filter-change");
-
     this.filtersDiv.removeChild(filterElement);
-    filter.applied = false;
+    this.selectedFilters = this.selectedFilters.filter(item => item.id !== filter.id);
   }
+
+
+  getFilterIds() {
+    let ids = [];
+    for (let jsonFilter of this.selectedFilters) {
+      ids.push(jsonFilter.id);
+    }
+    return ids;
+  }
+
+  filterIsDisplayed(filterId) {
+    for (let filter of this.filtersDiv.children) {
+      if (filter.dataset.id == filterId) {
+        return true
+      }
+    }
+    return false
+  }
+
 }
+

@@ -243,7 +243,14 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	isHxRequest := r.Header.Get("HX-Request") == "true"
 	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
 	if isHxRequest && !isHistoryRestore {
-		app.render(r, w, http.StatusOK, "catalog-result.tmpl.html", "catalog-result", data)
+		app.infoLog.Println("TARGET: ", r.Header.Get("HX-Target"))
+		if r.Header.Get("HX-Target") == "catalogSection" {
+			app.infoLog.Println("Rendering catalog")
+			app.render(r, w, http.StatusOK, "video-catalog.tmpl.html", "video-catalog", data)
+		} else {
+			app.infoLog.Println("Rendering result")
+			app.render(r, w, http.StatusOK, "video-catalog-result.tmpl.html", "video-catalog-result", data)
+		}
 		return
 	}
 
@@ -265,6 +272,118 @@ func buildURL(baseURL string, result *SearchResult) (string, error) {
 	u.RawQuery = params.Encode()
 
 	return u.String(), nil
+}
+
+func (app *application) peopleCatalog(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	page := r.Form.Get("page")
+	currentPage, err := strconv.Atoi(page)
+	if err != nil || currentPage < 1 {
+		currentPage = 1
+	}
+
+	sort := r.Form.Get("sort")
+	if sort == "" {
+		sort = "az"
+	}
+	query, _ := url.QueryUnescape(r.Form.Get("query"))
+	filterQuery := strings.Join(strings.Fields(query), " | ")
+
+	personIdParams := r.URL.Query()["person"]
+
+	var personIds []int
+	for _, idStr := range personIdParams {
+		id, err := strconv.Atoi(idStr)
+		if nil == err && id > 0 {
+			personIds = append(personIds, id)
+		}
+	}
+
+	var peopleFilter []*models.Person
+	if len(personIds) > 0 {
+		peopleFilter, err = app.people.GetPeople(&personIds)
+	}
+
+	creatorIdParams := r.URL.Query()["creator"]
+
+	var creatorIds []int
+	for _, idStr := range creatorIdParams {
+		id, err := strconv.Atoi(idStr)
+		if nil == err && id > 0 {
+			creatorIds = append(creatorIds, id)
+		}
+	}
+
+	var creatorFilter []*models.Creator
+	if len(creatorIds) > 0 {
+		creatorFilter, err = app.creators.GetCreators(&creatorIds)
+		app.errorLog.Println(err)
+	}
+
+	tagIdParams := r.URL.Query()["tag"]
+
+	var tagIds []int
+	for _, idStr := range tagIdParams {
+		id, err := strconv.Atoi(idStr)
+		if nil == err && id > 0 {
+			tagIds = append(tagIds, id)
+		}
+	}
+
+	var tagFilter []*models.Tag
+	if len(tagIds) > 0 {
+		tagFilter, err = app.tags.GetTags(&tagIds)
+	}
+
+	limit := app.settings.pageSize
+	offset := (currentPage - 1) * limit
+	filter := &models.Filter{
+		Query:    filterQuery,
+		Creators: creatorFilter,
+		People:   peopleFilter,
+		Tags:     tagFilter,
+		SortBy:   sort,
+		Limit:    limit,
+		Offset:   offset,
+	}
+
+	results, err := app.getCatalogResults(currentPage, "video", filter)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+
+	results.Filter = filter
+	data.SearchResults = results
+	data.SearchResults.Query = url.QueryEscape(query)
+	data.Query = query
+	data.CatalogType = "people"
+
+	url, err := buildURL("/catalog/people", results)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	w.Header().Add("HX-Push-Url", url)
+	app.infoLog.Println(url)
+
+	isHxRequest := r.Header.Get("HX-Request") == "true"
+	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
+	if isHxRequest && !isHistoryRestore {
+		app.infoLog.Println("TARGET: ", r.Header.Get("HX-Target"))
+		if r.Header.Get("HX-Target") == "catalogSection" {
+			app.render(r, w, http.StatusOK, "video-catalog.tmpl.html", "video-catalog", data)
+		} else {
+			app.render(r, w, http.StatusOK, "video-catalog-result.tmpl.html", "video-catalog-result", data)
+		}
+		return
+	}
+
+	app.render(r, w, http.StatusOK, "view-catalog.tmpl.html", "base", data)
 }
 
 func ping(w http.ResponseWriter, _ *http.Request) {
