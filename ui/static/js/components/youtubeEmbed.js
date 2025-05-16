@@ -1,8 +1,10 @@
-export class YoutubeEmbed {
-  constructor(embedDivId, toggleButtonClass) {
-    this.embedDiv = document.getElementById(embedDivId);
-    this.toggleButtons = document.getElementsByClassName(toggleButtonClass);
-    this.watchNowIframe = document.querySelector(`#${embedDivId} iframe`);
+export class YoutubeEmbed extends HTMLElement {
+  constructor() {
+    super();
+
+    this.embedDiv = this.querySelector("#watchNow");
+    this.toggleButtons = document.getElementsByClassName("toggleVideo");
+    this.watchNowIframe = this.querySelector("iframe");
 
     if (!(this.embedDiv && this.toggleButtons && this.watchNowIframe)) {
       throw Error('embed error');

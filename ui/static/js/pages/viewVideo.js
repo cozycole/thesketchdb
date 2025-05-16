@@ -1,7 +1,7 @@
-import { LikeButton } from '../components/likeButton.js'
+import { FavoriteButton } from '../components/favoriteButton.js'
 import { YoutubeEmbed } from '../components/youtubeEmbed.js'
 
 export function initViewVideo() {
-    new LikeButton('likeButton');
-    new YoutubeEmbed('watchNow', 'toggleVideo');
+  customElements.define("favorite-button", FavoriteButton);
+  customElements.define("youtube-embed", YoutubeEmbed);
 }

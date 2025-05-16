@@ -1,5 +1,5 @@
 {{ define "cast-gallery"}}
-  <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+  <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
     {{ range .Video.Cast }}
       {{ if .Actor.ID }}
         <div class="relative w-full rounded-md">
@@ -13,7 +13,7 @@
               {{ end }}
             />
           </a>
-            <div class="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black bg-opacity-50 ">
+            <div class="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black bg-opacity-50 rounded-b-md">
               <h3 class="block text-nowrap overflow-hidden text-ellipsis text-white">
                 {{ $characterName := .CharacterName}}
                 {{ with .Character.Slug}}

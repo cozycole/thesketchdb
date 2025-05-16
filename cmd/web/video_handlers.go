@@ -33,6 +33,14 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if video.Show != nil && video.Show.ID != nil {
+		show, err := app.shows.GetById(*video.Show.ID)
+		if err == nil {
+			video.Show = show
+		}
+
+	}
+
 	video.Cast = cast
 
 	user, ok := r.Context().Value(userContextKey).(*models.User)

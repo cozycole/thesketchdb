@@ -422,7 +422,7 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 
 func (m *VideoModel) GetById(id int) (*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
+		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
 			c.id, c.name, c.profile_img,
 			sh.id, sh.name, sh.profile_img, sh.slug,
 			p.id, p.slug, p.first, p.last, p.birthdate,
@@ -461,7 +461,7 @@ func (m *VideoModel) GetById(id int) (*Video, error) {
 		cm := &CastMember{}
 		hasRows = true
 		err := rows.Scan(
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate, &v.YoutubeID,
 			&c.ID, &c.Name, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.BirthDate, &p.Description, &p.ProfileImg,

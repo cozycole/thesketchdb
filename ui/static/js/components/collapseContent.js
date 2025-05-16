@@ -26,8 +26,10 @@ export class CollapsibleContent extends HTMLElement {
       this.content = this.querySelector(".content");
       this.content.style.maxHeight = this.content.scrollHeight + "px";
     }
+    setTimeout(() => {
+      this.content.style.maxHeight = this.isOpen ? this.content.scrollHeight + "px" : "0px";
+    }, 0);
 
-    this.content.style.maxHeight = this.isOpen ? this.content.scrollHeight + "px" : "0px";
     this.arrow.classList.toggle("rotate-180", !this.isOpen);
 
 
@@ -64,7 +66,7 @@ export class CollapsibleContent extends HTMLElement {
         }
       }
 
-      this.init();
+      //this.init();
       // Run initial height update in case non-image content was added
       this.updateHeight();
     });

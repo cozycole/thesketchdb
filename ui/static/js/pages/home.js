@@ -114,7 +114,10 @@ export function initHome() {
             },
             575: {
               perView: 3,
-              swipeThreshold: 40,
+              peek: {before:0, after: 50},
+            },
+            400: {
+              perView: 2,
               peek: {before:0, after: 50},
             }
           },

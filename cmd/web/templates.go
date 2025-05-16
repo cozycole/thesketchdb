@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"io/fs"
 	"path/filepath"
@@ -150,6 +151,17 @@ func dict(values ...any) map[string]any {
 	return m
 }
 
+func safeURL(urlString string) template.URL {
+	return template.URL(urlString)
+}
+
+func hasEpisode(show *models.Show) bool {
+	if len(show.Seasons) > 0 && len(show.Seasons[0].Episodes) > 0 {
+		return true
+	}
+	return false
+}
+
 func derefString(s *string) string {
 	if s == nil {
 		return ""
@@ -172,6 +184,8 @@ var functions = template.FuncMap{
 	"getSeasonSketchCount": getSeasonSketchCount,
 	"getShowEpisodeCount":  getShowEpisodeCount,
 	"getShowSketchCount":   getShowSketchCount,
+	"safeURL":              safeURL,
+	"hasEpisode":           hasEpisode,
 }
 
 // Getting mapping of html page filename to template set for the page
@@ -185,6 +199,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	}
 
 	for _, page := range pages {
+		fmt.Println(page)
 		name := filepath.Base(page)
 
 		patterns := []string{
