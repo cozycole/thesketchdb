@@ -1,7 +1,7 @@
 {{ define "title" }}Search SketchDB{{ end }}
 
 {{ define "main" }}
-  <div data-page="search" class="w-full my-4 px-2 text-slate-950 ">
+  <main data-page="search" class="w-full max-w-screen-xl mx-auto my-4 px-2 text-slate-950 ">
     <h1 class="w-full my-3 text-2xl font-bold line-clamp-1">Search "{{ .Query }}"</h1>
     <section class="flex">
       <div id="resultsSummary" class="w-72 h-fit border border-slate-950 rounded-md">
@@ -69,5 +69,5 @@
         {{- end -}}
       </div>
     </section>
-  </div>
+  </main>
 {{ end }}

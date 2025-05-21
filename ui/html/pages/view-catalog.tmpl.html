@@ -1,32 +1,20 @@
 {{ define "title" }}Catalog{{ end }}
 
 {{ define "main" }}
-  <div data-page="catalog" class="max-w-screen-xl mx-auto flex flex-col grow w-full mb-4 px-2 text-slate-950 ">
+  <main data-page="catalog" class="max-w-screen-xl mx-auto flex flex-col grow w-full mb-4 px-2 text-slate-950 ">
     <div
       id="tabContainer"
-      class="flex relative flex-shrink min-w-0 w-fit border-b border-slate-200 py-1
-            overflow-x-auto whitespace-nowrap font-medium scrollbar-hide text-slate-900 "
+      class="inline-flex relative flex-shrink min-w-full border-b border-slate-300 py-1
+            overflow-x-auto whitespace-nowrap font-medium scrollbar-hide text-slate-900"
     >
       <button class="tab px-3 py-2 hover:text-slate-700" 
         data-tab="sketches"
         hx-get="/catalog/sketches" 
         hx-target="#catalogSection">Sketches</button>
-      <button class="tab px-3 py-2 hover:text-slate-700" 
-        data-tab="people"
-        hx-get="/catalog/people" 
-        hx-target="#catalogSection">People</button>
-      <button class="tab px-3 py-2 hover:text-slate-700" 
-        data-tab="characters"
-        hx-get="/catalog/characters" 
-        hx-target="#catalogSection">Characters</button>
-      <button class="tab px-3 py-2 hover:text-slate-700" 
-        data-tab="Creators"
-        hx-get="/catalog/creators" 
-        hx-target="#catalogSection">Creators</button>
-      <button class="tab px-3 py-2 hover:text-slate-700" 
-        data-tab="Shows"
-        hx-get="/catalog/shows" 
-        hx-target="#catalogSection">Shows</button>
+      <button class="tab px-3 py-2 hover:text-slate-700">People</button>
+      <button class="tab px-3 py-2 hover:text-slate-700">Characters</button>
+      <button class="tab px-3 py-2 hover:text-slate-700">Creators</button>
+      <button class="tab px-3 py-2 hover:text-slate-700">Shows</button>
       <div id="tabUnderline" class="absolute bottom-0 h-0.5 bg-orange-500 transition-all duration-300 ease-out"></div>
     </div>
     <section id="catalogSection" class="flex flex-col grow">
@@ -36,7 +24,8 @@
         {{ template "video-catalog" . }}
       {{ end }}
     </section>
-  </div>
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+  </main>
 
   <template id="filterTemplate">
     <div class="relative">

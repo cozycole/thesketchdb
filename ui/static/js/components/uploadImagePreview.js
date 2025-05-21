@@ -2,6 +2,8 @@ export class UploadImagePreview extends HTMLElement {
   constructor() {
     super();
     this.preview = this.querySelector('.imagePreview');
+    console.log("in constructor");
+    console.log(this);
     if (!this.preview) {
       throw Error(`No image preview div`);
     }
@@ -63,4 +65,8 @@ export class UploadImagePreview extends HTMLElement {
       }
     }
   }
+}
+
+if (!customElements.get("img-preview")) {
+  customElements.define("img-preview", UploadImagePreview);
 }

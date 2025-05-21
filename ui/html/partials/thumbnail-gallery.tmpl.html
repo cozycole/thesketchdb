@@ -1,7 +1,11 @@
 {{ define "thumbnail-gallery" }}
-  <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-2">
+  <div class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2">
     {{ range .Videos }}
-      {{ template "video-thumbnail" (dict "Video" . "ImageBaseUrl" $.ImageBaseUrl )}}
+      {{ template "video-thumbnail" (dict "Video" . "ImageBaseUrl" $.ImageBaseUrl "Type" $.Type)}}
+    {{ else }}
+     <div class="flex items-center justify-center col-span-full h-12 text-lg text-center">
+      <h1>No Sketches</h1>
+    </div>
     {{ end }}
   </div>
 {{ end }}

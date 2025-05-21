@@ -13,8 +13,9 @@ import { CollapsibleContent } from './components/collapseContent.js';
 import './components/flashMessage.js';
 
 (function() {
-  const firstDiv = document.querySelector('main > div');
+  const firstDiv = document.querySelector('main');
   const pageType = firstDiv ? firstDiv.dataset.page : 'No page attribute found!';
+  console.log(pageType)
 
   const dropdownMenuButtons = document.querySelectorAll(".dropdownBtn");
   const dropdownMenus = document.querySelectorAll(".dropdownMenu");
@@ -79,8 +80,6 @@ import './components/flashMessage.js';
       mobileSearch.classList.toggle('hidden');
     });
   });
-
-  customElements.define("collapse-content", CollapsibleContent);
 
   switch (pageType) {
     case 'home':

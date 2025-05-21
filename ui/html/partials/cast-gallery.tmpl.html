@@ -3,7 +3,7 @@
     {{ range .Video.Cast }}
       {{ if .Actor.ID }}
         <div class="relative w-full rounded-md">
-        <a href="{{ with .Character.Slug}}/character/{{ . }}{{ else }}/person/{{ .Actor.Slug }}{{ end }}">
+      <a href="{{ with .Character.Slug}}/character/{{ . }}{{ else }}/person/{{ .Actor.ID }}/{{ .Actor.Slug }}{{ end }}">
             <img
               class="rounded-md w-full"
               {{ with .ThumbnailName }}
@@ -25,7 +25,7 @@
                 {{ end }}
               </h3>
               <h4 class=" text-white hover:underline" >
-                <a href="/person/{{ .Actor.Slug }}" class="text-sm"> {{ .Actor.First }} {{ .Actor.Last }} </a>
+                <a href="/person/{{ .Actor.ID }}/{{ .Actor.Slug }}" class="text-sm"> {{ .Actor.First }} {{ .Actor.Last }} </a>
               </h4>
           </div>
         </div>

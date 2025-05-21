@@ -79,3 +79,7 @@ export class CollapsibleContent extends HTMLElement {
     this.mutationObserver = observer;
   }
 }
+
+if (!customElements.get("collapse-content")) {
+  customElements.define("collapse-content", CollapsibleContent);
+}

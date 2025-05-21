@@ -26,10 +26,10 @@ type Filter struct {
 }
 
 var sortMap = map[string]string{
-	"latest": "v.upload_date DESC, v.title ASC",
-	"oldest": "v.upload_date ASC, v.title ASC",
-	"az":     "v.title ASC",
-	"za":     "v.title DESC",
+	"latest": "upload_date DESC, video_title ASC",
+	"oldest": "upload_date ASC, video_title ASC",
+	"az":     "video_title ASC",
+	"za":     "video_title DESC",
 }
 
 func (f *Filter) Params() url.Values {
@@ -209,28 +209,27 @@ func (m *VideoModel) BatchUpdateTags(vidId int, tags *[]*Tag) error {
 	return nil
 }
 
-func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
-	query := `
-		SELECT DISTINCT 
-		v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date, 
-		c.id, c.name, c.page_url, c.slug, c.profile_img,
-		sh.id, sh.name, sh.profile_img, sh.slug%s
-		FROM video as v
-		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
-		LEFT JOIN creator as c ON vcr.creator_id = c.id
-		LEFT JOIN cast_members as cm ON v.id = cm.video_id
-		LEFT JOIN video_tags as vt ON v.id = vt.video_id
-		LEFT JOIN episode as e ON v.episode_id = e.id
-		LEFT JOIN season as se ON e.season_id = se.id
-		LEFT JOIN show as sh ON se.show_id = sh.id
-		WHERE 1=1
-	`
+type Arguements struct {
+	Args     []any
+	ArgIndex int
+	ImgField string
+}
 
-	args := []interface{}{}
-	argIndex := 1
+func determineImageField(filter *Filter) string {
+	imgField := "v.thumbnail_name"
+	// only use the cast thumbnail if searching for a specific person, if multiple
+	// are being searched, use the overall thumbnail
+	if len(filter.People) == 1 {
+		imgField = "cm.img_name"
+	}
+	return imgField
+}
 
+func determineFields(filter *Filter, args *Arguements) string {
+	rankParam := ""
 	if filter.Query != "" {
-		rankParam := fmt.Sprintf(`
+		args.ArgIndex++
+		rankParam = fmt.Sprintf(`
 			 , ts_rank(
 				setweight(to_tsvector('english', v.title), 'A') ||
 				setweight(to_tsvector('english', c.name), 'B') ||
@@ -265,12 +264,31 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 				), ' ')), 'C'),
 				to_tsquery('english', $%d)
 				) AS rank
-			`, argIndex)
-		query = fmt.Sprintf(query, rankParam)
+		`, args.ArgIndex)
+		args.Args = append(args.Args, filter.Query)
+	}
 
-		query += fmt.Sprintf(`
+	baseFields := `
+		v.id as video_id, v.title as video_title, v.video_url as video_url, 
+		v.slug as video_slug, %s as thumbnail_name, v.upload_date as upload_date, 
+		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
+		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
+		sh.profile_img as show_img, sh.slug as show_slug %s
+	`
+
+	fields := fmt.Sprintf(baseFields, args.ImgField, rankParam)
+
+	return fields
+}
+
+func determineConditions(filter *Filter, args *Arguements) string {
+	clause := ""
+
+	if filter.Query != "" {
+		args.ArgIndex++
+		clause += fmt.Sprintf(`
 			AND
-            to_tsvector(
+			to_tsvector(
 				'english',
 				COALESCE(v.title, '') || ' ' || COALESCE(c.name, '') || ' ' ||
 				COALESCE(array_to_string(ARRAY(
@@ -302,84 +320,140 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 					JOIN character as c ON cm.character_id = c.id
 					WHERE cm.video_id = v.id
 				), ' '),'')) @@ to_tsquery('english', $%d)
-		
-		`, argIndex)
-
-		args = append(args, filter.Query)
-		argIndex++
-	} else {
-		query = fmt.Sprintf(query, "")
+			`, args.ArgIndex)
+		args.Args = append(args.Args, filter.Query)
 	}
 
-	// NOTE: Creators, shows, tags filters use OR opeartions
+	// NOTE: Creators, shows and tags use OR operator
 	if len(filter.Creators) > 0 {
 		creatorPlaceholders := []string{}
 		for _, creator := range filter.Creators {
-			creatorPlaceholders = append(creatorPlaceholders, fmt.Sprintf("$%d", argIndex))
-			args = append(args, creator.ID)
-			argIndex++
+			args.ArgIndex++
+			creatorPlaceholders = append(creatorPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
+			args.Args = append(args.Args, creator.ID)
 		}
 
-		query += fmt.Sprintf(" AND c.id IN (%s)", strings.Join(creatorPlaceholders, ","))
+		clause += fmt.Sprintf(" AND c.id IN (%s)", strings.Join(creatorPlaceholders, ","))
 	}
 
 	if len(filter.Shows) > 0 {
 		showPlaceholders := []string{}
 		for _, show := range filter.Shows {
-			showPlaceholders = append(showPlaceholders, fmt.Sprintf("$%d", argIndex))
-			args = append(args, show.ID)
-			argIndex++
+			args.ArgIndex++
+			showPlaceholders = append(showPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
+			args.Args = append(args.Args, show.ID)
 		}
 
-		query += fmt.Sprintf(" AND sh.id IN (%s)", strings.Join(showPlaceholders, ","))
+		clause += fmt.Sprintf(" AND sh.id IN (%s)", strings.Join(showPlaceholders, ","))
 	}
 
 	if len(filter.Tags) > 0 {
 		tagPlaceholders := []string{}
 		for _, tag := range filter.Tags {
-			tagPlaceholders = append(tagPlaceholders, fmt.Sprintf("$%d", argIndex))
-			args = append(args, tag.ID)
-			argIndex++
+			args.ArgIndex++
+			tagPlaceholders = append(tagPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
+			args.Args = append(args.Args, tag.ID)
 		}
 
-		query += fmt.Sprintf(" AND vt.tag_id IN (%s)", strings.Join(tagPlaceholders, ","))
+		clause += fmt.Sprintf(" AND vt.tag_id IN (%s)", strings.Join(tagPlaceholders, ","))
 	}
 
 	// NOTE: People filter use AND operation
 	if len(filter.People) > 0 {
 		peoplePlaceholders := []string{}
 		for _, person := range filter.People {
-			peoplePlaceholders = append(peoplePlaceholders, fmt.Sprintf("$%d", argIndex))
-			args = append(args, person.ID)
-			argIndex++
+			args.ArgIndex++
+			peoplePlaceholders = append(peoplePlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
+			args.Args = append(args.Args, person.ID)
 		}
 
-		query += fmt.Sprintf(" AND cm.person_id IN (%s)", strings.Join(peoplePlaceholders, ","))
-		query += `
+		clause += fmt.Sprintf(" AND cm.person_id IN (%s)", strings.Join(peoplePlaceholders, ","))
+		clause += fmt.Sprintf(`
 		GROUP BY v.id, v.title, v.video_url, v.slug, 
-		         v.thumbnail_name, v.upload_date, 
+		         %s, v.upload_date, 
 		         c.id, c.name, c.page_url, c.slug, c.profile_img,
-				sh.id, sh.name, sh.profile_img, sh.slug
-		`
+				sh.id, sh.name, sh.profile_img, sh.slug`, args.ImgField)
+
+		if filter.Query != "" {
+			clause += ", rank"
+		}
+
 		if len(filter.People) > 1 {
-			query += fmt.Sprintf("HAVING COUNT(DISTINCT cm.person_id) = $%d ", argIndex)
-			args = append(args, len(filter.People))
-			argIndex++
+			args.ArgIndex++
+			clause += fmt.Sprintf(" HAVING COUNT(DISTINCT cm.person_id) = $%d ", args.ArgIndex)
+			args.Args = append(args.Args, len(filter.People))
 		}
 	}
 
-	sort := "v.upload_date ASC, v.title ASC"
+	return clause
+}
+
+func determineSort(filter *Filter, args *Arguements) string {
+	sort := "upload_date ASC, video_title ASC"
 	if val, ok := sortMap[filter.SortBy]; ok {
 		sort = val
 	}
 
-	query += fmt.Sprintf(" ORDER BY %s", sort)
-	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
-	args = append(args, filter.Limit, filter.Offset)
-	fmt.Println(query)
-	fmt.Printf("ARGS: %+v\n", args)
+	sort = fmt.Sprintf(" ORDER BY %s", sort)
+	sort += fmt.Sprintf(" LIMIT $%d OFFSET $%d", args.ArgIndex+1, args.ArgIndex+2)
+	args.ArgIndex += 2
+	args.Args = append(args.Args, filter.Limit, filter.Offset)
 
-	rows, err := m.DB.Query(context.Background(), query, args...)
+	return sort
+}
+
+func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
+	// The CTE is used due to possiblility of a single cast member playing
+	// multiple rows in a video, this can cause duplicate video results (one for
+	// each character/person pairing) so we want to limit it to one (rn = 1)
+	query := `
+		WITH video_cast AS (
+		SELECT %s
+		FROM video as v
+		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
+		LEFT JOIN creator as c ON vcr.creator_id = c.id
+		LEFT JOIN cast_members as cm ON v.id = cm.video_id
+		LEFT JOIN video_tags as vt ON v.id = vt.video_id
+		LEFT JOIN episode as e ON v.episode_id = e.id
+		LEFT JOIN season as se ON e.season_id = se.id
+		LEFT JOIN show as sh ON se.show_id = sh.id
+		WHERE 1=1
+		%s
+		),
+		ranked_videos AS (
+			SELECT *, 
+			ROW_NUMBER() OVER (PARTITION BY video_id ORDER BY video_id) AS rn	
+			FROM video_cast
+		)
+		SELECT video_id, video_title, video_url, 
+		video_slug, thumbnail_name, upload_date, 
+		creator_id, creator_name, creator_slug, 
+		creator_img, show_id, show_name,
+		show_img, show_slug %s
+		FROM ranked_videos
+		WHERE rn = 1
+		%s
+	`
+
+	args := &Arguements{ArgIndex: 0}
+
+	imgField := determineImageField(filter)
+	args.ImgField = imgField
+	rank := ""
+	if filter.Query != "" {
+		rank = ", rank"
+	}
+
+	fields := determineFields(filter, args)
+	conditionClause := determineConditions(filter, args)
+	sortClause := determineSort(filter, args)
+
+	fmt.Println("SORT: ", sortClause)
+	query = fmt.Sprintf(query, fields, conditionClause, rank, sortClause)
+	fmt.Println(query)
+	fmt.Printf("ARGS: %+v\n", args.Args)
+
+	rows, err := m.DB.Query(context.Background(), query, args.Args...)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -397,7 +471,7 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 		sh := &Show{}
 		destinations := []any{
 			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
-			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
+			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
 		}
 		var rank *float32

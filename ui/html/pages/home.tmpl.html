@@ -1,7 +1,7 @@
 {{ define "title" }}Home{{ end }}
 
 {{ define "main" }}
-  <div class="w-full" data-page="home">
+  <main class="w-full" data-page="home">
     <div
       id="heroSection"
       class="bg-slate-900"
@@ -101,5 +101,5 @@
         {{ template "person-carousel" (dict "ImageBaseUrl" $.ImageBaseUrl "People" .Home.Actors) }}
       </div>
     </div>
-  </div>
+  </main>
 {{ end }}

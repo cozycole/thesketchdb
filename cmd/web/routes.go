@@ -36,10 +36,10 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		r.Get("/search", app.search)
 		r.Get("/catalog/sketches", app.catalogView)
-		r.Get("/catalog/people", app.peopleCatalog)
-		r.Get("/catalog/characters", app.catalogView)
-		r.Get("/catalog/creators", app.catalogView)
-		r.Get("/catalog/shows", app.catalogView)
+		// r.Get("/catalog/people", app.peopleCatalog)
+		// r.Get("/catalog/characters", app.catalogView)
+		// r.Get("/catalog/creators", app.catalogView)
+		// r.Get("/catalog/shows", app.catalogView)
 
 		r.Get("/categories", app.categoriesView)
 
@@ -51,7 +51,7 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Get("/creator/{slug}", app.creatorView)
 		r.Get("/creator/search", app.creatorSearch)
 
-		r.Get("/person/{slug}", app.personView)
+		r.Get("/person/{id}/{slug}", app.personView)
 		r.Get("/person/search", app.personSearch)
 
 		r.Get("/character/search", app.characterSearch)

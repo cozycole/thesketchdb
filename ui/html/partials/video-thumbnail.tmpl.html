@@ -1,9 +1,16 @@
 {{ define "video-thumbnail"}}
+  {{ $imgSubPath := "" }}
+  {{ if eq .Type "Cast"}}
+    {{ $imgSubPath = "cast/thumbnail"}}
+  {{ else }}
+    {{ $imgSubPath = "video"}}
+  {{ end }}
+
   {{ with .Video }}
     <div class="flex-shrink-0 min-w-0">
       <a href="/video/{{ .Slug }}">
         <img
-          src="{{ $.ImageBaseUrl }}/video/{{ .ThumbnailName }}"
+          src="{{ $.ImageBaseUrl }}/{{ $imgSubPath }}/{{ .ThumbnailName }}"
           class="w-full rounded-lg"
           onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
         />

@@ -1,6 +1,6 @@
 {{ define "person-card" }}
   {{ with .Person }}
-  <a href="/person/{{ .Slug }}">
+  <a href="/person/{{ .ID }}/{{ .Slug }}">
     <div class="bg-slate-50 p-4 border-t-4 border-orange-600 rounded-lg">
       <div class="flex flex-col items-center">
         <div class="w-full flex justify-center">

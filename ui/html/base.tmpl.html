@@ -30,12 +30,10 @@
 
     <body
       hx-ext="response-targets"
-      class="min-h-screen flex flex-col bg-slate-100 min-w-80 font-sans"
+      class="min-h-screen flex flex-col bg-slate-200 min-w-80 font-sans"
     >
       {{ template "nav" . }}
-      <main class="flex flex-col grow w-full mx-auto">
-        {{ template "main" . }}
-      </main>
+      {{ template "main" . }}
       {{ template "footer" . }}
       <script src="/static/js/dist/main.js"></script>
     </body>

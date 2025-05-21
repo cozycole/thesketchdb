@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strconv"
 	"time"
 
 	"sketchdb.cozycole.net/internal/models"
@@ -12,8 +13,14 @@ import (
 )
 
 func (app *application) personView(w http.ResponseWriter, r *http.Request) {
-	slug := r.PathValue("slug")
-	person, err := app.people.GetBySlug(slug)
+	idParam := r.PathValue("id")
+	persondId, err := strconv.Atoi(idParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	person, err := app.people.GetById(persondId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -34,9 +41,12 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
+	stats, err := app.people.GetPersonStats(persondId)
+
 	data := app.newTemplateData(r)
 	data.Person = person
 	data.Videos = videos
+	data.PersonPage.Stats = stats
 
 	app.render(r, w, http.StatusOK, "view-person.tmpl.html", "base", data)
 }

@@ -192,3 +192,6 @@ export class CatalogFilter extends HTMLElement {
 
 }
 
+if (!customElements.get("catalog-filter")) {
+  customElements.define("catalog-filter", CatalogFilter);
+}

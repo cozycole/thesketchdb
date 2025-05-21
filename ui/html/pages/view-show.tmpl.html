@@ -1,7 +1,7 @@
 {{ define "title" }}{{ .Show.Name }}{{ end }}
 
 {{ define "main" }}
-  <div data-page="view-show" class="px-2 my-2 text-slate-950 bg-slate-250">
+  <main data-page="view-show" class="max-w-screen-xl mx-auto px-2 my-2 text-slate-950 bg-slate-250">
     {{ with .Show }}
       <div class="flex flex-col items-center sm:flex-row sm:items-start">
         <section
@@ -22,7 +22,6 @@
               </h3>
             {{- end -}}
           </div>
-          <h3 class="font-bold">Creators</h3>
           <div>
             <h3 class="font-bold">Seasons</h3>
             <p>{{ len .Seasons }}</p>
@@ -77,5 +76,5 @@
         </div>
       </div>
     {{ end }}
-  </div>
+  </main>
 {{ end }}

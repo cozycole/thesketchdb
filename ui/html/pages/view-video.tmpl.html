@@ -1,12 +1,12 @@
 {{ define "title" }}{{ .Video.Title }}{{ end }}
 {{ define "main" }}
-  <div data-page="view-video" class="max-w-screen-xl space-y-3 mx-auto p-3 text-slate-950">
+  <main data-page="view-video" class="max-w-screen-xl space-y-3 mx-auto p-3 text-slate-950">
   {{ with .Video }}
-    <div class="lg:flex gap-6 items-stretch">
+    <div class="lg:flex gap-3 items-stretch">
       <div class="thumbnail toggleVideo basis-auto w-fit lg:basis-[640px] md:max-w-[640px] flex-shrink">
         <button class="block h-full w-full relative shadow-lg">
           <img
-            class="rounded-lg h-full w-auto object-cover block"
+            class="rounded-lg w-auto lg:object-cover lg:h-full block"
             src="{{ $.ImageBaseUrl }}/video/large/{{ .ThumbnailName }}"
             onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
           />
@@ -178,7 +178,7 @@
           </div>
         </div>
       </youtube-embed>
-    </div>
     {{ end }}
+    </main>
   {{ end }}
 {{ end }}

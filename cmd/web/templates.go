@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"io/fs"
 	"path/filepath"
@@ -37,19 +36,26 @@ type templateData struct {
 	Flash           flashMessage
 	Forms           Forms
 	Home            HomeData
+	HtmxRequest     bool
 	ImageBaseUrl    string
 	IsAdmin         bool
 	IsEditor        bool
 	Person          *models.Person
+	PersonPage      PersonPage
 	People          []*models.Person
 	Query           string
 	SearchResults   *SearchResult
 	Season          *models.Season
 	Show            *models.Show
 	Tags            *[]*models.Tag
+	ThumbnailType   string
 	User            *models.User
 	Video           *models.Video
 	Videos          []*models.Video
+}
+
+type PersonPage struct {
+	Stats *models.PersonStats
 }
 
 func humanDate(t time.Time) string {
@@ -71,6 +77,17 @@ func getYear(t time.Time) string {
 		return ""
 	}
 	return strconv.Itoa(t.Year())
+}
+
+func getAge(birthDate time.Time) int {
+	today := time.Now()
+	age := today.Year() - birthDate.Year()
+
+	if today.YearDay() < birthDate.YearDay() {
+		age--
+	}
+
+	return age
 }
 
 func getSeasonSketchCount(season *models.Season) int {
@@ -186,6 +203,7 @@ var functions = template.FuncMap{
 	"getShowSketchCount":   getShowSketchCount,
 	"safeURL":              safeURL,
 	"hasEpisode":           hasEpisode,
+	"getAge":               getAge,
 }
 
 // Getting mapping of html page filename to template set for the page
@@ -199,7 +217,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	}
 
 	for _, page := range pages {
-		fmt.Println(page)
+		// fmt.Println(page)
 		name := filepath.Base(page)
 
 		patterns := []string{

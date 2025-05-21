@@ -16,7 +16,9 @@
         name="vidId"
         value="{{ .Video.ID }}"
       />
-      {{ template "video-form" . }}
+      <div class="fomrInputs">
+        {{ template "video-form" . }}
+      </div>
       <button
         type="submit"
         class="my-2 p-1 bg-green-700 text-gray-100 border border-gray-300 rounded-lg hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"

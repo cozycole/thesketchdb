@@ -120,8 +120,7 @@ export class FilterContent extends HTMLElement {
     if (!(clickMenu || clickButton || clickDropDown)) {
       this.mobileFilters.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
       this.mobileFilters.classList.add("opacity-0", "scale-95", "pointer-events-none");
-    }
-  }
+    } }
 }
 
 let filterFunctionMap = {
@@ -139,3 +138,6 @@ let filterFunctionMap = {
   }
 }
 
+if (!customElements.get("filter-content")) {
+  customElements.define("filter-content", FilterContent);
+}

@@ -1,19 +1,17 @@
 {{ define "video-catalog-result" }}
-  <div>
-    {{- if ne (len .SearchResults.VideoResults) 0 -}}
-      {{- template "thumbnail-gallery" (dict "ImageBaseUrl" .ImageBaseUrl "Videos" .SearchResults.VideoResults) -}}
-    {{- else -}}
+  {{- if ne (len .SearchResults.VideoResults) 0 -}}
+    {{- template "thumbnail-gallery" (dict "ImageBaseUrl" .ImageBaseUrl "Videos" .SearchResults.VideoResults "Type" .ThumbnailType) -}}
+  {{- else -}}
     <div class="text-center p-6">
       <p class="text-lg font-bold">No results found.</p>
     </div>
-    {{- end -}}
-  </div>
+  {{- end -}}
   <div class="flex justify-center gap-x-2.5 mt-auto mb-2">
         {{ range .SearchResults.Pages }}
             {{ if eq . -1 }}
-                <span class="inline-block leading-8 text-gray-500">...</span>
+                <span class="inline-block leading-8 text-slate-500">...</span>
             {{ else if eq . $.SearchResults.CurrentPage }}
-                <span class="inline-block leading-8 h-8 font-bold px-3 rounded-md bg-gray-300">{{ . }}</span>
+                <span class="inline-block leading-8 h-8 font-bold px-3 rounded-md bg-slate-300">{{ . }}</span>
             {{ else }}
                 <a 
                   class="htmxSearchPage inline-block leading-8 h-8 text-gray-600 px-3 rounded-md bg-gray-300 hover:cursor-pointer hover:bg-gray-400" 
@@ -26,4 +24,9 @@
           <span class="inline-block leading-8 h-8 font-bold px-3 rounded-md bg-gray-300">0</span>
         {{ end }}
   </div>
+  {{ if .HtmxRequest }}
+    <p id="resultCount" 
+      class="font-bold text-xl"
+      hx-swap-oob="true">{{ .SearchResults.TotalVideoCount }} Sketches</p>
+  {{ end }}
 {{ end }}

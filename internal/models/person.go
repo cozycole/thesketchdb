@@ -21,12 +21,20 @@ type Person struct {
 	Description *string
 }
 
+type PersonStats struct {
+	SketchCount    int
+	CharacterCount int
+	CreatorCount   int
+	PortrayalCount int
+}
+
 type PersonModelInterface interface {
 	GetBySlug(slug string) (*Person, error)
 	Get(filter *Filter) ([]*Person, error)
 	GetById(id int) (*Person, error)
 	GetCount(filter *Filter) (int, error)
 	GetPeople(ids *[]int) ([]*Person, error)
+	GetPersonStats(id int) (*PersonStats, error)
 	Exists(id int) (bool, error)
 	Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, string, error)
 	Search(query string) ([]*Person, error)
@@ -36,6 +44,36 @@ type PersonModelInterface interface {
 
 type PersonModel struct {
 	DB *pgxpool.Pool
+}
+
+func (m *PersonModel) GetPersonStats(id int) (*PersonStats, error) {
+	stmt := `
+		SELECT
+		  (SELECT COUNT(DISTINCT video_id)
+		   FROM cast_members
+		   WHERE person_id = $1) AS sketch_count,
+		  (SELECT COUNT(*)
+		   FROM cast_members as cm
+		   JOIN character as c ON cm.character_id = c.id
+		   WHERE c.person_id = $1) AS portrayal_count,
+		  (SELECT COUNT(DISTINCT c.creator_id)
+		   FROM cast_members as cm
+		   JOIN video as v ON v.id = cm.video_id
+		   JOIN  video_creator_rel as c ON v.id = c.video_id
+		   WHERE cm.person_id = $1) AS creator_count,
+		  (SELECT COUNT(DISTINCT cm.character_id)
+		   FROM cast_members cm
+		   WHERE cm.person_id = $1 AND cm.character_id IS NOT NULL) AS character_count;
+	`
+
+	stats := &PersonStats{}
+	row := m.DB.QueryRow(context.Background(), stmt, id)
+	err := row.Scan(&stats.SketchCount, &stats.PortrayalCount, &stats.CreatorCount, &stats.CharacterCount)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
 }
 
 func (m *PersonModel) Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, string, error) {
