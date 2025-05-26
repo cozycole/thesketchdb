@@ -54,6 +54,7 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Get("/person/{id}/{slug}", app.personView)
 		r.Get("/person/search", app.personSearch)
 
+		r.Get("/character/{id}/{slug}", app.characterView)
 		r.Get("/character/search", app.characterSearch)
 
 		r.Get("/show/{id}/{slug}", app.viewShow)

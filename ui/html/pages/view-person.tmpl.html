@@ -1,7 +1,7 @@
 {{ define "title" }}{{ .Person.First }} {{ .Person.Last }}{{ end }}
 
 {{ define "main" }}
-  <main data-page="view-person" class="max-w-screen-xl mx-auto p-3 space-y-3 text-slate-950">
+  <main data-page="view-person" class="max-w-screen-xl mx-auto w-full p-3 space-y-3 text-slate-950">
     <div class="w-full flex flex-col md:flex-row gap-3">
       {{ with .Person }}
         <section class="md:w-64 shrink-0 h-fit p-6 flex flex-col items-center md:items-left 
@@ -47,7 +47,7 @@
       <div id="contentSections" class="flex-1 min-w-0">
         <section class="w-full bg-white rounded-lg p-4">
           <collapse-content>
-            <header class="flex items-center justify-between">
+            <header class="w-full flex items-center justify-between">
               <h2 class="text-xl font-bold hover:underline">
                 <a href="/catalog/sketches?person={{ .Person.ID }}">Popular Sketches</a>
               </h2>
@@ -57,7 +57,7 @@
                 </svg>
               </button>
             </header>
-            <div class="content overflow-hidden transition-all duration-500 ease-in-out">
+            <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out">
               <div class="mt-4">
                 {{ template "thumbnail-gallery" (dict "Videos" .Videos "ImageBaseUrl" $.ImageBaseUrl "Type" "Cast") }}
               </div>

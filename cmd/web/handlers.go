@@ -88,7 +88,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	people, err := app.people.GetPeople(&[]int{1, 2, 3, 4, 5, 6, 7, 8})
+	people, err := app.people.GetPeople([]int{1, 2, 3, 4, 5, 6, 7, 8})
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -173,8 +173,25 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 
 	var peopleFilter []*models.Person
 	if len(personIds) > 0 {
-		peopleFilter, err = app.people.GetPeople(&personIds)
+		peopleFilter, err = app.people.GetPeople(personIds)
 	}
+
+	characterIdParams := r.URL.Query()["character"]
+
+	var characterIds []int
+	for _, idStr := range characterIdParams {
+		id, err := strconv.Atoi(idStr)
+		if nil == err && id > 0 {
+			characterIds = append(characterIds, id)
+		}
+	}
+
+	var characterFilter []*models.Character
+	if len(characterIds) > 0 {
+		characterFilter, err = app.characters.GetCharacters(characterIds)
+	}
+
+	app.infoLog.Printf("%+v\n", characterIds)
 
 	creatorIdParams := r.URL.Query()["creator"]
 
@@ -210,13 +227,14 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	limit := app.settings.pageSize
 	offset := (currentPage - 1) * limit
 	filter := &models.Filter{
-		Query:    filterQuery,
-		Creators: creatorFilter,
-		People:   peopleFilter,
-		Tags:     tagFilter,
-		SortBy:   sort,
-		Limit:    limit,
-		Offset:   offset,
+		Query:      filterQuery,
+		Characters: characterFilter,
+		Creators:   creatorFilter,
+		People:     peopleFilter,
+		Tags:       tagFilter,
+		SortBy:     sort,
+		Limit:      limit,
+		Offset:     offset,
 	}
 
 	results, err := app.getCatalogResults(currentPage, "video", filter)
@@ -239,7 +257,7 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	data.SearchResults.Query = url.QueryEscape(query)
 	data.Query = query
 
-	if len(peopleFilter) == 1 {
+	if len(peopleFilter) == 1 || len(characterFilter) == 1 {
 		data.ThumbnailType = "Cast"
 	}
 

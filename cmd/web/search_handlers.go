@@ -110,7 +110,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 
 	if q != "" {
 		q = strings.Replace(q, " ", "", -1)
-		dbResults, err := app.characters.Search(q)
+		characters, err := app.characters.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)
@@ -118,13 +118,18 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
-		if dbResults != nil {
+		if characters != nil {
 			res := []result{}
-			for _, row := range dbResults {
+			for _, c := range characters {
 				r := result{}
 				r.Type = "character"
-				r.Text = *row.Name
-				r.ID = *row.ID
+				r.Text = *c.Name
+				r.ID = *c.ID
+				if c.Image != nil {
+					r.Image = *c.Image
+				} else {
+					r.Image = "missing-profile.jpg"
+				}
 				res = append(res, r)
 			}
 

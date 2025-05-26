@@ -1,35 +1,38 @@
 {{ define "cast-gallery"}}
   <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
     {{ range .Video.Cast }}
-      {{ if .Actor.ID }}
-        <div class="relative w-full rounded-md">
-      <a href="{{ with .Character.Slug}}/character/{{ . }}{{ else }}/person/{{ .Actor.ID }}/{{ .Actor.Slug }}{{ end }}">
-            <img
-              class="rounded-md w-full"
-              {{ with .ThumbnailName }}
-                src="{{ $.ImageBaseUrl }}/cast/profile/{{ . }}"
+      <div class="relative w-full rounded-md">
+        <a
+        {{ with .Character }}
+          href="/character/{{ .ID }}/{{ .Slug }}"
+        {{ else with .Actor }}
+         href="/person/{{ .ID }}/{{ .Slug }}"
+        {{ end }}>
+          <img
+            class="rounded-md w-full"
+            {{ with .ThumbnailName }}
+              src="{{ $.ImageBaseUrl }}/cast/profile/{{ . }}"
+            {{ else }}
+              src="{{ $.ImageBaseUrl }}/person/{{ .Actor.ProfileImg }}"
+            {{ end }}
+          />
+        </a>
+          <div class="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black bg-opacity-50 rounded-b-md">
+            <h3 class="block text-nowrap overflow-hidden text-ellipsis text-white">
+              {{ $characterName := .CharacterName}}
+              {{ with .Character }}
+                <a class="hover:underline" href="/character/{{ .ID }}/{{ .Slug }}">
+                  {{ $characterName }}
+                </a> 
               {{ else }}
-                src="{{ $.ImageBaseUrl }}/person/{{ .Actor.ProfileImg }}"
+                  {{ $characterName }}
               {{ end }}
-            />
-          </a>
-            <div class="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black bg-opacity-50 rounded-b-md">
-              <h3 class="block text-nowrap overflow-hidden text-ellipsis text-white">
-                {{ $characterName := .CharacterName}}
-                {{ with .Character.Slug}}
-                  <a class="hover:underline" href="/character/{{ . }}">
-                    {{ $characterName }}
-                  </a> 
-                {{ else }}
-                    {{ $characterName }}
-                {{ end }}
-              </h3>
-              <h4 class=" text-white hover:underline" >
-                <a href="/person/{{ .Actor.ID }}/{{ .Actor.Slug }}" class="text-sm"> {{ .Actor.First }} {{ .Actor.Last }} </a>
-              </h4>
-          </div>
+            </h3>
+            <h4 class=" text-white hover:underline" >
+              <a href="/person/{{ .Actor.ID }}/{{ .Actor.Slug }}" class="text-sm"> {{ .Actor.First }} {{ .Actor.Last }} </a>
+            </h4>
         </div>
-      {{ end }}
+      </div>
     {{ end }}
   </div>
 {{ end }}

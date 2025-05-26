@@ -15,14 +15,15 @@ import (
 )
 
 type Filter struct {
-	Query    string
-	People   []*Person
-	Creators []*Creator
-	Shows    []*Show
-	Tags     []*Tag
-	SortBy   string
-	Limit    int
-	Offset   int
+	Characters []*Character
+	Creators   []*Creator
+	Limit      int
+	Offset     int
+	People     []*Person
+	Query      string
+	Shows      []*Show
+	SortBy     string
+	Tags       []*Tag
 }
 
 var sortMap = map[string]string{
@@ -58,6 +59,12 @@ func (f *Filter) Params() url.Values {
 	for _, p := range f.Shows {
 		if p.ID != nil {
 			params.Add("show", strconv.Itoa(*p.ID))
+		}
+	}
+
+	for _, p := range f.Characters {
+		if p.ID != nil {
+			params.Add("character", strconv.Itoa(*p.ID))
 		}
 	}
 
@@ -219,7 +226,7 @@ func determineImageField(filter *Filter) string {
 	imgField := "v.thumbnail_name"
 	// only use the cast thumbnail if searching for a specific person, if multiple
 	// are being searched, use the overall thumbnail
-	if len(filter.People) == 1 {
+	if len(filter.People) == 1 || len(filter.Characters) == 1 {
 		imgField = "cm.img_name"
 	}
 	return imgField
@@ -336,6 +343,17 @@ func determineConditions(filter *Filter, args *Arguements) string {
 		clause += fmt.Sprintf(" AND c.id IN (%s)", strings.Join(creatorPlaceholders, ","))
 	}
 
+	if len(filter.Characters) > 0 {
+		characterPlaceholders := []string{}
+		for _, character := range filter.Characters {
+			args.ArgIndex++
+			characterPlaceholders = append(characterPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
+			args.Args = append(args.Args, character.ID)
+		}
+
+		clause += fmt.Sprintf(" AND cm.character_id IN (%s)", strings.Join(characterPlaceholders, ","))
+	}
+
 	if len(filter.Shows) > 0 {
 		showPlaceholders := []string{}
 		for _, show := range filter.Shows {
@@ -369,7 +387,7 @@ func determineConditions(filter *Filter, args *Arguements) string {
 
 		clause += fmt.Sprintf(" AND cm.person_id IN (%s)", strings.Join(peoplePlaceholders, ","))
 		clause += fmt.Sprintf(`
-		GROUP BY v.id, v.title, v.video_url, v.slug, 
+		GROUP BY v.id, v.title, v.video_url, v.slug,
 		         %s, v.upload_date, 
 		         c.id, c.name, c.page_url, c.slug, c.profile_img,
 				sh.id, sh.name, sh.profile_img, sh.slug`, args.ImgField)
@@ -546,8 +564,13 @@ func (m *VideoModel) GetById(id int) (*Video, error) {
 			return nil, err
 		}
 		if cm.ID != nil {
-			cm.Actor = p
-			cm.Character = ch
+			if p.ID != nil {
+				cm.Actor = p
+			}
+
+			if ch.ID != nil {
+				cm.Character = ch
+			}
 			members = append(members, cm)
 		}
 	}
@@ -578,119 +601,29 @@ func (m *VideoModel) GetCount(filter *Filter) (int, error) {
 	query := `
 		SELECT COUNT(*)
 		FROM (
-			SELECT DISTINCT v.id, v.title, v.video_url, v.slug, 
-			v.thumbnail_name, v.upload_date, c.id, c.name, c.page_url, 
-			c.slug, c.profile_img
+			SELECT DISTINCT %s
 			FROM video as v
 			LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
 			LEFT JOIN creator as c ON vcr.creator_id = c.id
 			LEFT JOIN cast_members as cm ON v.id = cm.video_id
 			LEFT JOIN video_tags as vt ON v.id = vt.video_id
+			LEFT JOIN episode as e ON v.episode_id = e.id
+			LEFT JOIN season as se ON e.season_id = se.id
+			LEFT JOIN show as sh ON se.show_id = sh.id
 			WHERE 1=1
+			%s
+		) as grouped_content
 	`
 
-	args := []interface{}{}
-	argIndex := 1
-
-	if len(filter.Creators) > 0 {
-		creatorPlaceholders := []string{}
-		for _, creator := range filter.Creators {
-			creatorPlaceholders = append(creatorPlaceholders, fmt.Sprintf("$%d", argIndex))
-			args = append(args, creator.ID)
-			argIndex++
-		}
-
-		query += fmt.Sprintf(" AND c.id IN (%s)", strings.Join(creatorPlaceholders, ","))
-	}
-
-	if len(filter.Shows) > 0 {
-		showPlaceholders := []string{}
-		for _, show := range filter.Shows {
-			showPlaceholders = append(showPlaceholders, fmt.Sprintf("$%d", argIndex))
-			args = append(args, show.ID)
-			argIndex++
-		}
-
-		query += fmt.Sprintf(" AND sh.id IN (%s)", strings.Join(showPlaceholders, ","))
-	}
-
-	if len(filter.Tags) > 0 {
-		tagPlaceholders := []string{}
-		for _, tag := range filter.Tags {
-			tagPlaceholders = append(tagPlaceholders, fmt.Sprintf("$%d", argIndex))
-			args = append(args, tag.ID)
-			argIndex++
-		}
-
-		query += fmt.Sprintf(" AND vt.tag_id IN (%s)", strings.Join(tagPlaceholders, ","))
-	}
-
-	if filter.Query != "" {
-		query += fmt.Sprintf(`
-			AND
-            to_tsvector(
-				'english',
-				COALESCE(v.title, '') || ' ' || COALESCE(c.name, '') || ' ' ||
-				COALESCE(array_to_string(ARRAY(
-					SELECT a.first
-					FROM cast_members AS cm 
-					JOIN person AS a ON cm.person_id = a.id 
-					WHERE cm.video_id = v.id
-				), ' '),'') || ' ' ||
-				COALESCE(array_to_string(ARRAY(
-					SELECT a.last
-					FROM cast_members AS cm 
-					JOIN person AS a ON cm.person_id = a.id 
-					WHERE cm.video_id = v.id
-				), ' '),'') || ' ' ||
-				COALESCE(array_to_string(ARRAY(
-					SELECT t.name 
-					FROM video_tags AS vt 
-					JOIN tags AS t ON vt.tag_id = t.id 
-					WHERE vt.video_id = v.id
-				), ' '),'') || ' ' ||
-				COALESCE(array_to_string(ARRAY(
-					SELECT cm.character_name
-					FROM cast_members AS cm 
-					WHERE cm.video_id = v.id
-				), ' '),'') || ' ' ||
-				COALESCE(array_to_string(ARRAY(
-					SELECT c.name
-					FROM cast_members AS cm 
-					JOIN character as c ON cm.character_id = c.id
-					WHERE cm.video_id = v.id
-				), ' '),'')) @@ to_tsquery('english', $%d)
-		`, argIndex)
-
-		args = append(args, filter.Query)
-		argIndex++
-	}
-
-	if len(filter.People) > 0 {
-		peoplePlaceholders := []string{}
-		for _, person := range filter.People {
-			peoplePlaceholders = append(peoplePlaceholders, fmt.Sprintf("$%d", argIndex))
-			args = append(args, person.ID)
-			argIndex++
-		}
-
-		query += fmt.Sprintf(" AND cm.person_id IN (%s)", strings.Join(peoplePlaceholders, ","))
-		query += `
-		GROUP BY v.id, v.title, v.video_url, v.slug, 
-		         v.thumbnail_name, v.upload_date, 
-		         c.id, c.name, c.page_url, c.slug, c.profile_img
-		`
-		if len(filter.People) > 1 {
-			query += fmt.Sprintf("HAVING COUNT(DISTINCT cm.person_id) = $%d ", argIndex)
-			args = append(args, len(filter.People))
-			argIndex++
-		}
-	}
-
-	query += " ) as grouped_count"
+	args := &Arguements{ArgIndex: 0}
+	args.ImgField = "v.thumbnail_name"
+	fields := determineFields(filter, args)
+	conditionClause := determineConditions(filter, args)
+	query = fmt.Sprintf(query, fields, conditionClause)
+	fmt.Println(query)
 
 	var count int
-	err := m.DB.QueryRow(context.Background(), query, args...).Scan(&count)
+	err := m.DB.QueryRow(context.Background(), query, args.Args...).Scan(&count)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

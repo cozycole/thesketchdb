@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,6 +14,7 @@ type Character struct {
 	ID          *int
 	Slug        *string
 	Name        *string
+	Type        *string
 	Image       *string
 	Description *string
 	Portrayal   *Person
@@ -21,6 +23,8 @@ type Character struct {
 type CharacterModelInterface interface {
 	Exists(id int) (bool, error)
 	Get(filter *Filter) ([]*Character, error)
+	GetById(id int) (*Character, error)
+	GetCharacters(ids []int) ([]*Character, error)
 	GetCount(filter *Filter) (int, error)
 	Search(search string) ([]*Character, error)
 	SearchCount(query string) (int, error)
@@ -99,6 +103,79 @@ func (m *CharacterModel) Get(filter *Filter) ([]*Character, error) {
 	}
 
 	return characters, nil
+}
+
+func (m *CharacterModel) GetCharacters(ids []int) ([]*Character, error) {
+	if len(ids) < 1 {
+		return nil, nil
+	}
+
+	stmt := `SELECT id, slug, name, img_name 
+			FROM character
+			WHERE id IN (%s)`
+
+	args := []interface{}{}
+	queryPlaceholders := []string{}
+	for i, id := range ids {
+		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
+		args = append(args, id)
+	}
+
+	stmt = fmt.Sprintf(stmt, strings.Join(queryPlaceholders, ","))
+	rows, err := m.DB.Query(context.Background(), stmt, args...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	var characters []*Character
+	for rows.Next() {
+		c := Character{}
+		err := rows.Scan(&c.ID, &c.Slug, &c.Name, &c.Image)
+		if err != nil {
+			return nil, err
+		}
+		characters = append(characters, &c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return characters, nil
+}
+
+func (m *CharacterModel) GetById(id int) (*Character, error) {
+	stmt := `SELECT c.id, c.slug, c.name, c.img_name,
+			p.id, p.slug, p.first, p.last
+			FROM character AS c
+			LEFT JOIN person AS p ON c.person_id = p.id
+			WHERE c.id = $1`
+
+	row := m.DB.QueryRow(context.Background(), stmt, id)
+
+	c := &Character{}
+	p := &Person{}
+
+	err := row.Scan(&c.ID, &c.Slug, &c.Name, &c.Image,
+		&p.ID, &p.Slug, &p.First, &p.Last)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	if p.ID != nil {
+		c.Portrayal = p
+	}
+
+	return c, nil
 }
 
 func (m *CharacterModel) GetCount(filter *Filter) (int, error) {

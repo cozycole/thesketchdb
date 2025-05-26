@@ -21,12 +21,6 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cast, err := app.cast.GetCastMembers(*video.ID)
-	if err != nil && !errors.Is(err, models.ErrNoRecord) {
-		app.serverError(r, w, err)
-		return
-	}
-
 	tags, err := app.tags.GetByVideo(*video.ID)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
@@ -40,8 +34,6 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
-
-	video.Cast = cast
 
 	user, ok := r.Context().Value(userContextKey).(*models.User)
 	if ok {

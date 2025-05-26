@@ -38,6 +38,23 @@
     </catalog-filter>
   </div>
   <div>
+    <h3 class="font-bold p-1">Character</h3>
+    <catalog-filter
+      id="character-filter"
+      data-type="character"
+      data-url="/character/search"
+      data-placeholder="Enter characters's name"
+      data-selected='[
+        {{- range $i, $c := .SearchResults.Filter.Characters -}}
+          {{- if ne $i 0 -}},{{- end -}}
+          {"id": "{{ $c.ID }}",
+          "name": "{{ $c.Name }}",
+          "image": "{{ $.ImageBaseUrl }}/character/{{ $c.Image }}"}
+        {{- end -}}
+    ]'>
+    </catalog-filter>
+  </div>
+  <div>
     <h3 class="font-bold p-1">Creator</h3>
     <catalog-filter
       id="creator-filter"

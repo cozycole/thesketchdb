@@ -133,6 +133,9 @@ let filterFunctionMap = {
   "creator" : (f) => {
     return f.getFilterIds();
   },
+  "character" : (f) => {
+    return f.getFilterIds();
+  },
   "tag" : (f) => {
     return f.getFilterIds();
   }

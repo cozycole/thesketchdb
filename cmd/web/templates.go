@@ -28,6 +28,7 @@ type templateData struct {
 	Cast            []*models.CastMember
 	CastMember      *models.CastMember
 	CatalogType     string
+	CharacterPage   CharacterPage
 	Creator         *models.Creator
 	CurrentYear     int
 	DropdownResults dropdownSearchResults
@@ -56,6 +57,11 @@ type templateData struct {
 
 type PersonPage struct {
 	Stats *models.PersonStats
+}
+
+type CharacterPage struct {
+	Character *models.Character
+	Popular   []*models.Video
 }
 
 func humanDate(t time.Time) string {

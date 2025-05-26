@@ -33,7 +33,7 @@ type PersonModelInterface interface {
 	Get(filter *Filter) ([]*Person, error)
 	GetById(id int) (*Person, error)
 	GetCount(filter *Filter) (int, error)
-	GetPeople(ids *[]int) ([]*Person, error)
+	GetPeople(ids []int) ([]*Person, error)
 	GetPersonStats(id int) (*PersonStats, error)
 	Exists(id int) (bool, error)
 	Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, string, error)
@@ -219,8 +219,8 @@ func (m *PersonModel) GetById(id int) (*Person, error) {
 	return p, nil
 }
 
-func (m *PersonModel) GetPeople(ids *[]int) ([]*Person, error) {
-	if ids != nil && len(*ids) < 1 {
+func (m *PersonModel) GetPeople(ids []int) ([]*Person, error) {
+	if len(ids) < 1 {
 		return nil, nil
 	}
 
@@ -230,7 +230,7 @@ func (m *PersonModel) GetPeople(ids *[]int) ([]*Person, error) {
 
 	args := []interface{}{}
 	queryPlaceholders := []string{}
-	for i, id := range *ids {
+	for i, id := range ids {
 		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
 		args = append(args, id)
 	}
