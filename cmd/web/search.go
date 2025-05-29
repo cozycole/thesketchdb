@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"sketchdb.cozycole.net/internal/models"
 )
@@ -22,6 +23,8 @@ type SearchResult struct {
 	TotalCreatorCount   int
 	CharacterResults    []*models.Character
 	TotalCharacterCount int
+	ShowResults         []*models.Show
+	TotalShowCount      int
 	Filter              *models.Filter
 	NoResults           bool
 	PageURLParams       string
@@ -33,42 +36,52 @@ func (app *application) getSearchResults(filter *models.Filter) (*SearchResult, 
 
 	videos, err := app.videos.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
-		return nil, err
+		return nil, fmt.Errorf("search video error: %s", err)
 	}
 
 	videoCount, err := app.videos.GetCount(filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("search video count error: %s", err)
 	}
 
 	people, err := app.people.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
-		return nil, err
+		return nil, fmt.Errorf("search person error: %s", err)
 	}
 
 	peopleCount, err := app.people.GetCount(filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("search person count error: %s", err)
 	}
 
 	creators, err := app.creators.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
-		return nil, err
+		return nil, fmt.Errorf("search creator error: %s", err)
 	}
 
 	creatorCount, err := app.creators.GetCount(filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("search creator count error: %s", err)
 	}
 
 	characters, err := app.characters.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
-		return nil, err
+		return nil, fmt.Errorf("search character error: %s", err)
 	}
 
 	characterCount, err := app.characters.GetCount(filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("search character count error: %s", err)
+	}
+
+	shows, err := app.shows.Get(filter)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		return nil, fmt.Errorf("search show error: %s", err)
+	}
+
+	showCount, err := app.shows.GetCount(filter)
+	if err != nil {
+		return nil, fmt.Errorf("search show count error: %s", err)
 	}
 
 	noResults := peopleCount == 0 &&
@@ -85,6 +98,8 @@ func (app *application) getSearchResults(filter *models.Filter) (*SearchResult, 
 		TotalCreatorCount:   creatorCount,
 		CharacterResults:    characters,
 		TotalCharacterCount: characterCount,
+		ShowResults:         shows,
+		TotalShowCount:      showCount,
 		NoResults:           noResults,
 	}, nil
 }

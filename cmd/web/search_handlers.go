@@ -19,8 +19,9 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 
 		filter := &models.Filter{
 			Query:  filterQuery,
-			Limit:  8,
+			Limit:  12,
 			Offset: 0,
+			SortBy: "latest",
 		}
 
 		results, err := app.getSearchResults(filter)
@@ -36,6 +37,8 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 	} else {
 		data.SearchResults = &SearchResult{}
 	}
+
+	app.infoLog.Printf("SHOWS: %+v\n", data.SearchResults.ShowResults)
 
 	app.render(r, w, http.StatusOK, "search.tmpl.html", "base", data)
 }

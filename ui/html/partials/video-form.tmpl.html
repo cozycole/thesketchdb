@@ -9,7 +9,7 @@
         type="text"
         name="title"
         value="{{ with .Forms.Video.Title }}{{ . }}{{ else with .Video.Title }}{{ . }}{{ end }}"
-        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
       />
     </div>
     <div>
@@ -20,8 +20,8 @@
       <input
         type="text"
         name="url"
-      value="{{with .Forms.Video.URL }}{{ . }}{{ else with .Video.URL }}{{ . }}{{ end }}"
-        class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        value="{{with .Forms.Video.URL }}{{ . }}{{ else with .Video.URL }}{{ . }}{{ end }}"
+        class="w-3/4 p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
       />
     </div>
     {{ if .Video.Slug }}
@@ -34,7 +34,7 @@
           type="text"
           name="slug"
           value="{{with .Forms.Video.Slug }}{{ . }}{{ else with .Video.Slug }}{{ . }}{{ end }}"
-          class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+          class="w-3/4 p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
         />
       </div>
     {{ end }}
@@ -47,7 +47,7 @@
         type="date"
         name="uploadDate"
         value="{{with .Forms.Video.UploadDate }}{{ . }}{{ else with .Video.UploadDate }}{{ formDate . }}{{ end }}"
-        class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
+        class="mt-3 p-1 border border-slate-300 rounded-lg bg-slate-50"
       />
     </div>
     <div>
@@ -58,12 +58,12 @@
       {{- $selection := "" -}}
       {{- with .Forms.Video.Rating -}}
         {{ $selection = . }}
-      {{- else with .Video -}}
-        {{ $selection = .Rating }}
+      {{- else with .Video.Rating -}}
+        {{ $selection = derefString . }}
       {{- end }}
       <select
         name="rating"
-        class="mt-3 p-1 border border-gray-300 rounded-lg bg-gray-50"
+        class="mt-3 p-1 border border-slate-300 rounded-lg bg-slate-50"
       >
         <option value=""></option>
         <option value="PG" {{ if eq $selection "PG" }}selected{{ end }}>PG</option>
@@ -72,27 +72,33 @@
       </select>
     </div>
     <div>
-      {{ with .Forms.Video.FieldErrors.thumbnail }}
+      {{- with .Forms.Video.FieldErrors.thumbnail -}}
         <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
+      {{- end -}}
       <h3>Video Thumbnail</h3>
-      {{ with .Video.ThumbnailName }}
-        <img 
-          src="{{$.ImageBaseUrl}}/video/{{ . }}"
-          class="w-72"/>
-      {{ end }}
-      <label
-        id="vidThumbPrev"
-        class="inline-block cursor-pointer my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-      >
-        Upload
-        <input
-          type="file"
-          name="thumbnail"
-          accept="image/*"
-          class="hidden"
-        />
-      </label>
+      <img-preview>
+        <label
+          class="inline-block cursor-pointer my-2 p-2 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        >
+          Upload Thumbnail
+          <input
+            type="file"
+            name="thumbnail"
+            accept="image/*"
+            class="hidden"
+          />
+        </label>
+        <button type="button" class="remove ml-2 hover:bg-slate-300">
+          <img src="/static/img/close.svg"/>
+        </button>
+        <div class="imagePreview">
+          {{ with .Video.ThumbnailName }}
+            <img 
+              src="{{$.ImageBaseUrl}}/video/{{ . }}"
+              class="max-w-72"/>
+          {{ end }}
+        </div>
+      </img-preview>
     </div>
     <div>
       <form-search>
@@ -110,7 +116,7 @@
             type="search"
             name="creatorInput"
             value="{{ with .Forms.Video.CreatorInput }}{{ . }}{{ else with .Video.Creator }}{{ .Name }}{{ end }}"
-            class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
             placeholder="Enter creator's name"
             hx-get="/creator/search"
             hx-params="query"
@@ -118,7 +124,7 @@
             hx-target="next"
             hx-swap="innerHTML"
           />
-          <ul class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-gray-300 rounded shadow-lg z-10 empty:hidden"></ul>
+          <ul class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-slate-300 rounded shadow-lg z-10 empty:hidden"></ul>
         </div>
       </form-search>
 

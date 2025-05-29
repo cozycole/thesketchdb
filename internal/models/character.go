@@ -38,7 +38,7 @@ type CharacterModel struct {
 func (m *CharacterModel) Get(filter *Filter) ([]*Character, error) {
 
 	query := `SELECT c.id, c.slug, c.name, c.img_name,
-			p.id, p.slug, p.first, p.last, p.profile_img, p.birthdate%s
+			p.id, p.slug, p.first, p.last, p.profile_img %s
 			FROM character as c
 			LEFT JOIN person as p ON c.person_id = p.id
 			WHERE 1=1
@@ -82,8 +82,8 @@ func (m *CharacterModel) Get(filter *Filter) ([]*Character, error) {
 		var c Character
 		var p Person
 		destinations := []any{
-			&c.ID, &c.Slug, &c.Name, &c.Image, &p.ID, &p.First,
-			&p.Last, &p.ProfileImg, &p.BirthDate, &p.Slug,
+			&c.ID, &c.Slug, &c.Name, &c.Image,
+			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 		}
 
 		var rank *float32

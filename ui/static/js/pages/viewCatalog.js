@@ -56,7 +56,7 @@ function updateUnderline(tab) {
 function addPaginationListener() {
   document.querySelectorAll('.htmxSearchPage').forEach(e => {
     e.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 500);
     });
   });
 }

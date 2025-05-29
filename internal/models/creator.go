@@ -163,7 +163,6 @@ func (m *CreatorModel) GetCount(filter *Filter) (int, error) {
 	}
 
 	return count, nil
-
 }
 
 func (m *CreatorModel) GetCreators(ids *[]int) ([]*Creator, error) {

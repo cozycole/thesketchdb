@@ -64,6 +64,7 @@ type ShowModelInterface interface {
 	Get(filter *Filter) ([]*Show, error)
 	GetById(id int) (*Show, error)
 	GetBySlug(slug string) (*Show, error)
+	GetCount(filter *Filter) (int, error)
 	GetEpisode(episodeId int) (*Episode, error)
 	GetSeason(seasonId int) (*Season, error)
 	GetShowCast(id int) ([]*Person, error)
@@ -246,11 +247,100 @@ func (m *ShowModel) DeleteEpisode(episodeId int) error {
 }
 
 func (m *ShowModel) Get(filter *Filter) ([]*Show, error) {
-	// stmt := `
-	// 	SELECT s.id, s.name, s.profile_img, s.slug,
-	// `
-	return nil, nil
+	query := `
+		SELECT s.id, s.slug, s.name, s.profile_img %s
+		FROM show as s
+		WHERE 1=1
+	`
 
+	args := []any{}
+	argIndex := 1
+
+	if filter.Query != "" {
+		rankParam := fmt.Sprintf(`
+		, ts_rank(
+			setweight(to_tsvector('english', s.name), 'A'),
+			to_tsquery('english', $%d)
+		) AS rank
+		`, argIndex)
+
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`AND
+            to_tsvector('english', s.name) @@ to_tsquery('english', $%d)
+		`, argIndex)
+
+		args = append(args, filter.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var shows []*Show
+	for rows.Next() {
+		var s Show
+		destinations := []any{
+			&s.ID, &s.Slug, &s.Name, &s.ProfileImg,
+		}
+
+		var rank *float32
+		if filter.Query != "" {
+			destinations = append(destinations, &rank)
+		}
+		err := rows.Scan(destinations...)
+		if err != nil {
+			return nil, err
+		}
+
+		shows = append(shows, &s)
+	}
+
+	return shows, nil
+}
+
+func (m *ShowModel) GetCount(filter *Filter) (int, error) {
+	query := `
+			SELECT COUNT(*)
+			FROM (
+				SELECT DISTINCT s.id, s.slug, s.name, s.profile_img
+				FROM show as s
+				WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+
+	if filter.Query != "" {
+
+		query += fmt.Sprintf(`AND
+            to_tsvector('english', s.name) @@ to_tsquery('english', $%d)
+		`, argIndex)
+
+		args = append(args, filter.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	query += " ) as grouped_count"
+
+	var count int
+	err := m.DB.QueryRow(context.Background(), query, args...).Scan(&count)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+
+	return count, nil
 }
 
 func (m *ShowModel) GetById(id int) (*Show, error) {
