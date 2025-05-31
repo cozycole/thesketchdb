@@ -82,9 +82,11 @@ func (m *CategoryModel) Get(id int) (*Category, error) {
 
 func (m *CategoryModel) GetAll() ([]*Category, error) {
 	stmt := `
-			SELECT DISTINCT c.id, c.name, t.id, t.name
+			SELECT DISTINCT c.id, c.name, t.id, t.name, count(vt.tag_id) as count
 			FROM categories as c
 			LEFT JOIN tags as t ON c.id = t.category_id
+			LEFT JOIN video_tags as vt ON t.id = vt.tag_id
+			GROUP BY c.id, c.name, t.id, t.name
 			ORDER BY c.name DESC
     `
 	rows, err := m.DB.Query(context.Background(), stmt)
@@ -97,7 +99,7 @@ func (m *CategoryModel) GetAll() ([]*Category, error) {
 	for rows.Next() {
 		var c Category
 		var t Tag
-		if err := rows.Scan(&c.ID, &c.Name, &t.ID, &t.Name); err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &t.ID, &t.Name, &t.Count); err != nil {
 			return nil, err
 		}
 

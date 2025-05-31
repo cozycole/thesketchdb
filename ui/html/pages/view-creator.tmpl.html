@@ -1,58 +1,42 @@
 {{ define "title" }}{{ .Creator.Name }}{{ end }}
 {{ define "main" }}
-  {{ with .Creator }}
-    <div class="my-3">
-      <h1 class="text-2xl font-bold my-3">{{ .Name }}</h1>
-      <div class="flex my-3">
-        <a href="{{ .URL }}">
+  <main data-page="view-creator" class="max-w-screen-xl w-full mx-auto p-3 space-y-3 text-slate-950">
+    <div class="w-full flex flex-col md:flex-row gap-3">
+      {{ with .Creator }}
+        <section class="md:w-64 shrink-0 h-fit p-6 flex flex-col items-center md:items-left 
+              gap-6 bg-white rounded-lg">
           <img
             src="{{ $.ImageBaseUrl }}/creator/{{ .ProfileImage }}"
-            class="rounded-full inline-block w-8"
-            alt="profile-img"
+            class="w-52 rounded-full"
+            onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
           />
-        </a>
-      </div>
-      <div class="metadata rounded-md bg-slate-300">
-        <time>Established: {{ humanDate .EstablishedDate }}</time>
+          <div class="text-center space-y-1">
+            <h1 class="text-2xl font-medium">{{ .Name }}</h1>
+          </div>
+          <time class="block">Established: {{ humanDate .EstablishedDate }}</time>
+        </section>
+      {{ end }}
+      <div id="contentSections" class="flex-1 min-w-0">
+        <section class="w-full bg-white rounded-lg p-4">
+          <collapse-content>
+            <header class="flex items-center justify-between">
+              <h2 class="text-xl font-bold hover:underline">
+                <a href="/catalog/sketches?creator={{ .Creator.ID }}">Popular Sketches</a>
+              </h2>
+              <button class="toggleBtn transition-all">
+                <svg class="arrow stroke-slate-950 w-7 transform transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
+                    <path d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z" fill="currentColor"></path>
+                </svg>
+              </button>
+            </header>
+            <div class="content overflow-hidden transition-all duration-500 ease-in-out">
+              <div class="mt-4">
+                {{ template "thumbnail-gallery" (dict "Videos" .Videos "ImageBaseUrl" $.ImageBaseUrl "SectionType" "sub") }}
+              </div>
+            </div>
+          </collapse-content>
+        </section>
       </div>
     </div>
-  {{ end }}
-  <h1>Videos</h1>
-  <div class="flex flex-wrap justify-start">
-    {{ range .Videos }}
-      <div class="w-[calc(25%-8px)] mx-1">
-        <a href="/video/{{ .Slug }}">
-          <img
-            class="rounded-md"
-            src="{{ $.ImageBaseUrl }}/video/{{ .ThumbnailName }}"
-            alt="video thumbnail"
-          />
-        </a>
-        <div class="flex mt-2 h-32">
-          <a class="w-[calc(15%-4px)] mr-1" href="/creator/{{ .Creator.Slug }}">
-            <img
-              src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
-              class="rounded-full"
-              alt="creator profile image"
-            />
-          </a>
-          <div class="w-[calc(95%-4px)]">
-            <h3 class="font-bold line-clamp-2">
-              <a href="/video/{{ .Slug }}">{{ .Title }}</a>
-            </h3>
-            <p class="font-medium text-base">
-              <a href="/creator/{{ .Creator.Slug }}">
-                {{ .Creator.Name }}
-              </a>
-            </p>
-            <p>{{ .UploadDate.Format "Jan 2, 2006" }}</p>
-          </div>
-        </div>
-      </div>
-    {{ end }}
-  </div>
-{{ end }}
-
-{{ define "scripts" }}
-  <script src="/static/js/search.js"></script>
+  </main>
 {{ end }}

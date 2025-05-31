@@ -48,7 +48,7 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Post("/video/like/{id}", app.videoAddLike)
 		r.Delete("/video/like/{id}", app.videoRemoveLike)
 
-		r.Get("/creator/{slug}", app.creatorView)
+		r.Get("/creator/{id}/{slug}", app.creatorView)
 		r.Get("/creator/search", app.creatorSearch)
 
 		r.Get("/person/{id}/{slug}", app.personView)

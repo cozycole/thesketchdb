@@ -20,13 +20,14 @@ type password struct {
 }
 
 type User struct {
-	ID        int
-	CreatedAt time.Time
-	Username  string
-	Email     string
-	Password  password
-	Activated bool
-	Role      string
+	ID           int
+	CreatedAt    time.Time
+	Username     string
+	Email        string
+	Password     password
+	Activated    bool
+	Role         string
+	ProfileImage string
 }
 
 func (p *password) Set(plaintext string) error {
@@ -104,7 +105,7 @@ func (m *UserModel) Authenticate(username, password string) (int, error) {
 
 func (m *UserModel) GetByUsername(username string) (*User, error) {
 	query := `
-		SELECT id, created_at, username, email, password_hash, activated, role
+		SELECT id, created_at, username, email, password_hash, activated, role, profile_image
 		FROM users
 		WHERE username = $1
 	`
@@ -122,6 +123,7 @@ func (m *UserModel) GetByUsername(username string) (*User, error) {
 		&user.Password.hash,
 		&user.Activated,
 		&user.Role,
+		&user.ProfileImage,
 	)
 
 	if err != nil {

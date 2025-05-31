@@ -51,6 +51,7 @@ type templateData struct {
 	Tags            *[]*models.Tag
 	ThumbnailType   string
 	User            *models.User
+	UserPage        UserPage
 	Video           *models.Video
 	Videos          []*models.Video
 }

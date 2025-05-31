@@ -1,19 +1,20 @@
 {{ define "title" }}{{ .Show.Name }}{{ end }}
 
 {{ define "main" }}
-  <main data-page="view-show" class="max-w-screen-xl mx-auto w-full px-2 my-2 text-slate-950 bg-slate-250">
+  <main data-page="view-show" class="max-w-screen-xl mx-auto w-full p-3 text-slate-950 bg-slate-250">
     {{ with .Show }}
-      <div class="flex flex-col items-center sm:flex-row sm:items-start">
+      <div class="flex flex-col w-full gap-3 items-center min-[775px]:flex-row sm:items-start">
         <section
           id="profile"
-          class="w-52 p-4 flex flex-col gap-2 flex-shrink-0"
+          class="md:w-64 w-full p-4 h-fit flex flex-col gap-2 shrink-0
+                bg-white rounded-lg text-center"
         >
           <div>
             <img
               src="{{ $.ImageBaseUrl }}/show/{{ .ProfileImg }}"
-              class="mb-2"
+              class="rounded-full mx-auto mb-2"
             />
-            <h2 class="font-bold text-lg text-center">{{ .Name }}</h2>
+            <h2 class="font-bold text-lg">{{ .Name }}</h2>
             {{- if $.IsEditor -}}
               <h3 class="text-sm text-center">
                 (<a href="/show/{{ .ID }}/update" class="hover:underline"
@@ -22,56 +23,104 @@
               </h3>
             {{- end -}}
           </div>
-          <div>
+          <div class="mx-auto">
             <h3 class="font-bold">Seasons</h3>
             <p>{{ len .Seasons }}</p>
           </div>
-          <div>
+          <div class="mx-auto">
             <h3 class="font-bold">Episodes</h3>
             <p>{{ getShowEpisodeCount . }}</p>
           </div>
-          <div>
+          <div class="mx-auto">
             <h3 class="font-bold">Sketches</h3>
             <p>{{ getShowSketchCount . }}</p>
           </div>
         </section>
-        <div class="w-full flex flex-col gap-5 my-4  sm:ml-3">
-          <section id="popular" class="p-4 border shadow-slate-500 shadow-md">
-            <h2 class="font-bold text-lg mb-2">Popular</h2>
-            {{- template "thumbnail-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Videos" $.Videos) -}}
+        <div class="w-full flex flex-col gap-5">
+          <section id="popular" class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md">
+            <collapse-content>
+              <header class="w-full flex items-center justify-between">
+                <h2 class="text-xl font-bold hover:underline">
+                  <a href="/catalog/sketches?show={{ .ID }}">Popular</a>
+                </h2>
+                <button class="toggleBtn transition-all">
+                  <svg class="arrow stroke-slate-950 w-7 transform transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
+                      <path d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z" fill="currentColor"></path>
+                  </svg>
+                </button>
+              </header>
+              <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out">
+                <div class="mt-4">
+                  {{- template "thumbnail-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Videos" $.Videos "SectionType" "sub") -}}
+                </div>
+              </div>
+            </collapse-content>
           </section>
-          <section id="seasons" class="p-4 border shadow-slate-500 shadow-md">
-            <h2 class="font-bold text-lg mb-2">Seasons</h2>
-            <table class="w-full text-center">
-              <tr class="border-b border-slate-300">
-                <th class="py-2">Season</th>
-                <th>Year</th>
-                <th>Episodes</th>
-                <th>Sketches</th>
-              </tr>
-              {{ range $season := .Seasons }}
-                <tr class="border-b border-slate-300">
-                  <td class="py-2 font-normal">
-                    <a
-                      href="/show/{{ $.Show.Slug }}/season/{{ $season.Number }}"
-                    >
-                      {{ $season.Number }}
-                    </a>
-                  </td>
-                  <td class="font-normal">
-                    {{ with $season.AirYear }}{{ . }}{{ end }}
-                  </td>
-                  <td class="font-normal">{{ len $season.Episodes }}</td>
-                  <td class="font-normal">
-                    {{ getSeasonSketchCount $season }}
-                  </td>
-                </tr>
-              {{ end }}
-            </table>
+          <section id="seasons" class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md">
+            <collapse-content>
+              <header class="w-full flex items-center justify-between">
+                <h2 class="text-xl font-bold hover:underline">
+                  <a href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/seasons">Seasons</a>
+                </h2>
+                <button class="toggleBtn transition-all">
+                  <svg class="arrow stroke-slate-950 w-7 transform transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
+                    <path d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z" fill="currentColor"></path>
+                  </svg>
+                </button>
+              </header>
+              <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out text-center">
+                <table class="w-full">
+                  <tr class="border-b border-slate-300">
+                    <th class="py-2">Season</th>
+                    <th>Year</th>
+                    <th>Episodes</th>
+                    <th>Sketches</th>
+                  </tr>
+                  {{ range $season := .Seasons }}
+                    <tr class="border-b border-slate-300">
+                      <td class="py-2 font-normal">
+                        <a
+                          href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/season/{{ $season.Number }}"
+                        >
+                          {{ $season.Number }}
+                        </a>
+                      </td>
+                      <td class="font-normal">
+                        {{ with $season.AirYear }}{{ . }}{{ end }}
+                      </td>
+                      <td class="font-normal">
+                        <a
+                          href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/season/{{ $season.Number }}"
+                          href="">
+                          {{ len $season.Episodes }}</td>
+                        </a>
+                      <td class="font-normal">
+                        {{ getSeasonSketchCount $season }}
+                      </td>
+                    </tr>
+                  {{ end }}
+                </table>
+              </div>
+            </collapse-content>
           </section>
-          <section id="cast" class="p-4 border shadow-slate-500 shadow-md">
-            <h2 class="font-bold text-lg mb-2">Cast</h2>
-            {{- template "person-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "People" $.People ) -}}
+          <section id="cast" class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md">
+            <collapse-content>
+              <header class="w-full flex items-center justify-between">
+                <h2 class="text-xl font-bold">
+                  Cast
+                </h2>
+                <button class="toggleBtn transition-all">
+                  <svg class="arrow stroke-slate-950 w-7 transform transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
+                    <path d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z" fill="currentColor"></path>
+                  </svg>
+                </button>
+              </header>
+              <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out text-center">
+                <div class="mt-4">
+                  {{- template "person-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "People" $.People ) -}}
+                </div>
+              </div>
+            </collapse-content>
           </section>
         </div>
       </div>

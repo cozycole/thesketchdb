@@ -128,7 +128,8 @@ CREATE TABLE IF NOT EXISTS users (
     email CITEXT UNIQUE NOT NULL,
     password_hash BYTEA NOT NULL,
     activated BOOL NOT NULL,
-    role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('admin', 'editor', 'viewer'))
+    role TEXT NOT NULL DEFAULT 'viewer' CHECK (role IN ('admin', 'editor', 'viewer')),
+    profile_image TEXT DEFAULT 'missing-profile.jpg'
 );
 
 CREATE TABLE IF NOT EXISTS likes (

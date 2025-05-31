@@ -15,6 +15,7 @@ type Tag struct {
 	Name     *string
 	Slug     *string
 	Category *Category
+	Count    *int
 }
 
 type TagModelInterface interface {

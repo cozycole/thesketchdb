@@ -42,7 +42,7 @@
             <a href="/video/{{ .Slug }}">{{ .Title }}</a>
           </h3>
           {{ if and .Show .Show.Slug }}
-              <a href="/show/{{ .Show.ID }}{{ .Show.Slug }}">
+              <a href="/show/{{ .Show.ID }}/{{ .Show.Slug }}">
               <p class="font-medium text-base line-clamp-2 break-words whitespace-normal">{{ .Show.Name }}</p>
             </a>
           {{ else if and .Creator .Creator.Slug }}

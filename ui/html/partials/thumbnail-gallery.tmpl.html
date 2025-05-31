@@ -1,5 +1,9 @@
 {{ define "thumbnail-gallery" }}
+  {{if eq .SectionType "sub"}}
+  <div class="grid grid-cols-1 xs:grid-cols-2 min-[970px]:grid-cols-3 xl:grid-cols-4 gap-2">
+  {{ else }}
   <div class="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2">
+  {{ end }}
     {{ range .Videos }}
       {{ template "video-thumbnail" (dict "Video" . "ImageBaseUrl" $.ImageBaseUrl "Type" $.Type)}}
     {{ else }}

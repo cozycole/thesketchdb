@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strconv"
 	"time"
 
 	"sketchdb.cozycole.net/internal/models"
@@ -66,8 +67,14 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
-	slug := r.PathValue("slug")
-	creator, err := app.creators.GetBySlug(slug)
+	idParam := r.PathValue("id")
+	creatorId, err := strconv.Atoi(idParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	creator, err := app.creators.GetById(creatorId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -82,11 +89,12 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 			Limit:  16,
 			Offset: 0,
 			SortBy: "az",
-			People: []*models.Person{
-				&models.Person{ID: creator.ID},
+			Creators: []*models.Creator{
+				&models.Creator{ID: creator.ID},
 			},
 		},
 	)
+
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)

@@ -654,20 +654,24 @@ func (m *VideoModel) GetIdBySlug(slug string) (int, error) {
 }
 
 func (m *VideoModel) GetByUserLikes(userId int) ([]*Video, error) {
-	stmt := `SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date,
-		c.id, c.name, c.page_url, c.slug, c.profile_img
+	stmt := `
+		SELECT v.id as video_id, v.title as video_title, v.video_url as video_url, 
+		v.slug as video_slug, v.thumbnail_name as thumbnail_name, v.upload_date as upload_date, 
+		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
+		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
+		sh.profile_img as show_img, sh.slug as show_slug
 		FROM video AS v
-		JOIN video_creator_rel as vcr
-		ON v.id = vcr.video_id
-		JOIN creator as c
-		ON vcr.creator_id = c.id
-		JOIN likes as l
-		ON v.id = l.video_id
-		JOIN users as u
-		ON l.user_id = u.id
-		WHERE u.id = $1
+		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
+		LEFT JOIN creator as c ON vcr.creator_id = c.id
+		LEFT JOIN episode as e ON v.episode_id = e.id
+		LEFT JOIN season as se ON e.season_id = se.id
+		LEFT JOIN show as sh ON se.show_id = sh.id
+		JOIN likes as l ON v.id = l.video_id
+		WHERE l.user_id = $1
 		ORDER BY l.created_at desc
 	`
+
+	fmt.Println(stmt)
 
 	rows, err := m.DB.Query(context.Background(), stmt, userId)
 	if err != nil {
@@ -683,21 +687,25 @@ func (m *VideoModel) GetByUserLikes(userId int) ([]*Video, error) {
 	for rows.Next() {
 		v := &Video{}
 		c := &Creator{}
-		err := rows.Scan(
+		sh := &Show{}
+		destinations := []any{
 			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
-			&c.ID, &c.Name, &c.URL, &c.Slug, &c.ProfileImage,
-		)
-
+			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
+		}
+		err := rows.Scan(destinations...)
 		if err != nil {
 			return nil, err
 		}
 		v.Creator = c
+		v.Show = sh
 		videos = append(videos, v)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
+
 	return videos, nil
 }
 

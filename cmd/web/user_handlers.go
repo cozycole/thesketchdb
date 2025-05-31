@@ -104,6 +104,11 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/search", http.StatusSeeOther)
 }
 
+type UserPage struct {
+	User      *models.User
+	Favorited []*models.Video
+}
+
 func (app *application) userView(w http.ResponseWriter, r *http.Request) {
 	username := r.PathValue("username")
 	user, err := app.users.GetByUsername(username)
@@ -123,8 +128,8 @@ func (app *application) userView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	data.User = user
-	data.Videos = videos
+	data.UserPage.User = user
+	data.UserPage.Favorited = videos
 	app.render(r, w, http.StatusOK, "view-user.tmpl.html", "base", data)
 }
 
