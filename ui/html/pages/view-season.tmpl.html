@@ -1,0 +1,28 @@
+{{ define "title" }}{{ .Show.Name }} - Season {{ .Season.Number }}{{ end }}
+
+{{ define "main" }}
+  <main data-page="view-season" class="max-w-screen-xl mx-auto w-full p-3 text-slate-950 bg-slate-250">
+    <section class="p-4 bg-white rounded-lg">
+      <header class="font-bold text-xl">{{ .Show.Name }} Seasons</header>
+      <div class="flex items-center gap-2">
+        <select
+          id="seasonDropdown"
+          name="season"
+          data-url="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/season"
+          autocomplete="off"
+          class="my-2 p-2 border border-slate-300 rounded-lg bg-slate-50"
+        >
+          {{ range .Show.Seasons }}
+            <option value="{{ .Number }}" {{ if eq .Number $.Season.Number }}selected{{ end }}>
+              Season {{ .Number }}
+            </option>
+          {{ end }}
+        </select>
+      <p class="text-lg font-medium">• {{ len .Season.Episodes }} Episodes</p>
+      </div>
+      <div id="episodes">
+        {{ template "episode-gallery" (dict "Episodes" .Season.Episodes "Show" .Show "Season" .Season "ImageBaseUrl" $.ImageBaseUrl)}}
+      </div>
+    </section>
+  </main>
+{{ end }}

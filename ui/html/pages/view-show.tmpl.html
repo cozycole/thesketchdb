@@ -37,6 +37,43 @@
           </div>
         </section>
         <div class="w-full flex flex-col gap-5">
+          <section id="seasons" class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md">
+            <collapse-content>
+              <header class="w-full flex items-center justify-between">
+                <h2 class="text-xl font-bold hover:underline">
+                  <a href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/season">Seasons</a>
+                </h2>
+                <button class="toggleBtn transition-all">
+                  <svg class="arrow stroke-slate-950 w-7 transform transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
+                    <path d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z" fill="currentColor"></path>
+                  </svg>
+                </button>
+              </header>
+              <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out">
+                {{ with .Seasons }} 
+                  {{ $season := index . 0}}
+                  <select
+                    name="season"
+                    hx-get="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/season"
+                    hx-target="#episodes"
+                    autocomplete="off"
+                    class="my-2 p-2 border border-slate-300 rounded-lg bg-slate-50"
+                  >
+                    {{ range . }}
+                      <option value="{{ .Number }}" {{ if eq .Number $season.Number }}selected{{ end }}>
+                        Season {{ .Number }}
+                      </option>
+                    {{ end }}
+                  </select>
+                  <div id="episodes">
+                    {{ template "episode-gallery" (dict "Episodes" $season.Episodes "Show" $.Show "Season" $season "ImageBaseUrl" $.ImageBaseUrl "SectionType" "sub")}}
+                  </div>
+                {{ else }}
+                    <div class="text-lg">No Seasons</div>
+                {{ end }}
+              </div>
+            </collapse-content>
+          </section>
           <section id="popular" class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md">
             <collapse-content>
               <header class="w-full flex items-center justify-between">
@@ -53,53 +90,6 @@
                 <div class="mt-4">
                   {{- template "thumbnail-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Videos" $.Videos "SectionType" "sub") -}}
                 </div>
-              </div>
-            </collapse-content>
-          </section>
-          <section id="seasons" class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md">
-            <collapse-content>
-              <header class="w-full flex items-center justify-between">
-                <h2 class="text-xl font-bold hover:underline">
-                  <a href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/seasons">Seasons</a>
-                </h2>
-                <button class="toggleBtn transition-all">
-                  <svg class="arrow stroke-slate-950 w-7 transform transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
-                    <path d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z" fill="currentColor"></path>
-                  </svg>
-                </button>
-              </header>
-              <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out text-center">
-                <table class="w-full">
-                  <tr class="border-b border-slate-300">
-                    <th class="py-2">Season</th>
-                    <th>Year</th>
-                    <th>Episodes</th>
-                    <th>Sketches</th>
-                  </tr>
-                  {{ range $season := .Seasons }}
-                    <tr class="border-b border-slate-300">
-                      <td class="py-2 font-normal">
-                        <a
-                          href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/season/{{ $season.Number }}"
-                        >
-                          {{ $season.Number }}
-                        </a>
-                      </td>
-                      <td class="font-normal">
-                        {{ with $season.AirYear }}{{ . }}{{ end }}
-                      </td>
-                      <td class="font-normal">
-                        <a
-                          href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/season/{{ $season.Number }}"
-                          href="">
-                          {{ len $season.Episodes }}</td>
-                        </a>
-                      <td class="font-normal">
-                        {{ getSeasonSketchCount $season }}
-                      </td>
-                    </tr>
-                  {{ end }}
-                </table>
               </div>
             </collapse-content>
           </section>

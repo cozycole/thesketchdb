@@ -33,6 +33,7 @@ type templateData struct {
 	CurrentYear     int
 	DropdownResults dropdownSearchResults
 	Episode         *models.Episode
+	Episodes        []*models.Episode
 	Featured        []*models.Video
 	Flash           flashMessage
 	Forms           Forms
@@ -47,6 +48,7 @@ type templateData struct {
 	Query           string
 	SearchResults   *SearchResult
 	Season          *models.Season
+	SectionType     string
 	Show            *models.Show
 	Tags            *[]*models.Tag
 	ThumbnailType   string

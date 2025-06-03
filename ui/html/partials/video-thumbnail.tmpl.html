@@ -43,13 +43,16 @@
           </h3>
           {{ if and .Show .Show.Slug }}
               <a href="/show/{{ .Show.ID }}/{{ .Show.Slug }}">
-              <p class="font-medium text-base line-clamp-2 break-words whitespace-normal">{{ .Show.Name }}</p>
+              <p class="font-medium text-base line-clamp-1 break-words whitespace-normal">{{ .Show.Name }}</p>
             </a>
           {{ else if and .Creator .Creator.Slug }}
             <a href="/creator/{{ .Creator.Slug }}">
               <p class="font-medium text-base line-clamp-2 break-words whitespace-normal">{{ .Creator.Name }}</p>
             </a>
           {{ end }}
+            {{ if and .EpisodeNumber .SeasonNumber }}
+              S{{ .SeasonNumber }} · E{{ .EpisodeNumber }} · Sketch {{ .Number }} 
+            {{ end }}
           {{ with .UploadDate }}
             <p>{{ .Format "Jan 2, 2006" }}</p>
           {{ end }}

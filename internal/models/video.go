@@ -96,6 +96,8 @@ type Video struct {
 	Cast          []*CastMember
 	Tags          *[]*Tag
 	Show          *Show
+	SeasonNumber  *int
+	EpisodeNumber *int
 	Number        *int
 	Liked         bool
 }

@@ -58,6 +58,9 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Get("/character/search", app.characterSearch)
 
 		r.Get("/show/{id}/{slug}", app.viewShow)
+		r.Get("/show/{id}/{slug}/season", app.viewSeason)
+		r.Get("/show/{id}/{slug}/season/{snum}", app.viewSeason)
+		r.Get("/show/{id}/{slug}/season/{snum}/episode/{enum}", app.viewEpisode)
 
 		r.Get("/category/search", app.categorySearch)
 		r.Get("/tag/search", app.tagSearch)

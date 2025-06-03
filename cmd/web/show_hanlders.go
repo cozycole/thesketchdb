@@ -56,6 +56,134 @@ func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "view-show.tmpl.html", "base", data)
 }
 
+func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	snum := r.PathValue("snum")
+	if snum == "" {
+		snum = "1"
+	}
+
+	showId, err := strconv.Atoi(id)
+	seasonNumber, err2 := strconv.Atoi(snum)
+	if err != nil || err2 != nil {
+		app.badRequest(w)
+		app.errorLog.Printf("ID:%s SNUM:%s ERR:%s ERR2:%s", id, snum, err, err2)
+		return
+	}
+
+	show, err := app.shows.GetById(showId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	var season *models.Season
+	for _, s := range show.Seasons {
+		if s.Number == nil {
+			continue
+		}
+
+		if *s.Number == seasonNumber {
+			season = s
+		}
+	}
+
+	if season == nil {
+		app.notFound(w)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Show = show
+	data.Season = season
+	data.Episodes = season.Episodes
+
+	isHxRequest := r.Header.Get("HX-Request") == "true"
+	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
+	data.SectionType = "sub"
+	if isHxRequest && !isHistoryRestore {
+		app.render(r, w, http.StatusOK, "episode-gallery.tmpl.html", "episode-gallery", data)
+		return
+	}
+
+	app.render(r, w, http.StatusOK, "view-season.tmpl.html", "base", data)
+}
+
+func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	snum := r.PathValue("snum")
+	enum := r.PathValue("enum")
+
+	showId, err := strconv.Atoi(id)
+	seasonNumber, err2 := strconv.Atoi(snum)
+	episodeNumber, err3 := strconv.Atoi(enum)
+	if err != nil || err2 != nil || err3 != nil {
+		app.badRequest(w)
+		app.errorLog.Printf("ID:%s SNUM:%s ENUM:%s ERR:%s ERR2:%s", id, snum, enum, err, err2)
+		return
+	}
+
+	app.errorLog.Printf("ID:%s SNUM:%s ENUM:%s ERR:%s ERR2:%s", id, snum, enum, err, err2)
+	show, err := app.shows.GetById(showId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	var season *models.Season
+	for _, s := range show.Seasons {
+		if s.Number == nil {
+			continue
+		}
+
+		if *s.Number == seasonNumber {
+			season = s
+		}
+	}
+
+	if season == nil {
+		app.notFound(w)
+		return
+	}
+
+	var episode *models.Episode
+	for _, e := range season.Episodes {
+		if e.Number == nil {
+			continue
+		}
+
+		if *e.Number == episodeNumber {
+			episode = e
+		}
+	}
+
+	if episode == nil {
+		app.notFound(w)
+		return
+	}
+
+	episode, err = app.shows.GetEpisode(*episode.ID)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Show = show
+	data.Season = season
+	data.Episode = episode
+
+	app.render(r, w, http.StatusOK, "view-episode.tmpl.html", "base", data)
+}
+
 func (app *application) addShowPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Show = &models.Show{}

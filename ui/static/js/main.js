@@ -7,6 +7,8 @@ import { initAddCategory } from './pages/addCategory.js';
 import { initSearch } from './pages/search.js';
 import { initBrowse } from './pages/browse.js';
 import { initUpdateShow } from './pages/updateShow.js';
+import { initViewShow } from './pages/viewShow.js';
+import { initViewSeason } from './pages/viewSeason.js';
 import { initViewCatalog } from './pages/viewCatalog.js';
 import { CollapsibleContent } from './components/collapseContent.js';
 
@@ -109,8 +111,14 @@ import './components/flashMessage.js';
     case 'add-category':
       initAddCategory();
       break;
+    case 'view-show':
+      initViewShow();
+      break;
     case 'update-show':
       initUpdateShow();
+      break;
+    case 'view-season':
+      initViewSeason();
       break;
   }
 

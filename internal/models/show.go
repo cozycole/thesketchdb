@@ -101,13 +101,15 @@ func (m *ShowModel) AddSeason(showId int) (int, error) {
 func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	stmt := `
 		SELECT e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name,
-		v.id, v.title, v.slug, v.video_url, v.youtube_id, v.thumbnail_name, v.upload_date, v.description, v.pg_rating,
-		c.id, c.name, c.slug, c.profile_img
+		v.id, v.title, v.slug, v.video_url, v.sketch_number, e.episode_number, se.season_number,
+		v.thumbnail_name, v.upload_date, 
+		sh.id, sh.name, sh.profile_img, sh.slug
 		FROM episode as e
 		LEFT JOIN video as v ON e.id = v.episode_id
-		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
-		LEFT JOIN creator as c ON vcr.creator_id = c.id
+		LEFT JOIN season as se ON e.season_id = se.id
+		LEFT JOIN show as sh ON se.show_id = sh.id
 		WHERE e.id = $1
+		ORDER BY v.sketch_number asc
 	`
 
 	rows, err := m.DB.Query(context.Background(), stmt, episodeId)
@@ -118,21 +120,22 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	e := &Episode{}
 	for rows.Next() {
 		v := &Video{}
-		c := &Creator{}
+		s := &Show{}
 		rows.Scan(
 			&e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
-			&v.ID, &v.Title, &v.Slug, &v.URL, &v.YoutubeID,
-			&v.ThumbnailName, &v.UploadDate, &v.Description,
-			&v.Rating, &c.ID, &c.Name, &c.Slug, &c.ProfileImage,
+			&v.ID, &v.Title, &v.Slug, &v.URL, &v.Number, &v.EpisodeNumber,
+			&v.SeasonNumber, &v.ThumbnailName, &v.UploadDate,
+			&s.ID, &s.Name, &s.ProfileImg, &s.Slug,
 		)
 
 		if v.ID == nil {
 			continue
 		}
-		v.Creator = c
+		v.Show = s
 
 		e.Videos = append(e.Videos, v)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
