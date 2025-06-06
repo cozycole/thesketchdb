@@ -32,6 +32,9 @@ export class CollapsibleContent extends HTMLElement {
 
     this.arrow.classList.toggle("rotate-180", !this.isOpen);
 
+    if (this.dataset.status === "closed") {
+      this.toggleContent();
+    }
 
     this.observeContentMutations();
   }
@@ -66,7 +69,6 @@ export class CollapsibleContent extends HTMLElement {
         }
       }
 
-      //this.init();
       // Run initial height update in case non-image content was added
       this.updateHeight();
     });

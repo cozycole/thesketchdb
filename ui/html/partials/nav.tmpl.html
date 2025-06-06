@@ -1,28 +1,63 @@
 {{ define "nav" }}
-  <div class="bg-slate-900">
-    <nav class="w-full text-white px-3 py-3 lg:max-w-screen-xl mx-auto flex items-center justify-between">
+  <div class="relative text-slate-950">
+    <div id="mobileSearch" 
+        class="z-10 absolute top-16 left-0 w-full shadow-lg
+          transform -translate-y-full transition-transform duration-300 ease-in-out
+          sm:hidden">
+      <form class="relative w-full" method="get" action="/search">
+        <div class="flex items-center border bg-white border-slate-700">
+          <div class="w-6 text-slate-600 ml-2 shrink-0">
+            {{ template "search-icon" }}
+          </div>
+          <input type="text" 
+              value="{{ .Query }}" 
+              name="query" 
+              autocomplete="off"
+              placeholder="Search" 
+              class="w-full px-1 py-3 italic focus:outline-none">
+          <div id="clearMobileSearch" 
+              class="w-9 hidden text-slate-600 mr-2 p-1 rounded-full 
+                  hover:cursor-pointer">
+            {{ template "close-icon" }}
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="bg-slate-900 z-20 relative">
+    <div class="w-full text-white px-3 py-3 lg:max-w-screen-xl mx-auto flex items-center justify-between">
       <a href="/" class="shrink-0 text-xl font-bold mr-4"><span class="text-sm text-slate-300">the</span>Sketch<span class="text-orange-600">DB</span></a>
       <!--Center Search-->
-      <div class="hidden sm:flex grow relative w-full">
-        <form class="w-full" method="get" action="/search">
-          <input type="text" placeholder="Search SketchDB" name="query" value="{{ .Query }}"
-              class="w-full px-4 py-2 text-black rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <input type="submit" class="hidden">
-        </form>
-      </div>
-      <div id="mobileSearch" class="hidden z-20 absolute top-12 left-0 w-full bg-slate-900 p-2 shadow-lg">
-        <form class="w-full" method="get" action="/search">
-          <input type="text" value="{{ .Query }}" name="query" placeholder="Search SketchDB" class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700 focus:outline-none">
+      <div id="desktopSearch" class="hidden sm:flex grow relative w-full">
+        <form class="relative w-full" method="get" action="/search">
+          <div class="flex items-center bg-white rounded-md">
+            <div class="w-7 text-slate-600 ml-2 shrink-0">
+              {{ template "search-icon" }}
+            </div>
+            <input type="text" 
+                value="{{ .Query }}"
+                name="query" 
+                autocomplete="off"
+                placeholder="Search" 
+                class="w-full px-2 py-2 text-slate-950 rounded-md italic focus:outline-none">
+            <input type="submit" class="hidden">
+            <div id="clearDesktopSearch" 
+                class="hidden w-9 
+                  text-slate-600 mr-2 p-1 rounded-full hover:cursor-pointer">
+              {{ template "close-icon" }}
+            </div>
+          </div>
         </form>
       </div>
       <!-- Right Side Menus -->
       <div class="pl-6 flex shrink-0">
-        <div class="hidden md:flex items-center space-x-6 font-bold">
+        <nav class="hidden md:flex items-center space-x-6 font-bold">
             <button class="hover:text-slate-200">
                 <a href="/browse">Browse</a>
             </button>
             <!-- Catalog Dropdown -->
-            <div class="relative z-20">
+            <div class="relative z-30">
                 <button class="dropdownBtn flex items-center 
                             space-x-2 hover:text-slate-200 rounded-md">
                     <span class="font-bold">Catalog</span>
@@ -33,12 +68,24 @@
                 <div class="dropdownMenu absolute right-0 mt-2 w-48 
                         bg-white text-black rounded-md shadow-lg opacity-0
                         scale-95 transform origin-top transition-all pointer-events-none">
-                    <a href="/catalog/sketches" class="block px-4 py-2 hover:bg-slate-200 rounded-md">Sketches</a>
-                    <a href="/categories" class="block px-4 py-2 hover:bg-slate-200 rounded-md">Categories</a>
+                    <div class="flex items-center rounded-md hover:cursor-pointer hover:bg-slate-200 gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 -960 960 960" class="w-6 text-slate-950 ml-2 fill-current">
+                        <path d="M479.92-264q72.61 0 123.34-51.24Q654-366.48 654-438H306q0 72 50.66 123t123.26 51ZM480-55q-80 0-150-30t-122.5-82Q155-219 125-289T95-437.66V-906h771v468.34Q866-359 835.5-289t-82.89 121.91q-52.4 51.91-122.5 82Q560-55 480-55ZM264-606h177q0-37-26.1-62.5-26.11-25.5-62.77-25.5-36.65 0-62.39 25.59Q264-642.81 264-606Zm253 0h179q0-37-26.16-62.5-26.17-25.5-62.91-25.5-37.16 0-63.54 25.59Q517-642.81 517-606Z"/>
+                      </svg>
+                      <a href="/catalog/sketches" class="block py-2">Sketches</a>
+                    </div>
+                    <div class="flex items-center rounded-md hover:cursor-pointer hover:bg-slate-200 gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" 
+                          class="w-6 text-slate-950 ml-2 fill-current">
+                        <path d="m22-518 244-437 243 437H22ZM268-72q-77.7 0-131.85-54Q82-180 82-257.2q0-77.21 54-131Q190.01-442 267.5-442q77.5 0 131 53.8 53.5 53.79 53.5 131 0 77.2-53.36 131.2Q345.29-72 268-72Zm258 0v-370h370v370H526Zm186-446q-69-58-113.25-97.51-44.25-39.51-69-69Q505-714 495.5-738.54 486-763.09 486-791q0-56 36.5-91.5T616-918q27.64 0 53.32 13T712-869q16-23 42.18-36T808-918q57 0 93 35.5t36 91.5q0 27.91-9.5 52.46-9.5 24.54-34.25 54.03-24.75 29.49-69 69Q780-576 712-518Z"/>
+                      </svg>
+                      <a href="/categories" class="block py-2">Categories</a>
+                    </div>
                 </div>
             </div>
             <!-- Account Dropdown -->
-            <div class="relative z-20">
+            <div class="relative z-30">
                 <button class="dropdownBtn flex items-center space-x-2 hover:text-slate-300">
                   <img class="w-7" src="/static/img/account-icon.svg"/>
                 </button>
@@ -54,31 +101,102 @@
                     {{ end }}
                 </div>
             </div>
-          </div>
-        <button id="mobileSearchBtn" class="sm:hidden p-2">
-            <img class="w-6" src="/static/img/search-icon.svg"/>
+          </nav>
+        <button id="mobileSearchBtn" class="text-white block w-11 p-2 sm:hidden">
+          {{ template "search-icon" }}
         </button>
         <!-- Mobile Menu Button -->
-        <button id="mobileBtn" class="md:hidden text-xl">
-            <img class="w-8" src="/static/img/menu-icon.svg"/>
+        <button id="mobileBtn" class="block text-white w-10 md:hidden text-xl pr-1">
+            {{ template "menu-icon" }}
         </button>
       </div>
       <!-- Mobile Menu (Hidden by default) -->
-      <div id="mobileMenu" class="fixed z-20 top-0 right-0 h-full w-64 bg-slate-900 opacity-90 shadow-lg transform translate-x-full transition-transform">
-          <button id="closeMenuBtn" class="absolute top-4 right-4">✖</button>
-          <nav class="mt-10 space-y-4">
-          <a href="/browse" class="block px-6 py-2">Browse</a>
+      <div id="mobileMenu" 
+          class="fixed z-40 top-0 right-0 h-full w-56 bg-slate-900 
+              opacity-95 shadow-lg transform translate-x-full transition-transform
+              font-medium">
+          <button id="closeMenuBtn" class="absolute w-8 top-4 right-4">
+            {{ template "close-icon"}}
+          </button>
+          <nav class="mt-10 space-y-3 text-xl">
+            <a href="/browse" class="block ml-4">Browse</a>
+            <collapse-content data-status="closed" class="block">
+              <div class="toggleBtn flex items-center hover:cursor-pointer">
+                <h2 class="ml-4 text-xl">Catalog</h2>
+                <button class=" transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      class="arrow w-7 transform transition-transform duration-300">
+                      <path  d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z" fill="currentColor"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="content overflow-hidden transition-all duration-300 ease-in-out">
+                <a href="/catalog/sketches" class="text-lg font-medium">
+                  <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 -960 960 960" class="w-6 text-white ml-4 fill-current">
+                      <path d="M479.92-264q72.61 0 123.34-51.24Q654-366.48 654-438H306q0 72 50.66 123t123.26 51ZM480-55q-80 0-150-30t-122.5-82Q155-219 125-289T95-437.66V-906h771v468.34Q866-359 835.5-289t-82.89 121.91q-52.4 51.91-122.5 82Q560-55 480-55ZM264-606h177q0-37-26.1-62.5-26.11-25.5-62.77-25.5-36.65 0-62.39 25.59Q264-642.81 264-606Zm253 0h179q0-37-26.16-62.5-26.17-25.5-62.91-25.5-37.16 0-63.54 25.59Q517-642.81 517-606Z"/>
+                    </svg>
+                    <span>Sketches</span>
+                  </div>
+                </a>
+                <a href="/catalog/people" class="hidden text-lg font-medium">
+                  <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        viewBox="0 -960 960 960" class="w-6 text-white ml-4 fill-current">
+                      <path d="M15-122v-121q0-42.3 21.7-76.1Q58.39-352.9 97-371q75-32 136.47-47 61.48-15 126.55-15 66.98 0 127.48 14.5T623-371q38.34 16.83 60.67 50.7Q706-286.43 706-243.05V-122H15Zm762 0v-119q0-65-31.5-109.5T660-431q61 9 115.5 23.5T866-375q36 19 57.5 54.81t21.5 82.24V-122H777ZM360.25-494Q288-494 243-539t-45-117.5q0-72.5 45.04-117.5 45.05-45 117-45 71.96 0 117.46 45.03T523-657q0 73-45.25 118t-117.5 45ZM757-657.01q0 72.01-45.45 117.51-45.44 45.5-117.8 45.5-12.06 0-24.4-2-12.35-2-26.35-7 26-27 38.5-65.85 12.5-38.85 12.5-87.5t-12.65-86.13q-12.66-37.49-38.35-67.65 12-3.87 25.24-6.37 13.24-2.5 25.51-2.5 71.99 0 117.62 45.52Q757-727.96 757-657.01Z"/>
+                    </svg>
+                    <span>People</span>
+                  </div>
+                </a>
+                <a href="/catalog/characters" class="hidden text-lg font-medium">
+                  <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <div class="w-6 text-white ml-4 fill-current">
+                      {{ template "character-icon" }}
+                    </div>
+                    <span>Characters</span>
+                  </div>
+                </a>
+                <a href="/catalog/creators" class="hidden text-lg font-medium">
+                  <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <div class="w-6 text-white ml-4 fill-current">
+                      {{ template "creator-icon" }}
+                    </div>
+                    <span>Creators</span>
+                  </div>
+                </a>
+                <a href="/catalog/shows" class="hidden text-lg font-medium">
+                  <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <div class="w-6 text-white ml-4 fill-current">
+                      {{ template "show-icon" }}
+                    </div>
+                    <span>Shows</span>
+                  </div>
+                </a>
+                <a href="/categories" class="text-lg font-medium">
+                  <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" 
+                        class="w-6 text-white ml-4 fill-current">
+                      <path d="m22-518 244-437 243 437H22ZM268-72q-77.7 0-131.85-54Q82-180 82-257.2q0-77.21 54-131Q190.01-442 267.5-442q77.5 0 131 53.8 53.5 53.79 53.5 131 0 77.2-53.36 131.2Q345.29-72 268-72Zm258 0v-370h370v370H526Zm186-446q-69-58-113.25-97.51-44.25-39.51-69-69Q505-714 495.5-738.54 486-763.09 486-791q0-56 36.5-91.5T616-918q27.64 0 53.32 13T712-869q16-23 42.18-36T808-918q57 0 93 35.5t36 91.5q0 27.91-9.5 52.46-9.5 24.54-34.25 54.03-24.75 29.49-69 69Q780-576 712-518Z"/>
+                    </svg>
+                    <span>Categories</span>
+                  </div>
+                </a>
+              </div>
+            </collapse-content>
             {{ with .User }}
-              <a href="/user/{{ .Username}}" class="block px-4 py-2 hover:bg-slate-200">View Account</a>
+              <a href="/user/{{ .Username}}" class="block px-4 py-2">View Account</a>
               <form class="block" action='/logout' method='POST'>
-                <button class="w-full px-4 py-2 text-left hover:bg-slate-200">Logout</button>
+                <button class="w-full ml-4 text-left">Logout</button>
               </form>
             {{ else }}
-              <a href="/signup" class="block px-4 py-2 hover:bg-slate-200 rounded-md">Signup</a>
-              <a href="/login" class="block px-4 py-2 hover:bg-slate-200 rounded-md">Login</a>
+              <a href="/signup" class="text-xl block ml-4 rounded-md">Signup</a>
+              <a href="/login" class="text-xl block ml-4 rounded-md">Login</a>
             {{ end }}
           </nav>
       </div>
-    </nav>
+      <div id="mobileBackground" class="fixed inset-0 z-30 hidden"></div>
+    </div>
   </div>
 {{ end }}

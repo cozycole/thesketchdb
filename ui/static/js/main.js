@@ -68,18 +68,60 @@ import './components/flashMessage.js';
     const closeMenu = document.getElementById('closeMenuBtn');
     const searchBtn = document.getElementById('mobileSearchBtn');
     const mobileSearch = document.getElementById('mobileSearch');
+    const mobileBackground = document.getElementById('mobileBackground');
+    const mobileInput = mobileSearch.querySelector('input');
 
     menuBtn.addEventListener('click', () => {
-        mobileMenu.classList.remove('translate-x-full');
+      mobileMenu.classList.remove('translate-x-full');
+      mobileBackground.classList.remove('hidden');
     });
 
     closeMenu.addEventListener('click', () => {
-        mobileMenu.classList.add('translate-x-full');
-    }
-    );
+      mobileMenu.classList.add('translate-x-full');
+      mobileBackground.classList.add('hidden');
+    });
+
+    mobileBackground.addEventListener('click', () => {
+      mobileMenu.classList.add('translate-x-full');
+      mobileBackground.classList.add('hidden');
+    });
 
     searchBtn.addEventListener('click', () => {
-      mobileSearch.classList.toggle('hidden');
+      mobileSearch.classList.toggle('-translate-y-full');
+      mobileSearch.classList.toggle('translate-y-0');
+      setTimeout(() => {
+        if (mobileSearch.classList.contains('translate-y-0')) {
+          // focus to end of the text
+          let length = mobileInput.value.length;
+          mobileInput.focus();
+          mobileInput.setSelectionRange(length, length);
+        } else {
+          mobileSearch.querySelector('input').blur();
+        }
+      }, 300);
+    });
+
+    let clearMobileSearch = document.getElementById('clearMobileSearch');
+    clearMobileSearch.addEventListener('click', () => {
+      mobileInput.value = '';
+      clearMobileSearch.classList.toggle('hidden', mobileInput.value.trim() === '');
+    });
+
+    mobileInput.addEventListener('input', () => {
+      clearMobileSearch.classList.toggle('hidden', mobileInput.value.trim() === '');
+    });
+
+    let desktopSearch = document.getElementById('desktopSearch');
+    let desktopInput = desktopSearch.querySelector('input');
+    let clearDesktopSearch = document.getElementById('clearDesktopSearch');
+    desktopInput.addEventListener('input', () => {
+      clearDesktopSearch.classList.toggle('hidden', desktopInput.value.trim() === '');
+    });
+
+    clearDesktopSearch.addEventListener('click', () => {
+      let input = desktopSearch.querySelector('input');
+      input.value = '';
+      clearDesktopSearch.classList.toggle('hidden', desktopInput.value.trim() === '');
     });
   });
 
