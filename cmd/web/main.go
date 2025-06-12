@@ -41,7 +41,8 @@ type application struct {
 }
 
 type settings struct {
-	pageSize int
+	pageSize         int
+	maxSearchResults int
 }
 
 func main() {
@@ -118,7 +119,8 @@ func main() {
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,
 		settings: settings{
-			pageSize: 24,
+			pageSize:         24,
+			maxSearchResults: 12,
 		},
 	}
 

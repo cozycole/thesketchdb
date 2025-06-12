@@ -43,7 +43,7 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		r.Get("/categories", app.categoriesView)
 
-		r.Get("/video/{slug}", app.videoView)
+		r.Get("/video/{id}/{slug}", app.videoView)
 
 		r.Post("/video/like/{id}", app.videoAddLike)
 		r.Delete("/video/like/{id}", app.videoRemoveLike)

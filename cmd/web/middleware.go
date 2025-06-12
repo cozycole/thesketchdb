@@ -60,7 +60,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 func (app *application) requireRoles(roles []string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, ok := r.Context().Value(userContextKey).(*models.User)
-		if !ok || !slices.Contains(roles, user.Role) {
+		if !ok || !slices.Contains(roles, derefString(user.Role)) {
 			app.unauthorized(w)
 			return
 		}

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/utils"
 )
@@ -30,7 +31,7 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videos, err := app.videos.Get(
+	popular, err := app.videos.Get(
 		&models.Filter{
 			Limit:  16,
 			Offset: 0,
@@ -44,10 +45,12 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 	stats, err := app.people.GetPersonStats(persondId)
 
 	data := app.newTemplateData(r)
-	data.Person = person
-	data.Videos = videos
-	data.PersonPage.Stats = stats
+	page, err := views.PersonPageView(person, stats, popular, app.baseImgUrl)
+	if err != nil {
+		app.serverError(r, w, err)
+	}
 
+	data.Page = page
 	app.render(r, w, http.StatusOK, "view-person.tmpl.html", "base", data)
 }
 

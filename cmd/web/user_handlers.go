@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
 )
 
@@ -30,10 +31,11 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	activated := false
 	user := &models.User{
-		Username:  form.Username,
-		Email:     form.Email,
-		Activated: true,
+		Username:  &form.Username,
+		Email:     &form.Email,
+		Activated: &activated,
 	}
 
 	err = user.Password.Set(form.Password)
@@ -104,11 +106,6 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/search", http.StatusSeeOther)
 }
 
-type UserPage struct {
-	User      *models.User
-	Favorited []*models.Video
-}
-
 func (app *application) userView(w http.ResponseWriter, r *http.Request) {
 	username := r.PathValue("username")
 	user, err := app.users.GetByUsername(username)
@@ -121,15 +118,24 @@ func (app *application) userView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videos, err := app.videos.GetByUserLikes(user.ID)
-	if err != nil {
+	favoriteSketches, err := app.videos.GetByUserLikes(*user.ID)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	data.UserPage.User = user
-	data.UserPage.Favorited = videos
+	page, err := views.UserPageView(
+		user,
+		favoriteSketches,
+		app.baseImgUrl,
+	)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	data.Page = page
 	app.render(r, w, http.StatusOK, "view-user.tmpl.html", "base", data)
 }
 

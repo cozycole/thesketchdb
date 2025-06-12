@@ -12,27 +12,8 @@ import (
 // - Filter.Query -> "kenan | snl"
 // - SearchResult.Query -> "kenan+snl"
 // - templateData.Query -> "kenan snl" (i.e. user facing)
-type SearchResult struct {
-	Type                string
-	Query               string
-	VideoResults        []*models.Video
-	TotalVideoCount     int
-	PersonResults       []*models.Person
-	TotalPersonCount    int
-	CreatorResults      []*models.Creator
-	TotalCreatorCount   int
-	CharacterResults    []*models.Character
-	TotalCharacterCount int
-	ShowResults         []*models.Show
-	TotalShowCount      int
-	Filter              *models.Filter
-	NoResults           bool
-	PageURLParams       string
-	CurrentPage         int
-	Pages               []int
-}
 
-func (app *application) getSearchResults(filter *models.Filter) (*SearchResult, error) {
+func (app *application) getSearchResults(filter *models.Filter) (*models.SearchResult, error) {
 
 	videos, err := app.videos.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
@@ -84,12 +65,7 @@ func (app *application) getSearchResults(filter *models.Filter) (*SearchResult, 
 		return nil, fmt.Errorf("search show count error: %s", err)
 	}
 
-	noResults := peopleCount == 0 &&
-		videoCount == 0 &&
-		creatorCount == 0 &&
-		characterCount == 0
-
-	return &SearchResult{
+	return &models.SearchResult{
 		VideoResults:        videos,
 		TotalVideoCount:     videoCount,
 		PersonResults:       people,
@@ -100,44 +76,5 @@ func (app *application) getSearchResults(filter *models.Filter) (*SearchResult, 
 		TotalCharacterCount: characterCount,
 		ShowResults:         shows,
 		TotalShowCount:      showCount,
-		NoResults:           noResults,
 	}, nil
-}
-
-func paginate(currentPage, totalPages int) []int {
-	var pages []int
-
-	// Show the current page and two pages before and after
-	start := currentPage - 1
-	if start < 1 {
-		start = 1
-	}
-
-	end := currentPage + 1
-	if end > totalPages {
-		end = totalPages
-	}
-
-	// Add the main range
-	for i := start; i <= end; i++ {
-		pages = append(pages, i)
-	}
-
-	// Add ellipsis and the last page if necessary
-	if end < totalPages {
-		if end+1 < totalPages {
-			pages = append(pages, -1) // -1 represents "..."
-		}
-		pages = append(pages, totalPages)
-	}
-
-	// Add the first page and ellipsis if necessary
-	if start > 1 {
-		if start > 2 {
-			pages = append([]int{-1}, pages...)
-		}
-		pages = append([]int{1}, pages...)
-	}
-
-	return pages
 }

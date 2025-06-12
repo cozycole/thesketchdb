@@ -1,36 +1,22 @@
 {{ define "episode-thumbnail" }}
-  {{ with .Episode }}
-    <div class="flex-shrink-0 min-w-0">
-      <a href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/season/{{ $.Season.Number }}/episode/{{ .Number }}">
-        <img
-          src="{{ $.ImageBaseUrl }}/episode/{{ .Thumbnail }}"
-          class="w-full rounded-lg"
-          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
-        />
-      </a>
-      <div class="flex h-24">
-        <div class="w-8 min-w-8 mt-2">
-            <a href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}">
-            <img
-              src="{{ $.ImageBaseUrl }}/show/{{ $.Show.ProfileImg }}"
-              class="w-full rounded-full"
-              onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
-            />
+  <div class="flex-shrink-0 min-w-0">
+    <a {{ with .Url }}href="{{ . }}"{{ end }}>
+      <img
+        src="{{ .Image }}"
+        class="w-full rounded-lg"
+        onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+      />
+    </a>
+    <div class="flex h-28">
+      <div class="mt-2 ml-2 flex-1 min-w-0">
+        <h3 class="font-bold line-clamp-2 break-words whitespace-normal">
+          <a {{ with .Url }}href="{{ . }}"{{ end }}>
+            {{ .Title }}
           </a>
-        </div>
-        <div class="mt-2 ml-2 flex-1 min-w-0">
-          <h3 class="font-bold line-clamp-2 break-words whitespace-normal">
-            <a href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}/season/{{ $.Season.Number }}/episode/{{ .Number }}">{{ with .Title }}{{ . }}{{ else }}Episode {{ .Number }}{{ end }}</a>
-          </h3>
-          <!--<a href="/show/{{ $.Show.ID }}/{{ $.Show.Slug }}">-->
-          <!--  <p class="font-medium text-base line-clamp-2 break-words whitespace-normal">{{ $.Show.Name }}</p>-->
-          <!--</a>-->
-          <p></p>
-          {{ with .AirDate }}
-            <p>S{{ $.Season.Number }} E{{ $.Episode.Number }} • {{ .Format "Jan 2, 2006" }}</p>
-          {{ end }}
-        </div>
+        </h3>
+        <p>{{ .Info }}</p>
+        <p>Aired {{ .AirDate }}</p>
       </div>
     </div>
-  {{ end }}
+  </div>
 {{ end }}

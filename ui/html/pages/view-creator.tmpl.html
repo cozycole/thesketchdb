@@ -1,27 +1,28 @@
-{{ define "title" }}{{ .Creator.Name }}{{ end }}
+{{ define "title" }}{{ .Page.CreatorName }}{{ end }}
 {{ define "main" }}
   <main data-page="view-creator" class="max-w-screen-xl w-full mx-auto p-3 space-y-3 text-slate-950">
+    {{ with .Page }}
     <div class="w-full flex flex-col md:flex-row gap-3">
-      {{ with .Creator }}
         <section class="md:w-64 shrink-0 h-fit p-6 flex flex-col items-center md:items-left 
               gap-6 bg-white rounded-lg">
           <img
-            src="{{ $.ImageBaseUrl }}/creator/{{ .ProfileImage }}"
+            src="{{ .Image }}"
             class="w-52 rounded-full"
             onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
           />
           <div class="text-center space-y-1">
-            <h1 class="text-2xl font-medium">{{ .Name }}</h1>
+            <h1 class="text-2xl font-medium">{{ .CreatorName }}</h1>
           </div>
-          <time class="block">Established: {{ humanDate .EstablishedDate }}</time>
+          {{ if .EstablishedDate }}
+            <time class="block">Established: {{ .EstablishedDate }}</time>
+          {{ end }}
         </section>
-      {{ end }}
       <div id="contentSections" class="flex-1 min-w-0">
         <section class="w-full bg-white rounded-lg p-4">
           <collapse-content>
             <header class="flex items-center justify-between">
               <h2 class="text-xl font-bold hover:underline">
-                <a href="/catalog/sketches?creator={{ .Creator.ID }}">Popular Sketches</a>
+                <a href="/catalog/sketches?creator={{ .ID }}">Popular Sketches</a>
               </h2>
               <button class="toggleBtn transition-all">
                 <svg class="arrow stroke-slate-950 w-7 transform transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
@@ -31,12 +32,13 @@
             </header>
             <div class="content overflow-hidden transition-all duration-500 ease-in-out">
               <div class="mt-4">
-                {{ template "thumbnail-gallery" (dict "Videos" .Videos "ImageBaseUrl" $.ImageBaseUrl "SectionType" "sub") }}
+                {{ template "thumbnail-gallery-v2" .Popular }}
               </div>
             </div>
           </collapse-content>
         </section>
       </div>
     </div>
+    {{ end }}
   </main>
 {{ end }}

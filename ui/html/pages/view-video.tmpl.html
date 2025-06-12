@@ -1,77 +1,70 @@
-{{ define "title" }}{{ .Video.Title }}{{ end }}
+{{ define "title" }}{{ .Page.Title }} - theSketchDB{{ end }}
+
+<!-- See SketchPageView for template data -->
 {{ define "main" }}
   <main data-page="view-video" class="max-w-screen-xl w-full space-y-3 mx-auto p-3 text-slate-950">
-  {{ with .Video }}
+    {{ with .Page }}
     <div class="lg:flex gap-3 items-stretch">
       <div class="thumbnail toggleVideo basis-auto w-fit lg:basis-[640px] md:max-w-[640px] flex-shrink">
-        <button class="block h-full w-full relative shadow-lg">
+        <button class="block h-full w-full relative">
           <img
             class="rounded-lg w-auto lg:object-cover lg:h-full block"
-            src="{{ $.ImageBaseUrl }}/video/large/{{ .ThumbnailName }}"
+            src="{{ .Image }}"
             onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
           />
           <img class="absolute right-1 bottom-1 w-12" src="/static/img/play-button.svg">
         </button>
       </div>
       <div id="videoInfo" class="w-full min-w-80 flex-1 
-            mt-3 lg:mt-0 p-5 rounded-xl shadow-lg bg-white">
+            mt-3 lg:mt-0 p-5 rounded-xl bg-white">
         <div class="mb-3">
           <h1 class="text-2xl font-bold my-1 md:line-clamp-2">{{ .Title }}
             {{- if $.IsEditor -}}
               <span class="text-sm">
-                (<a href="/video/{{ .ID }}/update" class="hover:underline">Edit</a>)
+                (<a href="{{ .UpdateUrl }}" class="hover:underline">Edit</a>)
               </span>
             {{- end -}}
           </h1>
         </div>
         <div class="flex flex-nowrap items-start mb-6">
-          {{ if and .Show .Show.ID }}
             <div class="w-12 md:w-14 min-w-8 mr-3">
-              <a href="/show/{{ .Show.ID }}/{{ .Show.Slug }}">
+              <a href="{{ .CreatorUrl }}">
                 <img
-                  src="{{ $.ImageBaseUrl }}/show/{{ .Show.ProfileImg }}"
+                  src="{{ .CreatorImage }}"
                   class="w-full rounded-full"
                   onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
                 />
               </a>
             </div>
-          {{ else if and .Creator .Creator.ID }}
-            <div class="w-12 md:w-14 min-w-8 mr-3">
-              <a href="/creator/{{ .Creator.Slug }}">
-                <img
-                  src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
-                  class="w-full rounded-full"
-                  onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
-                />
+            <div>
+              <a href="{{ .CreatorUrl }}">
+                <p class="font-medium text-lg line-clamp-1">{{ .CreatorName }}</p>
               </a>
-            </div>
-          {{ end }}
-          <div>
-            {{ if and .Show .Show.Slug }}
-              <a href="/show/{{ .Show.ID }}/{{ .Show.Slug }}">
-                <p class="font-medium text-lg line-clamp-1">{{ .Show.Name }}</p>
-              </a>
-              {{ if (hasEpisode .Show )}}
-                <span class="block">
-                {{ $season := (index .Show.Seasons 0) }}
-                {{ $episode := (index $season.Episodes 0) }}
-                Season {{$season.Number}} · Episode {{$episode.Number}}
-                </span>
+              {{  if .SeasonNumber }}
+                <div>
+                  <a href="{{ .SeasonUrl }}" class="hover:underline">
+                    Season {{ .SeasonNumber }} 
+                  </a>
+                  {{ if .EpisodeNumber }}
+                    ·
+                  <a href="{{ .EpisodeUrl }}" class="hover:underline">
+                    Episode {{ .EpisodeNumber }}
+                  </a>
+                  {{ end }}
+                  {{ with .SketchNumber }}
+                    · Sketch #{{ . }}
+                  {{ end }}
+                </div>
               {{ end }}
               
-            {{ else if and .Creator .Creator.Slug }}
-              <a href="/creator/{{ .Creator.Slug }}">
-                <p class="font-medium text-lg line-clamp-1">{{ .Creator.Name }}</p>
-              </a>
-            {{ end }}
-            {{ with .UploadDate}}
-              <time class="block">{{ humanDate . }}</time>
+            {{ with .Date}}
+              <time class="block">{{ . }}</time>
             {{ end }}
           </div>
         </div>
         <div id="buttons" class="flex items-center gap-3">
           <favorite-button data-favorited="{{ if .Liked }} true {{ else }} false {{ end }}"
-              data-id="{{.ID}}">
+              data-id="{{.SketchID}}">
             <button id="favBtn"
               class="flex items-center gap-2 relative px-4 py-2 rounded-full bg-orange-600 text-white font-semibold shadow hover:bg-orange-500 transition-all duration-300"
               >
@@ -99,9 +92,10 @@
             Watch On
           </h3>
           <div class="flex gap-3">
-            {{ if .YoutubeID }}
-              <a href="{{ .URL }}" target="_blank">
-                <img class="w-14 rounded-full transition-all duration-300 hover:shadow-lg" src="/static/img/youtube-logo.jpg">
+            {{ with .YoutubeUrl }}
+              <a href="{{ . }}" target="_blank">
+                <img class="w-14 rounded-full transition-all duration-300 hover:shadow-lg" 
+                  src="/static/img/youtube-logo.jpg">
               </a>
             {{ end }}
           </div>
@@ -124,7 +118,7 @@
           </button>
         </div>
         <div id="castGallery" class="content overflow-hidden transition-all duration-500 ease-in-out">
-          {{ template "cast-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Video" .) }}
+          {{ template "cast-gallery" .Cast }}
         </div>
       </collapse-content>
     </div>
@@ -145,20 +139,18 @@
         </div>
         <div id="tags" class="content overflow-hidden transition-all duration-300 ease-in-out">
           <div class=" flex flex-wrap gap-2 mt-4 text-slate-50 text-sm">
-            {{ range $tag := .Tags }}
-              <a href="/catalog/sketches?tag={{ .ID }}">
-                {{- with $tag.Category.Name -}}
-                  <div class="p-3 font-bold rounded-full bg-slate-950 hover:bg-slate-850 hover:cursor-pointer">{{ . }} / {{ $tag.Name }}</div>
-                {{- else -}}
-                  <div class="p-3 font-bold rounded-full bg-slate-950 hover:bg-slate-850 hover:cursor-pointer">{{ $tag.Name}}</div>
-                {{- end -}}
+            {{ range .Tags }}
+              <a {{ with .Url }}href="{{ . }}"{{ end }}>
+                <div class="p-3 font-bold rounded-full bg-slate-950 hover:bg-slate-850 hover:cursor-pointer">
+                  {{ .Name }}
+                </div>
               </a>
             {{ end }}
           </div>
         </div>
       </collapse-content>
     </div>
-    {{ if .YoutubeID }}
+    {{ if .YoutubeId }}
       <youtube-embed>
         <div id="watchNow" 
             class="toggleVideo hidden items-center justify-center fixed inset-0"
@@ -169,7 +161,7 @@
                 id="watchNowIframe"
                 allowfullscreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                src="https://www.youtube.com/embed/{{ .YoutubeID}}?enablejsapi=1&origin=localhost:4000"
+                src="https://www.youtube.com/embed/{{ .YoutubeId }}?enablejsapi=1&origin=localhost:4000"
                 title="YouTube video player"
                 frameborder="0" 
                 allowscriptaccess="always"

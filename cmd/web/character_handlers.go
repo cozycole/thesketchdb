@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
 )
 
@@ -37,12 +38,17 @@ func (app *application) characterView(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	// stats, err := app.people.GetPersonStats(persondId)
-
 	data := app.newTemplateData(r)
-	data.CharacterPage.Character = character
-	data.CharacterPage.Popular = popularSketches
-	// data.PersonPage.Stats = stats
+	page, err := views.CharacterPageView(
+		character,
+		popularSketches,
+		app.baseImgUrl,
+	)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
 
+	data.Page = page
 	app.render(r, w, http.StatusOK, "view-character.tmpl.html", "base", data)
 }

@@ -2,40 +2,28 @@ package main
 
 import (
 	"fmt"
-	"math"
 
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) getCatalogResults(currentPage int, searchType string, filter *models.Filter) (*SearchResult, error) {
-	var result SearchResult
-	var getErr, countErr error
-	var totalCount, resultCount int
-	app.infoLog.Printf("%+v\n", filter)
-	switch searchType {
-	default:
-		var videos []*models.Video
-		result.Type = "video"
-		videos, getErr = app.videos.Get(filter)
-		totalCount, countErr = app.videos.GetCount(filter)
-		resultCount = len(videos)
-
-		result.VideoResults = videos
+func (app *application) getSketchCatalogResults(
+	currentPage int,
+	searchType string,
+	filter *models.Filter,
+) (*models.SearchResult, error) {
+	videos, err := app.videos.Get(filter)
+	if err != nil {
+		return nil, fmt.Errorf("%s get error: %w", searchType, err)
 	}
 
-	if getErr != nil {
-		return nil, fmt.Errorf("%s get error: %w", searchType, getErr)
+	totalCount, err := app.videos.GetCount(filter)
+	if err != nil {
+		return nil, fmt.Errorf("%s search count error: %w", searchType, err)
 	}
 
-	if countErr != nil {
-		return nil, fmt.Errorf("%s search count error: %w", searchType, countErr)
-	}
-
-	totalPages := int(math.Ceil(float64(totalCount) / float64(app.settings.pageSize)))
-	pageList := paginate(currentPage, totalPages)
-
-	result.Pages = pageList
-	result.NoResults = resultCount == 0
-	result.CurrentPage = currentPage
-	return &result, nil
+	return &models.SearchResult{
+		Type:            "video",
+		VideoResults:    videos,
+		TotalVideoCount: totalCount,
+	}, nil
 }

@@ -9,10 +9,9 @@
               border border-slate-300 hover:border-slate-400 
               px-3 py-1.5 rounded-lg shadow-sm focus:outline-none"
       >
-      <option value="latest" {{if eq .SearchResults.Filter.SortBy "latest"}}selected{{end}}>Latest</option>
-        <option value="oldest" {{if eq .SearchResults.Filter.SortBy "oldest"}}selected{{end}}>Oldest</option>
-        <option value="az" {{if eq .SearchResults.Filter.SortBy "az"}}selected{{end}}>A-Z</option>
-        <option value="za" {{if eq .SearchResults.Filter.SortBy "za"}}selected{{end}}>Z-A</option>
+      {{ range .SortOptions }}
+        <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>{{ .Label }}</option>
+      {{ end }}
       </select>
       <div class="pointer-events-none absolute inset-y-0 right-0 
                   flex items-center px-2 text-slate-500">
@@ -27,14 +26,7 @@
       data-type="person"
       data-url="/person/search"
       data-placeholder="Enter actor's name"
-      data-selected='[
-        {{- range $i, $p := .SearchResults.Filter.People -}}
-          {{- if ne $i 0 -}},{{- end -}}
-          {"id": "{{ $p.ID }}", 
-          "name": "{{ $p.First }} {{ $p.Last }}",
-          "image": "{{ $.ImageBaseUrl }}/person/{{ $p.ProfileImg }}"}
-        {{- end -}}
-    ]'>
+      data-selected='{{ .SelectedPeopleJSON }}'>
     </catalog-filter>
   </div>
   <div>
@@ -44,14 +36,7 @@
       data-type="character"
       data-url="/character/search"
       data-placeholder="Enter characters's name"
-      data-selected='[
-        {{- range $i, $c := .SearchResults.Filter.Characters -}}
-          {{- if ne $i 0 -}},{{- end -}}
-          {"id": "{{ $c.ID }}",
-          "name": "{{ $c.Name }}",
-          "image": "{{ $.ImageBaseUrl }}/character/{{ $c.Image }}"}
-        {{- end -}}
-    ]'>
+      data-selected='{{ .SelectedCharactersJSON }}'>
     </catalog-filter>
   </div>
   <div>
@@ -61,14 +46,7 @@
       data-type="creator"
       data-url="/creator/search"
       data-placeholder="Enter creator's name"
-      data-selected='[
-        {{- range $i, $c := .SearchResults.Filter.Creators -}}
-          {{- if ne $i 0 -}},{{- end -}}
-          {"id": "{{ $c.ID }}", 
-          "name": "{{ $c.Name }}",
-          "image": "{{ $.ImageBaseUrl }}/creator/{{ $c.ProfileImage }}"}
-        {{- end -}}
-    ]'>
+      data-selected='{{ .SelectedCreatorsJSON }}'>
     </catalog-filter>
   </div>
   <div>
@@ -79,13 +57,7 @@
       data-url="/tag/search"
       data-placeholder="Search categories / tags"
       data-display-img="false"
-      data-selected='[
-        {{- range $i, $t := .SearchResults.Filter.Tags -}}
-          {{- if ne $i 0 -}},{{- end -}}
-          {"id": "{{ $t.ID }}", 
-          "name": "{{ with $t.Category }}{{ .Name }} / {{ end }}{{ $t.Name }}"}
-        {{- end -}}
-    ]'>
+      data-selected='{{ .SelectedTagsJSON }}'>
     </catalog-filter>
   </div>
 {{ end }}

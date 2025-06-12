@@ -1,6 +1,6 @@
 {{ define "video-catalog" }}
   <div class="flex justify-between items-center relative my-2">
-    <p id="resultCount" class="font-bold text-xl">{{ .SearchResults.TotalVideoCount }} Sketches</p>
+    <p id="resultCount" class="font-bold text-xl">{{ .ResultCountLabel }}</p>
     <button id="mobileFilterMenu"
         class="flex p-3 lg:hidden gap-2 rounded-md bg-orange-600 hover:bg-orange-500">
       <p class="hidden sm:block font-bold text-white tx-lg">Filters</p>
@@ -21,11 +21,11 @@
         class="flex flex-col grow w-full lg:pl-2 border-slate-950"
         hx-trigger="filter-change"
       >
-      {{ template "video-catalog-result" . }}
+      {{ template "video-catalog-result" .CatalogResult }}
     </div>
     <filter-content>
       <div id="filters" class="flex flex-col gap-2">
-        {{ template "video-catalog-filter" (dict "SearchResults" .SearchResults "ImageBaseUrl" $.ImageBaseUrl)}}
+        {{ template "video-catalog-filter" .CatalogFilter }}
         <button id="filterApply" class="mt-1 w-full p-2 rounded-full
                       bg-orange-600 hover:bg-orange-500
                       text-white font-bold"

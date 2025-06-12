@@ -25,6 +25,8 @@ type Season struct {
 	ID       *int
 	Number   *int
 	ShowId   *int
+	ShowName *string
+	ShowSlug *string
 	Episodes []*Episode
 }
 
@@ -49,13 +51,17 @@ func (s *Season) AirYear() string {
 }
 
 type Episode struct {
-	ID        *int
-	Number    *int
-	Title     *string
-	AirDate   *time.Time
-	Thumbnail *string
-	SeasonId  *int
-	Videos    []*Video
+	ID           *int
+	Number       *int
+	Title        *string
+	AirDate      *time.Time
+	Thumbnail    *string
+	SeasonId     *int
+	SeasonNumber *int
+	ShowID       *int
+	ShowName     *string
+	ShowSlug     *string
+	Videos       []*Video
 }
 
 type ShowModelInterface interface {
@@ -131,6 +137,10 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 		if v.ID == nil {
 			continue
 		}
+		if v.SeasonNumber != nil {
+			e.SeasonNumber = new(int)
+			*e.SeasonNumber = *v.SeasonNumber
+		}
 		v.Show = s
 
 		e.Videos = append(e.Videos, v)
@@ -178,6 +188,11 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 
 		if e.ID == nil {
 			continue
+		}
+
+		e.SeasonNumber = new(int)
+		if s.Number != nil {
+			*e.SeasonNumber = *s.Number
 		}
 
 		// If episode already exists, want to append its videos
@@ -392,6 +407,13 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 			continue
 		}
 
+		s.ShowId = new(int)
+		*s.ShowId = *show.ID
+		s.ShowName = new(string)
+		*s.ShowName = *show.Name
+		s.ShowSlug = new(string)
+		*s.ShowSlug = *show.Slug
+
 		// add season to map if not already added
 		if _, ok := seasonMap[*s.ID]; !ok {
 			seasonMap[*s.ID] = s
@@ -402,6 +424,15 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 		if e.ID == nil {
 			continue
 		}
+
+		e.ShowID = new(int)
+		*e.ShowID = *show.ID
+		e.ShowName = new(string)
+		*e.ShowName = *show.Name
+		e.ShowSlug = new(string)
+		*e.ShowSlug = *show.Slug
+		e.SeasonNumber = new(int)
+		*e.SeasonNumber = *s.Number
 
 		if _, ok := episodes[*e.ID]; !ok {
 			episodes[*e.ID] = e

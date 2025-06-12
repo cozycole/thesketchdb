@@ -33,9 +33,9 @@
           <div class="glide w-full">
             <div class="glide__track" data-glide-el="track">
               <div class="glide__slides">
-                  {{ range .Home.Featured }}
+                  {{ range .Page.Featured }}
                     <div class="glide__slide">
-                      {{ template "featured-thumbnail" (dict "ImageBaseUrl" $.ImageBaseUrl "Video" .)}}
+                      {{ template "featured-thumbnail" . }}
                     </div>
                   {{ end }}
                 </div>
@@ -83,7 +83,7 @@
             >Popular</a
           >
         </h2>
-        {{ template "video-carousel" (dict "ImageBaseUrl" $.ImageBaseUrl "Videos" .Home.PopularSketches) }}
+        {{ template "video-carousel" .Page.PopularSketches }}
       </div>
       <div class="px-2 max-w-screen-xl mx-auto">
         <h2 class="font-bold text-2xl py-3">
@@ -91,7 +91,7 @@
             >Latest</a
           >
         </h2>
-        {{ template "video-carousel" (dict "ImageBaseUrl" $.ImageBaseUrl "Videos" .Home.Latest) }}
+        {{ template "video-carousel" .Page.LatestSketches }}
       </div>
     </div>
     <div class="bg-slate-800 pb-4">
@@ -100,7 +100,7 @@
           <a href="/catalog/sketches?sort=oldest" class="hover:underline"
             >Popular Actors</a>
         </h2>
-        {{ template "person-carousel" (dict "ImageBaseUrl" $.ImageBaseUrl "People" .Home.Actors) }}
+        {{ template "person-carousel" (dict "ImageBaseUrl" $.ImageBaseUrl "People" .Page.Actors) }}
       </div>
     </div>
   </main>

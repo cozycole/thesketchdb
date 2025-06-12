@@ -6,12 +6,19 @@ import (
 	"net/http"
 	"strconv"
 
+	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
 )
 
 func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
-	slug := r.PathValue("slug")
-	video, err := app.videos.GetBySlug(slug)
+	idParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(idParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	video, err := app.videos.GetById(sketchId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -21,34 +28,27 @@ func (app *application) videoView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags, err := app.tags.GetByVideo(*video.ID)
+	tags, err := app.tags.GetByVideo(sketchId)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
 	}
 
-	if video.Show != nil && video.Show.ID != nil {
-		show, err := app.shows.GetById(*video.Show.ID)
-		if err == nil {
-			video.Show = show
-		}
-
-	}
-
 	user, ok := r.Context().Value(userContextKey).(*models.User)
-	if ok {
-		hasLike, _ := app.videos.HasLike(*video.ID, user.ID)
-		video.Liked = hasLike
+	if ok && user.ID != nil {
+		hasLike, _ := app.videos.HasLike(*video.ID, *user.ID)
+		video.Liked = &hasLike
 	}
 
 	data := app.newTemplateData(r)
-	if video.YoutubeID != nil && *video.YoutubeID != "" {
-		videoUrl := fmt.Sprintf("https://www.youtube.com/watch?v=%s", *video.YoutubeID)
-		video.URL = &videoUrl
+	sketchPage, err := views.SketchPageView(video, tags, app.baseImgUrl)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
 	}
 
-	data.Video = video
-	data.Video.Tags = tags
+	data.Page = sketchPage
+	app.infoLog.Printf("%+v/n", sketchPage)
 
 	app.render(r, w, http.StatusOK, "view-video.tmpl.html", "base", data)
 }
@@ -158,7 +158,7 @@ func (app *application) videoUpdatePage(w http.ResponseWriter, r *http.Request) 
 	}
 
 	video.Cast = cast
-	video.Tags = tags
+	video.Tags = &tags
 	app.infoLog.Printf("%+v", video.Tags)
 	data := app.newTemplateData(r)
 	data.Video = video
@@ -275,7 +275,7 @@ func (app *application) videoAddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.users.AddLike(user.ID, videoId)
+	err = app.users.AddLike(*user.ID, videoId)
 	if err != nil {
 		// check if problem with primary key constraint
 		app.badRequest(w)
@@ -296,7 +296,7 @@ func (app *application) videoRemoveLike(w http.ResponseWriter, r *http.Request) 
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	err = app.users.RemoveLike(user.ID, videoId)
+	err = app.users.RemoveLike(*user.ID, videoId)
 	if err != nil {
 		app.badRequest(w)
 		return

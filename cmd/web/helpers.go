@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"sketchdb.cozycole.net/internal/models"
@@ -61,6 +62,18 @@ func (app *application) unauthorized(w http.ResponseWriter) {
 	app.clientError(w, http.StatusUnauthorized)
 }
 
+func extractUrlParamIDs(idParams []string) []int {
+	var ids []int
+	for _, idStr := range idParams {
+		id, err := strconv.Atoi(idStr)
+		if nil == err && id > 0 {
+			ids = append(ids, id)
+		}
+	}
+
+	return ids
+}
+
 // For consistency, we'll also implement a notFound helper. This is simply a
 // convenience wrapper around clientError which sends a 404 Not Found response to
 // the user.
@@ -72,8 +85,8 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	user, ok := r.Context().Value(userContextKey).(*models.User)
 	var isEditor, isAdmin bool
 	if ok {
-		isEditor = user.Role == "admin" || user.Role == "editor"
-		isAdmin = user.Role == "admin"
+		isEditor = safeDerefString(user.Role) == "admin" || safeDerefString(user.Role) == "editor"
+		isAdmin = safeDerefString(user.Role) == "admin"
 	} else {
 		isEditor = false
 	}
@@ -87,7 +100,14 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	}
 }
 
-func (app *application) render(r *http.Request, w http.ResponseWriter, status int, page string, baseTemplate string, data *templateData) {
+func safeDerefString(str *string) string {
+	if str != nil {
+		return *str
+	}
+	return ""
+}
+
+func (app *application) render(r *http.Request, w http.ResponseWriter, status int, page string, baseTemplate string, data any) {
 	ts, ok := app.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
@@ -116,13 +136,4 @@ func (app *application) render(r *http.Request, w http.ResponseWriter, status in
 	// If the template is written to the buffer
 	w.WriteHeader(status)
 	buf.WriteTo(w)
-}
-
-func intSliceContains(list []int, value int) bool {
-	for _, n := range list {
-		if n == value {
-			return true
-		}
-	}
-	return false
 }

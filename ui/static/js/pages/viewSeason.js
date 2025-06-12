@@ -1,11 +1,8 @@
 export function initViewSeason() {
-  document.getElementById('seasonDropdown').addEventListener('change', function() {
-    let selectedValue = this.value;
-    let dropdown = document.getElementById('seasonDropdown');
-    console.log(dropdown);
-    if (selectedValue) {
-      console.log(dropdown.dataset.url + `/${this.value}`);
-      window.location.href = dropdown.dataset.url + `/${this.value}`;
+  document.body.addEventListener("htmx:configRequest", function (evt) {
+    if (evt.detail.path.includes('season')) {
+      evt.detail.path = evt.detail.path + `/${evt.detail.elt.value}?format=sub`
+      evt.detail.parameters = {};
     }
   });
 }

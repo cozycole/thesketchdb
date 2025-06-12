@@ -2,43 +2,50 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
 )
 
 func (app *application) search(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	query, _ := url.QueryUnescape(r.Form.Get("query"))
+	fmt.Println("QUERY", query)
 
-	data := app.newTemplateData(r)
+	var results *models.SearchResult
+	var err error
 	if query != "" {
 		filterQuery := strings.Join(strings.Fields(query), " | ")
 
 		filter := &models.Filter{
 			Query:  filterQuery,
-			Limit:  12,
+			Limit:  app.settings.maxSearchResults,
 			Offset: 0,
 			SortBy: "latest",
 		}
 
-		results, err := app.getSearchResults(filter)
+		results, err = app.getSearchResults(filter)
 		if err != nil {
 			app.serverError(r, w, err)
 			return
 		}
-
-		data.Query = query
-		data.SearchResults = results
-		data.SearchResults.Query = url.QueryEscape(query)
-		data.SearchResults.Filter = filter
-	} else {
-		data.SearchResults = &SearchResult{}
 	}
 
-	app.infoLog.Printf("SHOWS: %+v\n", data.SearchResults.ShowResults)
+	data := app.newTemplateData(r)
+	data.Page, err = views.SearchPageView(
+		results,
+		query,
+		app.baseImgUrl,
+		app.settings.maxSearchResults,
+	)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
 
 	app.render(r, w, http.StatusOK, "search.tmpl.html", "base", data)
 }

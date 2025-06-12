@@ -20,14 +20,14 @@ type password struct {
 }
 
 type User struct {
-	ID           int
-	CreatedAt    time.Time
-	Username     string
-	Email        string
-	Password     password
-	Activated    bool
-	Role         string
-	ProfileImage string
+	ID           *int
+	CreatedAt    *time.Time
+	Username     *string
+	Email        *string
+	Password     *password
+	Activated    *bool
+	Role         *string
+	ProfileImage *string
 }
 
 func (p *password) Set(plaintext string) error {
@@ -114,13 +114,13 @@ func (m *UserModel) GetByUsername(username string) (*User, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-
+	password := password{}
 	err := m.DB.QueryRow(ctx, query, username).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Username,
 		&user.Email,
-		&user.Password.hash,
+		&password.hash,
 		&user.Activated,
 		&user.Role,
 		&user.ProfileImage,
@@ -132,6 +132,8 @@ func (m *UserModel) GetByUsername(username string) (*User, error) {
 		}
 		return nil, err
 	}
+
+	user.Password = &password
 
 	return &user, nil
 }

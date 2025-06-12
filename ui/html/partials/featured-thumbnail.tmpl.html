@@ -1,58 +1,39 @@
 {{ define "featured-thumbnail" }}
-  {{ with .Video}}
-    <div class="relative flex-shrink-0 min-w-0 w-full">
-      <div class="absolute bottom-14 left-0 w-full h-1/6 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
-      <div class="absolute bottom-2 left-1 w-full">
-        <div class="flex items-center text-white">
-          {{ if and .Show .Show.ID }}
-            <div class="w-16 mt-2">
-              <a href="/show/{{ .Show.ID }}/{{ .Show.Slug }}">
-                <img
-                  src="{{ $.ImageBaseUrl }}/show/{{ .Show.ProfileImg }}"
-                  class="w-full rounded-full"
-                  onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
-                />
-              </a>
-            </div>
-          {{ else if and .Creator .Creator.ID }}
-            <div class="w-16 mt-2">
-              <a href="/creator/{{ .Creator.Slug }}">
-                <img
-                  src="{{ $.ImageBaseUrl }}/creator/{{ .Creator.ProfileImage }}"
-                  class="w-full rounded-full"
-                  onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
-                />
-              </a>
-            </div>
-          {{ end }}
-          <div class="mt-2 ml-2 flex-1">
-            <a href="/video/test-video-1">
-              <h3 class="font-bold text-lg line-clamp-1">
-                {{ .Title }}
-              </h3>
-            </a>
-            {{ if and .Show .Show.Slug }}
-              <a href="/show/{{ .Show.ID }}/{{ .Show.Slug }}">
-                <p class="font-medium text-base line-clamp-1">{{ .Show.Name }}</p>
-              </a>
-            {{ else if and .Creator .Creator.Slug }}
-              <a href="/creator/{{ .Creator.Slug }}">
-                <p class="font-medium text-base line-clamp-1">{{ .Creator.Name }}</p>
-              </a>
-            {{ end }}
-            <div class="line-clamp-1">
-              {{ printCast .Cast }}
-             </div>
+  <div class="relative flex-shrink-0 min-w-0 w-full">
+    <div class="absolute bottom-14 left-0 w-full h-1/6 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
+    <div class="absolute bottom-2 left-1 w-full">
+      <div class="flex items-center text-white">
+        <div class="w-16 mt-2">
+          <a href="{{ .CreatorUrl }}">
+            <img
+              src="{{ .CreatorImage }}"
+              class="w-full rounded-full"
+              onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+            />
+          </a>
+        </div>
+        <div class="mt-2 ml-2 flex-1">
+          <a href="{{ .Url }}">
+            <h3 class="font-bold text-lg line-clamp-1">
+              {{ .Title }}
+            </h3>
+          </a>
+          <a href="{{ .CreatorUrl }}">
+            <p class="font-medium text-base line-clamp-1">{{ .CreatorName }}</p>
+          </a>
+          <div class="line-clamp-1">
+            {{ .CreatorInfo }}
           </div>
         </div>
       </div>
-      <a href="/video/{{ .Slug }}">
-         <img
-          src="{{ $.ImageBaseUrl }}/video/large/{{ .ThumbnailName }}"
-          class="w-full rounded-lg"
-        />
-      </a>
-     <div class="h-14 bg-slate-950 rounded-b-lg"></div>
     </div>
-  {{ end }}
+    <a href="{{ .Url }}">
+       <img
+        src="{{ .LargeImage }}"
+        class="w-full rounded-lg"
+        onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+      />
+    </a>
+   <div class="h-14 bg-slate-950 rounded-b-lg"></div>
+  </div>
 {{ end }}

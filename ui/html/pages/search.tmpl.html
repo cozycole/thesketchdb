@@ -1,6 +1,7 @@
 {{ define "title" }}Search SketchDB{{ end }}
 
 {{ define "main" }}
+  {{ with .Page }}
   <main data-page="search" class="w-full max-w-screen-xl mx-auto px-2 pb-4 text-slate-950 ">
     <h1 class="w-full my-3 text-2xl font-bold line-clamp-1">Search "{{ .Query }}"</h1>
     <section class="w-full">
@@ -9,95 +10,91 @@
           <div class="text-center p-6">
             <p class="text-lg font-bold">Search SketchDB by typing a word or phrase in the search box above.</p>
           </div>
-        {{- else if eq .SearchResults.NoResults false -}} 
-          {{- with .SearchResults.PersonResults -}}
+        {{- else if .NoResults -}} 
+          <div class="text-center p-6">
+            <p class="text-lg font-bold">No results found.</p>
+          </div>
+        {{- else -}}
+        {{ if ne .PersonResultCount 0 }}
           <div class="bg-white p-4 rounded-lg">
             <header class="w-full flex items-center justify-between">
               <h2 class="text-xl font-bold">
-                <a>People ({{ $.SearchResults.TotalPersonCount}})</a>
+                <a>People ({{ .PersonResultCount }})</a>
               </h2>
               <a class="hidden">See All</a>
             </header>
             <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out">
               <div class="w-full mt-4">
-                {{- template "person-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "People" .) -}}
+                {{- template "person-gallery" .PersonResults -}}
               </div>
             </div>
           </div>
-          {{- end -}}
-          {{- with .SearchResults.CharacterResults -}}
+        {{ end }}
+        {{ if ne .CharacterResultCount 0 }}
           <div class="w-full bg-white p-4 rounded-lg">
             <header class="w-full flex items-center justify-between">
               <h2 class="text-xl font-bold">
-                <a>Characters ({{ $.SearchResults.TotalCharacterCount }})</a>
+                <a>Characters ({{ .CharacterResultCount }})</a>
               </h2>
               <a class="hidden">See All</a>
             </header>
             <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out">
               <div class="w-full mt-4 overflow-hidden">
-                {{- template "character-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Characters" .) -}}
+                {{- template "character-gallery" .CharacterResults -}}
               </div>
             </div>
           </div>
-          {{- end -}}
-          {{- with .SearchResults.CreatorResults -}}
+          {{ end }}
+          {{ if ne .CreatorResultCount 0 }}
           <div class="bg-white p-4 rounded-lg">
             <header class="w-full flex items-center justify-between">
               <h2 class="text-xl font-bold">
-                <a>Creators ({{ $.SearchResults.TotalCreatorCount }})</a>
+                <a>Creators ({{ .CreatorResultCount }})</a>
               </h2>
               <a class="hidden">See All</a>
             </header>
             <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out">
               <div class="mt-4">
-                {{- template "creator-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Creators" .) -}}
+                {{- template "creator-gallery" .CreatorResults -}}
               </div>
             </div>
           </div>
-          {{- end -}}
-          {{- with .SearchResults.ShowResults -}}
+          {{ end }}
+          {{ if ne .ShowResultCount 0 }}
           <div class="bg-white p-4 rounded-lg">
             <header class="w-full flex items-center justify-between">
               <h2 class="text-xl font-bold">
-                <a>Shows ({{ $.SearchResults.TotalShowCount }})</a>
+                <a>Shows ({{ .ShowResultCount }})</a>
               </h2>
               <a class="hidden">See All</a>
             </header>
             <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out">
               <div class="mt-4">
-                {{- template "show-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Shows" .) -}}
+                {{- template "show-gallery" .ShowResults -}}
               </div>
             </div>
           </div>
-          {{- end -}}
-          {{- with .SearchResults.VideoResults -}}
+          {{ end }}
+          {{ if ne .SketchResultCount 0 }}
           <div class="bg-white p-4 rounded-lg">
             <header class="w-full flex items-center justify-between">
               <h2 class="text-xl font-bold hover:underline">
-                <a href="/catalog/sketches?query={{ $.SearchResults.Query }}">Sketches ({{ $.SearchResults.TotalVideoCount}})</a>
+                <a href="/catalog/sketches?query={{ .EscapedQuery }}">
+                  Sketches ({{ .SketchResultCount }})
+                </a>
               </h2>
               <a class="hidden">See All</a>
             </header>
             <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out">
               <div class="mt-4">
-                {{- template "thumbnail-gallery" (dict "ImageBaseUrl" $.ImageBaseUrl "Videos" .) -}}
-                {{ if gt $.SearchResults.TotalVideoCount 12 }}
-                  <div class="p-4 font-medium text-lg text-center">
-                    <a href="/catalog/sketches?query={{ $.SearchResults.Query }}" class="w-fit hover:underline">
-                      See More
-                    </a>
-                  </div>
-                {{ end }}
+                {{- template "thumbnail-gallery-v2" .SketchResults -}}
               </div>
             </div>
           </div>
-          {{- end -}}
-        {{- else -}}
-          <div class="text-center p-6">
-            <p class="text-lg font-bold">No results found.</p>
-          </div>
+          {{ end }}
         {{- end -}}
       </div>
     </section>
   </main>
+  {{ end }}
 {{ end }}

@@ -18,10 +18,10 @@
       <div id="tabUnderline" class="absolute bottom-0 h-0.5 bg-orange-500 transition-all duration-300 ease-out"></div>
     </div>
     <section id="catalogSection" class="flex flex-col grow">
-      {{ if eq .CatalogType "people" }}
-        {{ template "video-catalog" . }}
+      {{ if eq .CatalogType "Sketches" }}
+        {{ template "video-catalog" .Page.Catalog }}
       {{ else }}
-        {{ template "video-catalog" . }}
+        {{ template "video-catalog" .Page.Catalog }}
       {{ end }}
     </section>
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>

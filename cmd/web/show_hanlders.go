@@ -6,10 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	// "path"
-	// "time"
+	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
-	// "sketchdb.cozycole.net/internal/utils"
 )
 
 func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
@@ -32,11 +30,11 @@ func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
 
 	filter := &models.Filter{
 		Limit:  8,
-		SortBy: "latest",
+		SortBy: "az",
 		Shows:  []*models.Show{show},
 	}
 
-	videos, err := app.videos.Get(filter)
+	popular, err := app.videos.Get(filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -49,10 +47,13 @@ func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	data.Show = show
-	data.People = cast
-	data.Videos = videos
+	page, err := views.ShowPageView(show, popular, cast, app.baseImgUrl)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
 
+	data.Page = page
 	app.render(r, w, http.StatusOK, "view-show.tmpl.html", "base", data)
 }
 
@@ -98,17 +99,22 @@ func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	data.Show = show
-	data.Season = season
-	data.Episodes = season.Episodes
 
 	isHxRequest := r.Header.Get("HX-Request") == "true"
 	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
 	data.SectionType = "sub"
 	if isHxRequest && !isHistoryRestore {
-		app.render(r, w, http.StatusOK, "episode-gallery.tmpl.html", "episode-gallery", data)
+		format := r.URL.Query().Get("format")
+		app.infoLog.Println("FORMAT", format)
+		templateData := views.SeasonSelectGalleryView(show.Seasons, season, app.baseImgUrl, format)
+		app.infoLog.Printf("%+v\n", templateData)
+		app.render(r, w, http.StatusOK, "season-select-gallery.tmpl.html", "season-select-gallery", templateData)
 		return
 	}
+
+	page := views.SeasonPageView(show, season, app.baseImgUrl)
+	data.Page = page
+	app.infoLog.Printf("%+v\n", page.SeasonSelectGallery.EpisodeGallery.EpisodeThumbnails[0])
 
 	app.render(r, w, http.StatusOK, "view-season.tmpl.html", "base", data)
 }
@@ -177,10 +183,14 @@ func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	data.Show = show
-	data.Season = season
-	data.Episode = episode
+	page, err := views.EpisodePageView(show, episode, app.baseImgUrl)
+	app.infoLog.Printf("%+v\n", page)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
 
+	data.Page = page
 	app.render(r, w, http.StatusOK, "view-episode.tmpl.html", "base", data)
 }
 

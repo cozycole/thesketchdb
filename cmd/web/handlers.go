@@ -1,22 +1,17 @@
 package main
 
 import (
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
 )
 
 var pageSize = 16
-
-type HomeData struct {
-	Featured        []*models.Video
-	Latest          []*models.Video
-	PopularSketches []*models.Video
-	Actors          []*models.Person
-}
 
 func (app *application) testing(w http.ResponseWriter, r *http.Request) {
 	filter := models.Filter{
@@ -37,29 +32,23 @@ func (app *application) testing(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "carousel-testing.tmpl.html", "base", data)
 }
 
+type HomePage struct {
+	Featured        []*views.SketchThumbnail
+	LatestSketches  []*views.SketchThumbnail
+	PopularSketches []*views.SketchThumbnail
+	Actors          []*models.Person
+}
+
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// this will get replaced by a playlist at some point
-	featured, err := app.videos.GetById(1)
+
+	featured, err := app.videos.GetFeatured()
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
-	featured2, err := app.videos.GetById(2)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
-	featured3, err := app.videos.GetById(3)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
-	featured4, err := app.videos.GetById(4)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
-	featured5, err := app.videos.GetById(5)
+
+	featuredSketchViews, err := views.FeaturedSketchesView(featured, app.baseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -77,8 +66,10 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	latestViews, err := views.SketchThumbnailsView(latest, app.baseImgUrl, "")
+
 	popularFilter := models.Filter{
-		Limit:  8,
+		Limit:  20,
 		Offset: 0,
 	}
 
@@ -88,17 +79,23 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	popularSketchViews, err := views.SketchThumbnailsView(popularSketches, app.baseImgUrl, "")
+
 	people, err := app.people.GetPeople([]int{1, 2, 3, 4, 5, 6, 7, 8})
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
+	homePageData := HomePage{
+		Featured:        featuredSketchViews,
+		LatestSketches:  latestViews,
+		PopularSketches: popularSketchViews,
+		Actors:          people,
+	}
+
 	data := app.newTemplateData(r)
-	data.Home.Featured = []*models.Video{featured, featured2, featured3, featured4, featured5}
-	data.Home.Latest = latest
-	data.Home.PopularSketches = popularSketches
-	data.Home.Actors = people
+	data.Page = homePageData
 
 	for _, f := range data.Featured {
 		app.infoLog.Printf("%s\n", *f.Title)
@@ -144,6 +141,11 @@ func (app *application) browse(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "browse.tmpl.html", "base", data)
 }
 
+type Catalog struct {
+	CatalogType string
+	Catalog     any
+}
+
 func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
@@ -161,64 +163,25 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	query, _ := url.QueryUnescape(r.Form.Get("query"))
 	filterQuery := strings.Join(strings.Fields(query), " | ")
 
-	personIdParams := r.URL.Query()["person"]
-
-	var personIds []int
-	for _, idStr := range personIdParams {
-		id, err := strconv.Atoi(idStr)
-		if nil == err && id > 0 {
-			personIds = append(personIds, id)
-		}
-	}
-
+	personIds := extractUrlParamIDs(r.URL.Query()["person"])
 	var peopleFilter []*models.Person
 	if len(personIds) > 0 {
 		peopleFilter, err = app.people.GetPeople(personIds)
 	}
 
-	characterIdParams := r.URL.Query()["character"]
-
-	var characterIds []int
-	for _, idStr := range characterIdParams {
-		id, err := strconv.Atoi(idStr)
-		if nil == err && id > 0 {
-			characterIds = append(characterIds, id)
-		}
-	}
-
+	characterIds := extractUrlParamIDs(r.URL.Query()["character"])
 	var characterFilter []*models.Character
 	if len(characterIds) > 0 {
 		characterFilter, err = app.characters.GetCharacters(characterIds)
 	}
 
-	app.infoLog.Printf("%+v\n", characterIds)
-
-	creatorIdParams := r.URL.Query()["creator"]
-
-	var creatorIds []int
-	for _, idStr := range creatorIdParams {
-		id, err := strconv.Atoi(idStr)
-		if nil == err && id > 0 {
-			creatorIds = append(creatorIds, id)
-		}
-	}
-
+	creatorIds := extractUrlParamIDs(r.URL.Query()["creator"])
 	var creatorFilter []*models.Creator
 	if len(creatorIds) > 0 {
 		creatorFilter, err = app.creators.GetCreators(&creatorIds)
-		app.errorLog.Println(err)
 	}
 
-	tagIdParams := r.URL.Query()["tag"]
-
-	var tagIds []int
-	for _, idStr := range tagIdParams {
-		id, err := strconv.Atoi(idStr)
-		if nil == err && id > 0 {
-			tagIds = append(tagIds, id)
-		}
-	}
-
+	tagIds := extractUrlParamIDs(r.URL.Query()["tag"])
 	var tagFilter []*models.Tag
 	if len(tagIds) > 0 {
 		tagFilter, err = app.tags.GetTags(&tagIds)
@@ -237,7 +200,7 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		Offset:     offset,
 	}
 
-	results, err := app.getCatalogResults(currentPage, "video", filter)
+	results, err := app.getSketchCatalogResults(currentPage, "video", filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -249,19 +212,30 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	results.Filter = filter
+	results.TotalVideoCount = sketchCount
+	results.Query = url.QueryEscape(query)
+
 	data := app.newTemplateData(r)
 
-	results.Filter = filter
-	data.SearchResults = results
-	data.SearchResults.TotalVideoCount = sketchCount
-	data.SearchResults.Query = url.QueryEscape(query)
-	data.Query = query
+	totalPages := int(math.Ceil(float64(sketchCount) / float64(limit)))
 
-	if len(peopleFilter) == 1 || len(characterFilter) == 1 {
-		data.ThumbnailType = "Cast"
+	isHxRequest := r.Header.Get("HX-Request") == "true"
+	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
+	sketchCatalog, err := views.SketchCatalogView(
+		results,
+		currentPage,
+		totalPages,
+		isHxRequest && !isHistoryRestore,
+		app.baseImgUrl,
+	)
+
+	if err != nil {
+		app.serverError(r, w, err)
+		return
 	}
 
-	url, err := buildURL("/catalog/sketches", results)
+	url, err := views.BuildURL("/catalog/sketches", currentPage, filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -270,39 +244,22 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("HX-Push-Url", url)
 	app.infoLog.Println(url)
 
-	isHxRequest := r.Header.Get("HX-Request") == "true"
-	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
-	data.HtmxRequest = isHxRequest && !isHistoryRestore
 	if isHxRequest && !isHistoryRestore {
 		app.infoLog.Println("TARGET: ", r.Header.Get("HX-Target"))
 		if r.Header.Get("HX-Target") == "catalogSection" {
-			app.infoLog.Println("Rendering catalog")
-			app.render(r, w, http.StatusOK, "video-catalog.tmpl.html", "video-catalog", data)
+			app.render(r, w, http.StatusOK, "video-catalog.tmpl.html", "video-catalog", sketchCatalog)
 		} else {
-			app.infoLog.Println("Rendering result")
-			app.render(r, w, http.StatusOK, "video-catalog-result.tmpl.html", "video-catalog-result", data)
+			app.render(r, w, http.StatusOK, "video-catalog-result.tmpl.html", "video-catalog-result", sketchCatalog.CatalogResult)
 		}
 		return
 	}
 
+	data.Page = Catalog{
+		CatalogType: "Sketches",
+		Catalog:     sketchCatalog,
+	}
+
 	app.render(r, w, http.StatusOK, "view-catalog.tmpl.html", "base", data)
-}
-
-func buildURL(baseURL string, result *SearchResult) (string, error) {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		return "", err
-	}
-
-	params := result.Filter.Params()
-	params.Add("page", strconv.Itoa(result.CurrentPage))
-	if result.Query != "" {
-		params.Set("query", result.Query)
-	}
-
-	u.RawQuery = params.Encode()
-
-	return u.String(), nil
 }
 
 func ping(w http.ResponseWriter, _ *http.Request) {

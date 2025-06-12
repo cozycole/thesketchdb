@@ -23,7 +23,7 @@ type TagModelInterface interface {
 	Get(id int) (*Tag, error)
 	GetTags(ids *[]int) ([]*Tag, error)
 	// GetBySlug(slug string) (*Tag, error)
-	GetByVideo(vidId int) (*[]*Tag, error)
+	GetByVideo(vidId int) ([]*Tag, error)
 	Insert(category *Tag) (int, error)
 	Search(query string) (*[]*Tag, error)
 }
@@ -122,7 +122,7 @@ func (m *TagModel) GetTags(ids *[]int) ([]*Tag, error) {
 	return tags, nil
 }
 
-func (m *TagModel) GetByVideo(id int) (*[]*Tag, error) {
+func (m *TagModel) GetByVideo(id int) ([]*Tag, error) {
 	stmt := `
 		SELECT t.id, t.name, t.slug,
 		c.id, c.name, c.slug
@@ -136,7 +136,7 @@ func (m *TagModel) GetByVideo(id int) (*[]*Tag, error) {
 	rows, err := m.DB.Query(context.Background(), stmt, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return &[]*Tag{}, ErrNoRecord
+			return []*Tag{}, ErrNoRecord
 		} else {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func (m *TagModel) GetByVideo(id int) (*[]*Tag, error) {
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return &tags, nil
+	return tags, nil
 }
 
 func (m *TagModel) Insert(tag *Tag) (int, error) {
@@ -184,7 +184,7 @@ func (m *TagModel) Search(query string) (*[]*Tag, error) {
 	stmt := `SELECT t.id, t.slug, t.name, 
 			c.id, c.slug, c.name
 			FROM tags as t
-			JOIN categories as c
+			LEFT JOIN categories as c
 			ON t.category_id = c.id
 			WHERE t.name ILIKE $1
 			ORDER BY c.name, t.name`

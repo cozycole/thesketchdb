@@ -1,35 +1,23 @@
 {{ define "cast-gallery"}}
   <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-    {{ range .Video.Cast }}
+    {{ range .CastCards }}
       <div class="relative w-full rounded-md">
-        <a
-        {{ with .Character }}
-          href="/character/{{ .ID }}/{{ .Slug }}"
-        {{ else with .Actor }}
-         href="/person/{{ .ID }}/{{ .Slug }}"
-        {{ end }}>
+        <a {{ with .CardUrl }}href="{{ . }}"{{ end }}>
           <img
             class="rounded-md w-full"
-            {{ with .ThumbnailName }}
-              src="{{ $.ImageBaseUrl }}/cast/profile/{{ . }}"
-            {{ else }}
-              src="{{ $.ImageBaseUrl }}/person/{{ .Actor.ProfileImg }}"
-            {{ end }}
+            src="{{ .Image }}"
           />
         </a>
-          <div class="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black bg-opacity-50 rounded-b-md">
-            <h3 class="block text-nowrap overflow-hidden text-ellipsis text-white">
-              {{ $characterName := .CharacterName}}
-              {{ with .Character }}
-                <a class="hover:underline" href="/character/{{ .ID }}/{{ .Slug }}">
-                  {{ $characterName }}
-                </a> 
-              {{ else }}
-                  {{ $characterName }}
-              {{ end }}
-            </h3>
-            <h4 class=" text-white hover:underline" >
-              <a href="/person/{{ .Actor.ID }}/{{ .Actor.Slug }}" class="text-sm"> {{ .Actor.First }} {{ .Actor.Last }} </a>
+        <div class="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black bg-opacity-50 rounded-b-md">
+          <h3 class="block text-nowrap overflow-hidden text-ellipsis text-white">
+              <a {{ with .CharacterUrl }}class="hover:underline" href="{{ . }}"{{ end }}}>
+                {{ .CharacterName }}
+              </a> 
+          </h3>
+          <h4 class="text-white w-fit">
+            <a {{ with .ActorUrl }}href="{{ . }}" class="hover:underline"{{ end }}> 
+              <p class="text-sm">{{ .ActorName }}</p>
+            </a>
             </h4>
         </div>
       </div>

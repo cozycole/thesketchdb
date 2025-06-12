@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"mime/multipart"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -99,7 +101,7 @@ type Video struct {
 	SeasonNumber  *int
 	EpisodeNumber *int
 	Number        *int
-	Liked         bool
+	Liked         *bool
 }
 
 type VideoModelInterface interface {
@@ -109,6 +111,7 @@ type VideoModelInterface interface {
 	GetCount(filter *Filter) (int, error)
 	GetBySlug(slug string) (*Video, error)
 	GetByUserLikes(id int) ([]*Video, error)
+	GetFeatured() ([]*Video, error)
 	HasLike(vidId, userId int) (bool, error)
 	Insert(video *Video) (int, error)
 	InsertThumbnailName(vidId int, name string) error
@@ -278,11 +281,12 @@ func determineFields(filter *Filter, args *Arguements) string {
 	}
 
 	baseFields := `
-		v.id as video_id, v.title as video_title, v.video_url as video_url, 
-		v.slug as video_slug, %s as thumbnail_name, v.upload_date as upload_date, 
+		v.id as video_id, v.title as video_title, v.sketch_number as sketch_number,
+		v.video_url as video_url, v.slug as video_slug, %s as thumbnail_name, v.upload_date as upload_date, 
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
 		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
-		sh.profile_img as show_img, sh.slug as show_slug %s
+		sh.profile_img as show_img, sh.slug as show_slug, 
+		se.season_number as season_number, e.episode_number as episode_number %s
 	`
 
 	fields := fmt.Sprintf(baseFields, args.ImgField, rankParam)
@@ -390,9 +394,9 @@ func determineConditions(filter *Filter, args *Arguements) string {
 		clause += fmt.Sprintf(" AND cm.person_id IN (%s)", strings.Join(peoplePlaceholders, ","))
 		clause += fmt.Sprintf(`
 		GROUP BY v.id, v.title, v.video_url, v.slug,
-		         %s, v.upload_date, 
+		         %s, v.upload_date, v.sketch_number,
 		         c.id, c.name, c.page_url, c.slug, c.profile_img,
-				sh.id, sh.name, sh.profile_img, sh.slug`, args.ImgField)
+				sh.id, sh.name, sh.profile_img, sh.slug, se.season_number, e.episode_number`, args.ImgField)
 
 		if filter.Query != "" {
 			clause += ", rank"
@@ -445,11 +449,11 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 			ROW_NUMBER() OVER (PARTITION BY video_id ORDER BY video_id) AS rn	
 			FROM video_cast
 		)
-		SELECT video_id, video_title, video_url, 
+		SELECT video_id, video_title, sketch_number, video_url, 
 		video_slug, thumbnail_name, upload_date, 
 		creator_id, creator_name, creator_slug, 
 		creator_img, show_id, show_name,
-		show_img, show_slug %s
+		show_img, show_slug, season_number, episode_number %s
 		FROM ranked_videos
 		WHERE rn = 1
 		%s
@@ -490,9 +494,9 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 		c := &Creator{}
 		sh := &Show{}
 		destinations := []any{
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
-			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &v.SeasonNumber, &v.EpisodeNumber,
 		}
 		var rank *float32
 		if filter.Query != "" {
@@ -516,13 +520,14 @@ func (m *VideoModel) Get(filter *Filter) ([]*Video, error) {
 
 func (m *VideoModel) GetById(id int) (*Video, error) {
 	stmt := `
-		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
-			c.id, c.name, c.profile_img,
-			sh.id, sh.name, sh.profile_img, sh.slug,
-			p.id, p.slug, p.first, p.last, p.birthdate,
-			p.description, p.profile_img,
-			cm.id, cm.position, cm.img_name, cm.character_name,
-			ch.id, ch.slug, ch.name, ch.img_name
+		SELECT v.id, v.title, v.sketch_number, v.video_url, 
+		v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
+		se.season_number, e.episode_number,
+		c.id, c.name, c.slug, c.profile_img,
+		sh.id, sh.name, sh.slug, sh.profile_img,
+		p.id, p.slug, p.first, p.last, p.profile_img,
+		ch.id, ch.name, ch.slug, ch.img_name,
+		cm.id, cm.position, cm.character_name, cm.img_name
 		FROM video AS v
 		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
@@ -555,16 +560,18 @@ func (m *VideoModel) GetById(id int) (*Video, error) {
 		cm := &CastMember{}
 		hasRows = true
 		err := rows.Scan(
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate, &v.YoutubeID,
-			&c.ID, &c.Name, &c.ProfileImage,
-			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
-			&p.ID, &p.Slug, &p.First, &p.Last, &p.BirthDate, &p.Description, &p.ProfileImg,
-			&cm.ID, &cm.Position, &cm.ThumbnailName, &cm.CharacterName,
-			&ch.ID, &ch.Slug, &ch.Name, &ch.Image,
+			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName,
+			&v.UploadDate, &v.YoutubeID, &v.SeasonNumber, &v.EpisodeNumber,
+			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
+			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
+			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
+			&ch.ID, &ch.Name, &ch.Slug, &ch.Image,
+			&cm.ID, &cm.Position, &cm.CharacterName, &cm.ThumbnailName,
 		)
 		if err != nil {
 			return nil, err
 		}
+
 		if cm.ID != nil {
 			if p.ID != nil {
 				cm.Actor = p
@@ -580,6 +587,7 @@ func (m *VideoModel) GetById(id int) (*Video, error) {
 	if !hasRows {
 		return nil, ErrNoRecord
 	}
+
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
@@ -638,6 +646,94 @@ func (m *VideoModel) GetCount(filter *Filter) (int, error) {
 	return count, nil
 }
 
+func (m *VideoModel) GetFeatured() ([]*Video, error) {
+	stmt := `
+		SELECT v.id, v.title, v.video_url, v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
+			c.id, c.name, c.profile_img,
+			sh.id, sh.name, sh.profile_img, sh.slug,
+			p.id, p.slug, p.first, p.last, p.profile_img,
+			cm.id, cm.position, cm.img_name, cm.character_name,
+			ch.id, ch.slug, ch.name, ch.img_name
+		FROM video AS v
+		JOIN video_tags as vt ON v.id = vt.video_id
+		JOIN tags as t ON vt.tag_id = t.id
+		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
+		LEFT JOIN creator as c ON vcr.creator_id = c.id
+		LEFT JOIN episode as e ON v.episode_id = e.id
+		LEFT JOIN season as se ON e.season_id = se.id
+		LEFT JOIN show as sh ON se.show_id = sh.id
+		LEFT JOIN cast_members as cm ON v.id = cm.video_id
+		LEFT JOIN person as p ON cm.person_id = p.id
+		LEFT JOIN character as ch ON cm.character_id = ch.id
+		WHERE t.name = 'Featured'
+	`
+
+	rows, err := m.DB.Query(context.Background(), stmt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	videoMap := make(map[int]*Video)
+	hasRows := false
+	for rows.Next() {
+		v := &Video{}
+		c := &Creator{}
+		sh := &Show{}
+		p := &Person{}
+		ch := &Character{}
+		cm := &CastMember{}
+		hasRows = true
+
+		err := rows.Scan(
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate, &v.YoutubeID,
+			&c.ID, &c.Name, &c.ProfileImage,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
+			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
+			&cm.ID, &cm.Position, &cm.ThumbnailName, &cm.CharacterName,
+			&ch.ID, &ch.Slug, &ch.Name, &ch.Image,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		v.Show = sh
+		v.Creator = c
+
+		if cm.ID != nil {
+			if p.ID != nil {
+				cm.Actor = p
+			}
+
+			if ch.ID != nil {
+				cm.Character = ch
+			}
+		}
+
+		if currentVid, ok := videoMap[*v.ID]; ok {
+			currentVid.Cast = append(currentVid.Cast, cm)
+		} else {
+			v.Cast = append(v.Cast, cm)
+			videoMap[*v.ID] = v
+		}
+	}
+
+	if !hasRows {
+		return nil, ErrNoRecord
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	videos := slices.Collect(maps.Values(videoMap))
+
+	return videos, nil
+}
+
 func (m *VideoModel) GetIdBySlug(slug string) (int, error) {
 	stmt := `SELECT v.id FROM video as v WHERE v.slug = $1`
 	id_row := m.DB.QueryRow(context.Background(), stmt, slug)
@@ -657,11 +753,12 @@ func (m *VideoModel) GetIdBySlug(slug string) (int, error) {
 
 func (m *VideoModel) GetByUserLikes(userId int) ([]*Video, error) {
 	stmt := `
-		SELECT v.id as video_id, v.title as video_title, v.video_url as video_url, 
-		v.slug as video_slug, v.thumbnail_name as thumbnail_name, v.upload_date as upload_date, 
+		SELECT v.id as video_id, v.title as video_title, v.sketch_number as sketch_number,
+		v.video_url as video_url, v.slug as video_slug, v.thumbnail_name as thumbnail_name, v.upload_date as upload_date, 
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
 		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
-		sh.profile_img as show_img, sh.slug as show_slug
+		sh.profile_img as show_img, sh.slug as show_slug, 
+		se.season_number as season_number, e.episode_number as episode_number
 		FROM video AS v
 		LEFT JOIN video_creator_rel as vcr ON v.id = vcr.video_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
@@ -691,9 +788,9 @@ func (m *VideoModel) GetByUserLikes(userId int) ([]*Video, error) {
 		c := &Creator{}
 		sh := &Show{}
 		destinations := []any{
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
-			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &v.SeasonNumber, &v.EpisodeNumber,
 		}
 		err := rows.Scan(destinations...)
 		if err != nil {

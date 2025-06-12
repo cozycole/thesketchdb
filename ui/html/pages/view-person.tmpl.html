@@ -1,55 +1,52 @@
-{{ define "title" }}{{ .Person.First }} {{ .Person.Last }}{{ end }}
+{{ define "title" }}{{ .Page.Name }}{{ end }}
 
 {{ define "main" }}
   <main data-page="view-person" class="max-w-screen-xl mx-auto w-full p-3 space-y-3 text-slate-950">
+    {{ with .Page }}
     <div class="w-full flex flex-col md:flex-row gap-3">
-      {{ with .Person }}
-        <section class="md:w-64 shrink-0 h-fit p-6 flex flex-col items-center md:items-left 
-              gap-6 bg-white rounded-lg">
-          <img
-            src="{{ $.ImageBaseUrl }}/person/{{ .ProfileImg }}"
-            class="w-52 rounded-full"
-            alt="profile-img"
-          />
-          <div class="text-center">
-            <h1 class="text-2xl font-medium">{{ .First }} {{ .Last }}</h1>
-            <div class="metadata rounded-md">
-              <p class="text-lg">Actor, Comedian</p>
-              {{ if .BirthDate }}
-              <div>
-                <time>{{ humanDate .BirthDate }}</time> <span>(age {{ getAge .BirthDate }})</span>
-              </div>
-              {{ end }}
+      <section class="md:w-64 shrink-0 h-fit p-6 flex flex-col items-center md:items-left
+            gap-6 bg-white rounded-lg">
+        <img
+      src="{{ .Image }}"
+          class="w-52 rounded-full"
+          alt="profile-img"
+        />
+        <div class="text-center">
+          <h1 class="text-2xl font-medium">{{ .Name }}</h1>
+          <div class="metadata rounded-md">
+            <p class="text-lg">Actor, Comedian</p>
+            {{ if .BirthDate }}
+            <div>
+              <time>{{ .BirthDate }}</time> <span>(age {{ .Age }})</span>
             </div>
+            {{ end }}
           </div>
-          {{ with $.PersonPage.Stats }}
-            <div class="grid grid-cols-2 w-full max-w-56 gap-3 text-white">
-              <div class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square">
-                <div class="text-xl font-bold">{{ .SketchCount }}</div>
-                <div>Sketches</div>
-              </div>
-              <div class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square">
-                <div class="text-xl font-bold">{{ .PortrayalCount }}</div>
-                <div>Portrayals</div>
-              </div>
-              <div class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square">
-                <div class="text-xl font-bold">{{ .CharacterCount }}</div>
-                <div>Characters</div>
-              </div>
-              <div class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square">
-              <div class="text-xl font-bold">{{ .CreatorCount }}</div>
-                <div>Creators</div>
-              </div>
-            </div>
-          {{ end }}
-        </section>
-      {{ end }}
+        </div>
+        <div class="grid grid-cols-2 w-full max-w-56 gap-3 text-white">
+          <div class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square">
+            <div class="text-xl font-bold">{{ .SketchCount }}</div>
+            <div>Sketches</div>
+          </div>
+          <div class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square">
+            <div class="text-xl font-bold">{{ .PortrayalCount }}</div>
+            <div>Portrayals</div>
+          </div>
+          <div class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square">
+            <div class="text-xl font-bold">{{ .CharacterCount }}</div>
+            <div>Characters</div>
+          </div>
+          <div class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square">
+          <div class="text-xl font-bold">{{ .CreatorCount }}</div>
+            <div>Creators</div>
+          </div>
+        </div>
+      </section>
       <div id="contentSections" class="flex-1 min-w-0">
         <section class="w-full bg-white rounded-lg p-4">
           <collapse-content>
             <header class="w-full flex items-center justify-between">
               <h2 class="text-xl font-bold hover:underline">
-                <a href="/catalog/sketches?person={{ .Person.ID }}">Popular Sketches</a>
+                <a href="/catalog/sketches?person={{ .ID }}">Popular Sketches</a>
               </h2>
               <button class="toggleBtn transition-all">
                 <svg class="arrow stroke-slate-950 w-7 transform transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" focusable="false">
@@ -59,12 +56,13 @@
             </header>
             <div class="content w-full overflow-hidden transition-all duration-500 ease-in-out">
               <div class="mt-4">
-                {{ template "thumbnail-gallery" (dict "Videos" .Videos "ImageBaseUrl" $.ImageBaseUrl "Type" "Cast" "SectionType" "sub") }}
+                {{ template "thumbnail-gallery-v2" .Popular }}
               </div>
             </div>
           </collapse-content>
         </section>
       </div>
     </div>
+    {{ end }}
   </main>
 {{ end }}

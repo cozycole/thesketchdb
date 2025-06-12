@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/utils"
 )
@@ -84,7 +85,7 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videos, err := app.videos.Get(
+	popularSketches, err := app.videos.Get(
 		&models.Filter{
 			Limit:  16,
 			Offset: 0,
@@ -95,19 +96,18 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			app.notFound(w)
-		} else {
-			app.serverError(r, w, err)
-		}
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	data.Creator = creator
-	data.Videos = videos
+	page, err := views.CreatorPageView(creator, popularSketches, app.baseImgUrl)
+	if err != nil {
+		app.serverError(r, w, err)
+	}
 
+	data.Page = page
 	app.render(r, w, http.StatusOK, "view-creator.tmpl.html", "base", data)
 }
 

@@ -28,7 +28,6 @@ type templateData struct {
 	Cast            []*models.CastMember
 	CastMember      *models.CastMember
 	CatalogType     string
-	CharacterPage   CharacterPage
 	Creator         *models.Creator
 	CurrentYear     int
 	DropdownResults dropdownSearchResults
@@ -37,34 +36,21 @@ type templateData struct {
 	Featured        []*models.Video
 	Flash           flashMessage
 	Forms           Forms
-	Home            HomeData
 	HtmxRequest     bool
 	ImageBaseUrl    string
 	IsAdmin         bool
 	IsEditor        bool
 	Person          *models.Person
-	PersonPage      PersonPage
 	People          []*models.Person
-	Query           string
-	SearchResults   *SearchResult
 	Season          *models.Season
 	SectionType     string
 	Show            *models.Show
 	Tags            *[]*models.Tag
 	ThumbnailType   string
 	User            *models.User
-	UserPage        UserPage
 	Video           *models.Video
 	Videos          []*models.Video
-}
-
-type PersonPage struct {
-	Stats *models.PersonStats
-}
-
-type CharacterPage struct {
-	Character *models.Character
-	Popular   []*models.Video
+	Page            any
 }
 
 func humanDate(t time.Time) string {
@@ -99,35 +85,6 @@ func getAge(birthDate time.Time) int {
 	return age
 }
 
-func getSeasonSketchCount(season *models.Season) int {
-	var count int
-	for _, ep := range season.Episodes {
-		count += len(ep.Videos)
-	}
-
-	return count
-}
-
-func getShowEpisodeCount(show *models.Show) int {
-	var count int
-	for _, season := range show.Seasons {
-		count += len(season.Episodes)
-	}
-
-	return count
-}
-
-func getShowSketchCount(show *models.Show) int {
-	var count int
-	for _, season := range show.Seasons {
-		for _, ep := range season.Episodes {
-			count += len(ep.Videos)
-		}
-	}
-
-	return count
-}
-
 func printPersonName(a *models.Person) string {
 	if a == nil || a.First == nil {
 		return ""
@@ -138,28 +95,6 @@ func printPersonName(a *models.Person) string {
 		return name
 	}
 	return name + " " + *a.Last
-}
-
-func printCast(cast []*models.CastMember) string {
-	castList := ""
-	var personIds []int
-	for i, cm := range cast {
-		if cm.Actor.ID == nil || intSliceContains(personIds, *cm.Actor.ID) {
-			continue
-		}
-
-		name := printPersonName(cm.Actor)
-		if name != "" {
-			if i != 0 {
-				name = ", " + name
-			}
-			castList += name
-		}
-
-		personIds = append(personIds, *cm.Actor.ID)
-	}
-
-	return castList
 }
 
 func dict(values ...any) map[string]any {
@@ -200,19 +135,15 @@ func derefString(s *string) string {
 // functions from template). NOTE: The tempalte functions should only
 // return a single value
 var functions = template.FuncMap{
-	"humanDate":            humanDate,
-	"getYear":              getYear,
-	"dict":                 dict,
-	"derefString":          derefString,
-	"formDate":             formDate,
-	"printPersonName":      printPersonName,
-	"printCast":            printCast,
-	"getSeasonSketchCount": getSeasonSketchCount,
-	"getShowEpisodeCount":  getShowEpisodeCount,
-	"getShowSketchCount":   getShowSketchCount,
-	"safeURL":              safeURL,
-	"hasEpisode":           hasEpisode,
-	"getAge":               getAge,
+	"humanDate":       humanDate,
+	"getYear":         getYear,
+	"dict":            dict,
+	"derefString":     derefString,
+	"formDate":        formDate,
+	"printPersonName": printPersonName,
+	"safeURL":         safeURL,
+	"hasEpisode":      hasEpisode,
+	"getAge":          getAge,
 }
 
 // Getting mapping of html page filename to template set for the page
