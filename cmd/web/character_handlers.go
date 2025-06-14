@@ -27,7 +27,7 @@ func (app *application) characterView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	popularSketches, err := app.videos.Get(
+	popularSketches, err := app.sketches.Get(
 		&models.Filter{
 			Limit:  16,
 			Offset: 0,
@@ -50,5 +50,5 @@ func (app *application) characterView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.Page = page
-	app.render(r, w, http.StatusOK, "view-character.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "view-character.gohtml", "base", data)
 }

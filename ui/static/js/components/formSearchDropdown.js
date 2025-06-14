@@ -1,27 +1,31 @@
-// class that implements search auto complete dropdown 
+// class that implements search auto complete dropdown
 // and fills in the input box on click
 export class FormSearchDropdown extends HTMLElement {
   constructor() {
     super();
 
-    this.idInput = this.querySelector('input[type="hidden"]')
-    this.searchInput = this.querySelector('input[type="search"]')
+    this.idInput = this.querySelector('input[type="hidden"]');
+    this.searchInput = this.querySelector('input[type="search"]');
     this.dropdown = this.querySelector(".dropdown");
 
-    this.addEventListener('insertDropdownItem', (e) => {
-      let dropDownItems = this.querySelectorAll('li.result');
+    this.addEventListener("insertDropdownItem", (e) => {
+      let dropDownItems = this.querySelectorAll("li.result");
 
       for (let el of dropDownItems) {
-          el.addEventListener('click', (e) => this.insertDropdownItem(e));
+        el.addEventListener("click", (e) => this.insertDropdownItem(e));
       }
     });
-    
-    document.body.addEventListener("click", (e) => {
-      if (!(this.dropdown.contains(e.target) || this.searchInput.contains(e.target))) {
-        this.dropdown.innerHTML = '';
-      }
 
-    })
+    document.body.addEventListener("click", (e) => {
+      if (
+        !(
+          this.dropdown.contains(e.target) ||
+          this.searchInput.contains(e.target)
+        )
+      ) {
+        this.dropdown.innerHTML = "";
+      }
+    });
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
@@ -41,8 +45,7 @@ export class FormSearchDropdown extends HTMLElement {
   }
 
   removeDropdown() {
-    this.dropdown.innerHTML = '';
+    this.dropdown.innerHTML = "";
     this.searchInput.blur();
   }
 }
-

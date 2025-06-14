@@ -76,7 +76,7 @@ func TestCreatorDecodePostForm(t *testing.T) {
 	})
 }
 
-func TestVideoDecodePostForm(t *testing.T) {
+func TestSketchDecodePostForm(t *testing.T) {
 	fields := map[string]string{
 		"title":            "Test Name",
 		"url":              "www.testsite.com",
@@ -122,7 +122,7 @@ func TestVideoDecodePostForm(t *testing.T) {
 	app := newTestApplication(t)
 
 	t.Run("Correct Form", func(t *testing.T) {
-		var form addVideoForm
+		var form addSketchForm
 
 		app.decodePostForm(r, &form)
 
@@ -146,4 +146,3 @@ func TestHash(t *testing.T) {
 	str := toURLSafeBase64MD5("1-2-2")
 	t.Logf("Hash (%d): %s\n", len(str), str)
 }
-

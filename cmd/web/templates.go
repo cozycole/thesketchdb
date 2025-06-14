@@ -4,7 +4,6 @@ import (
 	"html/template"
 	"io/fs"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"sketchdb.cozycole.net/internal/models"
@@ -22,7 +21,7 @@ type flashMessage struct {
 // struct for inserting data and data can come from many sources,
 // you need to combine it all into one
 type templateData struct {
-	BrowseSections  map[string][]*models.Video
+	BrowseSections  map[string][]*models.Sketch
 	Categories      *[]*models.Category
 	CSRFToken       string
 	Cast            []*models.CastMember
@@ -33,7 +32,7 @@ type templateData struct {
 	DropdownResults dropdownSearchResults
 	Episode         *models.Episode
 	Episodes        []*models.Episode
-	Featured        []*models.Video
+	Featured        []*models.Sketch
 	Flash           flashMessage
 	Forms           Forms
 	HtmxRequest     bool
@@ -48,16 +47,9 @@ type templateData struct {
 	Tags            *[]*models.Tag
 	ThumbnailType   string
 	User            *models.User
-	Video           *models.Video
-	Videos          []*models.Video
+	Sketch          *models.Sketch
+	Sketches        []*models.Sketch
 	Page            any
-}
-
-func humanDate(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return t.UTC().Format("Jan 2, 2006")
 }
 
 func formDate(t time.Time) string {
@@ -65,24 +57,6 @@ func formDate(t time.Time) string {
 		return ""
 	}
 	return t.Format("2006-01-02")
-}
-
-func getYear(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return strconv.Itoa(t.Year())
-}
-
-func getAge(birthDate time.Time) int {
-	today := time.Now()
-	age := today.Year() - birthDate.Year()
-
-	if today.YearDay() < birthDate.YearDay() {
-		age--
-	}
-
-	return age
 }
 
 func printPersonName(a *models.Person) string {
@@ -112,17 +86,6 @@ func dict(values ...any) map[string]any {
 	return m
 }
 
-func safeURL(urlString string) template.URL {
-	return template.URL(urlString)
-}
-
-func hasEpisode(show *models.Show) bool {
-	if len(show.Seasons) > 0 && len(show.Seasons[0].Episodes) > 0 {
-		return true
-	}
-	return false
-}
-
 func derefString(s *string) string {
 	if s == nil {
 		return ""
@@ -135,15 +98,10 @@ func derefString(s *string) string {
 // functions from template). NOTE: The tempalte functions should only
 // return a single value
 var functions = template.FuncMap{
-	"humanDate":       humanDate,
-	"getYear":         getYear,
 	"dict":            dict,
 	"derefString":     derefString,
 	"formDate":        formDate,
 	"printPersonName": printPersonName,
-	"safeURL":         safeURL,
-	"hasEpisode":      hasEpisode,
-	"getAge":          getAge,
 }
 
 // Getting mapping of html page filename to template set for the page
@@ -151,7 +109,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 
 	// Add all pages and partials to the cache
-	pages, err := fs.Glob(ui.Files, "html/**/*.tmpl.html")
+	pages, err := fs.Glob(ui.Files, "html/**/*.gohtml")
 	if err != nil {
 		return nil, err
 	}
@@ -161,8 +119,8 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		name := filepath.Base(page)
 
 		patterns := []string{
-			"html/base.tmpl.html",
-			"html/partials/*.tmpl.html",
+			"html/base.gohtml",
+			"html/partials/*.gohtml",
 			page,
 		}
 

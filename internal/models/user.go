@@ -55,21 +55,21 @@ func (p *password) Match(plaintext string) (bool, error) {
 }
 
 type UserModelInterface interface {
-	AddLike(userId, videoId int) error
+	AddLike(userId, sketchId int) error
 	Authenticate(username, password string) (int, error)
 	GetByUsername(username string) (*User, error)
 	GetById(id int) (*User, error)
 	Insert(user *User) error
-	RemoveLike(userId, videoId int) error
+	RemoveLike(userId, sketchId int) error
 }
 
-func (m *UserModel) AddLike(userId, videoId int) error {
+func (m *UserModel) AddLike(userId, sketchId int) error {
 	stmt := `
-		INSERT INTO likes (user_id, video_id)
+		INSERT INTO likes (user_id, sketch_id)
 		VALUES($1, $2)
 	`
 
-	_, err := m.DB.Exec(context.Background(), stmt, userId, videoId)
+	_, err := m.DB.Exec(context.Background(), stmt, userId, sketchId)
 	if err != nil {
 		return err
 	}
@@ -150,12 +150,13 @@ func (m *UserModel) GetById(id int) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	password := password{}
 	err := m.DB.QueryRow(ctx, query, id).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Username,
 		&user.Email,
-		&user.Password.hash,
+		&password.hash,
 		&user.Activated,
 		&user.Role,
 	)
@@ -166,6 +167,8 @@ func (m *UserModel) GetById(id int) (*User, error) {
 		}
 		return nil, err
 	}
+
+	user.Password = &password
 
 	return &user, nil
 }
@@ -199,13 +202,13 @@ func (m *UserModel) Insert(user *User) error {
 	return nil
 }
 
-func (m *UserModel) RemoveLike(userId, videoId int) error {
+func (m *UserModel) RemoveLike(userId, sketchId int) error {
 	stmt := `
 		DELETE FROM likes 
-		WHERE user_id = $1 AND video_id = $2	
+		WHERE user_id = $1 AND sketch_id = $2	
 	`
 
-	_, err := m.DB.Exec(context.Background(), stmt, userId, videoId)
+	_, err := m.DB.Exec(context.Background(), stmt, userId, sketchId)
 	if err != nil {
 		return err
 	}

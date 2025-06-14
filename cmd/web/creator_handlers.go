@@ -26,7 +26,7 @@ func (app *application) creatorAddPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Forms.Creator = &form
-		app.render(r, w, http.StatusUnprocessableEntity, "add-creator.tmpl.html", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "add-creator.gohtml", "base", data)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	popularSketches, err := app.videos.Get(
+	popularSketches, err := app.sketches.Get(
 		&models.Filter{
 			Limit:  16,
 			Offset: 0,
@@ -108,12 +108,12 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.Page = page
-	app.render(r, w, http.StatusOK, "view-creator.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "view-creator.gohtml", "base", data)
 }
 
 func (app *application) creatorAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	data.Forms.Creator = &creatorForm{}
-	app.render(r, w, http.StatusOK, "add-creator.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-creator.gohtml", "base", data)
 }

@@ -1,0 +1,155 @@
+{{ define "sketch-form" }}
+  <div id="sketchForm">
+    <div>
+      <label class="inline-block my-2">Sketch Title</label>
+      {{ with .Forms.Sketch.FieldErrors.title }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="text"
+        name="title"
+        value="{{ with .Forms.Sketch.Title }}
+          {{ . }}
+        {{ else with .sketch.Title }}
+          {{ . }}
+        {{ end }}"
+        class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+      />
+    </div>
+    <div>
+      <label class="inline-block my-2">Sketch URL:</label>
+      {{ with .Forms.Sketch.FieldErrors.url }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="text"
+        name="url"
+        value="{{ with .Forms.Sketch.URL }}
+          {{ . }}
+        {{ else with .sketch.URL }}
+          {{ . }}
+        {{ end }}"
+        class="w-3/4 p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+      />
+    </div>
+    {{ if .Sketch.Slug }}
+      <div>
+        <label class="inline-block my-2">Slug</label>
+        {{ with .Forms.Sketch.FieldErrors.slug }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <input
+          type="text"
+          name="slug"
+          value="{{ with .Forms.Sketch.Slug }}
+            {{ . }}
+          {{ else with .sketch.Slug }}
+            {{ . }}
+          {{ end }}"
+          class="w-3/4 p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        />
+      </div>
+    {{ end }}
+    <div>
+      <label class="inline-block my-2">Upload Date</label>
+      {{ with .Forms.Sketch.FieldErrors.uploadDate }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="date"
+        name="uploadDate"
+        value="{{ with .Forms.Sketch.UploadDate }}
+          {{ . }}
+        {{ else with .sketch.UploadDate }}
+          {{ formDate . }}
+        {{ end }}"
+        class="mt-3 p-1 border border-slate-300 rounded-lg bg-slate-50"
+      />
+    </div>
+    <div>
+      {{- with .Forms.Sketch.FieldErrors.rating -}}
+        <label class="block text-red-700">{{- . -}}</label>
+      {{- end -}}
+      <label class="inline-block my-2">Rating</label>
+      {{- $selection := "" -}}
+      {{- with .Forms.Sketch.Rating -}}
+        {{ $selection = . }}
+      {{- else with .Sketch.Rating -}}
+        {{ $selection = derefString . }}
+      {{- end }}
+      <select
+        name="rating"
+        class="mt-3 p-1 border border-slate-300 rounded-lg bg-slate-50"
+      >
+        <option value=""></option>
+        <option value="PG" {{ if eq $selection "PG" }}selected{{ end }}>
+          PG
+        </option>
+        <option value="PG-13" {{ if eq $selection "PG-13" }}selected{{ end }}>
+          PG-13
+        </option>
+        <option value="R" {{ if eq $selection "R" }}selected{{ end }}>R</option>
+      </select>
+    </div>
+    <div>
+      {{- with .Forms.Sketch.FieldErrors.thumbnail -}}
+        <label class="block text-red-700">{{ . }}</label>
+      {{- end -}}
+      <h3>Sketch Thumbnail</h3>
+      <img-preview>
+        <label
+          class="inline-block cursor-pointer my-2 p-2 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        >
+          Upload Thumbnail
+          <input type="file" name="thumbnail" accept="image/*" class="hidden" />
+        </label>
+        <button type="button" class="remove ml-2 hover:bg-slate-300">
+          <img src="/static/img/close.svg" />
+        </button>
+        <div class="imagePreview">
+          {{ with .Sketch.ThumbnailName }}
+            <img src="{{ $.ImageBaseUrl }}/sketch/{{ . }}" class="max-w-72" />
+          {{ end }}
+        </div>
+      </img-preview>
+    </div>
+    <div>
+      <form-search>
+        <label class="inline-block my-2">Creator Name</label>
+        {{ with .Forms.Sketch.FieldErrors.creatorId }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <div class="relative">
+          <input
+            type="hidden"
+            name="creatorId"
+            value="{{ with .Forms.Sketch.CreatorID }}
+              {{ . }}
+            {{ else with .sketch.Creator }}
+              {{ .ID }}
+            {{ end }}"
+          />
+          <input
+            type="search"
+            name="creatorInput"
+            value="{{ with .Forms.Sketch.CreatorInput }}
+              {{ . }}
+            {{ else with .sketch.Creator }}
+              {{ .Name }}
+            {{ end }}"
+            class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            placeholder="Enter creator's name"
+            hx-get="/creator/search"
+            hx-params="query"
+            hx-trigger="focus, input changed delay:500ms, search"
+            hx-target="next"
+            hx-swap="innerHTML"
+          />
+          <ul
+            class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-slate-300 rounded shadow-lg z-10 empty:hidden"
+          ></ul>
+        </div>
+      </form-search>
+    </div>
+  </div>
+{{ end }}

@@ -85,7 +85,7 @@ func (m *CategoryModel) GetAll() ([]*Category, error) {
 			SELECT DISTINCT c.id, c.name, t.id, t.name, count(vt.tag_id) as count
 			FROM categories as c
 			LEFT JOIN tags as t ON c.id = t.category_id
-			LEFT JOIN video_tags as vt ON t.id = vt.tag_id
+			LEFT JOIN sketch_tags as vt ON t.id = vt.tag_id
 			GROUP BY c.id, c.name, t.id, t.name
 			ORDER BY c.name DESC
     `

@@ -1,0 +1,19 @@
+{{ define "title" }}Browse{{ end }}
+
+{{ define "main" }}
+  <main class="px-2" data-page="browse">
+    <h1 class="my-4 font-bold text-3xl">Browse</h1>
+    <div id="browseSections">
+      {{ range $sectionName, $sketches := .BrowseSections }}
+        <div class="my-3">
+          <h2 class="my-2 text-2xl font-bold">{{ $sectionName }}</h2>
+          {{ if $sketches }}
+            {{ template "sketch-carousel" (dict "ImageBaseUrl" $.ImageBaseUrl "Sketches" $sketches) }}
+          {{ else }}
+            <p>Error fetching sketches</p>
+          {{ end }}
+        </div>
+      {{ end }}
+    </div>
+  </main>
+{{ end }}

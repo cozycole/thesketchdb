@@ -20,16 +20,16 @@ func (app *application) testing(w http.ResponseWriter, r *http.Request) {
 		SortBy: "latest",
 	}
 
-	latest, err := app.videos.Get(&filter)
+	latest, err := app.sketches.Get(&filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	data.Videos = latest
+	data.Sketches = latest
 
-	app.render(r, w, http.StatusOK, "carousel-testing.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "carousel-testing.gohtml", "base", data)
 }
 
 type HomePage struct {
@@ -42,7 +42,7 @@ type HomePage struct {
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// this will get replaced by a playlist at some point
 
-	featured, err := app.videos.GetFeatured()
+	featured, err := app.sketches.GetFeatured()
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -60,7 +60,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		SortBy: "latest",
 	}
 
-	latest, err := app.videos.Get(&filter)
+	latest, err := app.sketches.Get(&filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -73,7 +73,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		Offset: 0,
 	}
 
-	popularSketches, err := app.videos.Get(&popularFilter)
+	popularSketches, err := app.sketches.Get(&popularFilter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -101,16 +101,16 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		app.infoLog.Printf("%s\n", *f.Title)
 	}
 
-	app.render(r, w, http.StatusOK, "home.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "home.gohtml", "base", data)
 }
 
 func (app *application) browse(w http.ResponseWriter, r *http.Request) {
-	browseSections := make(map[string][]*models.Video)
+	browseSections := make(map[string][]*models.Sketch)
 	limit := 8
 	offset := 0
 
 	// First add "custom" sections (ex: latest, trending, recommended/because you liked X)
-	latest, err := app.videos.Get(
+	latest, err := app.sketches.Get(
 		&models.Filter{
 			Limit:  limit,
 			Offset: offset,
@@ -121,7 +121,7 @@ func (app *application) browse(w http.ResponseWriter, r *http.Request) {
 	browseSections["Latest"] = latest
 
 	kyleId := 1
-	actorVideos, err := app.videos.Get(
+	actorSketches, err := app.sketches.Get(
 		&models.Filter{
 			Limit:  limit,
 			Offset: offset,
@@ -134,11 +134,11 @@ func (app *application) browse(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.errorLog.Println(err)
 	}
-	browseSections["Sketches Featuring Kyle Mooney"] = actorVideos
+	browseSections["Sketches Featuring Kyle Mooney"] = actorSketches
 
 	data := app.newTemplateData(r)
 	data.BrowseSections = browseSections
-	app.render(r, w, http.StatusOK, "browse.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "browse.gohtml", "base", data)
 }
 
 type Catalog struct {
@@ -200,20 +200,20 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		Offset:     offset,
 	}
 
-	results, err := app.getSketchCatalogResults(currentPage, "video", filter)
+	results, err := app.getSketchCatalogResults(currentPage, "sketch", filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	sketchCount, err := app.videos.GetCount(filter)
+	sketchCount, err := app.sketches.GetCount(filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	results.Filter = filter
-	results.TotalVideoCount = sketchCount
+	results.TotalSketchCount = sketchCount
 	results.Query = url.QueryEscape(query)
 
 	data := app.newTemplateData(r)
@@ -247,9 +247,9 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	if isHxRequest && !isHistoryRestore {
 		app.infoLog.Println("TARGET: ", r.Header.Get("HX-Target"))
 		if r.Header.Get("HX-Target") == "catalogSection" {
-			app.render(r, w, http.StatusOK, "video-catalog.tmpl.html", "video-catalog", sketchCatalog)
+			app.render(r, w, http.StatusOK, "sketch-catalog.gohtml", "sketch-catalog", sketchCatalog)
 		} else {
-			app.render(r, w, http.StatusOK, "video-catalog-result.tmpl.html", "video-catalog-result", sketchCatalog.CatalogResult)
+			app.render(r, w, http.StatusOK, "sketch-catalog-result.gohtml", "sketch-catalog-result", sketchCatalog.CatalogResult)
 		}
 		return
 	}
@@ -259,7 +259,7 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		Catalog:     sketchCatalog,
 	}
 
-	app.render(r, w, http.StatusOK, "view-catalog.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "view-catalog.gohtml", "base", data)
 }
 
 func ping(w http.ResponseWriter, _ *http.Request) {

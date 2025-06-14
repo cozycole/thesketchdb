@@ -23,7 +23,7 @@ type TagModelInterface interface {
 	Get(id int) (*Tag, error)
 	GetTags(ids *[]int) ([]*Tag, error)
 	// GetBySlug(slug string) (*Tag, error)
-	GetByVideo(vidId int) ([]*Tag, error)
+	GetBySketch(vidId int) ([]*Tag, error)
 	Insert(category *Tag) (int, error)
 	Search(query string) (*[]*Tag, error)
 }
@@ -122,16 +122,16 @@ func (m *TagModel) GetTags(ids *[]int) ([]*Tag, error) {
 	return tags, nil
 }
 
-func (m *TagModel) GetByVideo(id int) ([]*Tag, error) {
+func (m *TagModel) GetBySketch(id int) ([]*Tag, error) {
 	stmt := `
 		SELECT t.id, t.name, t.slug,
 		c.id, c.name, c.slug
 		FROM tags as t
-		LEFT JOIN video_tags as vt
+		LEFT JOIN sketch_tags as vt
 		ON t.id = vt.tag_id 
 		LEFT JOIN categories as c
 		ON t.category_id = c.id
-		WHERE vt.video_id = $1
+		WHERE vt.sketch_id = $1
 	`
 	rows, err := m.DB.Query(context.Background(), stmt, id)
 	if err != nil {

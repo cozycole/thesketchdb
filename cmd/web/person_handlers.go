@@ -31,7 +31,7 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	popular, err := app.videos.Get(
+	popular, err := app.sketches.Get(
 		&models.Filter{
 			Limit:  16,
 			Offset: 0,
@@ -51,14 +51,14 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.Page = page
-	app.render(r, w, http.StatusOK, "view-person.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "view-person.gohtml", "base", data)
 }
 
 func (app *application) personAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	data.Forms.Person = &personForm{}
-	app.render(r, w, http.StatusOK, "add-person.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-person.gohtml", "base", data)
 }
 
 func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +74,7 @@ func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Forms.Person = &form
-		app.render(r, w, http.StatusUnprocessableEntity, "add-person.tmpl.html", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "add-person.gohtml", "base", data)
 		return
 	}
 

@@ -23,8 +23,8 @@ FOR EACH ROW EXECUTE FUNCTION tsvector_update_trigger(
   first, last, description
 );
 
-CREATE OR REPLACE TRIGGER video_search_update 
-BEFORE INSERT OR UPDATE ON video 
+CREATE OR REPLACE TRIGGER sketch_search_update 
+BEFORE INSERT OR UPDATE ON sketch 
 FOR EACH ROW EXECUTE FUNCTION tsvector_update_trigger(
   search_vector, 
   'pg_catalog.english', 

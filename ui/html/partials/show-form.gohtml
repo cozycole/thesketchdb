@@ -1,0 +1,71 @@
+{{ define "show-form" }}
+  <div id="showForm" class="flex flex-col gap-2">
+    <div class="flash fixed top-4 right-4 z-40">
+      {{ with .Flash }}
+        {{ template "flash-message" $ }}
+      {{ end }}
+    </div>
+    <div>
+      <label class="block">Show Name</label>
+      {{ with .Forms.Show.FieldErrors.name }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="text"
+        name="name"
+        value="{{ with .Forms.Show.Name }}
+          {{ . }}
+        {{ else with .Show.Name }}
+          {{ . }}
+        {{ end }}"
+        class="w-full max-w-xl p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+      />
+    </div>
+    {{ if .Show.Slug }}
+      <div>
+        <label class="block">Slug</label>
+        {{ with .Forms.Show.FieldErrors.slug }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <input
+          type="text"
+          name="slug"
+          value="{{ with .Forms.Show.Slug }}
+            {{ . }}
+          {{ else with .Show.Slug }}
+            {{ . }}
+          {{ end }}"
+          class="w-full max-w-xl p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        />
+      </div>
+    {{ end }}
+    <div>
+      {{ with .Forms.Show.FieldErrors.profileImg }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <img-preview>
+        <div class="flex items-center">
+          <label
+            class="inline-block my-2 p-2 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none hover:cursor-pointer"
+          >
+            Upload Show Image
+            <input
+              type="file"
+              name="profileImg"
+              accept=".png, .jpg, .jpeg"
+              class="hidden"
+            />
+          </label>
+          <button type="button" class="remove ml-2 hover:bg-slate-300">
+            <img src="/static/img/close.svg" />
+          </button>
+        </div>
+        <div class="imagePreview">
+          {{ if .Show.ProfileImg }}
+            <img src="{{ .ImageBaseUrl }}/show/{{ .Show.ProfileImg }}" />
+          {{ end }}
+        </div>
+      </img-preview>
+    </div>
+  </div>
+{{ end }}

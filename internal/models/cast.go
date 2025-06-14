@@ -34,7 +34,7 @@ type CastModel struct {
 func (m *CastModel) Insert(vidId int, member *CastMember) (int, error) {
 	stmt := `
 	INSERT INTO cast_members (
-	video_id, person_id, character_name, character_id, position, img_name)
+	sketch_id, person_id, character_name, character_id, position, img_name)
 	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id;`
 	result := m.DB.QueryRow(
@@ -62,9 +62,9 @@ func (m *CastModel) GetCastMembers(vidId int) ([]*CastMember, error) {
 			p.description, p.profile_img, 
 			vpr.id, vpr.position, vpr.img_name, vpr.character_name,
 			ch.id, ch.slug, ch.name, ch.img_name
-		FROM video AS v
+		FROM sketch AS v
 		JOIN cast_members as vpr
-		ON v.id = vpr.video_id
+		ON v.id = vpr.sketch_id
 		LEFT JOIN person as p
 		ON vpr.person_id = p.id
 		LEFT JOIN character as ch

@@ -8,7 +8,7 @@ import (
 	"sketchdb.cozycole.net/internal/utils"
 )
 
-func TestAddVideoImageNames(t *testing.T) {
+func TestAddSketchImageNames(t *testing.T) {
 	validThumbnail, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail.jpg")
 	if err != nil {
 		t.Fatal(err)
@@ -27,16 +27,16 @@ func TestAddVideoImageNames(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		video          models.Video
+		sketch         models.Sketch
 		wantVidThumb   string
 		wantCharThumb1 string
 		wantCharThumb2 string
 	}{
 		{
 			name: "Valid Entry",
-			video: models.Video{
+			sketch: models.Sketch{
 				ID:            1,
-				Title:         "Test VIDEO",
+				Title:         "Test sketch",
 				ThumbnailFile: validThumbnail,
 				Creator:       &models.Creator{ID: 1},
 				Cast: []*models.CastMember{
@@ -54,7 +54,7 @@ func TestAddVideoImageNames(t *testing.T) {
 					},
 				},
 			},
-			wantVidThumb:   "test-video-1.jpg",
+			wantVidThumb:   "test-sketch-1.jpg",
 			wantCharThumb1: "LyIaGOuGOANpVwsu0UfYtA.jpg",
 			wantCharThumb2: "5hcw5nF7F4fPCdRJFP-5IA.jpg",
 		},
@@ -62,19 +62,19 @@ func TestAddVideoImageNames(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := addVideoImageNames(&tt.video)
+			err := addSketchImageNames(&tt.sketch)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			assert.Equal(t, tt.video.ThumbnailName, tt.wantVidThumb)
-			assert.Equal(t, *tt.video.Cast[0].ThumbnailName, tt.wantCharThumb1)
-			assert.Equal(t, *tt.video.Cast[1].ThumbnailName, tt.wantCharThumb2)
+			assert.Equal(t, tt.sketch.ThumbnailName, tt.wantVidThumb)
+			assert.Equal(t, *tt.sketch.Cast[0].ThumbnailName, tt.wantCharThumb1)
+			assert.Equal(t, *tt.sketch.Cast[1].ThumbnailName, tt.wantCharThumb2)
 		})
 	}
 }
 
-func TestSaveVideoImages(t *testing.T) {
+func TestSaveSketchImages(t *testing.T) {
 	validThumbnail, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail.jpg")
 	if err != nil {
 		t.Fatal(err)
@@ -98,16 +98,16 @@ func TestSaveVideoImages(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		video     models.Video
+		sketch    models.Sketch
 		wantError error
 	}{
 		{
 			name: "Valid Entry",
-			video: models.Video{
+			sketch: models.Sketch{
 				ID:            1,
-				Title:         "Test VIDEO",
+				Title:         "Test sketch",
 				ThumbnailFile: validThumbnail,
-				ThumbnailName: "test-video-1.jpg",
+				ThumbnailName: "test-sketch-1.jpg",
 				Creator:       &models.Creator{ID: 1},
 				Cast: []*models.CastMember{
 					{
@@ -131,10 +131,9 @@ func TestSaveVideoImages(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := app.saveVideoImages(&tt.video)
+			err := app.saveSketchImages(&tt.sketch)
 			assert.Equal(t, err, tt.wantError)
 		})
 	}
 
 }
-

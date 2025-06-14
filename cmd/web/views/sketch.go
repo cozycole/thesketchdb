@@ -32,7 +32,7 @@ type SketchPage struct {
 	Tags          []*Tag
 }
 
-func SketchPageView(sketch *models.Video, tags []*models.Tag, baseImgUrl string) (*SketchPage, error) {
+func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string) (*SketchPage, error) {
 	page := SketchPage{}
 	if sketch.ID == nil {
 		return nil, fmt.Errorf("Sketch ID not defined")
@@ -46,7 +46,7 @@ func SketchPageView(sketch *models.Video, tags []*models.Tag, baseImgUrl string)
 
 	page.Image = "/static/img/missing-thumbnail.jpg"
 	if sketch.ThumbnailName != nil {
-		page.Image = fmt.Sprintf("%s/video/large/%s", baseImgUrl, *sketch.ThumbnailName)
+		page.Image = fmt.Sprintf("%s/sketch/large/%s", baseImgUrl, *sketch.ThumbnailName)
 	}
 
 	page.Title = safeDerefString(sketch.Title)
@@ -67,7 +67,7 @@ func SketchPageView(sketch *models.Video, tags []*models.Tag, baseImgUrl string)
 		page.Liked = *sketch.Liked
 	}
 
-	page.UpdateUrl = fmt.Sprintf("/video/%d/update", *sketch.ID)
+	page.UpdateUrl = fmt.Sprintf("/sketch/%d/update", *sketch.ID)
 	page.Cast, _ = CastGalleryView(sketch.Cast, baseImgUrl)
 	page.Tags = TagsView(tags)
 
@@ -152,7 +152,7 @@ type SketchThumbnail struct {
 }
 
 func SketchGalleryView(
-	sketches []*models.Video,
+	sketches []*models.Sketch,
 	baseImgUrl,
 	thumbnailType,
 	sectionType string,
@@ -169,7 +169,7 @@ func SketchGalleryView(
 	}, nil
 }
 
-func FeaturedSketchesView(sketches []*models.Video, baseImgUrl string) ([]*SketchThumbnail, error) {
+func FeaturedSketchesView(sketches []*models.Sketch, baseImgUrl string) ([]*SketchThumbnail, error) {
 	var sketchViews []*SketchThumbnail
 	for _, sketch := range sketches {
 		sketchView, err := SketchThumbnailView(sketch, baseImgUrl, "")
@@ -185,7 +185,7 @@ func FeaturedSketchesView(sketches []*models.Video, baseImgUrl string) ([]*Sketc
 	return sketchViews, nil
 }
 
-func SketchThumbnailsView(sketches []*models.Video, baseImgUrl string, thumbnailType string) ([]*SketchThumbnail, error) {
+func SketchThumbnailsView(sketches []*models.Sketch, baseImgUrl string, thumbnailType string) ([]*SketchThumbnail, error) {
 	var sketchViews []*SketchThumbnail
 	for _, sketch := range sketches {
 		sketchView, err := SketchThumbnailView(sketch, baseImgUrl, thumbnailType)
@@ -198,7 +198,7 @@ func SketchThumbnailsView(sketches []*models.Video, baseImgUrl string, thumbnail
 	return sketchViews, nil
 }
 
-func SketchThumbnailView(sketch *models.Video, baseImgUrl string, thumbnailType string) (*SketchThumbnail, error) {
+func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType string) (*SketchThumbnail, error) {
 	sketchView := &SketchThumbnail{}
 	if sketch.ID == nil {
 		return nil, fmt.Errorf("Sketch ID not defined")
@@ -214,14 +214,14 @@ func SketchThumbnailView(sketch *models.Video, baseImgUrl string, thumbnailType 
 		sketchView.Title = "Untitled Sketch"
 	}
 
-	sketchView.Url = fmt.Sprintf("/video/%d/%s", *sketch.ID, *sketch.Slug)
+	sketchView.Url = fmt.Sprintf("/sketch/%d/%s", *sketch.ID, *sketch.Slug)
 
 	if sketch.YoutubeID != nil && len(*sketch.YoutubeID) == 11 {
 		sketchView.YoutubeUrl = fmt.Sprintf("www.youtube.com/watch?v=%s", *sketch.YoutubeID)
 	}
 
 	if sketch.ThumbnailName != nil {
-		thumbnailSubPath := "video"
+		thumbnailSubPath := "sketch"
 		if strings.ToUpper(thumbnailType) == "CAST" {
 			thumbnailSubPath = "cast/thumbnail"
 		}
@@ -318,7 +318,7 @@ func SketchCatalogView(
 	}
 
 	return &SketchCatalog{
-		ResultCountLabel: sketchCountLabel(results.TotalVideoCount),
+		ResultCountLabel: sketchCountLabel(results.TotalSketchCount),
 		CatalogFilter:    *sketchCatalogFilter,
 		CatalogResult:    *sketchCatalogResult,
 	}, nil
@@ -345,7 +345,7 @@ func SketchCatalogResultView(
 	}
 
 	sketches, err := SketchThumbnailsView(
-		results.VideoResults,
+		results.SketchResults,
 		baseImgUrl,
 		thumbnailType,
 	)
@@ -369,14 +369,14 @@ func SketchCatalogResultView(
 	}
 
 	labelString := "%d Sketch"
-	if results.TotalVideoCount != 1 {
+	if results.TotalSketchCount != 1 {
 		labelString += "es"
 	}
 
-	labelString = fmt.Sprintf(labelString, results.TotalVideoCount)
+	labelString = fmt.Sprintf(labelString, results.TotalSketchCount)
 
 	return &SketchCatalogResult{
-		HasResults:           len(results.VideoResults) != 0,
+		HasResults:           len(results.SketchResults) != 0,
 		IsHtmxRequest:        htmxRequest,
 		ResultCountLabel:     labelString,
 		SketchResultsGallery: SketchGallery{Sketches: sketches, SectionType: "full"},
@@ -519,4 +519,3 @@ func buildSelectedJSON(items []SelectedItem) (string, error) {
 	}
 	return string(data), nil
 }
-

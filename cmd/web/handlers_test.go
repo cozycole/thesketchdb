@@ -148,7 +148,7 @@ func TestPersonAddPost(t *testing.T) {
 	}
 }
 
-func TestVideoAddPost(t *testing.T) {
+func TestSketchAddPost(t *testing.T) {
 	app := newTestApplication(t)
 
 	ts := newTestServer(t, app.routes())
@@ -251,7 +251,7 @@ func TestVideoAddPost(t *testing.T) {
 				"thumbnail": tt.imgPath,
 			}
 
-			code, _, body := ts.postMultipartForm(t, "/video/add", fields, files)
+			code, _, body := ts.postMultipartForm(t, "/sketch/add", fields, files)
 			// fmt.Print(body)
 			assert.Equal(t, code, tt.wantCode)
 

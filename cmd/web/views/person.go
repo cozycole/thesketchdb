@@ -22,7 +22,7 @@ type PersonPage struct {
 func PersonPageView(
 	person *models.Person,
 	stats *models.PersonStats,
-	popular []*models.Video,
+	popular []*models.Sketch,
 	baseImgUrl string) (*PersonPage, error) {
 	page := PersonPage{}
 

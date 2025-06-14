@@ -1,0 +1,107 @@
+{{ define "title" }}Home{{ end }}
+
+{{ define "main" }}
+  <main class="w-full" data-page="home">
+    <div id="heroSection" class="bg-slate-900">
+      <div
+        class="w-full max-w-screen-xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between md:py-12 md:px-6 px-3 py-8 gap-8"
+      >
+        <!-- Hero Text -->
+        <div id="heroText" class="flex-1 min-w-[290px] max-w-xl">
+          <h1 class="text-white font-bold text-5xl mb-4">
+            The Sketch Comedy Database
+          </h1>
+          <h2 class="text-white text-lg">
+            Discover new sketches, actors, and characters. Find sketches from
+            creators and shows you know & love!
+          </h2>
+          <a href="/browse">
+            <button
+              class="w-fit my-7 bg-orange-600 text-white font-bold align-middle py-2 px-4 rounded-full hover:bg-orange-500"
+            >
+              Browse Sketches
+            </button>
+          </a>
+        </div>
+
+        <!-- Hero Carousel -->
+        <div class="md:flex-shrink md:basis-[640px] h-fit min-w-0">
+          <div class="relative group">
+            <div class="glide w-full">
+              <div class="glide__track" data-glide-el="track">
+                <div class="glide__slides">
+                  {{ range .Page.Featured }}
+                    <div class="glide__slide">
+                      {{ template "featured-thumbnail" . }}
+                    </div>
+                  {{ end }}
+                </div>
+              </div>
+
+              <!--Navigation Buttons -->
+              <div class="glide__arrows" data-glide-el="controls">
+                <button
+                  id="prevBtn"
+                  class="glide__arrow glide__arrow--left 
+                        hidden md:block
+                        absolute top-1/2 left-1 -translate-y-1/2 
+                        opacity-0 group-hover:opacity-100 transition-opacity 
+                        duration-300 ease-in-out 
+                        bg-slate-50 bg-opacity-70 rounded-full p-2"
+                  data-glide-dir="<"
+                >
+                  ⬅
+                </button>
+                <button
+                  id="nextBtn"
+                  class="glide__arrow glide__arrow--right 
+                        hidden md:block
+                        absolute top-1/2 right-1 -translate-y-1/2 
+                        opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out
+                        bg-slate-50 bg-opacity-70 rounded-full p-2"
+                  data-glide-dir=">"
+                >
+                  ➡
+                </button>
+              </div>
+            </div>
+            <!--Offset Title -->
+            <span
+              class="absolute -top-10 right-[clamp(1rem,2.5vw,1.6rem)] p-3 sm:p-4 rounded-lg text-slate-50 font-bold sm:text-[clamp(1rem,2.5vw,1.6rem)] text-[clamp(1.3rem, 3.5vw, 1.7)] bg-slate-950"
+            >
+              Featured
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bg-slate-50">
+      <div class="px-2 w-full max-w-screen-xl mx-auto">
+        <h2 class="font-bold text-2xl py-3">
+          <a href="/catalog/sketches?sort=oldest" class="hover:underline"
+            >Popular</a
+          >
+        </h2>
+        {{ template "sketch-carousel" .Page.PopularSketches }}
+      </div>
+      <div class="px-2 max-w-screen-xl mx-auto">
+        <h2 class="font-bold text-2xl py-3">
+          <a href="/catalog/sketches?sort=oldest" class="hover:underline"
+            >Latest</a
+          >
+        </h2>
+        {{ template "sketch-carousel" .Page.LatestSketches }}
+      </div>
+    </div>
+    <div class="bg-slate-800 pb-4">
+      <div class="px-2 py-4 max-w-screen-xl mx-auto">
+        <h2 class="font-bold text-2xl my-3 text-slate-50">
+          <a href="/catalog/sketches?sort=oldest" class="hover:underline"
+            >Popular Actors</a
+          >
+        </h2>
+        {{ template "person-carousel" (dict "ImageBaseUrl" $.ImageBaseUrl "People" .Page.Actors) }}
+      </div>
+    </div>
+  </main>
+{{ end }}

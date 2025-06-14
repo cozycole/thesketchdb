@@ -9,6 +9,6 @@ var (
 	ErrInvalidCredentials     = errors.New("models: invalid crednetials")
 	ErrDuplicateEmail         = errors.New("models: duplicate email")
 	ErrDuplicateUsername      = errors.New("models: duplicate email")
-	ErrDuplicateVidCreatorRel = errors.New("models: duplicate video creator relation")
-	ErrDuplicateVidPersonRel  = errors.New("models: duplicate video person relation")
+	ErrDuplicateVidCreatorRel = errors.New("models: duplicate sketch creator relation")
+	ErrDuplicateVidPersonRel  = errors.New("models: duplicate sketch person relation")
 )

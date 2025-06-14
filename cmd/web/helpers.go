@@ -33,7 +33,7 @@ func (app *application) serverError(r *http.Request, w http.ResponseWriter, err 
 		}
 		app.render(r, w,
 			http.StatusInternalServerError,
-			"flash-message.tmpl.html",
+			"flash-message.gohtml",
 			"flash-message",
 			data)
 	} else if app.debugMode {

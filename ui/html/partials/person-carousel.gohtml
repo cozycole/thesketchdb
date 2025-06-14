@@ -1,0 +1,55 @@
+{{ define "person-carousel" }}
+  <div class="glideCarousel group relative">
+    <div
+      class="gt glide__track scroll-smooth space-x-4 scrollbar-hide"
+      data-glide-el="track"
+    >
+      <div class="gs glide__slides flex space-x-4">
+        {{ range .People }}
+          <div class="flex-shrink-0 w-44">
+            {{ template "person-card" (dict "Person" . "ImageBaseUrl" $.ImageBaseUrl) }}
+          </div>
+        {{ end }}
+      </div>
+    </div>
+    <!--Navigation Buttons -->
+    <div class="glide__arrows" data-glide-el="controls">
+      <button
+        class="glide__arrow glide__arrow--left
+                  absolute left-0 top-1/2 -translate-y-1/2
+                  opacity-0 group-hover:opacity-100
+                  transition-opacity duration-300 ease-in-out
+                  bg-opacity-80 bg-slate-950 p-2"
+        data-glide-dir="|<"
+      >
+        <svg
+          class="w-5 h-8 fill-current text-slate-50"
+          viewBox="0 -960 960 960"
+        >
+          <path
+            d="M640-80 240-480l400-400 71 71-329 329 329 329-71 71Z"
+            stroke="currentColor"
+          />
+        </svg>
+      </button>
+      <button
+        class="glide__arrow glide__arrow--right 
+                  absolute right-0 top-1/2 -translate-y-1/2
+                  opacity-0 group-hover:opacity-100
+                  transition-opacity duration-300 ease-in-out
+                  bg-opacity-80 bg-slate-950 p-2"
+        data-glide-dir="|>"
+      >
+        <svg
+          class="w-5 h-8 fill-current text-slate-50"
+          viewBox="0 -960 960 960"
+        >
+          <path
+            d="m321-80-71-71 329-329-329-329 71-71 400 400L321-80Z"
+            stroke="currentColor"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+{{ end }}

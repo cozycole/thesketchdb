@@ -1,0 +1,40 @@
+{{ define "sketch-thumbnail" }}
+  <div class="flex-shrink-0 min-w-0">
+    <a href="{{ .Url }}">
+      <img
+        src="{{ .Image }}"
+        class="w-full rounded-lg"
+        onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+      />
+    </a>
+    <div class="flex h-32">
+      <div class="w-8 min-w-8 mt-2">
+        <a href="{{ .CreatorUrl }}">
+          <img
+            src="{{ .CreatorImage }}"
+            class="w-full rounded-full"
+            onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+          />
+        </a>
+      </div>
+      <div class="mt-2 ml-2 flex-1 min-w-0">
+        <h3 class="font-bold line-clamp-2 break-words whitespace-normal">
+          <a href="{{ .Url }}">{{ .Title }}</a>
+        </h3>
+        <a {{ if .CreatorUrl }}href="{{ .CreatorUrl }}"{{ end }}>
+          <h4
+            class="font-medium text-base line-clamp-2 break-words whitespace-normal"
+          >
+            {{- .CreatorName -}}
+          </h4>
+        </a>
+        {{ if .CreatorInfo }}
+          <p>{{ .CreatorInfo }}</p>
+        {{ end }}
+        {{ if .Date }}
+          <p>{{ .Date }}</p>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+{{ end }}

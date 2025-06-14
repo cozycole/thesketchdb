@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS season (
     id SERIAL PRIMARY KEY,
     show_id INTEGER REFERENCES show(id),
     season_number INTEGER NOT NULL,
+    air_date DATE,
     CONSTRAINT unique_show_season UNIQUE(show_id, season_number)
 );
 
@@ -78,21 +79,20 @@ CREATE TABLE IF NOT EXISTS episode (
     season_id INTEGER REFERENCES season(id),
     title TEXT,
     episode_number INTEGER NOT NULL,
-    thumbnail_name TEXT UNIQUE,
+    thumbnail_name TEXT,
     air_date DATE,
     CONSTRAINT unique_season_episode UNIQUE(season_id, episode_number)
 );
 
-CREATE TABLE IF NOT EXISTS video (
+CREATE TABLE IF NOT EXISTS sketch (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
-    video_url TEXT,
+    sketch_url TEXT,
     youtube_id TEXT, 
     slug TEXT NOT NULL,
     thumbnail_name TEXT,
     description TEXT,
     upload_date DATE,
-    pg_rating rating,
     episode_id int REFERENCES episode(id),
     part_number int,
     sketch_number int,
@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS video (
 
 CREATE TABLE IF NOT EXISTS cast_members (
     id SERIAL PRIMARY KEY,
-    video_id INT references video(id) NOT NULL,
+    sketch_id INT references sketch(id) NOT NULL,
     person_id INT references person(id) NOT NULL,
     character_name text DEFAULT '',
     character_id INT references character(id),
@@ -110,15 +110,15 @@ CREATE TABLE IF NOT EXISTS cast_members (
     img_name TEXT,
     role TEXT CHECK (role IN ('host', 'cast', 'guest')),
     insert_timestamp timestamp DEFAULT now(),
-    CONSTRAINT unique_cast_character UNIQUE(video_id, person_id, character_id)
+    CONSTRAINT unique_cast_character UNIQUE(sketch_id, person_id, character_id)
 );
 
-CREATE TABLE IF NOT EXISTS video_creator_rel (
+CREATE TABLE IF NOT EXISTS sketch_creator_rel (
     creator_id INT references creator(id),
-    video_id INT references video(id),
+    sketch_id INT references sketch(id),
     position INT,
     insert_timestamp timestamp DEFAULT now(),
-    PRIMARY KEY (creator_id, video_id)
+    PRIMARY KEY (creator_id, sketch_id)
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -135,8 +135,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS likes (
     created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
     user_id INT references users(id) NOT NULL,
-    video_id INT references video(id) NOT NULL,
-    PRIMARY KEY (user_id, video_id)
+    sketch_id INT references sketch(id) NOT NULL,
+    PRIMARY KEY (user_id, sketch_id)
 );
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -155,10 +155,10 @@ CREATE TABLE IF NOT EXISTS tags (
     category_id INT REFERENCES categories(id) ON DELETE SET NULL
 );
 
-CREATE TABLE video_tags (
-    video_id INT references video(id),
+CREATE TABLE sketch_tags (
+    sketch_id INT references sketch(id),
     tag_id INT references tags(id),
-    PRIMARY KEY (video_id, tag_id)
+    PRIMARY KEY (sketch_id, tag_id)
 );
 
 CREATE TABLE IF NOT EXISTS sessions (

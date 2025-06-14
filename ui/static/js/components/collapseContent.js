@@ -19,7 +19,6 @@ export class CollapsibleContent extends HTMLElement {
 
     if (!document.contains(this.arrow)) {
       this.arrow = this.querySelector(".arrow");
-
     }
 
     if (!document.contains(this.content)) {
@@ -27,7 +26,9 @@ export class CollapsibleContent extends HTMLElement {
       this.content.style.maxHeight = this.content.scrollHeight + "px";
     }
     setTimeout(() => {
-      this.content.style.maxHeight = this.isOpen ? this.content.scrollHeight + "px" : "0px";
+      this.content.style.maxHeight = this.isOpen
+        ? this.content.scrollHeight + "px"
+        : "0px";
     }, 0);
 
     this.arrow.classList.toggle("rotate-180", !this.isOpen);
@@ -41,7 +42,9 @@ export class CollapsibleContent extends HTMLElement {
 
   toggleContent() {
     this.isOpen = this.content.style.maxHeight !== "0px";
-    this.content.style.maxHeight = this.isOpen ?  "0px" : this.content.scrollHeight + "px";
+    this.content.style.maxHeight = this.isOpen
+      ? "0px"
+      : this.content.scrollHeight + "px";
     this.arrow.classList.toggle("rotate-180", this.isOpen);
     this.isOpen = this.content.style.maxHeight !== "0px";
   }
@@ -51,7 +54,7 @@ export class CollapsibleContent extends HTMLElement {
       this.content.style.maxHeight = this.content.scrollHeight + "px";
     }
   }
-  
+
   // if the content is mutated in any way we want to update the height to include
   // any new content AND reset all class attributes for the custom element
   observeContentMutations() {
@@ -62,9 +65,11 @@ export class CollapsibleContent extends HTMLElement {
             node.addEventListener("load", () => this.updateHeight());
           } else if (node.querySelectorAll) {
             // In case images are nested in fragments or other elements
-            node.querySelectorAll("img").forEach(img =>
-              img.addEventListener("load", () => this.updateHeight())
-            );
+            node
+              .querySelectorAll("img")
+              .forEach((img) =>
+                img.addEventListener("load", () => this.updateHeight()),
+              );
           }
         }
       }
@@ -73,7 +78,7 @@ export class CollapsibleContent extends HTMLElement {
       this.updateHeight();
     });
 
-      observer.observe(this, {
+    observer.observe(this, {
       childList: true,
       subtree: true,
     });

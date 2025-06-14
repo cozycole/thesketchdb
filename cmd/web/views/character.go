@@ -15,7 +15,7 @@ type CharacterPage struct {
 	Popular       *SketchGallery
 }
 
-func CharacterPageView(character *models.Character, popular []*models.Video, baseImgUrl string) (*CharacterPage, error) {
+func CharacterPageView(character *models.Character, popular []*models.Sketch, baseImgUrl string) (*CharacterPage, error) {
 	if character.ID == nil {
 		return nil, fmt.Errorf("Character ID not defined")
 	}

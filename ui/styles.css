@@ -6,7 +6,7 @@
   .flex-to-grid {
     display: flex;
   }
-  
+
   @media (min-width: 640px) {
     .flex-to-grid {
       display: grid;

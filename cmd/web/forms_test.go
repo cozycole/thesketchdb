@@ -159,7 +159,7 @@ func TestValidateAddPersonForm(t *testing.T) {
 	}
 }
 
-func TestValidateAddVideoForm(t *testing.T) {
+func TestValidateAddSketchForm(t *testing.T) {
 
 	// store in memory valid and invalid images
 	var emptyMap map[string]string
@@ -190,14 +190,14 @@ func TestValidateAddVideoForm(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		form           *addVideoForm
+		form           *addSketchForm
 		fieldErrors    map[string]string
 		nonFieldErrors []string
 	}{
 		{
 			name: "Valid Submission",
-			form: &addVideoForm{
-				Title:               "Video Title",
+			form: &addSketchForm{
+				Title:               "Sketch Title",
 				URL:                 "www.url.com",
 				Rating:              "pg-13",
 				UploadDate:          "2024-11-24",
@@ -212,8 +212,8 @@ func TestValidateAddVideoForm(t *testing.T) {
 		},
 		{
 			name: "Invalid Image",
-			form: &addVideoForm{
-				Title:               "Video Title",
+			form: &addSketchForm{
+				Title:               "Sketch Title",
 				URL:                 "www.url.com",
 				Rating:              "pg-13",
 				UploadDate:          "2024-11-24",
@@ -230,7 +230,7 @@ func TestValidateAddVideoForm(t *testing.T) {
 		},
 		{
 			name: "Blank fields",
-			form: &addVideoForm{
+			form: &addSketchForm{
 				Title:               "",
 				URL:                 "",
 				Rating:              "",
@@ -255,14 +255,14 @@ func TestValidateAddVideoForm(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app.validateAddVideoForm(tt.form)
+			app.validateAddSketchForm(tt.form)
 			assert.DeepEqual(t, tt.form.FieldErrors, tt.fieldErrors)
 			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
 		})
 	}
 }
 
-func TestConvertFormToVideo(t *testing.T) {
+func TestConvertFormToSketch(t *testing.T) {
 	validThumbnail, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail.jpg")
 	if err != nil {
 		t.Fatal(err)
@@ -282,7 +282,7 @@ func TestConvertFormToVideo(t *testing.T) {
 	url := "www.test.com"
 	rating := "pg"
 	uploadDateStr := "2024-11-30"
-	vidForm := addVideoForm{
+	vidForm := addSketchForm{
 		Title:               title,
 		URL:                 url,
 		Rating:              rating,
@@ -295,9 +295,9 @@ func TestConvertFormToVideo(t *testing.T) {
 		CharacterThumbnails: []*multipart.FileHeader{validImg, validImg2},
 	}
 
-	v, err := convertFormToVideo(&vidForm)
+	v, err := convertFormToSketch(&vidForm)
 	if err != nil {
-		t.Fatalf("unable to convert video: %s", err)
+		t.Fatalf("unable to convert sketch: %s", err)
 	}
 
 	assert.Equal(t, v.Title, title)
@@ -311,4 +311,3 @@ func TestConvertFormToVideo(t *testing.T) {
 	assert.Equal(t, v.Cast[0].ThumbnailFile.Filename, "test-img.jpg")
 	assert.Equal(t, v.Cast[1].ThumbnailFile.Filename, "test-img2.jpg")
 }
-

@@ -1,7 +1,7 @@
-import { VideoCarousel } from '../components/videoCarousel.js'
-import Glide from '@glidejs/glide'
+import { SketchCarousel } from "../components/sketchCarousel.js";
+import Glide from "@glidejs/glide";
 
-const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
 
 var FixBoundPeek = function (Glide, Components, Events) {
   return {
@@ -11,33 +11,37 @@ var FixBoundPeek = function (Glide, Components, Events) {
      * @param  {Number} translate
      * @return {Number}
      */
-    modify (translate) {
-      var isBound = Components.Run.isBound
+    modify(translate) {
+      var isBound = Components.Run.isBound;
       // future method from 'master'
-      if (typeof isBound !== 'function') {
+      if (typeof isBound !== "function") {
         isBound = function () {
-          return Glide.isType('slider') && Glide.settings.focusAt !== 'center' && Glide.settings.bound
-        }
+          return (
+            Glide.isType("slider") &&
+            Glide.settings.focusAt !== "center" &&
+            Glide.settings.bound
+          );
+        };
       }
 
       if (isBound() && Components.Run.isEnd()) {
-        const peek = Components.Peek.value
+        const peek = Components.Peek.value;
 
-        if (typeof peek === 'object' && peek.after) {
-          return translate - peek.after
+        if (typeof peek === "object" && peek.after) {
+          return translate - peek.after;
         }
 
-        return translate - peek
+        return translate - peek;
       }
 
-      return translate
-    }
-  }
-}
+      return translate;
+    },
+  };
+};
 
 export function initHome() {
-  new Glide('.glide', {
-    type: 'carousel',
+  new Glide(".glide", {
+    type: "carousel",
     startAt: 0,
     perView: 1,
     focusAt: "center",
@@ -46,93 +50,94 @@ export function initHome() {
     gap: 0,
   }).mount();
 
-  let elements = document.getElementsByClassName('glideCarousel');
+  let elements = document.getElementsByClassName("glideCarousel");
   if (isTouchDevice) {
     for (carousel of elements) {
-      let track = carousel.querySelector('.gt');
-      let slides = carousel.querySelector('.gs');
-      track.classList.toggle('glide__track');
-      track.classList.toggle('flex');
-      track.classList.toggle('overflow-x-auto');
-      slides.classList.toggle('glide__slides');
+      let track = carousel.querySelector(".gt");
+      let slides = carousel.querySelector(".gs");
+      track.classList.toggle("glide__track");
+      track.classList.toggle("flex");
+      track.classList.toggle("overflow-x-auto");
+      slides.classList.toggle("glide__slides");
       // hide nav buttons
-      carousel.querySelector('.glide__arrows').classList.toggle('hidden');
+      carousel.querySelector(".glide__arrows").classList.toggle("hidden");
     }
   } else {
     for (carousel of elements) {
-      if (carousel.classList.contains('sketch')) {
+      if (carousel.classList.contains("sketch")) {
         new Glide(carousel, {
-          type: 'slider',
+          type: "slider",
           startAt: 0,
           perView: 5,
-          perSwipe: '|',
+          perSwipe: "|",
           focusAt: 0,
           bound: true,
           gap: 8,
-          peek: {before:0, after: 50},
+          peek: { before: 0, after: 50 },
           breakpoints: {
             1100: {
               perView: 4,
-              peek: {before:0, after: 50},
+              peek: { before: 0, after: 50 },
             },
             850: {
               perView: 3,
-              peek: {before:0, after: 50},
+              peek: { before: 0, after: 50 },
             },
             575: {
               perView: 2,
-              peek: {before:0, after: 50},
+              peek: { before: 0, after: 50 },
             },
             400: {
               perView: 1,
-              peek: {before:0, after: 50},
-            }
+              peek: { before: 0, after: 50 },
+            },
           },
           keyboard: false,
           rewind: false,
-        }).mutate([FixBoundPeek])
+        })
+          .mutate([FixBoundPeek])
           .mount();
       } else {
         // profile card carousel
         new Glide(carousel, {
-          type: 'slider',
+          type: "slider",
           startAt: 0,
           perView: 6,
-          perSwipe: '|',
+          perSwipe: "|",
           focusAt: 0,
           bound: true,
           gap: 8,
-          peek: {before:0, after: 50},
+          peek: { before: 0, after: 50 },
           breakpoints: {
             1100: {
               perView: 5,
-              peek: {before:0, after: 50},
+              peek: { before: 0, after: 50 },
             },
             850: {
               perView: 4,
-              peek: {before:0, after: 50},
+              peek: { before: 0, after: 50 },
             },
             575: {
               perView: 3,
-              peek: {before:0, after: 50},
+              peek: { before: 0, after: 50 },
             },
             400: {
               perView: 2,
-              peek: {before:0, after: 50},
-            }
+              peek: { before: 0, after: 50 },
+            },
           },
           keyboard: false,
           rewind: false,
-        }).mutate([FixBoundPeek])
+        })
+          .mutate([FixBoundPeek])
           .mount();
-
       }
     }
   }
 
   //const carouselSections = document.getElementsByClassName('carouselSection');
   //for (let section of carouselSections) {
-  //  new VideoCarousel(
+  //  new SketchCarousel(
   //    section.querySelector('.carousel'),
   //    section.querySelector('.carouselPrevBtn'),
   //    section.querySelector('.carouselNextBtn'),

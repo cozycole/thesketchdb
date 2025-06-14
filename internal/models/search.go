@@ -11,8 +11,8 @@ import ()
 type SearchResult struct {
 	Type                string
 	Query               string
-	VideoResults        []*Video
-	TotalVideoCount     int
+	SketchResults       []*Sketch
+	TotalSketchCount    int
 	PersonResults       []*Person
 	TotalPersonCount    int
 	CreatorResults      []*Creator

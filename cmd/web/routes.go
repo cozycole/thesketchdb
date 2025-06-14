@@ -43,10 +43,10 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		r.Get("/categories", app.categoriesView)
 
-		r.Get("/video/{id}/{slug}", app.videoView)
+		r.Get("/sketch/{id}/{slug}", app.sketchView)
 
-		r.Post("/video/like/{id}", app.videoAddLike)
-		r.Delete("/video/like/{id}", app.videoRemoveLike)
+		r.Post("/sketch/like/{id}", app.sketchAddLike)
+		r.Delete("/sketch/like/{id}", app.sketchRemoveLike)
 
 		r.Get("/creator/{id}/{slug}", app.creatorView)
 		r.Get("/creator/search", app.creatorSearch)
@@ -84,16 +84,16 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		editorAdmin := []string{"editor", "admin"}
 		admin := []string{"admin"}
-		r.Get("/video/add", app.requireRoles(editorAdmin, app.videoAddPage))
-		r.Post("/video/add", app.requireRoles(editorAdmin, app.videoAdd))
-		r.Get("/video/{id}/update", app.requireRoles(editorAdmin, app.videoUpdatePage))
-		r.Patch("/video/{id}", app.requireRoles(editorAdmin, app.videoUpdate))
-		r.Put("/video/{id}/tag", app.requireRoles(editorAdmin, app.videoUpdateTags))
+		r.Get("/sketch/add", app.requireRoles(editorAdmin, app.sketchAddPage))
+		r.Post("/sketch/add", app.requireRoles(editorAdmin, app.sketchAdd))
+		r.Get("/sketch/{id}/update", app.requireRoles(editorAdmin, app.sketchUpdatePage))
+		r.Patch("/sketch/{id}", app.requireRoles(editorAdmin, app.sketchUpdate))
+		r.Put("/sketch/{id}/tag", app.requireRoles(editorAdmin, app.sketchUpdateTags))
 
 		r.Get("/cast/add", app.requireRoles(editorAdmin, app.addCastPage))
-		r.Post("/video/{id}/cast", app.requireRoles(editorAdmin, app.addCast))
-		r.Patch("/video/{id}/cast/{castId}", app.requireRoles(editorAdmin, app.updateCast))
-		r.Patch("/video/{id}/tag", app.requireRoles(editorAdmin, app.videoAdd))
+		r.Post("/sketch/{id}/cast", app.requireRoles(editorAdmin, app.addCast))
+		r.Patch("/sketch/{id}/cast/{castId}", app.requireRoles(editorAdmin, app.updateCast))
+		r.Patch("/sketch/{id}/tag", app.requireRoles(editorAdmin, app.sketchAdd))
 
 		r.Get("/show/add", app.requireRoles(editorAdmin, app.addShowPage))
 		r.Post("/show/add", app.requireRoles(editorAdmin, app.addShow))

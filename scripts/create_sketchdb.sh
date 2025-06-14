@@ -15,8 +15,4 @@ else
     if [ $? -ne 0 ]; then
         exit 1
     fi
-
-    psql -d $1 -U "$USER" -c "
-        CREATE TYPE rating AS ENUM ('PG', 'PG-13', 'R');
-    "
 fi

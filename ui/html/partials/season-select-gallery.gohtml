@@ -1,0 +1,34 @@
+<!--See SeasonSelectGallery for view data-->
+{{ define "season-select-gallery" }}
+  <div class="seasonGallery ">
+    <div class="flex items-center gap-2">
+      {{ if .Seasons }}
+        <select
+          id="seasonDropdown"
+          name="season"
+          hx-get="{{ .SeasonUrl }}"
+          hx-target="closest .seasonGallery"
+          hx-swap="outerHTML"
+          autocomplete="off"
+          class="my-2 p-2 border border-slate-300 rounded-lg bg-slate-50"
+        >
+          {{ range .Seasons }}
+            <option
+              value="{{ . }}"
+              {{ if eq . $.SelectedSeason }}selected{{ end }}
+            >
+              Season
+              {{ . }}
+            </option>
+          {{ end }}
+        </select>
+        <p class="text-lg font-medium">• {{ .EpisodeCount }} Episodes</p>
+        <div id="episodes">
+          {{ template "episode-gallery" .EpisodeGallery }}
+        </div>
+      {{ else }}
+        <div class="text-lg">No Seasons</div>
+      {{ end }}
+    </div>
+  </div>
+{{ end }}

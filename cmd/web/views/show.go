@@ -20,7 +20,7 @@ type ShowPage struct {
 	CastSection    *PersonGallery
 }
 
-func ShowPageView(show *models.Show, popular []*models.Video, cast []*models.Person, baseImgUrl string) (*ShowPage, error) {
+func ShowPageView(show *models.Show, popular []*models.Sketch, cast []*models.Person, baseImgUrl string) (*ShowPage, error) {
 	page := ShowPage{}
 	if show.ID == nil || show.Slug == nil {
 		return nil, fmt.Errorf("Show ID and Slug not defined")
@@ -171,9 +171,9 @@ func EpisodePageView(show *models.Show, episode *models.Episode, baseImgUrl stri
 		)
 	}
 	var err error
-	page.SketchCount = len(episode.Videos)
+	page.SketchCount = len(episode.Sketches)
 	page.Sketches, err = SketchGalleryView(
-		episode.Videos,
+		episode.Sketches,
 		baseImgUrl,
 		"base",
 		"full",

@@ -32,6 +32,10 @@ func SearchPageView(results *models.SearchResult, query, baseImgUrl string, maxR
 	page := SearchPage{}
 	var err error
 
+	if results == nil {
+		return &page, nil
+	}
+
 	page.PersonResultCount = results.TotalPersonCount
 	if page.PersonResults, err = PersonGalleryView(results.PersonResults, baseImgUrl); err != nil {
 		return nil, err
@@ -52,8 +56,8 @@ func SearchPageView(results *models.SearchResult, query, baseImgUrl string, maxR
 		return nil, err
 	}
 
-	page.SketchResultCount = results.TotalVideoCount
-	page.SketchResults, err = SketchGalleryView(results.VideoResults, baseImgUrl, "Default", "Full", maxResults)
+	page.SketchResultCount = results.TotalSketchCount
+	page.SketchResults, err = SketchGalleryView(results.SketchResults, baseImgUrl, "Default", "Full", maxResults)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +65,7 @@ func SearchPageView(results *models.SearchResult, query, baseImgUrl string, maxR
 	page.SketchResults.SeeMoreUrl = fmt.Sprintf("/catalog/sketches?query=%s", page.EscapedQuery)
 	page.SketchResults.SeeMore = page.SketchResultCount > maxResults
 
-	page.NoResults = results.TotalVideoCount == 0 &&
+	page.NoResults = results.TotalSketchCount == 0 &&
 		results.TotalPersonCount == 0 &&
 		results.TotalCreatorCount == 0 &&
 		results.TotalCharacterCount == 0 &&

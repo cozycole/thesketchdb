@@ -27,7 +27,7 @@ func newTestApplication(t *testing.T) *application {
 		fileStorage:   &imgmock.FileStorage{},
 		formDecoder:   formDecoder,
 		templateCache: templateCache,
-		videos:        &mocks.VideoModel{},
+		sketches:      &mocks.SketchModel{},
 		creators:      &mocks.CreatorModel{},
 		people:        &mocks.PersonModel{},
 		characters:    &mocks.CharacterModel{},
@@ -36,7 +36,7 @@ func newTestApplication(t *testing.T) *application {
 }
 
 func resetMocks(app *application) {
-	app.videos = &mocks.VideoModel{}
+	app.sketches = &mocks.SketchModel{}
 	app.creators = &mocks.CreatorModel{}
 	app.people = &mocks.PersonModel{}
 }

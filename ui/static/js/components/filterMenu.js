@@ -10,7 +10,7 @@ export class FilterContent extends HTMLElement {
 
     this.mobileFilterButton = document.querySelector("#mobileFilterMenu");
     this.mobileFilters = document.querySelector("#mobileFilters");
-    this.applyButton = this.querySelector("#filterApply")
+    this.applyButton = this.querySelector("#filterApply");
 
     this._onMobileMenuClick = () => this.mobileFilterToggle();
     this._mobileMenuExit = (e) => this.mobileFitlerExit(e);
@@ -18,11 +18,10 @@ export class FilterContent extends HTMLElement {
   }
 
   connectedCallback() {
-    console.log("FilterContent connected")
+    console.log("FilterContent connected");
     this.desktopContainer.innerHTML = "";
     this.mobileContainer.innerHTML = "";
     this.currentState = "";
-
 
     this.applyButton.addEventListener("click", this._applyOnClick);
     this.mobileFilterButton.addEventListener("click", this._onMobileMenuClick);
@@ -31,10 +30,13 @@ export class FilterContent extends HTMLElement {
     this.updateLayout();
   }
 
-  disconnectedCallback() { 
-    console.log("FilterContent disconnected")
-    this.applyButton.removeEventListener('click', this._applyOnClick);
-    this.mobileFilterButton.removeEventListener("click", this._onMobileMenuClick);
+  disconnectedCallback() {
+    console.log("FilterContent disconnected");
+    this.applyButton.removeEventListener("click", this._applyOnClick);
+    this.mobileFilterButton.removeEventListener(
+      "click",
+      this._onMobileMenuClick,
+    );
     document.removeEventListener("click", this._mobileMenuExit);
     window.removeEventListener("resize", this._onResize);
   }
@@ -68,16 +70,16 @@ export class FilterContent extends HTMLElement {
   applyFilters() {
     // Get all filters and trigger the results htmx element
     // with newly created url
-    const filters = document.querySelectorAll('[data-type]');
+    const filters = document.querySelectorAll("[data-type]");
     const newURL = new URL(window.location.href);
     newURL.search = "";
 
     for (let f of filters) {
       let urlParam = f.dataset.type;
       let urlValue = filterFunctionMap[urlParam]?.(f);
-      if (typeof urlValue === 'object') {
-        urlValue.forEach(id => newURL.searchParams.append(urlParam, id));
-      } else if (typeof urlValue === 'string') {
+      if (typeof urlValue === "object") {
+        urlValue.forEach((id) => newURL.searchParams.append(urlParam, id));
+      } else if (typeof urlValue === "string") {
         newURL.searchParams.append(urlParam, urlValue);
       }
     }
@@ -92,11 +94,27 @@ export class FilterContent extends HTMLElement {
   mobileFilterToggle() {
     let isOpen = this.mobileFilters.classList.contains("opacity-100");
     if (isOpen) {
-      this.mobileFilters.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
-      this.mobileFilters.classList.add("opacity-0", "scale-95", "pointer-events-none");
+      this.mobileFilters.classList.remove(
+        "opacity-100",
+        "scale-100",
+        "pointer-events-auto",
+      );
+      this.mobileFilters.classList.add(
+        "opacity-0",
+        "scale-95",
+        "pointer-events-none",
+      );
     } else {
-      this.mobileFilters.classList.remove("opacity-0", "scale-95", "pointer-events-none");
-      this.mobileFilters.classList.add("opacity-100", "scale-100", "pointer-events-auto");
+      this.mobileFilters.classList.remove(
+        "opacity-0",
+        "scale-95",
+        "pointer-events-none",
+      );
+      this.mobileFilters.classList.add(
+        "opacity-100",
+        "scale-100",
+        "pointer-events-auto",
+      );
     }
   }
 
@@ -115,31 +133,40 @@ export class FilterContent extends HTMLElement {
       if (d.contains(e.target)) {
         clickDropDown = true;
       }
-    })
+    });
 
     if (!(clickMenu || clickButton || clickDropDown)) {
-      this.mobileFilters.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
-      this.mobileFilters.classList.add("opacity-0", "scale-95", "pointer-events-none");
-    } }
+      this.mobileFilters.classList.remove(
+        "opacity-100",
+        "scale-100",
+        "pointer-events-auto",
+      );
+      this.mobileFilters.classList.add(
+        "opacity-0",
+        "scale-95",
+        "pointer-events-none",
+      );
+    }
+  }
 }
 
 let filterFunctionMap = {
-  "sort" : (f) => {
+  sort: (f) => {
     return f.value;
   },
-  "person" : (f) => {
+  person: (f) => {
     return f.getFilterIds();
   },
-  "creator" : (f) => {
+  creator: (f) => {
     return f.getFilterIds();
   },
-  "character" : (f) => {
+  character: (f) => {
     return f.getFilterIds();
   },
-  "tag" : (f) => {
+  tag: (f) => {
     return f.getFilterIds();
-  }
-}
+  },
+};
 
 if (!customElements.get("filter-content")) {
   customElements.define("filter-content", FilterContent);

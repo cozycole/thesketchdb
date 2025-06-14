@@ -10,7 +10,7 @@ import (
 func (app *application) tagAddPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.Tag = &tagForm{}
-	app.render(r, w, http.StatusOK, "add-tag.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-tag.gohtml", "base", data)
 }
 
 func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Forms.Tag = &form
-		app.render(r, w, http.StatusUnprocessableEntity, "add-tag.tmpl.html", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "add-tag.gohtml", "base", data)
 		return
 	}
 
@@ -53,5 +53,5 @@ func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Forms.Tag = &tagForm{}
-	app.render(r, w, http.StatusOK, "add-tag.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-tag.gohtml", "base", data)
 }

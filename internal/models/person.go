@@ -49,7 +49,7 @@ type PersonModel struct {
 func (m *PersonModel) GetPersonStats(id int) (*PersonStats, error) {
 	stmt := `
 		SELECT
-		  (SELECT COUNT(DISTINCT video_id)
+		  (SELECT COUNT(DISTINCT sketch_id)
 		   FROM cast_members
 		   WHERE person_id = $1) AS sketch_count,
 		  (SELECT COUNT(*)
@@ -58,8 +58,8 @@ func (m *PersonModel) GetPersonStats(id int) (*PersonStats, error) {
 		   WHERE c.person_id = $1) AS portrayal_count,
 		  (SELECT COUNT(DISTINCT c.creator_id)
 		   FROM cast_members as cm
-		   JOIN video as v ON v.id = cm.video_id
-		   JOIN  video_creator_rel as c ON v.id = c.video_id
+		   JOIN sketch as v ON v.id = cm.sketch_id
+		   JOIN  sketch_creator_rel as c ON v.id = c.sketch_id
 		   WHERE cm.person_id = $1) AS creator_count,
 		  (SELECT COUNT(DISTINCT cm.character_id)
 		   FROM cast_members cm

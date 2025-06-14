@@ -1,0 +1,59 @@
+{{ define "title" }}Signup{{ end }}
+{{ define "main" }}
+  <main class="flex justify-center">
+    <div
+      class="w-80 mt-7 p-3 border border-gray-300 bg-gray-100 rounded-md drop-shadow-lg"
+    >
+      <form action="/signup" method="POST" novalidate>
+        <div>
+          {{ with .Forms.Signup.FieldErrors.email }}
+            <label class="error text-red-600">{{ . }}</label>
+          {{ end }}
+          <input
+            type="email"
+            name="email"
+            class="w-full my-2 p-3 rounded-md"
+            placeholder="Email"
+            value="{{ .Forms.Signup.Email }}"
+          />
+        </div>
+        <div>
+          {{ with .Forms.Signup.FieldErrors.username }}
+            <label class="error text-red-600">{{ . }}</label>
+          {{ end }}
+          <input
+            type="text"
+            name="username"
+            class="w-full my-2 p-3 rounded-md"
+            placeholder="Username"
+            value="{{ .Forms.Signup.Username }}"
+          />
+        </div>
+        <div>
+          {{ with .Forms.Signup.FieldErrors.password }}
+            <label class="error text-red-600">{{ . }}</label>
+          {{ end }}
+          <input
+            type="password"
+            name="password"
+            class="w-full my-2 p-3 rounded-md"
+            placeholder="Password"
+          />
+        </div>
+        <div>
+          <button
+            type="submit"
+            class="w-full my-2 p-2 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+          >
+            Sign Up
+          </button>
+        </div>
+      </form>
+      <div class="w-full text-center">
+        <p class="hover:underline">
+          <a href="/login">Have an account? Login</a>
+        </p>
+      </div>
+    </div>
+  </main>
+{{ end }}

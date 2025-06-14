@@ -11,7 +11,7 @@ import (
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.Signup = &userSignupForm{}
-	app.render(r, w, http.StatusOK, "signup.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "signup.gohtml", "base", data)
 }
 
 func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	if app.validateUserSignupForm(&form); !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Forms.Signup = &form
-		app.render(r, w, http.StatusUnprocessableEntity, "signup.tmpl.html", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "signup.gohtml", "base", data)
 		return
 	}
 
@@ -50,7 +50,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			form.Validator.AddFieldError("email", "a user with this email address already exists")
 			data := app.newTemplateData(r)
 			data.Forms.Signup = &form
-			app.render(r, w, http.StatusUnprocessableEntity, "signup.tmpl.html", "base", data)
+			app.render(r, w, http.StatusUnprocessableEntity, "signup.gohtml", "base", data)
 			return
 		}
 	}
@@ -63,7 +63,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.Login = &userLoginForm{}
-	app.render(r, w, http.StatusOK, "login.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "login.gohtml", "base", data)
 }
 
 func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +78,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Forms.Login = &form
-		app.render(r, w, http.StatusUnprocessableEntity, "login.tmpl.html", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "login.gohtml", "base", data)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 			form.AddNonFieldError("Email or password is incorrect")
 			data := app.newTemplateData(r)
 			data.Forms.Login = &form
-			app.render(r, w, http.StatusUnprocessableEntity, "login.tmpl.html", "base", data)
+			app.render(r, w, http.StatusUnprocessableEntity, "login.gohtml", "base", data)
 		} else {
 			app.serverError(r, w, err)
 		}
@@ -118,7 +118,7 @@ func (app *application) userView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	favoriteSketches, err := app.videos.GetByUserLikes(*user.ID)
+	favoriteSketches, err := app.sketches.GetByUserLikes(*user.ID)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
@@ -136,7 +136,7 @@ func (app *application) userView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.Page = page
-	app.render(r, w, http.StatusOK, "view-user.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "view-user.gohtml", "base", data)
 }
 
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {

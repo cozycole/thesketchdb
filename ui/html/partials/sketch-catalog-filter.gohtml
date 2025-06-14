@@ -1,0 +1,71 @@
+{{ define "sketch-catalog-filter" }}
+  <div>
+    <h3 class="font-bold p-1">Sort By</h3>
+    <div class="relative w-full">
+      <select
+        id="sortDropdown"
+        data-type="sort"
+        class="block w-full appearance-none bg-slate-50 
+              border border-slate-300 hover:border-slate-400 
+              px-3 py-1.5 rounded-lg shadow-sm focus:outline-none"
+      >
+        {{ range .SortOptions }}
+          <option value="{{ .Value }}" {{ if .Selected }}selected{{ end }}>
+            {{ .Label }}
+          </option>
+        {{ end }}
+      </select>
+      <div
+        class="pointer-events-none absolute inset-y-0 right-0 
+                  flex items-center px-2 text-slate-500"
+      >
+        ▼
+      </div>
+    </div>
+  </div>
+  <div>
+    <h3 class="font-bold p-1">Actor</h3>
+    <catalog-filter
+      id="person-filter"
+      data-type="person"
+      data-url="/person/search"
+      data-placeholder="Enter actor's name"
+      data-selected="{{ .SelectedPeopleJSON }}"
+    >
+    </catalog-filter>
+  </div>
+  <div>
+    <h3 class="font-bold p-1">Character</h3>
+    <catalog-filter
+      id="character-filter"
+      data-type="character"
+      data-url="/character/search"
+      data-placeholder="Enter characters's name"
+      data-selected="{{ .SelectedCharactersJSON }}"
+    >
+    </catalog-filter>
+  </div>
+  <div>
+    <h3 class="font-bold p-1">Creator</h3>
+    <catalog-filter
+      id="creator-filter"
+      data-type="creator"
+      data-url="/creator/search"
+      data-placeholder="Enter creator's name"
+      data-selected="{{ .SelectedCreatorsJSON }}"
+    >
+    </catalog-filter>
+  </div>
+  <div>
+    <h3 class="font-bold p-1">Tags</h3>
+    <catalog-filter
+      id="tags-filter"
+      data-type="tag"
+      data-url="/tag/search"
+      data-placeholder="Search categories / tags"
+      data-display-img="false"
+      data-selected="{{ .SelectedTagsJSON }}"
+    >
+    </catalog-filter>
+  </div>
+{{ end }}

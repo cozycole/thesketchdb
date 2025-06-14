@@ -1,0 +1,41 @@
+{{ define "featured-thumbnail" }}
+  <div class="relative flex-shrink-0 min-w-0 w-full">
+    <div
+      class="absolute bottom-14 left-0 w-full h-1/6 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"
+    ></div>
+    <div class="absolute bottom-2 left-1 w-full">
+      <div class="flex items-center text-white">
+        <div class="w-16 mt-2">
+          <a href="{{ .CreatorUrl }}">
+            <img
+              src="{{ .CreatorImage }}"
+              class="w-full rounded-full"
+              onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+            />
+          </a>
+        </div>
+        <div class="mt-2 ml-2 flex-1">
+          <a href="{{ .Url }}">
+            <h3 class="font-bold text-lg line-clamp-1">
+              {{ .Title }}
+            </h3>
+          </a>
+          <a href="{{ .CreatorUrl }}">
+            <p class="font-medium text-base line-clamp-1">{{ .CreatorName }}</p>
+          </a>
+          <div class="line-clamp-1">
+            {{ .CreatorInfo }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <a href="{{ .Url }}">
+      <img
+        src="{{ .LargeImage }}"
+        class="w-full rounded-lg"
+        onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+      />
+    </a>
+    <div class="h-14 bg-slate-950 rounded-b-lg"></div>
+  </div>
+{{ end }}

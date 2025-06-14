@@ -7,17 +7,17 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func convertFormToVideo(form *videoForm) (models.Video, error) {
+func convertFormToSketch(form *sketchForm) (models.Sketch, error) {
 	uploadDate, err := time.Parse(time.DateOnly, form.UploadDate)
 	if err != nil {
-		return models.Video{}, fmt.Errorf("unable to parse date")
+		return models.Sketch{}, fmt.Errorf("unable to parse date")
 	}
 
 	creator := &models.Creator{
 		ID: &form.CreatorID,
 	}
 
-	return models.Video{
+	return models.Sketch{
 		Title:         &form.Title,
 		URL:           &form.URL,
 		Slug:          &form.Slug,
@@ -60,7 +60,7 @@ func convertFormtoTag(form *tagForm) models.Tag {
 	}
 }
 
-func (app *application) convertFormtoVideoTags(form *videoTagsForm) ([]*models.Tag, error) {
+func (app *application) convertFormtoSketchTags(form *sketchTagsForm) ([]*models.Tag, error) {
 	var tags []*models.Tag
 	for _, tagId := range form.TagIds {
 		tag, err := app.tags.Get(tagId)

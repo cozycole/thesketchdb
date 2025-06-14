@@ -21,13 +21,13 @@ func (app *application) categoriesView(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Categories = &categories
-	app.render(r, w, http.StatusOK, "view-categories.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "view-categories.gohtml", "base", data)
 }
 
 func (app *application) categoryAddPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.Category = &categoryForm{}
-	app.render(r, w, http.StatusOK, "add-category.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-category.gohtml", "base", data)
 }
 
 func (app *application) categoryAdd(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +44,7 @@ func (app *application) categoryAdd(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Forms.Category = &form
-		app.render(r, w, http.StatusUnprocessableEntity, "add-category.tmpl.html", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "add-category.gohtml", "base", data)
 		return
 	}
 
@@ -61,5 +61,5 @@ func (app *application) categoryAdd(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Forms.Category = &categoryForm{}
-	app.render(r, w, http.StatusOK, "add-category.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "add-category.gohtml", "base", data)
 }

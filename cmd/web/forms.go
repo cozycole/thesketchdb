@@ -10,17 +10,17 @@ import (
 )
 
 type Forms struct {
-	Cast      *castForm
-	Category  *categoryForm
-	Creator   *creatorForm
-	Episode   *episodeForm
-	Login     *userLoginForm
-	Person    *personForm
-	Show      *showForm
-	Signup    *userSignupForm
-	Tag       *tagForm
-	Video     *videoForm
-	VideoTags *videoTagsForm
+	Cast       *castForm
+	Category   *categoryForm
+	Creator    *creatorForm
+	Episode    *episodeForm
+	Login      *userLoginForm
+	Person     *personForm
+	Show       *showForm
+	Signup     *userSignupForm
+	Tag        *tagForm
+	Sketch     *sketchForm
+	SketchTags *sketchTagsForm
 }
 
 // Changes to the form fields must be updated in their respective
@@ -86,7 +86,7 @@ func (app *application) validateAddPersonForm(form *personForm) {
 // PersonIDs have name form field names of form peopleId[i]
 // if there are spaces between indexes say peopleId[0] : 1, peopleId[2] : 3
 // the result is zero filled so []int{1,0,3}
-type videoForm struct {
+type sketchForm struct {
 	ID                  int                   `form:"vidId"`
 	Title               string                `form:"title"`
 	URL                 string                `form:"url"`
@@ -101,7 +101,7 @@ type videoForm struct {
 
 // We need this function to have access to the apps state
 // to validate based on database queries
-func (app *application) validateAddVideoForm(form *videoForm) {
+func (app *application) validateAddSketchForm(form *sketchForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Rating), "rating", "This field cannot be blank")
@@ -144,7 +144,7 @@ func (app *application) validateAddVideoForm(form *videoForm) {
 	form.CheckField(width >= MinThumbnailWidth && height >= MinThumbnailHeight, "thumbnail", "Thumbnail dimensions must be at least 480x360")
 }
 
-func (app *application) validateUpdateVideoForm(form *videoForm) {
+func (app *application) validateUpdateSketchForm(form *sketchForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Rating), "rating", "This field cannot be blank")
@@ -159,7 +159,7 @@ func (app *application) validateUpdateVideoForm(form *videoForm) {
 
 	form.CheckField(validator.NotBlank(form.Slug), "slug", "This field cannot be blank")
 	form.CheckField(
-		!app.videos.IsSlugDuplicate(form.ID, form.Slug),
+		!app.sketches.IsSlugDuplicate(form.ID, form.Slug),
 		"slug",
 		"Slug already exists",
 	)
@@ -213,7 +213,7 @@ func (app *application) validateAddCast(form *castForm) {
 		form.CheckField(
 			validator.BoolWithError(app.people.Exists(pid)),
 			"personId",
-			"Person does not exist. Please add it, then resubmit video!",
+			"Person does not exist. Please add it, then resubmit sketch!",
 		)
 	}
 
@@ -224,7 +224,7 @@ func (app *application) validateAddCast(form *castForm) {
 		form.CheckField(
 			validator.BoolWithError(app.characters.Exists(cid)),
 			"characterId",
-			"Character does not exist. Please add it, then resubmit video!",
+			"Character does not exist. Please add it, then resubmit sketch!",
 		)
 	}
 
@@ -335,13 +335,13 @@ func (app *application) validateTagForm(form *tagForm) {
 	}
 }
 
-type videoTagsForm struct {
+type sketchTagsForm struct {
 	TagIds              []int    `form:"tagId"`
 	TagInputs           []string `form:"tagName"`
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateVideoTagsForm(form *videoTagsForm) {
+func (app *application) validateSketchTagsForm(form *sketchTagsForm) {
 	for i, tagId := range form.TagIds {
 		if tagId == 0 {
 			form.AddMultiFieldError("tagId", i, "Please input tag")

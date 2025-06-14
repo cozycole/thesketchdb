@@ -2,7 +2,9 @@ export class CatalogFilter extends HTMLElement {
   constructor() {
     super();
 
-    const template = document.getElementById("filterTemplate").content.cloneNode(true);
+    const template = document
+      .getElementById("filterTemplate")
+      .content.cloneNode(true);
     if (!this.children.length) {
       this.appendChild(template);
     }
@@ -15,20 +17,22 @@ export class CatalogFilter extends HTMLElement {
     this.input.setAttribute("placeholder", this.dataset.placeholder);
 
     this.dropdown = this.querySelector(".dropdown");
-    this.filtersDiv = this.querySelector(".filters"); 
+    this.filtersDiv = this.querySelector(".filters");
 
     // close dropdown on click outside and escape
     document.body.addEventListener("click", (e) => {
       setTimeout(() => {
-        if (!(this.dropdown.contains(e.target) || this.input.contains(e.target))) {
-          this.dropdown.innerHTML = '';
+        if (
+          !(this.dropdown.contains(e.target) || this.input.contains(e.target))
+        ) {
+          this.dropdown.innerHTML = "";
         }
       }, 100);
     });
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        this.dropdown.innerHTML = '';
+        this.dropdown.innerHTML = "";
         this.input.blur();
       }
     });
@@ -41,7 +45,7 @@ export class CatalogFilter extends HTMLElement {
       // clear an empty response such that there isnt a gray
       // little line below on empty query
       if (!dropdownItems.length) {
-        e.detail.target.innerHTML = '';
+        e.detail.target.innerHTML = "";
       }
 
       for (let child of dropdownItems) {
@@ -53,13 +57,13 @@ export class CatalogFilter extends HTMLElement {
     this.input.addEventListener("htmx:configRequest", (e) => {
       if (e.detail.target.classList.contains("dropdown")) {
         if (!e.detail.elt.value) {
-          this.dropdown.innerHTML = '';
+          this.dropdown.innerHTML = "";
           e.preventDefault();
           return;
         }
         e.detail.parameters["query"] = e.detail.elt.value;
       }
-    })
+    });
 
     this.filterType = this.dataset.type;
     const selectedData = this.dataset.selected;
@@ -86,9 +90,9 @@ export class CatalogFilter extends HTMLElement {
         let currentURL = new URL(window.location.href);
         let id = ele.dataset.id;
         if (currentURL.searchParams.has(this.dataset.type, id)) {
-          this.dropdown.innerHTML = '';
+          this.dropdown.innerHTML = "";
           this.input.value = "";
-          return
+          return;
         }
 
         let img = ele.querySelector("img");
@@ -96,14 +100,14 @@ export class CatalogFilter extends HTMLElement {
 
         this.addFilter(id, text, img?.src);
         this.displayFilter(id);
-        this.dropdown.innerHTML = '';
+        this.dropdown.innerHTML = "";
         this.input.value = "";
       }, 100);
     });
   }
-  
+
   addFilter(id, text, imgSrc) {
-    let filter = this.selectedFilters.filter(e => e.id === id);
+    let filter = this.selectedFilters.filter((e) => e.id === id);
     // guard against adding the same filter twice
     if (!filter.length) {
       let newFilter = {};
@@ -117,7 +121,7 @@ export class CatalogFilter extends HTMLElement {
   }
 
   displayFilter(id) {
-    let filter = this.selectedFilters.filter(e => e.id === id);
+    let filter = this.selectedFilters.filter((e) => e.id === id);
     if (!filter.length) {
       throw Error(`No filter with id ${id}`);
     }
@@ -125,7 +129,7 @@ export class CatalogFilter extends HTMLElement {
     // guard against adding the same filter twice
     filter = filter[0];
     if (this.filterIsDisplayed(filter.id)) {
-      return
+      return;
     }
 
     let filterElement = this.filterProfileTemplate.content.cloneNode(true);
@@ -147,8 +151,7 @@ export class CatalogFilter extends HTMLElement {
     deleteButton.addEventListener("click", (e) => {
       setTimeout(() => {
         this.removeFilter(filter);
-
-      },100)
+      }, 100);
     });
 
     console.log(this.filtersDiv.children);
@@ -169,9 +172,10 @@ export class CatalogFilter extends HTMLElement {
     }
 
     this.filtersDiv.removeChild(filterElement);
-    this.selectedFilters = this.selectedFilters.filter(item => item.id !== filter.id);
+    this.selectedFilters = this.selectedFilters.filter(
+      (item) => item.id !== filter.id,
+    );
   }
-
 
   getFilterIds() {
     let ids = [];
@@ -184,12 +188,11 @@ export class CatalogFilter extends HTMLElement {
   filterIsDisplayed(filterId) {
     for (let filter of this.filtersDiv.children) {
       if (filter.dataset.id == filterId) {
-        return true
+        return true;
       }
     }
-    return false
+    return false;
   }
-
 }
 
 if (!customElements.get("catalog-filter")) {

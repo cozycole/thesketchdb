@@ -15,14 +15,14 @@ import (
 
 func (app *application) getSearchResults(filter *models.Filter) (*models.SearchResult, error) {
 
-	videos, err := app.videos.Get(filter)
+	sketches, err := app.sketches.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
-		return nil, fmt.Errorf("search video error: %s", err)
+		return nil, fmt.Errorf("search sketch error: %s", err)
 	}
 
-	videoCount, err := app.videos.GetCount(filter)
+	sketchCount, err := app.sketches.GetCount(filter)
 	if err != nil {
-		return nil, fmt.Errorf("search video count error: %s", err)
+		return nil, fmt.Errorf("search sketch count error: %s", err)
 	}
 
 	people, err := app.people.Get(filter)
@@ -66,8 +66,8 @@ func (app *application) getSearchResults(filter *models.Filter) (*models.SearchR
 	}
 
 	return &models.SearchResult{
-		VideoResults:        videos,
-		TotalVideoCount:     videoCount,
+		SketchResults:       sketches,
+		TotalSketchCount:    sketchCount,
 		PersonResults:       people,
 		TotalPersonCount:    peopleCount,
 		CreatorResults:      creators,

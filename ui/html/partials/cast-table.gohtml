@@ -1,0 +1,51 @@
+{{ define "cast-table" }}
+  <table class="w-full">
+    <thead>
+      <tr>
+        <th scope="col" class="border-b border-black p-2">ID</th>
+        <th scope="col" class="p-3 border-b border-black text-left">
+          Thumbnail
+        </th>
+        <th scope="col" class="p-3 border-b border-black text-left">
+          Character<br />Name
+        </th>
+        <th scope="col" class="p-3 border-b border-black text-left">
+          Character<br />Page
+        </th>
+        <th scope="col" class="p-3 border-b border-black text-left">Actor</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range $member := .Cast }}
+        <tr>
+          <td scope="col" class="border-b border-black p-2">
+            {{ $member.ID }}
+          </td>
+          <td scope="col" class="p-3 border-b border-black text-left">
+            <img
+              class="max-w-20"
+              src="{{ $.ImageBaseUrl }}/cast/profile/{{ $member.ThumbnailName }}"
+            />
+          </td>
+          <td scope="col" class="p-3 border-b border-black text-left">
+            {{ with $member.CharacterName -}}{{- . -}}{{- end -}}
+          </td>
+          <td scope="col" class="p-3 border-b border-black text-left">
+            {{- with $member.Character.Slug -}}
+              <a
+                href="/character/{{ . }}"
+                target="_blank"
+                class="hover:underline"
+              >
+                {{ $member.Character.Name }}
+              </a>
+            {{- end -}}
+          </td>
+          <td scope="col" class="p-3 border-b border-black text-left">
+            {{- printPersonName $member.Actor -}}
+          </td>
+        </tr>
+      {{ end }}
+    </tbody>
+  </table>
+{{ end }}

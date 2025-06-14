@@ -47,7 +47,7 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.render(r, w, http.StatusOK, "search.tmpl.html", "base", data)
+	app.render(r, w, http.StatusOK, "search.gohtml", "base", data)
 }
 
 type dropdownSearchResults struct {
@@ -105,7 +105,7 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
 
-	app.render(r, w, http.StatusOK, "dropdown.tmpl.html", "", data)
+	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
 func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) {
@@ -151,7 +151,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 	data := app.newTemplateData(r)
 	data.DropdownResults = results
 
-	app.render(r, w, http.StatusOK, "dropdown.tmpl.html", "", data)
+	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
 func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +197,7 @@ func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.DropdownResults = results
 
-	app.render(r, w, http.StatusOK, "dropdown.tmpl.html", "", data)
+	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
 func (app *application) categorySearch(w http.ResponseWriter, r *http.Request) {
@@ -237,7 +237,7 @@ func (app *application) categorySearch(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.DropdownResults = results
 
-	app.render(r, w, http.StatusOK, "dropdown.tmpl.html", "", data)
+	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
 func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
@@ -282,7 +282,7 @@ func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.DropdownResults = results
 
-	app.render(r, w, http.StatusOK, "dropdown.tmpl.html", "", data)
+	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
 func getFormattedQueries(query string) (string, string, string) {

@@ -1,7 +1,7 @@
 export class UploadImagePreview extends HTMLElement {
   constructor() {
     super();
-    this.preview = this.querySelector('.imagePreview');
+    this.preview = this.querySelector(".imagePreview");
     console.log("in constructor");
     console.log(this);
     if (!this.preview) {
@@ -12,12 +12,12 @@ export class UploadImagePreview extends HTMLElement {
       this.originalImg = this.preview.firstElementChild;
     }
 
-    this.input = this.querySelector('input[type=file]');
-    this.input.addEventListener('change', (e) => this.previewImage());
+    this.input = this.querySelector("input[type=file]");
+    this.input.addEventListener("change", (e) => this.previewImage());
 
-    this.removeButton = this.querySelector('.remove');
+    this.removeButton = this.querySelector(".remove");
     if (this.removeButton) {
-      this.removeButton.addEventListener('click', () => {
+      this.removeButton.addEventListener("click", () => {
         this.input.value = "";
 
         this.removePreviewImages();
@@ -25,7 +25,7 @@ export class UploadImagePreview extends HTMLElement {
         if (this.originalImg) {
           this.originalImg.style.display = "";
         }
-      })
+      });
     }
   }
 
@@ -42,16 +42,16 @@ export class UploadImagePreview extends HTMLElement {
       reader.onload = (e) => {
         this.removePreviewImages();
 
-        const img = document.createElement('img');
+        const img = document.createElement("img");
         img.src = e.target.result;
-        img.style.maxWidth = '300px'; 
-        img.style.maxHeight = '300px'; 
+        img.style.maxWidth = "300px";
+        img.style.maxHeight = "300px";
 
         this.preview.appendChild(img);
       };
 
       reader.readAsDataURL(file);
-    } 
+    }
   }
 
   removePreviewImages() {
@@ -59,7 +59,7 @@ export class UploadImagePreview extends HTMLElement {
       if (!child.isEqualNode(this.originalImg)) {
         child.remove();
       }
-      
+
       if (this.originalImg) {
         this.originalImg.style.display = "none";
       }

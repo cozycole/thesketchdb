@@ -15,12 +15,12 @@ func (app *application) addCastPage(w http.ResponseWriter, r *http.Request) {
 	// this is a sub template used by htmx to insert into update page. If you want
 	// to make a separate page for it, check the headers and have different template loaded
 	// based on whether htmx requested it or not
-	app.render(r, w, http.StatusOK, "actor-input.tmpl.html", "actor-input", data)
+	app.render(r, w, http.StatusOK, "actor-input.gohtml", "actor-input", data)
 }
 
 func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
-	videoIdParam := r.PathValue("id")
-	videoId, err := strconv.Atoi(videoIdParam)
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
 		app.badRequest(w)
 		return
@@ -38,13 +38,13 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 		data := app.newTemplateData(r)
 		data.CastMember = &models.CastMember{}
 		data.Forms.Cast = &form
-		app.render(r, w, http.StatusUnprocessableEntity, "actor-input.tmpl.html", "actor-input", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "actor-input.gohtml", "actor-input", data)
 		return
 	}
 
 	castMember := convertFormtoCastMember(&form)
 
-	castId, err := app.cast.Insert(videoId, &castMember)
+	castId, err := app.cast.Insert(sketchId, &castMember)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -70,19 +70,19 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cast, _ := app.cast.GetCastMembers(videoId)
+	cast, _ := app.cast.GetCastMembers(sketchId)
 	data := app.newTemplateData(r)
 	data.Cast = cast
-	app.render(r, w, http.StatusOK, "cast-table.tmpl.html", "cast-table", data)
+	app.render(r, w, http.StatusOK, "cast-table.gohtml", "cast-table", data)
 }
 
 func (app *application) updateCast(w http.ResponseWriter, r *http.Request) {
-	videoIdParam, castIdParam := r.PathValue("id"), r.PathValue("castId")
-	videoId, err := strconv.Atoi(videoIdParam)
+	sketchIdParam, castIdParam := r.PathValue("id"), r.PathValue("castId")
+	sketchId, err := strconv.Atoi(sketchIdParam)
 	castId, err2 := strconv.Atoi(castIdParam)
 	if err != nil || err2 != nil {
 		app.badRequest(w)
 		return
 	}
-	app.infoLog.Printf("%d %d\n", videoId, castId)
+	app.infoLog.Printf("%d %d\n", sketchId, castId)
 }

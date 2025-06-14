@@ -33,7 +33,7 @@ type application struct {
 	shows          models.ShowModelInterface
 	tags           models.TagModelInterface
 	users          models.UserModelInterface
-	videos         models.VideoModelInterface
+	sketches       models.SketchModelInterface
 	sessionManager *scs.SessionManager
 	debugMode      bool
 	formDecoder    *form.Decoder
@@ -114,7 +114,7 @@ func main() {
 		shows:          &models.ShowModel{DB: dbpool},
 		tags:           &models.TagModel{DB: dbpool},
 		users:          &models.UserModel{DB: dbpool},
-		videos:         &models.VideoModel{DB: dbpool},
+		sketches:       &models.SketchModel{DB: dbpool},
 		sessionManager: sessionManager,
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,

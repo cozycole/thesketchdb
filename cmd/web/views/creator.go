@@ -14,7 +14,7 @@ type CreatorPage struct {
 	Popular         *SketchGallery
 }
 
-func CreatorPageView(creator *models.Creator, popular []*models.Video, baseImgUrl string) (*CreatorPage, error) {
+func CreatorPageView(creator *models.Creator, popular []*models.Sketch, baseImgUrl string) (*CreatorPage, error) {
 	if creator.ID == nil {
 		return nil, fmt.Errorf("Creator has no defined ID")
 	}

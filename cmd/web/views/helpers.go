@@ -74,7 +74,7 @@ func seasonEpisodeInfo(episode *models.Episode) string {
 			"S%d · E%d · %s",
 			*episode.SeasonNumber,
 			*episode.Number,
-			sketchCountLabel(len(episode.Videos)),
+			sketchCountLabel(len(episode.Sketches)),
 		)
 	}
 
@@ -156,7 +156,7 @@ func intSliceContains(list []int, value int) bool {
 func getSeasonSketchCount(season *models.Season) int {
 	var count int
 	for _, ep := range season.Episodes {
-		count += len(ep.Videos)
+		count += len(ep.Sketches)
 	}
 
 	return count
@@ -175,7 +175,7 @@ func getShowSketchCount(show *models.Show) int {
 	var count int
 	for _, season := range show.Seasons {
 		for _, ep := range season.Episodes {
-			count += len(ep.Videos)
+			count += len(ep.Sketches)
 		}
 	}
 

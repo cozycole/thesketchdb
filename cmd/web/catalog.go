@@ -11,19 +11,19 @@ func (app *application) getSketchCatalogResults(
 	searchType string,
 	filter *models.Filter,
 ) (*models.SearchResult, error) {
-	videos, err := app.videos.Get(filter)
+	sketches, err := app.sketches.Get(filter)
 	if err != nil {
 		return nil, fmt.Errorf("%s get error: %w", searchType, err)
 	}
 
-	totalCount, err := app.videos.GetCount(filter)
+	totalCount, err := app.sketches.GetCount(filter)
 	if err != nil {
 		return nil, fmt.Errorf("%s search count error: %w", searchType, err)
 	}
 
 	return &models.SearchResult{
-		Type:            "video",
-		VideoResults:    videos,
-		TotalVideoCount: totalCount,
+		Type:             "sketch",
+		SketchResults:    sketches,
+		TotalSketchCount: totalCount,
 	}, nil
 }
