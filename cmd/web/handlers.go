@@ -105,39 +105,36 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) browse(w http.ResponseWriter, r *http.Request) {
-	browseSections := make(map[string][]*models.Sketch)
-	limit := 8
-	offset := 0
 
-	// First add "custom" sections (ex: latest, trending, recommended/because you liked X)
-	latest, err := app.sketches.Get(
-		&models.Filter{
-			Limit:  limit,
-			Offset: offset,
-			SortBy: "latest"})
-	if err != nil {
-		app.errorLog.Println(err)
-	}
-	browseSections["Latest"] = latest
+	var sections []views.BrowseSectionDefinition
+	for _, def := range views.BrowseSectionDefinitions {
+		section := views.BrowseSectionDefinition{
+			Title:  def.Title,
+			Filter: def.Filter,
+		}
 
-	kyleId := 1
-	actorSketches, err := app.sketches.Get(
-		&models.Filter{
-			Limit:  limit,
-			Offset: offset,
-			SortBy: "az",
-			People: []*models.Person{
-				&models.Person{ID: &kyleId},
-			},
-		},
-	)
-	if err != nil {
-		app.errorLog.Println(err)
+		sketches, err := app.sketches.Get(&section.Filter)
+		if err != nil {
+			app.serverError(r, w, err)
+			return
+		}
+
+		section.Sketches = sketches
+
+		sections = append(sections, section)
 	}
-	browseSections["Sketches Featuring Kyle Mooney"] = actorSketches
+
+	browsePage, err := views.BrowsePageView(sections, app.baseImgUrl)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
 
 	data := app.newTemplateData(r)
-	data.BrowseSections = browseSections
+	data.Page = browsePage
+
+	app.infoLog.Printf("%+v\n", browsePage)
+
 	app.render(r, w, http.StatusOK, "browse.gohtml", "base", data)
 }
 
@@ -157,7 +154,7 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 
 	sort := r.Form.Get("sort")
 	if sort == "" {
-		sort = "latest"
+		sort = "popular"
 	}
 
 	query, _ := url.QueryUnescape(r.Form.Get("query"))
@@ -181,6 +178,12 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		creatorFilter, err = app.creators.GetCreators(&creatorIds)
 	}
 
+	showIds := extractUrlParamIDs(r.URL.Query()["show"])
+	var showFilter []*models.Show
+	if len(showIds) > 0 {
+		showFilter, err = app.shows.GetShows(&showIds)
+	}
+
 	tagIds := extractUrlParamIDs(r.URL.Query()["tag"])
 	var tagFilter []*models.Tag
 	if len(tagIds) > 0 {
@@ -194,6 +197,7 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		Characters: characterFilter,
 		Creators:   creatorFilter,
 		People:     peopleFilter,
+		Shows:      showFilter,
 		Tags:       tagFilter,
 		SortBy:     sort,
 		Limit:      limit,

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -74,9 +75,11 @@ type ShowModelInterface interface {
 	GetEpisode(episodeId int) (*Episode, error)
 	GetSeason(seasonId int) (*Season, error)
 	GetShowCast(id int) ([]*Person, error)
+	GetShows(ids *[]int) ([]*Show, error)
 	Insert(show *Show) (int, error)
 	InsertEpisode(episode *Episode) (int, error)
 	Delete(show *Show) error
+	Search(query string) ([]*Show, error)
 	Update(show *Show) error
 	UpdateEpisode(episode *Episode) error
 }
@@ -566,6 +569,81 @@ func (m *ShowModel) Update(show *Show) error {
 		context.Background(), stmt, show.Name, show.Slug, show.ProfileImg, show.ID,
 	)
 	return err
+}
+
+func (m *ShowModel) GetShows(ids *[]int) ([]*Show, error) {
+	if ids != nil && len(*ids) < 1 {
+		return nil, nil
+	}
+
+	stmt := `SELECT id, name, slug, profile_img
+			FROM show
+			WHERE id IN (%s)`
+
+	args := []interface{}{}
+	queryPlaceholders := []string{}
+	for i, id := range *ids {
+		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
+		args = append(args, id)
+	}
+
+	stmt = fmt.Sprintf(stmt, strings.Join(queryPlaceholders, ","))
+	rows, err := m.DB.Query(context.Background(), stmt, args...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	var shows []*Show
+	for rows.Next() {
+		s := Show{}
+		err := rows.Scan(&s.ID, &s.Name, &s.Slug, &s.ProfileImg)
+		if err != nil {
+			return nil, err
+		}
+		shows = append(shows, &s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return shows, nil
+}
+
+func (m *ShowModel) Search(query string) ([]*Show, error) {
+	query = "%" + query + "%"
+	stmt := `SELECT s.id, s.slug, s.name, s.profile_img
+			FROM show as s
+			WHERE name ILIKE $1
+			ORDER BY name`
+
+	rows, err := m.DB.Query(context.Background(), stmt, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	shows := []*Show{}
+	for rows.Next() {
+		c := &Show{}
+		err := rows.Scan(
+			&c.ID, &c.Slug, &c.Name, &c.ProfileImg,
+		)
+		if err != nil {
+			return nil, err
+		}
+		shows = append(shows, c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return shows, nil
 }
 
 func (m *ShowModel) UpdateEpisode(episode *Episode) error {

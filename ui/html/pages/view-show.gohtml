@@ -3,134 +3,136 @@
 {{ define "main" }}
   <main
     data-page="view-show"
-    class="max-w-screen-xl mx-auto w-full p-3 text-slate-950 bg-slate-250"
+    class="w-full flex-1 p-3 text-slate-950 bg-slate-300"
   >
-    {{ with .Page }}
-      <div
-        class="flex flex-col w-full gap-3 items-center min-[775px]:flex-row sm:items-start"
-      >
-        <section
-          id="profile"
-          class="md:w-64 w-full p-4 h-fit flex flex-col gap-2 shrink-0
-                bg-white rounded-lg text-center"
+    <div class="max-w-screen-xl mx-auto">
+      {{ with .Page }}
+        <div
+          class="flex flex-col w-full gap-3 items-center min-[775px]:flex-row sm:items-start"
         >
-          <div>
-            <img src="{{ .Image }}" class="rounded-full mx-auto mb-2" />
-            <h2 class="font-bold text-lg">{{ .ShowName }}</h2>
-            {{- if $.IsEditor -}}
-              <h3 class="text-sm text-center">
-                (<a href="{{ .UpdateUrl }}" class="hover:underline">Edit</a>)
-              </h3>
-            {{- end -}}
-          </div>
-          <div class="mx-auto">
-            <h3 class="font-bold">Seasons</h3>
-            <p>{{ .SeasonCount }}</p>
-          </div>
-          <div class="mx-auto">
-            <h3 class="font-bold">Episodes</h3>
-            <p>{{ .EpisodeCount }}</p>
-          </div>
-          <div class="mx-auto">
-            <h3 class="font-bold">Sketches</h3>
-            <p>{{ .SketchCount }}</p>
-          </div>
-        </section>
-        <div class="w-full flex flex-col gap-5">
           <section
-            id="seasons"
-            class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md"
+            id="profile"
+            class="md:w-64 w-full p-4 h-fit flex flex-col gap-2 shrink-0
+                bg-white rounded-lg text-center"
           >
-            <collapse-content>
-              <header class="w-full flex items-center justify-between">
-                <h2 class="text-xl font-bold hover:underline">
-                  <a href="{{ .SeasonUrl }}">Seasons</a>
-                </h2>
-                <button class="toggleBtn transition-all">
-                  <svg
-                    class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    focusable="false"
-                  >
-                    <path
-                      d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
-                      fill="currentColor"
-                    ></path>
-                  </svg>
-                </button>
-              </header>
-              <div
-                class="content w-full overflow-hidden transition-all duration-500 ease-in-out"
-              >
-                {{ template "season-select-gallery" .SeasonSection }}
-              </div>
-            </collapse-content>
+            <div>
+              <img src="{{ .Image }}" class="rounded-full mx-auto mb-2" />
+              <h2 class="font-bold text-lg">{{ .ShowName }}</h2>
+              {{- if $.IsEditor -}}
+                <h3 class="text-sm text-center">
+                  (<a href="{{ .UpdateUrl }}" class="hover:underline">Edit</a>)
+                </h3>
+              {{- end -}}
+            </div>
+            <div class="mx-auto">
+              <h3 class="font-bold">Seasons</h3>
+              <p>{{ .SeasonCount }}</p>
+            </div>
+            <div class="mx-auto">
+              <h3 class="font-bold">Episodes</h3>
+              <p>{{ .EpisodeCount }}</p>
+            </div>
+            <div class="mx-auto">
+              <h3 class="font-bold">Sketches</h3>
+              <p>{{ .SketchCount }}</p>
+            </div>
           </section>
-          <section
-            id="popular"
-            class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md"
-          >
-            <collapse-content>
-              <header class="w-full flex items-center justify-between">
-                <h2 class="text-xl font-bold hover:underline">
-                  <a href="/catalog/sketches?show={{ .ID }}">Popular</a>
-                </h2>
-                <button class="toggleBtn transition-all">
-                  <svg
-                    class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    focusable="false"
-                  >
-                    <path
-                      d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
-                      fill="currentColor"
-                    ></path>
-                  </svg>
-                </button>
-              </header>
-              <div
-                class="content w-full overflow-hidden transition-all duration-500 ease-in-out"
-              >
-                <div class="mt-4">
-                  {{- template "thumbnail-gallery" .PopularSection -}}
+          <div class="w-full flex flex-col gap-5">
+            <section
+              id="seasons"
+              class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md"
+            >
+              <collapse-content>
+                <header class="w-full flex items-center justify-between">
+                  <h2 class="text-xl font-bold hover:underline">
+                    <a href="{{ .SeasonUrl }}">Seasons</a>
+                  </h2>
+                  <button class="toggleBtn transition-all">
+                    <svg
+                      class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      focusable="false"
+                    >
+                      <path
+                        d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
+                        fill="currentColor"
+                      ></path>
+                    </svg>
+                  </button>
+                </header>
+                <div
+                  class="content w-full overflow-hidden transition-all duration-500 ease-in-out"
+                >
+                  {{ template "season-select-gallery" .SeasonSection }}
                 </div>
-              </div>
-            </collapse-content>
-          </section>
-          <section
-            id="cast"
-            class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md"
-          >
-            <collapse-content>
-              <header class="w-full flex items-center justify-between">
-                <h2 class="text-xl font-bold">Cast</h2>
-                <button class="toggleBtn transition-all">
-                  <svg
-                    class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    focusable="false"
-                  >
-                    <path
-                      d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
-                      fill="currentColor"
-                    ></path>
-                  </svg>
-                </button>
-              </header>
-              <div
-                class="content w-full overflow-hidden transition-all duration-500 ease-in-out text-center"
-              >
-                <div class="mt-4">
-                  {{- template "person-gallery" .CastSection -}}
+              </collapse-content>
+            </section>
+            <section
+              id="popular"
+              class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md"
+            >
+              <collapse-content>
+                <header class="w-full flex items-center justify-between">
+                  <h2 class="text-xl font-bold hover:underline">
+                    <a href="/catalog/sketches?show={{ .ID }}">Popular</a>
+                  </h2>
+                  <button class="toggleBtn transition-all">
+                    <svg
+                      class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      focusable="false"
+                    >
+                      <path
+                        d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
+                        fill="currentColor"
+                      ></path>
+                    </svg>
+                  </button>
+                </header>
+                <div
+                  class="content w-full overflow-hidden transition-all duration-500 ease-in-out"
+                >
+                  <div class="mt-4">
+                    {{- template "thumbnail-gallery" .PopularSection -}}
+                  </div>
                 </div>
-              </div>
-            </collapse-content>
-          </section>
+              </collapse-content>
+            </section>
+            <section
+              id="cast"
+              class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md"
+            >
+              <collapse-content>
+                <header class="w-full flex items-center justify-between">
+                  <h2 class="text-xl font-bold">Cast</h2>
+                  <button class="toggleBtn transition-all">
+                    <svg
+                      class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      focusable="false"
+                    >
+                      <path
+                        d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
+                        fill="currentColor"
+                      ></path>
+                    </svg>
+                  </button>
+                </header>
+                <div
+                  class="content w-full overflow-hidden transition-all duration-500 ease-in-out text-center"
+                >
+                  <div class="mt-4">
+                    {{- template "person-gallery" .CastSection -}}
+                  </div>
+                </div>
+              </collapse-content>
+            </section>
+          </div>
         </div>
-      </div>
-    {{ end }}
+      {{ end }}
+    </div>
   </main>
 {{ end }}

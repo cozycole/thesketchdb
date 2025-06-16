@@ -89,32 +89,16 @@ export class FilterContent extends HTMLElement {
 
     htmx.process(resultsDiv);
     htmx.trigger(resultsDiv, "filter-change");
+
+    this.hideMenu();
   }
 
   mobileFilterToggle() {
     let isOpen = this.mobileFilters.classList.contains("opacity-100");
     if (isOpen) {
-      this.mobileFilters.classList.remove(
-        "opacity-100",
-        "scale-100",
-        "pointer-events-auto",
-      );
-      this.mobileFilters.classList.add(
-        "opacity-0",
-        "scale-95",
-        "pointer-events-none",
-      );
+      this.hideMenu();
     } else {
-      this.mobileFilters.classList.remove(
-        "opacity-0",
-        "scale-95",
-        "pointer-events-none",
-      );
-      this.mobileFilters.classList.add(
-        "opacity-100",
-        "scale-100",
-        "pointer-events-auto",
-      );
+      this.showMenu();
     }
   }
 
@@ -136,17 +120,34 @@ export class FilterContent extends HTMLElement {
     });
 
     if (!(clickMenu || clickButton || clickDropDown)) {
-      this.mobileFilters.classList.remove(
-        "opacity-100",
-        "scale-100",
-        "pointer-events-auto",
-      );
-      this.mobileFilters.classList.add(
-        "opacity-0",
-        "scale-95",
-        "pointer-events-none",
-      );
+      this.hideMenu();
     }
+  }
+
+  hideMenu() {
+    this.mobileFilters.classList.remove(
+      "opacity-100",
+      "scale-100",
+      "pointer-events-auto",
+    );
+    this.mobileFilters.classList.add(
+      "opacity-0",
+      "scale-95",
+      "pointer-events-none",
+    );
+  }
+
+  showMenu() {
+    this.mobileFilters.classList.remove(
+      "opacity-0",
+      "scale-95",
+      "pointer-events-none",
+    );
+    this.mobileFilters.classList.add(
+      "opacity-100",
+      "scale-100",
+      "pointer-events-auto",
+    );
   }
 }
 
@@ -161,6 +162,9 @@ let filterFunctionMap = {
     return f.getFilterIds();
   },
   character: (f) => {
+    return f.getFilterIds();
+  },
+  show: (f) => {
     return f.getFilterIds();
   },
   tag: (f) => {

@@ -5,14 +5,13 @@
 
 {{ define "main" }}
   {{ with .Page }}
-    <main
-      data-page="view-season"
-      class="max-w-screen-xl mx-auto w-full p-3 text-slate-950 bg-slate-250"
-    >
-      <section class="p-4 bg-white rounded-lg">
-        <header class="font-bold text-xl">{{ .ShowName }} Seasons</header>
-        {{ template "season-select-gallery" .SeasonSelectGallery }}
-      </section>
+    <main data-page="view-season" class="flex-1 w-full p-3 bg-slate-300">
+      <div class="max-w-screen-xl mx-auto">
+        <section class="p-4 bg-white rounded-lg">
+          <header class="font-bold text-xl">{{ .ShowName }} Seasons</header>
+          {{ template "season-select-gallery" .SeasonSelectGallery }}
+        </section>
+      </div>
     </main>
   {{ end }}
 {{ end }}

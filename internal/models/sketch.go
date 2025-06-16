@@ -29,10 +29,11 @@ type Filter struct {
 }
 
 var sortMap = map[string]string{
-	"latest": "upload_date DESC, sketch_title ASC",
-	"oldest": "upload_date ASC, sketch_title ASC",
-	"az":     "sketch_title ASC",
-	"za":     "sketch_title DESC",
+	"popular": "popularity DESC, upload_date DESC",
+	"latest":  "upload_date DESC, sketch_title ASC",
+	"oldest":  "upload_date ASC, sketch_title ASC",
+	"az":      "sketch_title ASC",
+	"za":      "sketch_title DESC",
 }
 
 func (f *Filter) Params() url.Values {
@@ -58,9 +59,9 @@ func (f *Filter) Params() url.Values {
 		}
 	}
 
-	for _, p := range f.Shows {
-		if p.ID != nil {
-			params.Add("show", strconv.Itoa(*p.ID))
+	for _, s := range f.Shows {
+		if s.ID != nil {
+			params.Add("show", strconv.Itoa(*s.ID))
 		}
 	}
 
@@ -282,10 +283,10 @@ func determineFields(filter *Filter, args *Arguements) string {
 
 	baseFields := `
 		v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number,
-		v.sketch_url as sketch_url, v.slug as sketch_slug, %s as thumbnail_name, v.upload_date as upload_date, 
+		v.sketch_url as sketch_url, v.slug as sketch_slug, %s as thumbnail_name, v.upload_date as upload_date,
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
 		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
-		sh.profile_img as show_img, sh.slug as show_slug, 
+		sh.profile_img as show_img, sh.slug as show_slug, popularity_score as popularity,
 		se.season_number as season_number, e.episode_number as episode_number %s
 	`
 
@@ -630,7 +631,7 @@ func (m *SketchModel) GetCount(filter *Filter) (int, error) {
 	fields := determineFields(filter, args)
 	conditionClause := determineConditions(filter, args)
 	query = fmt.Sprintf(query, fields, conditionClause)
-	fmt.Println(query)
+	// fmt.Println(query)
 
 	var count int
 	err := m.DB.QueryRow(context.Background(), query, args.Args...).Scan(&count)

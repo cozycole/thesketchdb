@@ -1,8 +1,8 @@
 <!--See SeasonSelectGallery for view data-->
 {{ define "season-select-gallery" }}
   <div class="seasonGallery ">
-    <div class="flex items-center gap-2">
-      {{ if .Seasons }}
+    {{ if .Seasons }}
+      <div class="flex items-center gap-2">
         <select
           id="seasonDropdown"
           name="season"
@@ -23,12 +23,12 @@
           {{ end }}
         </select>
         <p class="text-lg font-medium">• {{ .EpisodeCount }} Episodes</p>
-        <div id="episodes">
-          {{ template "episode-gallery" .EpisodeGallery }}
-        </div>
-      {{ else }}
-        <div class="text-lg">No Seasons</div>
-      {{ end }}
-    </div>
+      </div>
+      <div id="episodes">
+        {{ template "episode-gallery" .EpisodeGallery }}
+      </div>
+    {{ else }}
+      <div class="text-lg">No Seasons</div>
+    {{ end }}
   </div>
 {{ end }}

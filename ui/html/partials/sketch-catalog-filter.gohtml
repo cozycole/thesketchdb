@@ -5,6 +5,7 @@
       <select
         id="sortDropdown"
         data-type="sort"
+        autocomplete="off"
         class="block w-full appearance-none bg-slate-50 
               border border-slate-300 hover:border-slate-400 
               px-3 py-1.5 rounded-lg shadow-sm focus:outline-none"
@@ -40,7 +41,7 @@
       id="character-filter"
       data-type="character"
       data-url="/character/search"
-      data-placeholder="Enter characters's name"
+      data-placeholder="Enter character's name"
       data-selected="{{ .SelectedCharactersJSON }}"
     >
     </catalog-filter>
@@ -53,6 +54,17 @@
       data-url="/creator/search"
       data-placeholder="Enter creator's name"
       data-selected="{{ .SelectedCreatorsJSON }}"
+    >
+    </catalog-filter>
+  </div>
+  <div>
+    <h3 class="font-bold p-1">Show</h3>
+    <catalog-filter
+      id="creator-filter"
+      data-type="show"
+      data-url="/show/search"
+      data-placeholder="Enter show's name"
+      data-selected="{{ .SelectedShowsJSON }}"
     >
     </catalog-filter>
   </div>

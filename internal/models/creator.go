@@ -230,7 +230,7 @@ func (m *CreatorModel) Insert(name, url, slug, imgExt string, establishedDate ti
 }
 
 func (m *CreatorModel) Search(query string) ([]*Creator, error) {
-	query = query + "%"
+	query = "%" + query + "%"
 	stmt := `SELECT c.id, c.slug, c.name, c.profile_img
 			FROM creator as c
 			WHERE name ILIKE $1

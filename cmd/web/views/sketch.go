@@ -388,6 +388,7 @@ type SketchCatalogFilter struct {
 	SortOptions            []SortOption
 	SelectedPeopleJSON     string
 	SelectedCreatorsJSON   string
+	SelectedShowsJSON      string
 	SelectedCharactersJSON string
 	SelectedTagsJSON       string
 }
@@ -402,6 +403,7 @@ func SketchCatalogFilterView(filter *models.Filter, baseUrl string) (*SketchCata
 	var view SketchCatalogFilter
 	sortBy := filter.SortBy
 	view.SortOptions = []SortOption{
+		{Value: "popular", Label: "Popular", Selected: sortBy == "popular"},
 		{Value: "latest", Label: "Latest", Selected: sortBy == "latest"},
 		{Value: "oldest", Label: "Oldest", Selected: sortBy == "oldest"},
 		{Value: "az", Label: "A-Z", Selected: sortBy == "az"},
@@ -417,6 +419,9 @@ func SketchCatalogFilterView(filter *models.Filter, baseUrl string) (*SketchCata
 	}
 
 	if view.SelectedCharactersJSON, err = CharactersSelectedJSON(filter.Characters, baseUrl); err != nil {
+		return nil, err
+	}
+	if view.SelectedShowsJSON, err = ShowsSelectedJSON(filter.Shows, baseUrl); err != nil {
 		return nil, err
 	}
 	if view.SelectedTagsJSON, err = TagsSelectedJSON(filter.Tags); err != nil {
@@ -465,6 +470,28 @@ func CreatorsSelectedJSON(creators []*models.Creator, baseURL string) (string, e
 		}
 		items = append(items, SelectedItem{
 			ID:    strconv.Itoa(*c.ID),
+			Name:  name,
+			Image: image,
+		})
+	}
+
+	return buildSelectedJSON(items)
+}
+
+func ShowsSelectedJSON(shows []*models.Show, baseURL string) (string, error) {
+	items := make([]SelectedItem, 0, len(shows))
+	for _, s := range shows {
+
+		var name string
+		if s.Name != nil {
+			name = *s.Name
+		}
+		var image string
+		if s.ProfileImg != nil {
+			image = fmt.Sprintf("%s/show/%s", baseURL, *s.ProfileImg)
+		}
+		items = append(items, SelectedItem{
+			ID:    strconv.Itoa(*s.ID),
 			Name:  name,
 			Image: image,
 		})

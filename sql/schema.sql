@@ -93,9 +93,10 @@ CREATE TABLE IF NOT EXISTS sketch (
     thumbnail_name TEXT,
     description TEXT,
     upload_date DATE,
-    episode_id int REFERENCES episode(id),
-    part_number int,
-    sketch_number int,
+    episode_id INT REFERENCES episode(id),
+    part_number INT,
+    sketch_number INT,
+    popularity_score REAL DEFAULT 0,
     search_vector tsvector,
     insert_timestamp timestamp DEFAULT now()
 );

@@ -200,6 +200,52 @@ func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
+func (app *application) showSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("query")
+
+	redirLink := "/show/add"
+	redirText := "Add Show +"
+	results := dropdownSearchResults{
+		Redirect:     redirLink,
+		RedirectText: redirText,
+	}
+
+	if q != "" {
+		q = strings.Replace(q, " ", "", -1)
+		shows, err := app.shows.Search(q)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverError(r, w, err)
+			}
+			return
+		}
+
+		if shows != nil {
+			res := []result{}
+			for _, s := range shows {
+				r := result{}
+				r.Type = "show"
+				r.ID = *s.ID
+				r.Text = *s.Name
+				if s.ProfileImg != nil {
+					r.Image = *s.ProfileImg
+				} else {
+					r.Image = "missing-profile.jpg"
+				}
+				res = append(res, r)
+			}
+
+			results.Results = res
+		}
+	}
+	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
+
+	data := app.newTemplateData(r)
+	data.DropdownResults = results
+
+	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
+}
+
 func (app *application) categorySearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 

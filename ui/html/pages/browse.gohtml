@@ -1,19 +1,48 @@
 {{ define "title" }}Browse{{ end }}
 
 {{ define "main" }}
-  <main class="px-2" data-page="browse">
-    <h1 class="my-4 font-bold text-3xl">Browse</h1>
-    <div id="browseSections">
-      {{ range $sectionName, $sketches := .BrowseSections }}
-        <div class="my-3">
-          <h2 class="my-2 text-2xl font-bold">{{ $sectionName }}</h2>
-          {{ if $sketches }}
-            {{ template "sketch-carousel" (dict "ImageBaseUrl" $.ImageBaseUrl "Sketches" $sketches) }}
-          {{ else }}
-            <p>Error fetching sketches</p>
+  <main data-page="browse">
+    {{ with .Page }}
+      <section
+        class="
+        relative h-36 md:h-56 xl:h-60 overflow-hidden
+        bg-[url('/static/img/browse-banner-sm.jpg')]
+        sm:bg-[url('/static/img/browse-banner-md.jpg')]
+        lg:bg-[url('/static/img/browse-banner-lg.jpg')]
+        xl:bg-[url('/static/img/browse-banner-xl.jpg')]
+        bg-cover bg-no-repeat bg-[right_30%]
+        "
+      >
+        <div class="absolute inset-0 bg-black bg-opacity-40"></div>
+        <div
+          class="max-w-screen-xl mx-auto relative flex flex-col items-start justify-center h-full text-white px-4"
+        >
+          <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold">Browse</h1>
+        </div>
+      </section>
+      <section id="browseSections" class="w-full bg-slate-50">
+        <div class="max-w-screen-xl space-y-4 mx-auto p-3">
+          {{ range .Sections }}
+            <div>
+              <div class="flex justify-between items-center">
+                <a href="{{ .SeeAllUrl }}" class="hover:underline">
+                  <h2 class="my-2 text-xl md:text-2xl font-bold">
+                    {{ .Title }}
+                  </h2>
+                </a>
+                <p class="font-bold italic hover:underline">
+                  <a href="{{ .SeeAllUrl }}">See All</a>
+                </p>
+              </div>
+              {{ if .SketchGallery }}
+                {{ template "browse-gallery" .SketchGallery }}
+              {{ else }}
+                <p>Error fetching sketches</p>
+              {{ end }}
+            </div>
           {{ end }}
         </div>
-      {{ end }}
-    </div>
+      </section>
+    {{ end }}
   </main>
 {{ end }}

@@ -301,7 +301,7 @@ func (m *PersonModel) GetCount(filter *Filter) (int, error) {
 }
 
 func (m *PersonModel) Search(query string) ([]*Person, error) {
-	query = query + "%"
+	query = "%" + query + "%"
 	stmt := `SELECT id, slug, first, last, profile_img, birthdate
 			FROM person
 			WHERE CONCAT(LOWER(first), LOWER(last)) LIKE LOWER($1)

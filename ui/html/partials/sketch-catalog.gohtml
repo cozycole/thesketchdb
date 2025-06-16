@@ -20,20 +20,20 @@
     <div
       id="mobileFilters"
       class="absolute top-12 right-0 
-              opacity-0 rounded-md bg-slate-50 gap-2 w-72 p-3
+              opacity-0 rounded-md bg-white shadow-lg gap-2 w-72 p-3
               scale-95 transform origin-top transition-all pointer-events-none"
     ></div>
   </div>
   <div class="flex grow">
     <div
       id="filterSection"
-      class="hidden lg:block w-80 h-fit px-2 pt-2 pb-4 rounded-lg bg-slate-50"
+      class="hidden lg:block w-80 h-fit px-2 pt-2 pb-4 rounded-lg bg-white shadow-lg"
     >
       <div id="desktopFilters" class="flex flex-col gap-2 w-64"></div>
     </div>
     <div
       id="results"
-      class="flex flex-col grow w-full lg:pl-2 border-slate-950"
+      class="flex flex-col grow w-full lg:pl-2"
       hx-trigger="filter-change"
     >
       {{ template "sketch-catalog-result" .CatalogResult }}

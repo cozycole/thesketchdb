@@ -7,8 +7,18 @@
     display: flex;
   }
 
+  .browse-flex-to-grid {
+    display: flex;
+  }
+
   @media (min-width: 640px) {
     .flex-to-grid {
+      display: grid;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .browse-flex-to-grid {
       display: grid;
     }
   }
