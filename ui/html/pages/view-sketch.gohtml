@@ -19,10 +19,12 @@
                 src="{{ .Image }}"
                 onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
               />
-              <img
-                class="absolute right-1 bottom-1 w-12"
-                src="/static/img/play-button.svg"
-              />
+              <div
+                class="absolute right-1 bottom-1 w-12 text-white 
+            rounded-full bg-slate-950 bg-opacity-60"
+              >
+                {{ template "play-button" }}
+              </div>
             </button>
           </div>
           <div

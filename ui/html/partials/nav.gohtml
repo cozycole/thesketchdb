@@ -134,7 +134,9 @@
             <button
               class="dropdownBtn flex items-center space-x-2 hover:text-slate-300"
             >
-              <img class="w-7" src="/static/img/account-icon.svg" />
+              <div class="hover:text-slate-200 w-7 text-white">
+                {{ template "account-icon" }}
+              </div>
             </button>
             <div
               class="dropdownMenu absolute right-0 mt-2 w-48 bg-white text-black rounded-md shadow-lg opacity-0 scale-95 transform origin-top transition-all pointer-events-none"

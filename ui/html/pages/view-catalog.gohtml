@@ -69,11 +69,10 @@
         <img class="rounded-full w-8" />
         <h4 class="pl-2 overflow-hidden text-ellipsis whitespace-nowrap"></h4>
       </div>
-      <button class="flex-shrink-0">
-        <img
-          class="p-1 rounded-full hover:bg-slate-300"
-          src="/static/img/close.svg"
-        />
+      <button class="flex-shrink-0 p-1 rounded-full hover:bg-slate-300">
+        <div class="w-7 text-slate-950">
+          {{ template "close-icon" }}
+        </div>
       </button>
     </div>
   </template>

@@ -72,7 +72,7 @@ func (app *application) sketchAddPage(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	app.render(r, w, http.StatusOK, "add-sketch.gohtml", "base", data)
+	app.render(r, w, http.StatusOK, "sketch-form-page.gohtml", "base", data)
 }
 
 func (app *application) sketchAdd(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +93,7 @@ func (app *application) sketchAdd(w http.ResponseWriter, r *http.Request) {
 			SketchForm: form,
 		}
 		app.infoLog.Printf("%+v\n", form)
-		app.render(r, w, http.StatusUnprocessableEntity, "add-sketch.gohtml", "base", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "sketch-form-page.gohtml", "base", data)
 		return
 	}
 
@@ -196,7 +196,7 @@ func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request)
 	// need to instantiate empty struct to load
 	// castUpdate form on the page
 	data.CastMember = &models.CastMember{}
-	app.render(r, w, http.StatusOK, "add-sketch.gohtml", "base", data)
+	app.render(r, w, http.StatusOK, "sketch-form-page.gohtml", "base", data)
 }
 
 func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
@@ -227,7 +227,7 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 	app.validateSketchForm(&form)
 	if !form.Valid() {
 		form.ImageUrl = fmt.Sprintf("%s/sketch/%s", app.baseImgUrl, safeDeref(oldSketch.ThumbnailName))
-		app.render(r, w, http.StatusUnprocessableEntity, "add-sketch.gohtml", "sketch-form", form)
+		app.render(r, w, http.StatusUnprocessableEntity, "sketch-form-page.gohtml", "sketch-form", form)
 		return
 	}
 
@@ -282,7 +282,7 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 	newForm.ImageUrl = fmt.Sprintf("%s/sketch/%s", app.baseImgUrl, safeDeref(updatedSketch.ThumbnailName))
 	isHxRequest := r.Header.Get("HX-Request") == "true"
 	if isHxRequest {
-		app.render(r, w, http.StatusOK, "add-sketch.gohtml", "sketch-form", newForm)
+		app.render(r, w, http.StatusOK, "sketch-form-page.gohtml", "sketch-form", newForm)
 		return
 	}
 
@@ -303,7 +303,7 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 			CastTable: castTable,
 		},
 	}
-	app.render(r, w, http.StatusOK, "add-sketch.gohtml", "base", newForm)
+	app.render(r, w, http.StatusOK, "sketch-form-page.gohtml", "base", newForm)
 }
 
 func (app *application) sketchAddLike(w http.ResponseWriter, r *http.Request) {
