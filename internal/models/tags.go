@@ -23,7 +23,7 @@ type TagModelInterface interface {
 	Get(id int) (*Tag, error)
 	GetTags(ids *[]int) ([]*Tag, error)
 	// GetBySlug(slug string) (*Tag, error)
-	GetBySketch(vidId int) ([]*Tag, error)
+	GetBySketch(sketchId int) ([]*Tag, error)
 	Insert(category *Tag) (int, error)
 	Search(query string) (*[]*Tag, error)
 }
@@ -132,6 +132,7 @@ func (m *TagModel) GetBySketch(id int) ([]*Tag, error) {
 		LEFT JOIN categories as c
 		ON t.category_id = c.id
 		WHERE vt.sketch_id = $1
+		ORDER by t.id asc
 	`
 	rows, err := m.DB.Query(context.Background(), stmt, id)
 	if err != nil {

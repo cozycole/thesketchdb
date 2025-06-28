@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"sketchdb.cozycole.net/cmd/web/views"
@@ -46,13 +47,20 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 
 	err = app.users.Insert(user)
 	if err != nil {
+		fmt.Println(err.Error())
+		data := app.newTemplateData(r)
 		if errors.Is(err, models.ErrDuplicateEmail) {
-			form.Validator.AddFieldError("email", "a user with this email address already exists")
-			data := app.newTemplateData(r)
+			form.Validator.AddFieldError("email", "A user with this email address already exists.")
 			data.Forms.Signup = &form
 			app.render(r, w, http.StatusUnprocessableEntity, "signup.gohtml", "base", data)
-			return
+		} else if errors.Is(err, models.ErrDuplicateUsername) {
+			form.Validator.AddFieldError("username", "A user with this username already exists.")
+			data.Forms.Signup = &form
+			app.render(r, w, http.StatusUnprocessableEntity, "signup.gohtml", "base", data)
+		} else {
+			app.serverError(r, w, err)
 		}
+		return
 	}
 
 	app.sessionManager.Put(r.Context(), "flash", "Successful signup! Please log in.")
@@ -85,7 +93,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	id, err := app.users.Authenticate(form.Username, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
-			form.AddNonFieldError("Email or password is incorrect")
+			form.AddNonFieldError("Username or password is incorrect")
 			data := app.newTemplateData(r)
 			data.Forms.Login = &form
 			app.render(r, w, http.StatusUnprocessableEntity, "login.gohtml", "base", data)
@@ -102,8 +110,13 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
+	if app.sessionManager.Exists(r.Context(), "postLoginRedirectURL") {
+		url := app.sessionManager.Pop(r.Context(), "postLoginRedirectURL").(string)
+		http.Redirect(w, r, url, http.StatusSeeOther)
 
-	http.Redirect(w, r, "/search", http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, "/browse", http.StatusSeeOther)
+	}
 }
 
 func (app *application) userView(w http.ResponseWriter, r *http.Request) {

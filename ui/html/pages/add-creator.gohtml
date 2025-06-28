@@ -1,75 +1,93 @@
-{{ define "title" }}Add Creator{{ end }}
+{{ define "title" }}{{ .Page.Title }}{{ end }}
 
 {{ define "main" }}
-  <h1 class="my-5 text-xl font-bold">Add Creator</h1>
-  <form
-    class="w-1/2"
-    enctype="multipart/form-data"
-    action="http://localhost:4000/creator/add"
-    method="POST"
-  >
-    <div>
-      <label class="block my-2">Name</label>
-      {{ with .Forms.Creator.FieldErrors.name }}
-        <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
-      <input
-        type="text"
-        name="name"
-        value="{{ .Forms.Creator.Name }}"
-        class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-      />
-    </div>
-    <div>
-      <label class="block my-2">Youtube Channel URL</label>
-      {{ with .Forms.Creator.FieldErrors.url }}
-        <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
-      <input
-        type="text"
-        name="url"
-        value="{{ .Forms.Creator.URL }}"
-        class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-      />
-    </div>
-    <div>
-      <label class="inline-block my-2">Established Date</label>
-      {{ with .Forms.Creator.FieldErrors.establishedDate }}
-        <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
-      <input
-        type="date"
-        name="establishedDate"
-        value="{{ .Forms.Creator.EstablishedDate }}"
-        class="w-3/4 p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-      />
-    </div>
-    <label
-      class="inline-block my-2 p-2 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+  <main data-page="creator-form" class="w-full flex-1 p-3 bg-slate-300">
+    <div
+      class="max-w-screen-lg mx-auto mt-2 p-3 space-y-3 bg-slate-50 rounded-lg"
     >
-      Upload Creator Image
-      <input
-        type="file"
-        name="profileImg"
-        accept="image/*"
-        onChange="previewImage(event)"
-        class="hidden"
-      />
-    </label>
-    <div id="imagePreview"></div>
-    <label class="inline-block my-2">
-      Creator Tags
-      <input
-        type="text"
-        name="tag"
-        class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-      />
-    </label>
-    <button
-      type="submit"
-      class="block my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-    >
-      Submit
-    </button>
-  </form>
+      <h1 class="text-xl font-bold">{{ .Page.Title }}</h1>
+      {{ with .Page.Form }}
+        <form
+          class="w-full max-w-lg space-y-3"
+          enctype="multipart/form-data"
+          action="{{ .Action }}"
+          method="POST"
+        >
+          {{ if .ID }}
+            <input type="hidden" name="id" value="{{ .ID }}" />
+          {{ end }}
+          <div>
+            <label class="block my-2">Name</label>
+            {{ with .FieldErrors.name }}
+              <label class="block text-red-700">{{ . }}</label>
+            {{ end }}
+            <input
+              type="text"
+              name="name"
+              value="{{ .Name }}"
+              class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            />
+          </div>
+          <div>
+            <label class="block my-2">Youtube Channel URL</label>
+            {{ with .FieldErrors.url }}
+              <label class="block text-red-700">{{ . }}</label>
+            {{ end }}
+            <input
+              type="text"
+              name="url"
+              value="{{ .URL }}"
+              class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            />
+          </div>
+          <div>
+            <label class="block my-2">Established Date</label>
+            {{ with .FieldErrors.establishedDate }}
+              <label class="block text-red-700">{{ . }}</label>
+            {{ end }}
+            <input
+              type="date"
+              name="establishedDate"
+              value="{{ .EstablishedDate }}"
+              class="p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            />
+          </div>
+          <label class="block">Creator Profile</label>
+          {{ with .FieldErrors.profileImg }}
+            <label class="block text-red-700">{{ . }}</label>
+          {{ end }}
+          <img-preview>
+            <div class="flex items-center">
+              <label
+                class="inline-block p-2 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none hover:cursor-pointer"
+              >
+                Upload Show Image
+                <input
+                  type="file"
+                  name="profileImg"
+                  accept=".jpg, .jpeg"
+                  class="hidden"
+                />
+              </label>
+              <button type="button" class="remove ml-2 hover:bg-slate-300">
+                <img src="/static/img/close.svg" />
+              </button>
+            </div>
+            <div class="imagePreview">
+              {{ if .ImageUrl }}
+                <img src="{{ .ImageUrl }}" class="max-w-52" />
+              {{ end }}
+            </div>
+          </img-preview>
+          <button
+            type="submit"
+            class="block p-2 bg-slate-900 text-white border rounded-lg 
+            hover:bg-slate-800 outline-none ring-0 focus:outline-none focus:ring-0"
+          >
+            Submit
+          </button>
+        </form>
+      {{ end }}
+    </div>
+  </main>
 {{ end }}

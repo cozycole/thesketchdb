@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"net/url"
 	"runtime/debug"
 	"strconv"
 	"time"
@@ -85,8 +86,8 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	user, ok := r.Context().Value(userContextKey).(*models.User)
 	var isEditor, isAdmin bool
 	if ok {
-		isEditor = safeDerefString(user.Role) == "admin" || safeDerefString(user.Role) == "editor"
-		isAdmin = safeDerefString(user.Role) == "admin"
+		isEditor = safeDeref(user.Role) == "admin" || safeDeref(user.Role) == "editor"
+		isAdmin = safeDeref(user.Role) == "admin"
 	} else {
 		isEditor = false
 	}
@@ -100,11 +101,43 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	}
 }
 
-func safeDerefString(str *string) string {
-	if str != nil {
-		return *str
+func safeDeref[T any](ptr *T) T {
+	if ptr != nil {
+		return *ptr
 	}
-	return ""
+	var zero T
+	return zero
+}
+
+func extractYouTubeVideoID(rawURL string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid URL: %w", err)
+	}
+
+	queryParams := parsedURL.Query()
+	videoID := queryParams.Get("v")
+	if videoID == "" {
+		return "", fmt.Errorf("video ID not found in URL")
+	}
+
+	return videoID, nil
+}
+
+func convertStringsToInts(strs []string) ([]int, error) {
+	ints := make([]int, len(strs))
+	for i, s := range strs {
+		n, err := strconv.Atoi(s)
+		if err != nil {
+			return nil, fmt.Errorf("invalid integer at index %d: %v", i, err)
+		}
+		ints[i] = n
+	}
+	return ints, nil
+}
+
+func (app *application) isAutheticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }
 
 func (app *application) render(r *http.Request, w http.ResponseWriter, status int, page string, baseTemplate string, data any) {

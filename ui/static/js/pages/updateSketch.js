@@ -1,53 +1,34 @@
-import { UploadImagePreview } from "../components/uploadImagePreview.js";
-import { FormSearchDropdown } from "../components/formSearchDropdown.js";
+import Sortable from "sortablejs";
 
 export function initUpdateSketch() {
-  new UploadImagePreview("vidThumbPrev");
-  new UploadImagePreview("actorThumbnailPreview");
-  new UploadImagePreview("actorProfilePreview");
+  // Drag and drop sortable cast table
+  htmx.onLoad(function (content) {
+    var sortables = content.querySelectorAll(".sortable");
+    for (var i = 0; i < sortables.length; i++) {
+      var sortable = sortables[i];
+      var sortableInstance = new Sortable(sortable, {
+        animation: 150,
+        ghostClass: "bg-slate-300",
+        dragClass: "bg-white",
+        handle: ".drag-icon",
 
-  const creatorHtmxDropdown = document.getElementById("creatorHtmxDropdown");
-  const personHtmxDropdown = document.getElementById("personHtmxDropdown");
-  const characterHtmxDropdown = document.getElementById(
-    "characterHtmxDropdown",
-  );
-  new FormSearchDropdown(creatorHtmxDropdown);
-  new FormSearchDropdown(personHtmxDropdown);
-  new FormSearchDropdown(characterHtmxDropdown);
+        // Make the `.htmx-indicator` unsortable
+        filter: ".htmx-indicator",
+        onMove: function (evt) {
+          return evt.related.className.indexOf("htmx-indicator") === -1;
+        },
 
-  const tagHtmxDropdowns = document.getElementsByClassName("tagHtmxDropdown");
-  for (let drop of tagHtmxDropdowns) {
-    new FormSearchDropdown(drop);
-  }
+        // Disable sorting on the `end` event
+        onEnd: function (evt) {
+          this.option("disabled", true);
+        },
+      });
 
-  let addCastButton = document.getElementById("addCastButton");
-  let formViewer = document.getElementById("addCastFormViewer");
-
-  // display addCastForm
-  addCastButton.addEventListener("click", (e) => {
-    formViewer.classList.toggle("hidden");
-    formViewer.classList.toggle("flex");
-  });
-
-  // hide addCastForm
-  formViewer.addEventListener("click", (e) => {
-    if (e.target === e.currentTarget) {
-      formViewer.classList.toggle("hidden");
-      formViewer.classList.toggle("flex");
+      // Re-enable sorting on the `htmx:afterSwap` event
+      sortable.addEventListener("htmx:afterSwap", function () {
+        sortableInstance.option("disabled", false);
+      });
     }
-  });
-
-  const addTagButton = document.getElementById("addTagButton");
-  addTagButton.addEventListener("click", (e) => {
-    const template = document.getElementById("tagInput");
-    const node = template.content.firstElementChild.cloneNode(true);
-    const newInput = document
-      .querySelector("#tagTable tbody")
-      .appendChild(node);
-    new FormSearchDropdown(
-      newInput.querySelector('input[type="search"]').parentElement,
-    );
-    htmx.process(document.getElementById("tagTable"));
   });
 
   document.body.addEventListener("htmx:configRequest", function (evt) {
@@ -59,25 +40,25 @@ export function initUpdateSketch() {
   });
 
   document.body.addEventListener("htmx:afterSwap", function (evt) {
-    //console.log(evt.detail.target);
-    if (evt.detail.target.id === "castForm") {
-      new UploadImagePreview("actorThumbnailPreview");
-      new UploadImagePreview("actorProfilePreview");
+    // Process formViewer to enable closing on off click
+    let formViewer = document.body.querySelector("#formViewer");
+    if (formViewer && evt.target.id === "castFormViewer") {
+      formViewer.addEventListener("click", (e) => {
+        let menu = formViewer.querySelector("div");
+        let dropDown = document.querySelector(".dropdown");
+        if (!(menu.contains(e.target) || dropDown.contains(e.target))) {
+          formViewer.classList.remove("flex");
+          formViewer.classList.add("hidden");
+        }
+      });
     }
-
-    if (evt.detail.target.id === "castTable") {
-      formViewer.click();
-
-      const template = document.getElementById("actorFormInputs");
-      const form = document.getElementById("addCastForm");
-
-      if (template && form) {
-        const clonedContent = template.content.cloneNode(true);
-        form.innerHTML = "";
-        form.appendChild(clonedContent);
-        new UploadImagePreview("actorThumbnailPreview");
-        new UploadImagePreview("actorProfilePreview");
-      }
+    // Hide modal if there's been a swap into the castTable
+    if (formViewer && evt.target.id === "castTable") {
+      formViewer.classList.remove("flex");
+      formViewer.classList.add("hidden");
+    }
+    if (evt.target.tagName === "TBODY") {
+      document.querySelector("#noTagRow")?.remove();
     }
   });
 }

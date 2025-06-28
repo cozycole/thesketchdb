@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+	"unicode"
 
 	"sketchdb.cozycole.net/internal/models"
 )
@@ -19,7 +20,7 @@ func printCast(cast []*models.CastMember) string {
 			continue
 		}
 
-		name := printPersonName(cm.Actor)
+		name := PrintPersonName(cm.Actor)
 		if name != "" {
 			if i != 0 {
 				name = ", " + name
@@ -33,16 +34,29 @@ func printCast(cast []*models.CastMember) string {
 	return castList
 }
 
-func printPersonName(a *models.Person) string {
-	if a == nil || a.First == nil {
+func PrintPersonName(a *models.Person) string {
+	if a == nil {
 		return ""
 	}
+	var name string
+	if a.First != nil {
+		name = *a.First
+	}
 
-	name := *a.First
 	if a.Last == nil {
 		return name
 	}
+
 	return name + " " + *a.Last
+}
+
+func uppercaseFirst(s string) string {
+	if s == "" {
+		return s
+	}
+	runes := []rune(s)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
 }
 
 func humanDate(t *time.Time) string {
@@ -53,7 +67,7 @@ func humanDate(t *time.Time) string {
 }
 
 func createEpisodeTitle(episode *models.Episode) string {
-	title := safeDerefString(episode.Title)
+	title := safeDeref(episode.Title)
 	if title == "" {
 		if episode.Number == nil {
 			title = "Episode ?"
@@ -128,11 +142,12 @@ func BuildURL(baseURL string, currentPage int, filter *models.Filter) (string, e
 	return u.String(), nil
 }
 
-func safeDerefString(str *string) string {
-	if str != nil {
-		return *str
+func safeDeref[T any](ptr *T) T {
+	if ptr != nil {
+		return *ptr
 	}
-	return ""
+	var zero T
+	return zero
 }
 
 func sketchCountLabel(count int) string {

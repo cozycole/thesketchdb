@@ -37,7 +37,9 @@
               data-eid="{{ $episode.ID }}"
               data-sid="{{ $.Season.ID }}"
             >
-              <img src="/static/img/delete.svg" />
+              <div class="w-6 text-red-500">
+                {{ template "trash-icon" }}
+              </div>
             </button>
           </div>
           <h4 class="font-bold">Sketches: {{ len $episode.Sketches }}</h4>

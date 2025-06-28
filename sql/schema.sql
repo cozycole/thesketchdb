@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS person (
     slug TEXT NOT NULL,
     first TEXT NOT NULL,
     last TEXT NOT NULL,
+    professions TEXT NOT NULL,
     description TEXT,
     birthdate DATE, 
     profile_img TEXT,
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS character (
     id SERIAL PRIMARY KEY, 
     slug TEXT NOT NULL,
     name TEXT NOT NULL, 
+    character_type character_type NOT NULL,
     description TEXT, 
     img_name TEXT,
     insert_timestamp TIMESTAMP DEFAULT now(),
@@ -39,7 +41,7 @@ CREATE TABLE IF NOT EXISTS show (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     profile_img TEXT,
-    slug TEXT UNIQUE NOT NULL
+    slug TEXT NOT NULL
 );
 
 -- CREATE TABLE IF NOT EXISTS show_creator (
@@ -108,8 +110,10 @@ CREATE TABLE IF NOT EXISTS cast_members (
     character_name text DEFAULT '',
     character_id INT references character(id),
     position INT,
-    img_name TEXT,
-    role TEXT CHECK (role IN ('host', 'cast', 'guest')),
+    thumbnail_name TEXT,
+    profile_img TEXT,
+    role cast_role,
+    minor bool,
     insert_timestamp timestamp DEFAULT now(),
     CONSTRAINT unique_cast_character UNIQUE(sketch_id, person_id, character_id)
 );
@@ -144,8 +148,8 @@ CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
     name TEXT NOT NULL,
-    slug TEXT UNIQUE NOT NULL,
-    parent_id INT REFERENCES categories(id) ON DELETE SET NULL
+    slug TEXT NOT NULL,
+    -- parent_id INT REFERENCES categories(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS tags (

@@ -22,7 +22,7 @@ func CreatorPageView(creator *models.Creator, popular []*models.Sketch, baseImgU
 	page := CreatorPage{}
 	page.ID = *creator.ID
 
-	page.CreatorName = safeDerefString(creator.Name)
+	page.CreatorName = safeDeref(creator.Name)
 	if page.CreatorName == "" {
 		page.CreatorName = "Missing Creator Name"
 	}

@@ -133,7 +133,6 @@ func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.errorLog.Printf("ID:%s SNUM:%s ENUM:%s ERR:%s ERR2:%s", id, snum, enum, err, err2)
 	show, err := app.shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
@@ -437,7 +436,7 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 	}
 	episode.ID = &id
 
-	app.saveThumbnail(thumbnailName, "episode", form.Thumbnail)
+	app.saveLargeThumbnail(thumbnailName, "episode", form.Thumbnail)
 
 	season, err := app.shows.GetSeason(*episode.SeasonId)
 	if err != nil {
@@ -507,7 +506,7 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = app.saveThumbnail(thumbnailName, "episode", form.Thumbnail)
+		err = app.saveLargeThumbnail(thumbnailName, "episode", form.Thumbnail)
 		if err != nil {
 			app.serverError(r, w, err)
 			return

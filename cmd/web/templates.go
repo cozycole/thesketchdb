@@ -39,8 +39,6 @@ type templateData struct {
 	ImageBaseUrl    string
 	IsAdmin         bool
 	IsEditor        bool
-	Person          *models.Person
-	People          []*models.Person
 	Season          *models.Season
 	SectionType     string
 	Show            *models.Show
@@ -48,18 +46,18 @@ type templateData struct {
 	ThumbnailType   string
 	User            *models.User
 	Sketch          *models.Sketch
-	Sketches        []*models.Sketch
+	Form            any
 	Page            any
 }
 
-func formDate(t time.Time) string {
-	if t.IsZero() {
+func formDate(t *time.Time) string {
+	if t == nil || t.IsZero() {
 		return ""
 	}
 	return t.Format("2006-01-02")
 }
 
-func printPersonName(a *models.Person) string {
+func PrintPersonName(a *models.Person) string {
 	if a == nil || a.First == nil {
 		return ""
 	}
@@ -101,7 +99,7 @@ var functions = template.FuncMap{
 	"dict":            dict,
 	"derefString":     derefString,
 	"formDate":        formDate,
-	"printPersonName": printPersonName,
+	"PrintPersonName": PrintPersonName,
 }
 
 // Getting mapping of html page filename to template set for the page

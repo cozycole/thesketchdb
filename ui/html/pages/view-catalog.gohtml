@@ -1,7 +1,7 @@
 {{ define "title" }}Catalog{{ end }}
 
 {{ define "main" }}
-  <main data-page="catalog" class="flex flex-col grow w-full mb-4">
+  <main data-page="catalog" class="w-full flex flex-col grow mb-4">
     <div class="bg-slate-100 w-full">
       <div class="max-w-screen-xl mx-auto">
         <div
@@ -30,7 +30,7 @@
     </div>
     <section
       id="catalogSection"
-      class=" max-w-screen-xl mx-auto flex flex-col grow px-2"
+      class="max-w-screen-xl w-full mx-auto flex flex-col grow px-2"
     >
       {{ if eq .CatalogType "Sketches" }}
         {{ template "sketch-catalog" .Page.Catalog }}

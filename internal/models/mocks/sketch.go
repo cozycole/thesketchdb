@@ -59,24 +59,24 @@ func (m *SketchModel) Insert(sketch *models.Sketch) error {
 	return nil
 }
 
-func (m *SketchModel) InsertSketchCreatorRelation(vidId, creatorId int) error {
+func (m *SketchModel) InsertSketchCreatorRelation(sketchId, creatorId int) error {
 	return nil
 }
 
-func (m *SketchModel) InsertSketchPersonRelation(vidId, personId, position int, characterId *int, imgName string) error {
+func (m *SketchModel) InsertSketchPersonRelation(sketchId, personId, position int, characterId *int, imgName string) error {
 	if m.sketchPersonRel == nil {
 		m.sketchPersonRel = map[int][]int{}
 	}
 
-	val, ok := m.sketchPersonRel[vidId]
+	val, ok := m.sketchPersonRel[sketchId]
 	if ok {
 		if slices.Contains(val, personId) {
 			return models.ErrDuplicateVidPersonRel
 		} else {
-			m.sketchPersonRel[vidId] = append(val, personId)
+			m.sketchPersonRel[sketchId] = append(val, personId)
 		}
 	} else {
-		m.sketchPersonRel[vidId] = []int{personId}
+		m.sketchPersonRel[sketchId] = []int{personId}
 	}
 	return nil
 }

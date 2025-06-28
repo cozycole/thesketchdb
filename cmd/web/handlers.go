@@ -13,25 +13,6 @@ import (
 
 var pageSize = 16
 
-func (app *application) testing(w http.ResponseWriter, r *http.Request) {
-	filter := models.Filter{
-		Limit:  8,
-		Offset: 0,
-		SortBy: "latest",
-	}
-
-	latest, err := app.sketches.Get(&filter)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
-
-	data := app.newTemplateData(r)
-	data.Sketches = latest
-
-	app.render(r, w, http.StatusOK, "carousel-testing.gohtml", "base", data)
-}
-
 type HomePage struct {
 	Featured        []*views.SketchThumbnail
 	LatestSketches  []*views.SketchThumbnail

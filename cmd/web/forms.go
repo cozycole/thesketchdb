@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"mime/multipart"
-	"strings"
 
 	"sketchdb.cozycole.net/internal/utils"
 	"sketchdb.cozycole.net/internal/validator"
@@ -26,19 +25,26 @@ type Forms struct {
 // Changes to the form fields must be updated in their respective
 // validate functions
 type creatorForm struct {
+	ID                  int                   `form:"id"`
 	Name                string                `form:"name"`
 	URL                 string                `form:"url"`
 	EstablishedDate     string                `form:"establishedDate"`
 	ProfileImage        *multipart.FileHeader `img:"profileImg"`
+	Action              string                `form:"-"`
+	ImageUrl            string                `form:"-"`
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateAddCreatorForm(form *creatorForm) {
+func (app *application) validateCreatorForm(form *creatorForm) {
 	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.EstablishedDate), "establishedDate", "This field cannot be blank")
-	form.CheckField(validator.ValidDate(form.EstablishedDate), "establishedDate", "Date not of correct format YYYY-MM-DD")
-	form.CheckField(form.ProfileImage != nil, "profileImg", "Please upload an image")
+	if form.EstablishedDate != "" {
+		form.CheckField(validator.ValidDate(form.EstablishedDate), "establishedDate", "Date not of correct format YYYY-MM-DD")
+	}
+
+	if form.ID == 0 {
+		form.CheckField(form.ProfileImage != nil, "profileImg", "Please upload an image")
+	}
 
 	if form.ProfileImage == nil {
 		return
@@ -46,28 +52,37 @@ func (app *application) validateAddCreatorForm(form *creatorForm) {
 
 	profileImg, err := form.ProfileImage.Open()
 	if err != nil {
-		form.AddFieldError("profileImg", "Unable to open file, ensure it is a jpg or png")
+		form.AddFieldError("profileImg", "Unable to open file, ensure it is a jpg")
 		return
 	}
 	defer profileImg.Close()
 
-	form.CheckField(validator.IsMime(profileImg, "image/jpeg", "image/png"), "profileImg", "Uploaded file must be jpg or png")
+	form.CheckField(validator.IsMime(profileImg, "image/jpeg"), "profileImg", "Uploaded file must be jpg")
 }
 
 type personForm struct {
+	ID                  int                   `form:"id"`
 	First               string                `form:"first"`
 	Last                string                `form:"last"`
 	BirthDate           string                `form:"birthDate"`
+	Professions         string                `form:"professions"`
 	ProfileImage        *multipart.FileHeader `img:"profileImg"`
+	Action              string                `form:"-"`
+	ImageUrl            string                `form:"-"`
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateAddPersonForm(form *personForm) {
+func (app *application) validatePersonForm(form *personForm) {
 	form.CheckField(validator.NotBlank(form.First), "first", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Last), "last", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.BirthDate), "birthDate", "This field cannot be blank")
-	form.CheckField(validator.ValidDate(form.BirthDate), "birthDate", "Date not of correct format YYYY-MM-DD")
-	form.CheckField(form.ProfileImage != nil, "profileImg", "Please upload an image")
+	if form.BirthDate != "" {
+		form.CheckField(validator.ValidDate(form.BirthDate), "birthDate", "Date not of correct format YYYY-MM-DD")
+	}
+
+	// if it's an add instead of update
+	if form.ID == 0 {
+		form.CheckField(form.ProfileImage != nil, "profileImg", "Please upload an image")
+	}
 
 	if form.ProfileImage == nil {
 		return
@@ -75,19 +90,56 @@ func (app *application) validateAddPersonForm(form *personForm) {
 
 	profileImg, err := form.ProfileImage.Open()
 	if err != nil {
-		form.AddFieldError("profileImg", "Unable to open file, ensure it is a jpg or png")
+		form.AddFieldError("profileImg", "Unable to open file, ensure it is a jpg")
 		return
 	}
 	defer profileImg.Close()
 
-	form.CheckField(validator.IsMime(profileImg, "image/jpeg", "image/png"), "profileImg", "Uploaded file must be jpg or png")
+	form.CheckField(validator.IsMime(profileImg, "image/jpeg"), "profileImg", "Uploaded file must be jpg or png")
 }
 
-// PersonIDs have name form field names of form peopleId[i]
-// if there are spaces between indexes say peopleId[0] : 1, peopleId[2] : 3
-// the result is zero filled so []int{1,0,3}
+type characterForm struct {
+	ID                  int                   `form:"id"`
+	Name                string                `form:"name"`
+	Type                string                `form:"type"`
+	ProfileImage        *multipart.FileHeader `img:"profileImg"`
+	PersonID            int                   `form:"personId"`
+	PersonInput         string                `form:"personInput"`
+	Action              string                `form:"-"`
+	ImageUrl            string                `form:"-"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateCharacterForm(form *characterForm) {
+	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Type), "type", "This field cannot be blank")
+
+	if form.ID == 0 {
+		form.CheckField(form.ProfileImage != nil, "profileImg", "Please upload an image")
+	}
+
+	form.CheckField(validator.PermittedValue(form.Type, "original", "impression", "generic"),
+		"type", "Character must be either Original, Impression or Generic")
+	form.CheckField(
+		form.Type != "impression" || form.PersonID > 0,
+		"personId", "Person must be selected")
+
+	if form.ProfileImage == nil {
+		return
+	}
+
+	profileImg, err := form.ProfileImage.Open()
+	if err != nil {
+		form.AddFieldError("profileImg", "Unable to open file, ensure it is a jpg")
+		return
+	}
+	defer profileImg.Close()
+
+	form.CheckField(validator.IsMime(profileImg, "image/jpeg"), "profileImg", "Uploaded file must be jpg")
+}
+
 type sketchForm struct {
-	ID                  int                   `form:"vidId"`
+	ID                  int                   `form:"id"`
 	Title               string                `form:"title"`
 	URL                 string                `form:"url"`
 	Slug                string                `form:"slug"`
@@ -96,23 +148,19 @@ type sketchForm struct {
 	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
 	CreatorID           int                   `form:"creatorId"`
 	CreatorInput        string                `form:"creatorInput"`
+	Action              string                `form:"-"`
+	ImageUrl            string                `form:"-"`
 	validator.Validator `form:"-"`
 }
 
 // We need this function to have access to the apps state
 // to validate based on database queries
-func (app *application) validateAddSketchForm(form *sketchForm) {
+func (app *application) validateSketchForm(form *sketchForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.Rating), "rating", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.UploadDate), "uploadDate", "This field cannot be blank")
 	form.CheckField(form.CreatorID != 0, "creatorId", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.UploadDate), "uploadDate", "This field cannot be blank")
 	form.CheckField(validator.ValidDate(form.UploadDate), "uploadDate", "Date must be of the format YYYY-MM-DD")
-	form.CheckField(
-		validator.PermittedValue(strings.ToLower(form.Rating), "pg", "pg-13", "r"),
-		"rating",
-		"Rating must be PG, PG-13 or R (case insensitive)",
-	)
 
 	if form.CreatorID != 0 {
 		form.CheckField(
@@ -122,14 +170,17 @@ func (app *application) validateAddSketchForm(form *sketchForm) {
 		)
 	}
 
-	form.CheckField(form.Thumbnail != nil, "thumbnail", "Please upload an image")
+	if form.ID == 0 {
+		form.CheckField(form.Thumbnail != nil, "thumbnail", "Please upload an image")
+	}
+
 	if form.Thumbnail == nil {
 		return
 	}
 
 	thumbnail, err := form.Thumbnail.Open()
 	if err != nil {
-		form.AddFieldError("thumbnail", "Unable to open file, ensure it is a valid jpg or png")
+		form.AddFieldError("thumbnail", "Unable to open file, ensure it is a valid jpg")
 		return
 	}
 	defer thumbnail.Close()
@@ -141,72 +192,28 @@ func (app *application) validateAddSketchForm(form *sketchForm) {
 		return
 	}
 
-	form.CheckField(width >= MinThumbnailWidth && height >= MinThumbnailHeight, "thumbnail", "Thumbnail dimensions must be at least 480x360")
-}
-
-func (app *application) validateUpdateSketchForm(form *sketchForm) {
-	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.Rating), "rating", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.UploadDate), "uploadDate", "This field cannot be blank")
-	form.CheckField(form.CreatorID != 0, "creator", "This field cannot be blank")
-	form.CheckField(validator.ValidDate(form.UploadDate), "uploadDate", "Date must be of the format YYYY-MM-DD")
-	form.CheckField(
-		validator.PermittedValue(strings.ToLower(form.Rating), "pg", "pg-13", "r"),
-		"rating",
-		"Rating must be PG, PG-13 or R (case insensitive)",
-	)
-
-	form.CheckField(validator.NotBlank(form.Slug), "slug", "This field cannot be blank")
-	form.CheckField(
-		!app.sketches.IsSlugDuplicate(form.ID, form.Slug),
-		"slug",
-		"Slug already exists",
-	)
-
-	if form.CreatorID != 0 {
-		form.CheckField(
-			validator.BoolWithError(app.creators.Exists(form.CreatorID)),
-			"creator",
-			"Unable to find creator, please add them",
-		)
-	}
-
-	if form.Thumbnail == nil {
-		return
-	}
-
-	// NOTE: not DRY, see above
-	thumbnail, err := form.Thumbnail.Open()
-	if err != nil {
-		form.AddFieldError("thumbnail", "Unable to open file, ensure it is a valid jpg or png")
-		return
-	}
-	defer thumbnail.Close()
-
-	form.CheckField(validator.IsMime(thumbnail, "image/jpeg", "image/png"), "thumbnail", "Uploaded file must be jpg")
-	width, height, err := utils.GetImageDimensions(thumbnail)
-	if err != nil {
-		form.AddFieldError("thumbnail", "Unable to determine image dimensions")
-		return
-	}
-
-	form.CheckField(width >= MinThumbnailWidth && height >= MinThumbnailHeight,
-		"thumbnail", "Thumbnail dimensions must be at least 480x360")
+	form.CheckField(width >= LargeThumbnailWidth && height >= LargeThumbnailHeight, "thumbnail", "Thumbnail dimensions must be at least 480x360")
 }
 
 type castForm struct {
+	ID                  int                   `form:"id"`
 	PersonID            int                   `form:"personId"`
 	PersonInput         string                `form:"personInput"`
 	CharacterName       string                `form:"characterName"`
+	CastRole            string                `form:"castRole"`
+	MinorRole           bool                  `form:"minorRole"`
 	CharacterID         int                   `form:"characterId"`
 	CharacterInput      string                `form:"characterInput"`
+	ThumbnailName       string                `form:"-"`
 	CharacterThumbnail  *multipart.FileHeader `img:"characterThumbnail"`
+	ProfileImage        string                `form:"-"`
 	CharacterProfile    *multipart.FileHeader `img:"characterProfile"`
+	Action              string                `form:"-"`
+	ImageUrl            string                `form:"-"`
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateAddCast(form *castForm) {
+func (app *application) validateCastForm(form *castForm) {
 	pid := form.PersonID
 	form.CheckField(pid != 0, "personId", "This field cannot be blank. Select a person from dropdown.")
 	if pid != 0 {
@@ -229,7 +236,10 @@ func (app *application) validateAddCast(form *castForm) {
 	}
 
 	thumb := form.CharacterThumbnail
-	form.CheckField(thumb != nil, "characterThumbnail", "Please upload an image")
+	// if new insert
+	if form.ID == 0 {
+		form.CheckField(thumb != nil, "characterThumbnail", "Please upload an image")
+	}
 	if thumb != nil {
 		thumbnail, err := thumb.Open()
 		if err != nil {
@@ -247,12 +257,20 @@ func (app *application) validateAddCast(form *castForm) {
 			return
 		}
 
-		form.CheckField(width >= MinThumbnailWidth && height >= MinThumbnailHeight,
-			"characterThumbnail", "Thumbnail dimensions must be at least 480x360")
+		form.CheckField(width >= StandardThumbnailWidth && height >= StandardThumbnailHeight,
+			"characterThumbnail",
+			fmt.Sprintf(
+				"Thumbnail dimensions must be at least %dx%d",
+				StandardThumbnailWidth, StandardThumbnailHeight,
+			),
+		)
 	}
 
 	profile := form.CharacterProfile
-	form.CheckField(thumb != nil, "characterProfile", "Please upload an image")
+	if form.ID == 0 {
+		form.CheckField(thumb != nil, "characterProfile", "Please upload an image")
+	}
+
 	if profile == nil {
 		return
 	}
@@ -262,14 +280,15 @@ func (app *application) validateAddCast(form *castForm) {
 		form.AddFieldError("characterProfile", "File error, ensure it is a jpg")
 		return
 	}
+	defer thumbnail.Close()
 
 	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"),
 		"characterProfile", "Uploaded file must be jpg")
 
-	width, _, err := utils.GetImageDimensions(thumbnail)
-	form.CheckField(width >= MinProfileWidth, "characterProfile", "Ensure photo width is larger than 256")
-
-	thumbnail.Close()
+	width, height, err := utils.GetImageDimensions(thumbnail)
+	form.CheckField(width >= MinProfileWidth && height >= MinProfileWidth,
+		"characterProfile",
+		fmt.Sprintf("Ensure photo width is larger than %dx%d", MinProfileWidth, MinProfileWidth))
 }
 
 type userSignupForm struct {
@@ -284,8 +303,8 @@ func (app *application) validateUserSignupForm(form *userSignupForm) {
 	form.CheckField(validator.NotBlank(form.Email), "email", "Field cannot be blank")
 	form.CheckField(validator.Matches(form.Email, validator.EmailRegEx), "email", "Please enter a valid email")
 	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
-	form.CheckField(validator.MinChars(form.Password, 8), "password", "Must be 8-20 chararacters")
-	form.CheckField(validator.MaxChars(form.Password, 20), "password", "Must be 8-20 chararacters")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "Password must be 8-20 chararacters")
+	form.CheckField(validator.MaxChars(form.Password, 20), "password", "Password Must be 8-20 chararacters")
 }
 
 type userLoginForm struct {
@@ -443,7 +462,7 @@ func (app *application) validateEpisodeForm(form *episodeForm) {
 		return
 	}
 
-	form.CheckField(width >= MinThumbnailWidth && height >= MinThumbnailHeight, "thumbnail", "Thumbnail dimensions must be at least 480x360")
+	form.CheckField(width >= LargeThumbnailWidth && height >= LargeThumbnailHeight, "thumbnail", "Thumbnail dimensions must be at least 480x360")
 }
 
 func (app *application) validateUpdateEpisodeForm(form *episodeForm) {
@@ -497,5 +516,5 @@ func (app *application) validateUpdateEpisodeForm(form *episodeForm) {
 		return
 	}
 
-	form.CheckField(width >= MinThumbnailWidth && height >= MinThumbnailHeight, "thumbnail", "Thumbnail dimensions must be at least 480x360")
+	form.CheckField(width >= LargeThumbnailWidth && height >= LargeThumbnailHeight, "thumbnail", "Thumbnail dimensions must be at least 480x360")
 }

@@ -12,6 +12,7 @@ type PersonPage struct {
 	Image          string
 	BirthDate      string
 	Age            int
+	Professions    string
 	SketchCount    int
 	PortrayalCount int
 	CharacterCount int
@@ -31,7 +32,7 @@ func PersonPageView(
 	}
 
 	page.ID = *person.ID
-	page.Name = printPersonName(person)
+	page.Name = PrintPersonName(person)
 
 	if person.ProfileImg != nil {
 		page.Image = fmt.Sprintf("%s/person/%s", baseImgUrl, *person.ProfileImg)
@@ -40,6 +41,10 @@ func PersonPageView(
 	if person.BirthDate != nil {
 		page.BirthDate = humanDate(person.BirthDate)
 		page.Age = getAge(person.BirthDate)
+	}
+
+	if person.Professions != nil {
+		page.Professions = *person.Professions
 	}
 
 	page.SketchCount = stats.SketchCount
@@ -99,7 +104,7 @@ func PersonCardView(person *models.Person, baseImgUrl string) (*PersonCard, erro
 		return nil, fmt.Errorf("Person slug not defined")
 	}
 
-	card.Name = printPersonName(person)
+	card.Name = PrintPersonName(person)
 	if card.Name == "" {
 		card.Name = "Missing Name"
 	}

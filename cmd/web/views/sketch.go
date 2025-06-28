@@ -49,7 +49,7 @@ func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string
 		page.Image = fmt.Sprintf("%s/sketch/large/%s", baseImgUrl, *sketch.ThumbnailName)
 	}
 
-	page.Title = safeDerefString(sketch.Title)
+	page.Title = safeDeref(sketch.Title)
 	if page.Title == "" {
 		page.Title = "Missing Title"
 	}
@@ -448,7 +448,7 @@ func PeopleSelectedJSON(people []*models.Person, baseURL string) (string, error)
 
 		items = append(items, SelectedItem{
 			ID:    strconv.Itoa(*p.ID),
-			Name:  printPersonName(p),
+			Name:  PrintPersonName(p),
 			Image: image,
 		})
 	}

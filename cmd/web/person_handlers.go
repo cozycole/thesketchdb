@@ -4,16 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"path"
 	"strconv"
-	"time"
 
 	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
 )
 
-func (app *application) personView(w http.ResponseWriter, r *http.Request) {
+func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	persondId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -54,14 +51,24 @@ func (app *application) personView(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "view-person.gohtml", "base", data)
 }
 
-func (app *application) personAdd(w http.ResponseWriter, r *http.Request) {
+type personFormPage struct {
+	Title string
+	Form  personForm
+}
+
+func (app *application) addPersonPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
-	data.Forms.Person = &personForm{}
+	data.Page = personFormPage{
+		Title: "Add Person",
+		Form: personForm{
+			Action: "/person/add",
+		},
+	}
 	app.render(r, w, http.StatusOK, "add-person.gohtml", "base", data)
 }
 
-func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
+func (app *application) addPerson(w http.ResponseWriter, r *http.Request) {
 	var form personForm
 
 	err := app.decodePostForm(r, &form)
@@ -70,46 +77,151 @@ func (app *application) personAddPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.validateAddPersonForm(&form)
+	app.validatePersonForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		data.Forms.Person = &form
+		data.Page = personFormPage{
+			Title: "Add Person",
+			Form:  form,
+		}
+		app.infoLog.Printf("%+v\n", form)
 		app.render(r, w, http.StatusUnprocessableEntity, "add-person.gohtml", "base", data)
 		return
 	}
 
-	date, _ := time.Parse(time.DateOnly, form.BirthDate)
-	imgName := models.CreateSlugName(form.First + " " + form.Last)
+	person := convertFormtoPerson(&form)
+	slug := models.CreateSlugName(views.PrintPersonName(&person))
+	person.Slug = &slug
 
-	file, err := form.ProfileImage.Open()
+	thumbName, err := generateThumbnailName(form.ProfileImage)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
-	defer file.Close()
+	person.ProfileImg = &thumbName
 
-	mimeType, err := utils.GetMultipartFileMime(file)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
-
-	_, slug, fullImgName, err := app.people.
-		Insert(
-			form.First, form.Last, imgName,
-			mimeToExt[mimeType], date,
-		)
+	id, err := app.people.Insert(&person)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	err = app.fileStorage.SaveFile(path.Join("person", fullImgName), file)
+	err = app.saveProfileImage(*person.ProfileImg, "person", form.ProfileImage)
 	if err != nil {
-		// TODO: We gotta remove the db record on this error
+		app.serverError(r, w, err)
+		app.people.Delete(id)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/person/%d/%s", id, slug), http.StatusSeeOther)
+}
+
+func (app *application) updatePersonPage(w http.ResponseWriter, r *http.Request) {
+
+	id := r.PathValue("id")
+	personId, err := strconv.Atoi(id)
+	if err != nil {
+		app.badRequest(w)
+		app.errorLog.Print(err)
+		return
+	}
+
+	person, err := app.people.GetById(personId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	personForm := convertPersontoForm(person)
+	personForm.ImageUrl = fmt.Sprintf("%s/person/%s", app.baseImgUrl, personForm.ImageUrl)
+	personForm.Action = fmt.Sprintf("/person/%d/update", personForm.ID)
+
+	data := app.newTemplateData(r)
+	data.Page = personFormPage{
+		Title: "Update Person",
+		Form:  personForm,
+	}
+
+	app.render(r, w, http.StatusOK, "add-person.gohtml", "base", data)
+}
+
+func (app *application) updatePerson(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	personId, err := strconv.Atoi(id)
+	if err != nil {
+		app.badRequest(w)
+		app.errorLog.Print(err)
+		return
+	}
+
+	oldPerson, err := app.people.GetById(personId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	oldProfileImgName := safeDeref(oldPerson.ProfileImg)
+
+	var form personForm
+	err = app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	app.validatePersonForm(&form)
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		form.ImageUrl = fmt.Sprintf("%s/person/%s", app.baseImgUrl, oldProfileImgName)
+		form.Action = fmt.Sprintf("/person/%d/update", form.ID)
+		data.Page = personFormPage{
+			Title: "Update Person",
+			Form:  form,
+		}
+		app.render(r, w, http.StatusUnprocessableEntity, "add-person.gohtml", "base", data)
+		return
+	}
+
+	profileImgName := oldProfileImgName
+	if form.ProfileImage != nil {
+		var err error
+		profileImgName, err = generateThumbnailName(form.ProfileImage)
+		if err != nil {
+			app.serverError(r, w, err)
+			return
+		}
+		err = app.saveProfileImage(profileImgName, "person", form.ProfileImage)
+		if err != nil {
+			app.serverError(r, w, err)
+			return
+		}
+	}
+
+	newPerson := convertFormtoPerson(&form)
+	newPerson.ProfileImg = &profileImgName
+	slug := models.CreateSlugName(views.PrintPersonName(&newPerson))
+	newPerson.Slug = &slug
+	err = app.people.Update(&newPerson)
+	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/person/%s", slug), http.StatusSeeOther)
+	if form.ProfileImage != nil && oldPerson.ProfileImg != nil {
+		err = app.deleteImage("person", *oldPerson.ProfileImg)
+		if err != nil {
+			app.serverError(r, w, err)
+			return
+		}
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/person/%d/%s", personId, slug), http.StatusSeeOther)
 }

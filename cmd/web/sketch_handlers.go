@@ -48,9 +48,16 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.Page = sketchPage
-	app.infoLog.Printf("%+v/n", sketchPage)
 
 	app.render(r, w, http.StatusOK, "view-sketch.gohtml", "base", data)
+}
+
+type sketchFormPage struct {
+	SketchID    int
+	Title       string
+	SketchForm  sketchForm
+	CastSection castSection
+	TagTable    views.TagTable
 }
 
 func (app *application) sketchAddPage(w http.ResponseWriter, r *http.Request) {
@@ -58,8 +65,13 @@ func (app *application) sketchAddPage(w http.ResponseWriter, r *http.Request) {
 
 	// Need to initialize form data since the template needs it to
 	// render. It's a good place to put default values for the fields
-	data.Forms.Sketch = &sketchForm{}
-	data.Sketch = &models.Sketch{}
+	data.Page = sketchFormPage{
+		Title: "Add Sketch",
+		SketchForm: sketchForm{
+			Action: "/sketch/add",
+		},
+	}
+
 	app.render(r, w, http.StatusOK, "add-sketch.gohtml", "base", data)
 }
 
@@ -73,57 +85,62 @@ func (app *application) sketchAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.validateAddSketchForm(&form)
+	app.validateSketchForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		data.Forms.Sketch = &form
-		data.Sketch = &models.Sketch{}
+		data.Page = sketchFormPage{
+			Title:      "Add Sketch",
+			SketchForm: form,
+		}
+		app.infoLog.Printf("%+v\n", form)
 		app.render(r, w, http.StatusUnprocessableEntity, "add-sketch.gohtml", "base", data)
 		return
 	}
 
-	sketch, err := convertFormToSketch(&form)
+	sketch := convertFormToSketch(&form)
+	slug := models.CreateSlugName(form.Title)
+	sketch.Slug = &slug
+
+	thumbName, err := generateThumbnailName(form.Thumbnail)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
+	sketch.ThumbnailName = &thumbName
 
-	slug := models.CreateSlugName(form.Title)
-	slug = slug + "-" + models.GetTimeStampHash()
-
-	sketch.Slug = &slug
+	youtubeID, _ := extractYouTubeVideoID(*sketch.URL)
+	if youtubeID != "" {
+		sketch.YoutubeID = &youtubeID
+	}
 
 	id, err := app.sketches.Insert(&sketch)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
-	*sketch.ID = id
 
 	if sketch.Creator.ID != nil {
 		err = app.sketches.InsertSketchCreatorRelation(id, *sketch.Creator.ID)
 		if err != nil {
 			app.serverError(r, w, err)
+			app.sketches.Delete(id)
 			return
 		}
 	}
 
-	thumbnailName, err := generateThumbnailName(form.Thumbnail)
-	err = app.sketches.InsertThumbnailName(id, thumbnailName)
+	err = app.saveLargeThumbnail(thumbName, "sketch", form.Thumbnail)
 	if err != nil {
 		app.serverError(r, w, err)
+		app.sketches.Delete(id)
 		return
 	}
 
-	sketch.ThumbnailName = &thumbnailName
-	err = app.saveThumbnail(*sketch.ThumbnailName, "sketch", form.Thumbnail)
-	if err != nil {
-		app.serverError(r, w, err)
-		// TODO: delete sketch entry here
-		return
-	}
+	w.Header().Add("Hx-Redirect", fmt.Sprintf("/sketch/%d/update", id))
+}
 
-	http.Redirect(w, r, fmt.Sprintf("/sketch/%s", sketch.Slug), http.StatusSeeOther)
+type castSection struct {
+	SketchID  int
+	CastTable views.CastTable
 }
 
 func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request) {
@@ -145,11 +162,17 @@ func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	form := convertSketchToForm(sketch)
+	form.ImageUrl = fmt.Sprintf("%s/sketch/%s", app.baseImgUrl, safeDeref(sketch.ThumbnailName))
+	form.Action = fmt.Sprintf("/sketch/%d/update", safeDeref(sketch.ID))
+
 	cast, err := app.cast.GetCastMembers(*sketch.ID)
 	if err != nil && errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
 	}
+
+	castTable := views.CastTableView(cast, sketchId, app.baseImgUrl)
 
 	tags, err := app.tags.GetBySketch(*sketch.ID)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
@@ -157,19 +180,23 @@ func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	sketch.Cast = cast
-	sketch.Tags = &tags
-	app.infoLog.Printf("%+v", sketch.Tags)
 	data := app.newTemplateData(r)
-	data.Sketch = sketch
-	data.Forms.Sketch = &sketchForm{}
-	data.Forms.Cast = &castForm{}
+	data.Page = sketchFormPage{
+		SketchID:   sketchId,
+		Title:      "Update Sketch",
+		SketchForm: form,
+		CastSection: castSection{
+			SketchID:  sketchId,
+			CastTable: castTable,
+		},
+		TagTable: views.TagTableView(tags, sketchId),
+	}
 	// data.Forms.SketchTags = &sketchTagsForm{}
 
 	// need to instantiate empty struct to load
 	// castUpdate form on the page
 	data.CastMember = &models.CastMember{}
-	app.render(r, w, http.StatusOK, "update-sketch.gohtml", "base", data)
+	app.render(r, w, http.StatusOK, "add-sketch.gohtml", "base", data)
 }
 
 func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
@@ -197,20 +224,15 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.validateUpdateSketchForm(&form)
+	app.validateSketchForm(&form)
 	if !form.Valid() {
-		data := app.newTemplateData(r)
-		data.Sketch = oldSketch
-		data.Forms.Sketch = &form
-		app.render(r, w, http.StatusUnprocessableEntity, "sketch-form.gohtml", "sketch-form", data)
+		form.ImageUrl = fmt.Sprintf("%s/sketch/%s", app.baseImgUrl, safeDeref(oldSketch.ThumbnailName))
+		app.render(r, w, http.StatusUnprocessableEntity, "add-sketch.gohtml", "sketch-form", form)
 		return
 	}
 
-	sketch, err := convertFormToSketch(&form)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
+	sketch := convertFormToSketch(&form)
+
 	var thumbnailName string
 	if oldSketch.ThumbnailName != nil {
 		thumbnailName = *oldSketch.ThumbnailName
@@ -226,7 +248,7 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = app.saveThumbnail(thumbnailName, "sketch", form.Thumbnail)
+		err = app.saveLargeThumbnail(thumbnailName, "sketch", form.Thumbnail)
 		if err != nil {
 			app.serverError(r, w, err)
 			return
@@ -246,6 +268,7 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 		app.serverError(r, w, err)
 		return
 	}
+
 	if form.Thumbnail != nil && oldSketch.ThumbnailName != nil {
 		err = app.deleteImage("sketch", *oldSketch.ThumbnailName)
 		if err != nil {
@@ -254,10 +277,33 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	updatedSketch, _ := app.sketches.GetById(sketchId)
+	newForm := convertSketchToForm(updatedSketch)
+	newForm.ImageUrl = fmt.Sprintf("%s/sketch/%s", app.baseImgUrl, safeDeref(updatedSketch.ThumbnailName))
+	isHxRequest := r.Header.Get("HX-Request") == "true"
+	if isHxRequest {
+		app.render(r, w, http.StatusOK, "add-sketch.gohtml", "sketch-form", newForm)
+		return
+	}
+
+	cast, err := app.cast.GetCastMembers(*sketch.ID)
+	if err != nil && errors.Is(err, models.ErrNoRecord) {
+		app.serverError(r, w, err)
+		return
+	}
+
+	castTable := views.CastTableView(cast, sketchId, app.baseImgUrl)
 	data := app.newTemplateData(r)
-	data.Sketch = &sketch
-	data.Forms.Sketch = &form
-	app.render(r, w, http.StatusOK, "sketch-form.gohtml", "sketch-form", data)
+	data.Page = sketchFormPage{
+		SketchID:   sketchId,
+		Title:      "Update Sketch",
+		SketchForm: newForm,
+		CastSection: castSection{
+			SketchID:  sketchId,
+			CastTable: castTable,
+		},
+	}
+	app.render(r, w, http.StatusOK, "add-sketch.gohtml", "base", newForm)
 }
 
 func (app *application) sketchAddLike(w http.ResponseWriter, r *http.Request) {
@@ -314,38 +360,48 @@ func (app *application) sketchUpdateTags(w http.ResponseWriter, r *http.Request)
 	var form sketchTagsForm
 	r.ParseForm()
 	tagStrIds, ok := r.Form["tagId[]"]
-	tagNames, ok1 := r.Form["tagName[]"]
-	app.infoLog.Print(tagStrIds)
-	if !(ok && ok1) {
-		app.clientError(w, http.StatusBadRequest)
-		return
+	if !ok {
+		tagStrIds = []string{}
+	}
+	tagNames, ok := r.Form["tagName[]"]
+	if !ok {
+		tagNames = []string{}
 	}
 
-	var tagIds []int
+	// need to remove any duplicates first
+	tagSet := make(map[int]struct{})
+
 	for _, strId := range tagStrIds {
 		id, err := strconv.Atoi(strId)
 		if err != nil {
 			app.clientError(w, http.StatusBadRequest)
 			return
 		}
+		if id > 0 {
+			tagSet[id] = struct{}{}
+		}
+	}
+
+	// Convert to slice if needed
+	tagIds := make([]int, 0, len(tagSet))
+	for id := range tagSet {
 		tagIds = append(tagIds, id)
 	}
 
 	form.TagIds = tagIds
 	form.TagInputs = tagNames
 
-	app.validateSketchTagsForm(&form)
-	if !form.Valid() {
-		data := app.newTemplateData(r)
-		data.Forms.SketchTags = &form
-		data.Tags = &[]*models.Tag{}
-		app.render(r, w, http.StatusUnprocessableEntity, "tag-table.gohtml", "tag-table", data)
-		return
-	}
-
 	tags, err := app.convertFormtoSketchTags(&form)
 	if err != nil {
 		app.serverError(r, w, err)
+		return
+	}
+
+	app.validateSketchTagsForm(&form)
+	if !form.Valid() {
+		tagTable := views.TagTableView(tags, sketchId)
+		tagTable.Error = form.MultiFieldErrors["tagId"][0]
+		app.render(r, w, http.StatusUnprocessableEntity, "tag-table.gohtml", "tag-table", tagTable)
 		return
 	}
 
@@ -355,7 +411,5 @@ func (app *application) sketchUpdateTags(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	data := app.newTemplateData(r)
-	data.Tags = &tags
-	app.render(r, w, http.StatusOK, "tag-table.gohtml", "tag-table", data)
+	app.render(r, w, http.StatusOK, "tag-table.gohtml", "tag-table", views.TagTableView(tags, sketchId))
 }

@@ -1,51 +1,114 @@
 {{ define "cast-table" }}
-  <table class="w-full">
-    <thead>
-      <tr>
-        <th scope="col" class="border-b border-black p-2">ID</th>
-        <th scope="col" class="p-3 border-b border-black text-left">
-          Thumbnail
-        </th>
-        <th scope="col" class="p-3 border-b border-black text-left">
-          Character<br />Name
-        </th>
-        <th scope="col" class="p-3 border-b border-black text-left">
-          Character<br />Page
-        </th>
-        <th scope="col" class="p-3 border-b border-black text-left">Actor</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{ range $member := .Cast }}
+  <form
+    hx-patch="/sketch/{{ .SketchID }}/cast/order"
+    hx-trigger="end"
+    hx-swap="outerHTML"
+  >
+    <!--<div class="htmx-indicator">Updating...</div>-->
+    <table class="w-full">
+      <thead>
         <tr>
-          <td scope="col" class="border-b border-black p-2">
-            {{ $member.ID }}
-          </td>
-          <td scope="col" class="p-3 border-b border-black text-left">
-            <img
-              class="max-w-20"
-              src="{{ $.ImageBaseUrl }}/cast/profile/{{ $member.ThumbnailName }}"
-            />
-          </td>
-          <td scope="col" class="p-3 border-b border-black text-left">
-            {{ with $member.CharacterName -}}{{- . -}}{{- end -}}
-          </td>
-          <td scope="col" class="p-3 border-b border-black text-left">
-            {{- with $member.Character.Slug -}}
-              <a
-                href="/character/{{ . }}"
-                target="_blank"
-                class="hover:underline"
-              >
-                {{ $member.Character.Name }}
-              </a>
-            {{- end -}}
-          </td>
-          <td scope="col" class="p-3 border-b border-black text-left">
-            {{- printPersonName $member.Actor -}}
-          </td>
+          <th scope="col" class="border-b border-black p-2">ID</th>
+          <th scope="col" class="p-3 border-b border-black text-center">
+            Thumbnail
+          </th>
+          <th scope="col" class="p-3 border-b border-black text-center">
+            Character<br />Name
+          </th>
+          <th scope="col" class="p-3 border-b border-black text-center">
+            Character<br />Page
+          </th>
+          <th scope="col" class="p-3 border-b border-black text-center">
+            Actor
+          </th>
+          <th scope="col" class="p-3 border-b border-black text-center">
+            Cast Role
+          </th>
+          <th scope="col" class="p-3 border-b border-black text-center">
+            Minor Role
+          </th>
+          <th scope="col" class="p-3 border-b border-black text-center"></th>
         </tr>
+      </thead>
+      <tbody class="sortable">
+        {{ range .CastRows }}
+          {{ template "cast-row" . }}
+        {{ end }}
+      </tbody>
+    </table>
+  </form>
+{{ end }}
+
+{{ define "cast-row" }}
+  <tr data-cast-id="{{ .ID }}">
+    <td scope="col" class="border-b border-black p-2">
+      {{ .ID }}
+      <input type="hidden" name="position" value="{{ .ID }}" />
+    </td>
+    <td scope="col" class="p-3 border-b border-black text-center">
+      <img class="max-w-20" src="{{ .ImageUrl }}" />
+    </td>
+    <td scope="col" class="p-3 border-b border-black text-center">
+      {{ with .CharacterName -}}{{- . -}}{{- end -}}
+    </td>
+    <td scope="col" class="p-3 border-b border-black text-center">
+      {{- if .CharacterUrl -}}
+        <a href="{{ .CharacterUrl }}" target="_blank" class="hover:underline">
+          {{ .CharacterPageName }}
+        </a>
+      {{- end -}}
+    </td>
+    <td scope="col" class="p-3 border-b border-black text-center">
+      {{ if .PersonUrl }}
+        <a href="{{ .PersonUrl }}" class="hover:underline">
+          {{- .PersonName -}}
+        </a>
       {{ end }}
-    </tbody>
-  </table>
+    </td>
+    <td scope="col" class="p-3 border-b border-black text-center">
+      {{ with .CastRole -}}{{- . -}}{{- end -}}
+    </td>
+    <td scope="col" class="p-3 border-b border-black">
+      {{ if .MinorRole -}}
+        <div class="w-full text-slate-900 flex justify-center items-center">
+          <div class="w-8">
+            {{ template "checkmark-icon" }}
+          </div>
+        </div>
+      {{- end -}}
+    </td>
+    <td scope="col" class="p-3 border-b border-black text-left">
+      <button
+        class="p-1 bg-slate-100 border border-slate-300 
+                  rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+      >
+        <div class="drag-icon w-6 text-slate-900">
+          {{ template "drag-icon" }}
+        </div>
+      </button>
+      <button
+        class="p-1 bg-slate-100 border border-slate-300 
+                  rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        hx-get="/cast/{{ .ID }}/update"
+        hx-target="#castFormViewer"
+        hx-swap="innerHTML"
+      >
+        <div class="w-6 text-slate-900">
+          {{ template "edit-icon" }}
+        </div>
+      </button>
+      <button
+        class="p-1 bg-slate-100 border border-slate-300 
+                  rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        hx-delete="/cast/{{ .ID }}"
+        hx-confirm="Are you sure you want to delete {{ .PersonName }} as {{ .CharacterName }}?"
+        hx-target="#castTable"
+        hx-swap="innerHTML"
+      >
+        <div class="w-6 text-red-500">
+          {{ template "trash-icon" }}
+        </div>
+      </button>
+    </td>
+  </tr>
 {{ end }}

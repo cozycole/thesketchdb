@@ -1,0 +1,23 @@
+{{ define "main" }}
+  <main data-page="cast-form" class="w-full flex-1 p-3 bg-slate-300">
+    <div
+      class="max-w-screen-lg mx-auto mt-2 p-3 space-y-3 bg-slate-50 rounded-lg"
+    >
+      <h1 class="text-xl font-bold">{{ .Page.Title }}</h1>
+      <div id="cast">
+        <div id="castTable">
+          <h2 class="inline-block my-2 text-lg font-bold">Cast</h2>
+          {{ with .Page.CastForm }}
+            {{ template "cast-table" (dict "ImageBaseUrl" $.ImageBaseUrl "Cast" .Sketch.Cast) }}
+          {{ end }}
+        </div>
+        <button
+          id="addCastButton"
+          class="my-2 p-1 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        >
+          Add Cast
+        </button>
+      </div>
+    </div>
+  </main>
+{{ end }}

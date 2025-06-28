@@ -1,0 +1,179 @@
+{{ define "cast-form-modal" }}
+  <div
+    id="formViewer"
+    class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto"
+  >
+    <div
+      class="bg-white p-6 rounded-lg shadow-lg w-[32rem] max-h-screen overflow-y-auto"
+    >
+      <h1 class="text-xl font-bold">Add/Edit Cast Member</h1>
+      {{ template "cast-form" . }}
+    </div>
+  </div>
+{{ end }}
+
+{{ define "cast-form" }}
+  <form
+    id="castForm"
+    class="space-y-2"
+    enctype="multipart/form-data"
+    hx-post="{{ .Action }}"
+    hx-target="#castTable"
+    hx-target-422="#castForm"
+  >
+    <input type="hidden" name="id" value="{{ .ID }}" />
+    <div>
+      <label class="inline-block font-medium"> Thumbnail Image </label>
+      {{ with .FieldErrors.characterThumbnail }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <img-preview>
+        <div class="flex items-center">
+          <label
+            class="inline-block p-2 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none hover:cursor-pointer"
+          >
+            Upload Thumbnail
+            <input
+              type="file"
+              name="characterThumbnail"
+              accept=".jpg, .jpeg"
+              class="hidden"
+            />
+          </label>
+          <button type="button" class="remove ml-2 hover:bg-slate-300">
+            <img src="/static/img/close.svg" />
+          </button>
+        </div>
+        <div class="imagePreview">
+          {{ with .ThumbnailName }}
+            <img src="{{ . }}" class="max-w-72" />
+          {{ end }}
+        </div>
+      </img-preview>
+    </div>
+    <div>
+      <label class="inline-block font-medium"> Profile Image </label>
+      {{ with .FieldErrors.characterProfile }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <img-preview>
+        <div class="flex items-center">
+          <label
+            class="inline-block p-2 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none hover:cursor-pointer"
+          >
+            Upload Profile
+            <input
+              type="file"
+              name="characterProfile"
+              accept=".jpg, .jpeg"
+              class="hidden"
+            />
+          </label>
+          <button type="button" class="remove ml-2 hover:bg-slate-300">
+            <img src="/static/img/close.svg" />
+          </button>
+        </div>
+        <div class="imagePreview">
+          {{ with .ProfileImage }}
+            <img src="{{ . }}" class="max-w-44" />
+          {{ end }}
+        </div>
+      </img-preview>
+    </div>
+    <div>
+      <form-search>
+        <label class="font-medium">Person Name</label>
+        {{ with .FieldErrors.personId }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <div class="relative">
+          <input type="hidden" name="personId" value="{{ .PersonID }}" />
+          <input
+            type="search"
+            name="personInput"
+            autocomplete="off"
+            value="{{ .PersonInput }}"
+            class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            placeholder="Search for person"
+            hx-get="/person/search"
+            hx-params="query"
+            hx-trigger="focus, input changed delay:500ms, search"
+            hx-target="next"
+            hx-swap="innerHTML"
+          />
+          <ul
+            class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-slate-300 rounded shadow-lg z-10 empty:hidden"
+          ></ul>
+        </div>
+      </form-search>
+    </div>
+    <div>
+      <label class="inline-block font-medium">Cast Role</label>
+      {{ with .FieldErrors.castRole }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <select name="castRole" class="block border p-2 rounded bg-slate-200">
+        <option></option>
+        <option value="cast" {{ if eq .CastRole "cast" }}selected{{ end }}>
+          Cast
+        </option>
+        <option value="guest" {{ if eq .CastRole "guest" }}selected{{ end }}>
+          Guest
+        </option>
+        <option value="host" {{ if eq .CastRole "host" }}selected{{ end }}>
+          Host
+        </option>
+      </select>
+    </div>
+    <div>
+      <input type="checkbox" name="minorRole" />
+      <label for="minor" class="font-medium">Minor Role</label>
+    </div>
+    <div>
+      <div>
+        <label class="inline-block font-medium">Character Name</label>
+        {{ with .FieldErrors.characterName }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <input
+          name="characterName"
+          value="{{ .CharacterName }}"
+          autocomplete="off"
+          class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+          placeholder="Enter character's name"
+        />
+      </div>
+      <form-search>
+        <label class="inline-block font-medium">Character Page</label>
+        {{ with .FieldErrors.characterID }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <div class="relative">
+          <input type="hidden" name="characterId" value="{{ .CharacterID }}" />
+          <input
+            type="search"
+            name="characterInput"
+            value="{{ .CharacterInput }}"
+            class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            autocomplete="off"
+            placeholder="Search for character's page"
+            hx-get="/character/search"
+            hx-params="query"
+            hx-trigger="focus, input changed delay:500ms, search"
+            hx-target="next"
+            hx-swap="innerHTML"
+          />
+          <ul
+            class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-slate-300 rounded shadow-lg z-10 empty:hidden"
+          ></ul>
+        </div>
+      </form-search>
+    </div>
+    <button
+      type="submit"
+      class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+    >
+      Submit
+    </button>
+  </form>
+{{ end }}

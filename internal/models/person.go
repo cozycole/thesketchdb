@@ -16,6 +16,7 @@ type Person struct {
 	Slug        *string
 	First       *string
 	Last        *string
+	Professions *string
 	ProfileImg  *string
 	BirthDate   *time.Time
 	Description *string
@@ -29,6 +30,7 @@ type PersonStats struct {
 }
 
 type PersonModelInterface interface {
+	Delete(id int) error
 	GetBySlug(slug string) (*Person, error)
 	Get(filter *Filter) ([]*Person, error)
 	GetById(id int) (*Person, error)
@@ -36,14 +38,25 @@ type PersonModelInterface interface {
 	GetPeople(ids []int) ([]*Person, error)
 	GetPersonStats(id int) (*PersonStats, error)
 	Exists(id int) (bool, error)
-	Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, string, error)
+	Insert(person *Person) (int, error)
 	Search(query string) ([]*Person, error)
-	VectorSearch(query string) ([]*ProfileResult, error)
 	SearchCount(query string) (int, error)
+	Update(person *Person) error
+	VectorSearch(query string) ([]*ProfileResult, error)
 }
 
 type PersonModel struct {
 	DB *pgxpool.Pool
+}
+
+func (m *PersonModel) Delete(id int) error {
+	stmt := `
+		DELETE FROM person
+		WHERE id = $1
+	`
+
+	_, err := m.DB.Exec(context.Background(), stmt, id)
+	return err
 }
 
 func (m *PersonModel) GetPersonStats(id int) (*PersonStats, error) {
@@ -76,21 +89,22 @@ func (m *PersonModel) GetPersonStats(id int) (*PersonStats, error) {
 	return stats, nil
 }
 
-func (m *PersonModel) Insert(first, last, imgName, imgExt string, birthDate time.Time) (int, string, string, error) {
+func (m *PersonModel) Insert(person *Person) (int, error) {
 	stmt := `
-	INSERT INTO person (first, last, birthdate, slug, profile_img)
-	VALUES ($1,$2,$3,
-		CONCAT($4::text, '-', currval(pg_get_serial_sequence('person', 'id'))),
-		CONCAT($4::text, '-', currval(pg_get_serial_sequence('person', 'id')), $5::text))
-	RETURNING id, slug, profile_img;`
+	INSERT INTO person (first, last, birthdate, professions, slug, profile_img)
+	VALUES ($1,$2,$3,$4,$5,$6)
+	RETURNING id;
+	`
 	var id int
-	var fullImgName, slug string
-	row := m.DB.QueryRow(context.Background(), stmt, first, last, birthDate, imgName, imgExt)
-	err := row.Scan(&id, &slug, &fullImgName)
+	row := m.DB.QueryRow(
+		context.Background(), stmt, person.First, person.Last,
+		person.BirthDate, person.Professions, person.Slug, person.ProfileImg,
+	)
+	err := row.Scan(&id)
 	if err != nil {
-		return 0, "", "", err
+		return 0, err
 	}
-	return id, slug, fullImgName, err
+	return id, err
 }
 
 func (m *PersonModel) Exists(id int) (bool, error) {
@@ -199,7 +213,7 @@ func (m *PersonModel) GetIdBySlug(slug string) (int, error) {
 }
 
 func (m *PersonModel) GetById(id int) (*Person, error) {
-	stmt := `SELECT id, first, last, profile_img, birthdate, slug 
+	stmt := `SELECT id, first, last, profile_img, birthdate, slug, professions
 			FROM person
 			WHERE id = $1`
 
@@ -207,7 +221,8 @@ func (m *PersonModel) GetById(id int) (*Person, error) {
 
 	p := &Person{}
 
-	err := row.Scan(&p.ID, &p.First, &p.Last, &p.ProfileImg, &p.BirthDate, &p.Slug)
+	err := row.Scan(
+		&p.ID, &p.First, &p.Last, &p.ProfileImg, &p.BirthDate, &p.Slug, &p.Professions)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -348,6 +363,19 @@ func (m *PersonModel) SearchCount(query string) (int, error) {
 		}
 	}
 	return count, nil
+}
+
+func (m *PersonModel) Update(person *Person) error {
+	stmt := `
+	UPDATE person SET first = $1, last = $2, professions = $3, 
+	profile_img = $4, birthdate = $5, slug = $6
+	WHERE id = $7`
+	_, err := m.DB.Exec(
+		context.Background(), stmt, person.First,
+		person.Last, person.Professions, person.ProfileImg,
+		person.BirthDate, person.Slug, person.ID,
+	)
+	return err
 }
 
 func (m *PersonModel) VectorSearch(query string) ([]*ProfileResult, error) {

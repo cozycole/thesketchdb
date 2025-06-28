@@ -20,7 +20,7 @@ func UserPageView(user *models.User, favorited []*models.Sketch, baseImgUrl stri
 
 	page := UserPage{}
 
-	page.Username = safeDerefString(user.Username)
+	page.Username = safeDeref(user.Username)
 	page.DateJoined = humanDate(user.CreatedAt)
 	page.Image = "/static/img/missing-profile.jpg"
 	if user.ProfileImage != nil {

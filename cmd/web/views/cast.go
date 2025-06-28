@@ -16,6 +16,7 @@ type CastCard struct {
 	ActorUrl      string
 	CharacterName string
 	CharacterUrl  string
+	CastRole      string
 	Image         string
 }
 
@@ -59,7 +60,8 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 		}
 	}
 
-	card.ActorName = printPersonName(member.Actor)
+	card.ActorName = PrintPersonName(member.Actor)
+	card.CastRole = uppercaseFirst(safeDeref(member.CastRole))
 
 	if member.Character != nil {
 		if member.Character.ID != nil && member.Character.Slug != nil {
@@ -77,12 +79,12 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 		}
 	}
 
-	if member.ThumbnailName != nil {
+	if member.ProfileImg != nil {
 		card.Image =
 			fmt.Sprintf(
 				"%s/cast/profile/%s",
 				baseImgUrl,
-				*member.ThumbnailName)
+				*member.ProfileImg)
 
 	}
 
@@ -92,4 +94,59 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 	}
 
 	return &card, nil
+}
+
+type CastTable struct {
+	SketchID int
+	CastRows []CastRow
+}
+
+type CastRow struct {
+	ID                int
+	ImageUrl          string
+	CharacterName     string
+	PersonName        string
+	PersonUrl         string
+	CharacterPageName string
+	CharacterUrl      string
+	CastRole          string
+	MinorRole         bool
+}
+
+func CastTableView(cast []*models.CastMember, sketchID int, baseImgUrl string) CastTable {
+	castTable := CastTable{}
+	castTable.SketchID = sketchID
+	for _, c := range cast {
+		row := CastRow{}
+		row.ID = safeDeref(c.ID)
+		if c.ProfileImg != nil {
+			row.ImageUrl = fmt.Sprintf("%s/cast/profile/%s", baseImgUrl, safeDeref(c.ProfileImg))
+		}
+
+		row.CharacterName = safeDeref(c.CharacterName)
+		if c.Actor != nil {
+			row.PersonName = PrintPersonName(c.Actor)
+			row.PersonUrl = fmt.Sprintf(
+				"/person/%d/%s",
+				safeDeref(c.Actor.ID),
+				safeDeref(c.Actor.Slug),
+			)
+		}
+
+		if c.Character != nil {
+			row.CharacterPageName = safeDeref(c.Character.Name)
+			row.CharacterUrl = fmt.Sprintf(
+				"/character/%d/%s",
+				safeDeref(c.Character.ID),
+				safeDeref(c.Character.Slug),
+			)
+		}
+
+		row.CastRole = uppercaseFirst(safeDeref(c.CastRole))
+		row.MinorRole = safeDeref(c.MinorRole)
+
+		castTable.CastRows = append(castTable.CastRows, row)
+	}
+
+	return castTable
 }

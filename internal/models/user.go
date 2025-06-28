@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -24,7 +25,7 @@ type User struct {
 	CreatedAt    *time.Time
 	Username     *string
 	Email        *string
-	Password     *password
+	Password     password
 	Activated    *bool
 	Role         *string
 	ProfileImage *string
@@ -133,7 +134,7 @@ func (m *UserModel) GetByUsername(username string) (*User, error) {
 		return nil, err
 	}
 
-	user.Password = &password
+	user.Password = password
 
 	return &user, nil
 }
@@ -168,7 +169,7 @@ func (m *UserModel) GetById(id int) (*User, error) {
 		return nil, err
 	}
 
-	user.Password = &password
+	user.Password = password
 
 	return &user, nil
 }
@@ -192,8 +193,10 @@ func (m *UserModel) Insert(user *User) error {
 		&user.ID, &user.CreatedAt)
 	if err != nil {
 		switch {
-		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
+		case strings.Contains(err.Error(), `violates unique constraint "users_email_key"`):
 			return ErrDuplicateEmail
+		case strings.Contains(err.Error(), `violates unique constraint "users_username_key"`):
+			return ErrDuplicateUsername
 		default:
 			return err
 		}

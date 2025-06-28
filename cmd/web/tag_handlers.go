@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
 )
 
@@ -54,4 +55,8 @@ func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.Tag = &tagForm{}
 	app.render(r, w, http.StatusOK, "add-tag.gohtml", "base", data)
+}
+
+func (app *application) tagRow(w http.ResponseWriter, r *http.Request) {
+	app.render(r, w, http.StatusOK, "tag-table.gohtml", "tag-row", views.TagRow{})
 }

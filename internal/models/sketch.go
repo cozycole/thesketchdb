@@ -106,29 +106,54 @@ type Sketch struct {
 }
 
 type SketchModelInterface interface {
-	BatchUpdateTags(vidId int, tags *[]*Tag) error
+	BatchUpdateTags(sketchId int, tags *[]*Tag) error
+	Delete(id int) error
+	Exists(id int) (bool, error)
 	Get(filter *Filter) ([]*Sketch, error)
 	GetById(id int) (*Sketch, error)
 	GetCount(filter *Filter) (int, error)
 	GetBySlug(slug string) (*Sketch, error)
 	GetByUserLikes(id int) ([]*Sketch, error)
 	GetFeatured() ([]*Sketch, error)
-	HasLike(vidId, userId int) (bool, error)
+	HasLike(sketchId, userId int) (bool, error)
 	Insert(sketch *Sketch) (int, error)
-	InsertThumbnailName(vidId int, name string) error
-	InsertSketchCreatorRelation(vidId, creatorId int) error
+	InsertThumbnailName(sketchId int, name string) error
+	InsertSketchCreatorRelation(sketchId, creatorId int) error
 	Search(search string, limit, offset int) ([]*Sketch, error)
 	SearchCount(query string) (int, error)
-	IsSlugDuplicate(vidId int, slug string) bool
+	IsSlugDuplicate(sketchId int, slug string) bool
 	Update(sketch *Sketch) error
-	UpdateCreatorRelation(vidId, creatorId int) error
+	UpdateCreatorRelation(sketchId, creatorId int) error
 }
 
 type SketchModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *SketchModel) BatchUpdateTags(vidId int, tags *[]*Tag) error {
+func (m *SketchModel) Delete(id int) error {
+	stmt := `
+		DELETE from sketch
+		WHERE id = $1
+	`
+	_, err := m.DB.Exec(context.Background(), stmt, id)
+	return err
+}
+
+func (m *SketchModel) Exists(id int) (bool, error) {
+	stmt := `
+	SELECT EXISTS (
+	  SELECT 1 FROM sketch WHERE id = $1  
+	);
+	`
+
+	var exists bool
+
+	err := m.DB.QueryRow(context.Background(), stmt, id).Scan(&exists)
+	return exists, err
+
+}
+
+func (m *SketchModel) BatchUpdateTags(sketchId int, tags *[]*Tag) error {
 	if tags == nil {
 		return fmt.Errorf("tags argument is nil")
 	}
@@ -152,7 +177,7 @@ func (m *SketchModel) BatchUpdateTags(vidId int, tags *[]*Tag) error {
 
 	var id int
 	existingTags := make(map[int]bool)
-	rows, err := tx.Query(context.Background(), stmt, vidId)
+	rows, err := tx.Query(context.Background(), stmt, sketchId)
 	for rows.Next() {
 		err = rows.Scan(&id)
 		if err != nil {
@@ -189,11 +214,11 @@ func (m *SketchModel) BatchUpdateTags(vidId int, tags *[]*Tag) error {
 		query := "INSERT INTO sketch_tags (sketch_id, tag_id) VALUES "
 		values := []interface{}{}
 		for i, tag := range tagsToInsert {
-			query += fmt.Sprintf("($1, $d),", i+2)
+			query += fmt.Sprintf("($1, $%d),", i+2)
 			values = append(values, tag)
 		}
 		query = query[:len(query)-1] // Trim last comma
-		values = append([]interface{}{vidId}, values...)
+		values = append([]interface{}{sketchId}, values...)
 		fmt.Printf("QUERY: %s\n", query)
 		fmt.Printf("VALUES: %+v\n", values)
 
@@ -205,7 +230,7 @@ func (m *SketchModel) BatchUpdateTags(vidId int, tags *[]*Tag) error {
 
 	if len(tagsToDelete) > 0 {
 		query := "DELETE FROM sketch_tags WHERE sketch_id = $1 AND tag_id IN ("
-		values := []interface{}{vidId}
+		values := []interface{}{sketchId}
 		for i, tag := range tagsToDelete {
 			query += fmt.Sprintf("$%d,", i+2)
 			values = append(values, tag)
@@ -233,7 +258,7 @@ func determineImageField(filter *Filter) string {
 	// only use the cast thumbnail if searching for a specific person, if multiple
 	// are being searched, use the overall thumbnail
 	if len(filter.People) == 1 || len(filter.Characters) == 1 {
-		imgField = "cm.img_name"
+		imgField = "cm.thumbnail_name"
 	}
 	return imgField
 }
@@ -528,7 +553,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		sh.id, sh.name, sh.slug, sh.profile_img,
 		p.id, p.slug, p.first, p.last, p.profile_img,
 		ch.id, ch.name, ch.slug, ch.img_name,
-		cm.id, cm.position, cm.character_name, cm.img_name
+		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name
 		FROM sketch AS v
 		LEFT JOIN sketch_creator_rel as vcr ON v.id = vcr.sketch_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
@@ -539,6 +564,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		LEFT JOIN person as p ON cm.person_id = p.id
 		LEFT JOIN character as ch ON cm.character_id = ch.id
 		WHERE v.id = $1
+		ORDER BY cm.position asc
 	`
 
 	rows, err := m.DB.Query(context.Background(), stmt, id)
@@ -567,7 +593,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 			&ch.ID, &ch.Name, &ch.Slug, &ch.Image,
-			&cm.ID, &cm.Position, &cm.CharacterName, &cm.ThumbnailName,
+			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg,
+			&cm.ThumbnailName,
 		)
 		if err != nil {
 			return nil, err
@@ -653,7 +680,7 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 			c.id, c.name, c.profile_img,
 			sh.id, sh.name, sh.profile_img, sh.slug,
 			p.id, p.slug, p.first, p.last, p.profile_img,
-			cm.id, cm.position, cm.img_name, cm.character_name,
+			cm.id, cm.position, cm.thumbnail_name, cm.character_name,
 			ch.id, ch.slug, ch.name, ch.img_name
 		FROM sketch AS v
 		JOIN sketch_tags as vt ON v.id = vt.sketch_id
@@ -809,23 +836,23 @@ func (m *SketchModel) GetByUserLikes(userId int) ([]*Sketch, error) {
 	return sketches, nil
 }
 
-func (m *SketchModel) HasLike(vidId, userId int) (bool, error) {
+func (m *SketchModel) HasLike(sketchId, userId int) (bool, error) {
 	var exists bool
 
 	stmt := "SELECT EXISTS(SELECT true FROM likes WHERE sketch_id = $1 AND user_id = $2)"
-	err := m.DB.QueryRow(context.Background(), stmt, vidId, userId).Scan(&exists)
+	err := m.DB.QueryRow(context.Background(), stmt, sketchId, userId).Scan(&exists)
 	return exists, err
 }
 
 func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 	stmt := `
-	INSERT INTO sketch (title, sketch_url, upload_date, slug)
-	VALUES ($1,$2,$3,$4,$5)
+	INSERT INTO sketch (title, sketch_url, thumbnail_name, upload_date, slug, youtube_id)
+	VALUES ($1,$2,$3,$4,$5,$6)
 	RETURNING id;`
 	result := m.DB.QueryRow(
 		context.Background(), stmt, sketch.Title,
-		sketch.URL, sketch.UploadDate,
-		sketch.Slug,
+		sketch.URL, sketch.ThumbnailName, sketch.UploadDate,
+		sketch.Slug, sketch.YoutubeID,
 	)
 
 	var id int
@@ -836,21 +863,21 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 	return id, nil
 }
 
-func (m *SketchModel) InsertThumbnailName(vidId int, name string) error {
+func (m *SketchModel) InsertThumbnailName(sketchId int, name string) error {
 	stmt := `UPDATE sketch SET thumbnail_name = $1 WHERE id = $2`
-	_, err := m.DB.Exec(context.Background(), stmt, name, vidId)
+	_, err := m.DB.Exec(context.Background(), stmt, name, sketchId)
 	return err
 }
 
-func (m *SketchModel) InsertSketchCreatorRelation(vidId, creatorId int) error {
+func (m *SketchModel) InsertSketchCreatorRelation(sketchId, creatorId int) error {
 	stmt := `INSERT INTO sketch_creator_rel (sketch_id, creator_id) VALUES ($1, $2)`
-	_, err := m.DB.Exec(context.Background(), stmt, vidId, creatorId)
+	_, err := m.DB.Exec(context.Background(), stmt, sketchId, creatorId)
 	return err
 }
 
-func (m *SketchModel) UpdateCreatorRelation(vidId, creatorId int) error {
+func (m *SketchModel) UpdateCreatorRelation(sketchId, creatorId int) error {
 	stmt := `UPDATE sketch_creator_rel SET creator_id = $1 WHERE sketch_id = $2`
-	_, err := m.DB.Exec(context.Background(), stmt, creatorId, vidId)
+	_, err := m.DB.Exec(context.Background(), stmt, creatorId, sketchId)
 	return err
 }
 
@@ -925,10 +952,10 @@ func (m *SketchModel) SearchCount(query string) (int, error) {
 	return count, nil
 }
 
-func (m *SketchModel) IsSlugDuplicate(vidId int, slug string) bool {
+func (m *SketchModel) IsSlugDuplicate(sketchId int, slug string) bool {
 	var exists bool
 	stmt := "SELECT EXISTS(SELECT true FROM sketch WHERE slug = $1 AND id != $2)"
-	m.DB.QueryRow(context.Background(), stmt, slug, vidId).Scan(&exists)
+	m.DB.QueryRow(context.Background(), stmt, slug, sketchId).Scan(&exists)
 	return exists
 }
 
@@ -936,7 +963,7 @@ func (m *SketchModel) Update(sketch *Sketch) error {
 	stmt := `
 	UPDATE sketch SET title = $1, sketch_url = $2, upload_date = $3, 
 	slug = $4, thumbnail_name = $5
-	WHERE id = $7`
+	WHERE id = $6`
 	_, err := m.DB.Exec(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.UploadDate,

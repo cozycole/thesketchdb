@@ -16,6 +16,11 @@
             />
             <div class="text-center space-y-1">
               <h1 class="text-2xl font-medium">{{ .CreatorName }}</h1>
+              {{ if $.IsEditor }}
+                <a href="/creator/{{ .ID }}/update" class="text-sm font-bold"
+                  >(Edit)</a
+                >
+              {{ end }}
             </div>
             {{ if .EstablishedDate }}
               <time class="block">Established: {{ .EstablishedDate }}</time>

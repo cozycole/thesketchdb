@@ -1,74 +1,94 @@
 {{ define "tag-table" }}
-  {{ with .Flash }}
-    <h2
-      class="w-fit p-3 my-2 font-bold text-md text-green-600 border-green-700 bg-green-200 rounded-md"
-    >
-      {{ . }}
-    </h2>
-  {{ end }}
-  <table class="w-full">
-    <thead>
-      <tr>
-        <th
-          scope="col"
-          class="p-1 max-w-4 whitespace-nowrap border-b border-black text-left"
-        >
-          ID
-        </th>
-        <th scope="col" class="p-3 border-b border-black text-left">Name</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{ $tags := .Tags }}
-      {{ with .Forms.SketchTags }}
-        {{ $tags = .TagInputs }}
-      {{ end }}
-      {{ range $index, $tag := $tags }}
+  <form
+    id="tagForm"
+    hx-post="/sketch/{{ .SketchID }}/tag"
+    hx-target="this"
+    hx-target-422="this"
+    hx-swap="outerHTML"
+  >
+    <table id="tagTable" class="w-full">
+      <label class="block text-red-700"
+        >{{ with .Error }}{{ . }}{{ end }}</label
+      >
+      <thead>
         <tr>
-          <td scope="col" class="p-1 max-w-4 border-b border-black text-left">
-            {{- with $.Forms.SketchTags -}}
-              {{- index .TagIds $index -}}
-            {{- else -}}
-              {{- $tag.ID -}}
-            {{- end -}}
-          </td>
-          <td scope="col" class="border-b border-black p-2 text-left">
-            <div class="relative tagHtmxDropdown">
-              {{ with $.Forms.SketchTags }}
-                <label class="block text-red-700"
-                  >{{ .MultiFieldErrors.tagId $index }}</label
-                >
-              {{ end }}
-              <input
-                type="hidden"
-                name="tagId[]"
-                value="{{ with $.Forms.sketchTags }}
-                  {{ index .TagIds $index }}
-                {{ else }}
-                  {{ $tag.ID -}}
-                {{ end }}"
-              />
-              <input
-                type="search"
-                name="tagName[]"
-                class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                value="{{ with $.Forms.sketchTags }}
-                  {{ $tag }}
-                {{ else }}
-                  {{ with $tag.Category.Name }}{{ . }} /{{ end }}
-                  {{ $tag.Name -}}
-                {{ end }}"
-                placeholder="Search for tag"
-                hx-get="/tag/search"
-                hx-params="query"
-                hx-trigger="focus, input changed delay:500ms, search"
-                hx-target="next"
-              />
-              <div></div>
-            </div>
-          </td>
+          <th
+            scope="col"
+            class="p-1 max-w-4 whitespace-nowrap border-b border-black text-left"
+          >
+            Tag ID
+          </th>
+          <th scope="col" class="p-3 border-b border-black text-left">Name</th>
+          <th scope="col" class="p-3 border-b border-black text-left"></th>
         </tr>
-      {{ end }}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {{ range .TagRows }}
+          {{ template "tag-row" . }}
+        {{ else }}
+          <td id="noTagRow" colspan="3">
+            <div class="text-center p-4 font-bold">No Tags</div>
+          </td>
+        {{ end }}
+      </tbody>
+    </table>
+    <button
+      type="button"
+      hx-get="/tag/row"
+      hx-target="#tagTable tbody"
+      hx-swap="beforeend"
+      class="mt-2 p-2 bg-slate-900 text-white border rounded-lg 
+                  hover:bg-slate-800 outline-none ring-0 focus:outline-none focus:ring-0"
+    >
+      Add Tag
+    </button>
+    <button
+      type="submit"
+      class="mt-2 p-2 bg-slate-900 text-white border rounded-lg 
+                  hover:bg-slate-800 outline-none ring-0 focus:outline-none focus:ring-0"
+    >
+      Save Changes
+    </button>
+  </form>
+{{ end }}
+
+{{ define "tag-row" }}
+  <tr>
+    <td scope="col" class="p-1 max-w-4 border-b border-black text-center">
+      {{ .ID }}
+    </td>
+    <td scope="col" class="border-b max-w-screen-xs border-black p-2 text-left">
+      <form-search>
+        <div class="relative">
+          <input type="hidden" name="tagId[]" value="{{ .ID }}" />
+          <input
+            type="search"
+            name="tagName[]"
+            class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            value="{{ .Name }}"
+            placeholder="Search for tag"
+            hx-get="/tag/search"
+            hx-params="query"
+            hx-trigger="focus, input changed delay:500ms, search"
+            hx-target="next"
+            hx-swap="innerHTML"
+          />
+          <ul
+            class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-slate-300 rounded shadow-lg z-10 empty:hidden"
+          ></ul>
+        </div>
+      </form-search>
+    </td>
+    <td class="border-b border-black">
+      <button
+        class="p-1 bg-slate-100 border border-slate-300 
+                  rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        onclick="this.closest('tr').remove()"
+      >
+        <div class="w-6 text-red-500">
+          {{ template "trash-icon" }}
+        </div>
+      </button>
+    </td>
+  </tr>
 {{ end }}

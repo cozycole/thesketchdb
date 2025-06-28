@@ -32,3 +32,35 @@ func TagsView(tags []*models.Tag) []*Tag {
 
 	return tagViews
 }
+
+type TagTable struct {
+	SketchID int
+	Error    string
+	TagRows  []TagRow
+}
+
+type TagRow struct {
+	ID   int
+	Name string
+}
+
+func TagTableView(tags []*models.Tag, sketchID int) TagTable {
+	rows := make([]TagRow, 0, len(tags))
+	for _, tag := range tags {
+		row := TagRow{}
+		row.ID = safeDeref(tag.ID)
+
+		var tagName string
+		if tag.Category != nil && safeDeref(tag.Category.Name) != "" {
+			tagName = safeDeref(tag.Category.Name) + " / "
+		}
+
+		tagName += safeDeref(tag.Name)
+		row.Name = tagName
+		rows = append(rows, row)
+	}
+	return TagTable{
+		SketchID: sketchID,
+		TagRows:  rows,
+	}
+}

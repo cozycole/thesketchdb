@@ -1,7 +1,7 @@
 {{ define "title" }}{{ .Page.Title }}{{ end }}
 
 {{ define "main" }}
-  <main data-page="add-person" class="w-full flex-1 p-3 bg-slate-300">
+  <main data-page="character-form" class="w-full flex-1 p-3 bg-slate-300">
     <div
       class="max-w-screen-lg mx-auto mt-2 p-3 space-y-3 bg-slate-50 rounded-lg"
     >
@@ -17,55 +17,78 @@
             <input type="hidden" name="id" value="{{ .ID }}" />
           {{ end }}
           <div>
-            <label class="block">First Name</label>
+            <label class="block">Name</label>
             {{ with .FieldErrors.first }}
               <label class="block text-red-700">{{ . }}</label>
             {{ end }}
             <input
               type="text"
-              name="first"
-              value="{{ .First }}"
+              name="name"
+              value="{{ .Name }}"
               class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
             />
           </div>
           <div>
-            <label class="block">Last Name</label>
-            {{ with .FieldErrors.last }}
+            <label class="block mb-1">Character Type</label>
+            {{ with .FieldErrors.type }}
               <label class="block text-red-700">{{ . }}</label>
             {{ end }}
-            <input
-              type="text"
-              name="last"
-              value="{{ .Last }}"
-              class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-            />
+            <div class="space-x-2">
+              <label>
+                <input
+                  type="radio"
+                  name="type"
+                  value="original"
+                  {{ if eq .Type "original" }}checked{{ end }}
+                />
+                Original
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="type"
+                  value="impression"
+                  {{ if eq .Type "impression" }}checked{{ end }}
+                />
+                Impression
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="type"
+                  value="generic"
+                  {{ if eq .Type "generic" }}checked{{ end }}
+                />
+                Generic
+              </label>
+            </div>
           </div>
-          <div>
-            <label class="block">Professions</label>
-            {{ with .FieldErrors.professions }}
+          <form-search>
+            <label class="inline-block my-2">Person (if impression)</label>
+            {{ with .FieldErrors.personId }}
               <label class="block text-red-700">{{ . }}</label>
             {{ end }}
-            <input
-              type="text"
-              placeholder="Comma separated list of their professions"
-              name="professions"
-              value="{{ .Professions }}"
-              class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-            />
-          </div>
-          <div>
-            <label class="block">Birth Date</label>
-            {{ with .FieldErrors.birthDate }}
-              <label class="block text-red-700">{{ . }}</label>
-            {{ end }}
-            <input
-              type="date"
-              name="birthDate"
-              value="{{ .BirthDate }}"
-              class="p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-            />
-          </div>
-          <label class="block">Person Profile</label>
+            <div class="relative">
+              <input type="hidden" name="personId" value="{{ .PersonID }}" />
+              <input
+                type="search"
+                name="personInput"
+                value="{{ .PersonInput }}"
+                class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                placeholder="Enter person's name"
+                autocomplete="off"
+                hx-get="/person/search"
+                hx-params="query"
+                hx-trigger="focus, input changed delay:500ms, search"
+                hx-target="next"
+                hx-swap="innerHTML"
+              />
+              <ul
+                class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-slate-300 rounded shadow-lg z-10 empty:hidden"
+              ></ul>
+            </div>
+          </form-search>
+          <label class="block">Character Profile</label>
           {{ with .FieldErrors.profileImg }}
             <label class="block text-red-700">{{ . }}</label>
           {{ end }}
@@ -74,14 +97,12 @@
               <label
                 class="inline-block p-2 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none hover:cursor-pointer"
               >
-                Upload Person Image
+                Upload Show Image
                 <input
-                  id="profileImgUpload"
                   type="file"
                   name="profileImg"
                   accept=".jpg, .jpeg"
                   class="hidden"
-                  hx-preserve
                 />
               </label>
               <button type="button" class="remove ml-2 hover:bg-slate-300">

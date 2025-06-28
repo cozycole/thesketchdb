@@ -68,18 +68,6 @@ func ResizeImage(img image.Image, width, height int) *image.RGBA {
 	return dst
 }
 
-func CropFinalSize(img image.Image, finalHeight int) image.Image {
-	bounds := img.Bounds()
-	width, height := bounds.Dx(), bounds.Dy()
-
-	y0 := (height - finalHeight) / 2
-	y1 := y0 + finalHeight
-
-	return img.(interface {
-		SubImage(r image.Rectangle) image.Image
-	}).SubImage(image.Rect(0, y0, width, y1))
-}
-
 func GetImageDimensions(file io.ReadSeekCloser) (int, int, error) {
 	imgConf, _, err := image.DecodeConfig(file)
 	defer file.Seek(0, 0)

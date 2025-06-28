@@ -78,7 +78,7 @@ func TestValidateAddCreatorForm(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app.validateAddCreatorForm(tt.form)
+			app.validateCreatorForm(tt.form)
 			assert.DeepEqual(t, tt.form.FieldErrors, tt.fieldErrors)
 			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
 		})
@@ -152,7 +152,7 @@ func TestValidateAddPersonForm(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app.validateAddPersonForm(tt.form)
+			app.validatePersonForm(tt.form)
 			assert.DeepEqual(t, tt.form.FieldErrors, tt.fieldErrors)
 			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
 		})
@@ -255,7 +255,7 @@ func TestValidateAddSketchForm(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app.validateAddSketchForm(tt.form)
+			app.validateSketchForm(tt.form)
 			assert.DeepEqual(t, tt.form.FieldErrors, tt.fieldErrors)
 			assert.DeepEqual(t, tt.form.NonFieldErrors, tt.nonFieldErrors)
 		})

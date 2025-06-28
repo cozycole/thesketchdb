@@ -6,7 +6,7 @@ export class FavoriteButton extends HTMLElement {
     this._onClick = () => this.like();
 
     this.favorited = this.dataset.favorited.trim() === "true" ? true : false;
-    this.vidId = this.dataset.id;
+    this.sketchId = this.dataset.id;
 
     this.favButton = this.querySelector("#favBtn");
     this.icon = this.querySelector("#favIcon");
@@ -28,7 +28,7 @@ export class FavoriteButton extends HTMLElement {
   async like() {
     console.log("button clicked, favorite status: ", this.favorited);
     const method = this.favorited ? "DELETE" : "POST";
-    const response = await fetch(`/sketch/like/${this.vidId}`, {
+    const response = await fetch(`/sketch/like/${this.sketchId}`, {
       method: method,
       credentials: "include",
       redirect: "manual",

@@ -242,6 +242,9 @@ func (m *ShowModel) InsertEpisode(episode *Episode) (int, error) {
 }
 
 func (m *ShowModel) Delete(show *Show) error {
+	if show.ID == nil {
+		return fmt.Errorf("No show ID specified to delete")
+	}
 	stmt := `
 		DELETE FROM show
 		WHERE id = $1

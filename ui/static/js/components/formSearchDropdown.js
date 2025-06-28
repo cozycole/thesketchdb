@@ -12,15 +12,26 @@ export class FormSearchDropdown extends HTMLElement {
       let dropDownItems = this.querySelectorAll("li.result");
 
       for (let el of dropDownItems) {
-        el.addEventListener("click", (e) => this.insertDropdownItem(e));
+        el.addEventListener("click", (e) => {
+          const target = e.currentTarget;
+          const text = target.outerText;
+          const id = target.dataset.id;
+          setTimeout(() => this.insertDropdownItem(id, text), 100);
+        });
       }
+    });
+
+    document.body.addEventListener("htmx:configRequest", function (evt) {
+      // this adds the value of the triggering element to the query parameter of the
+      // url request
+      evt.detail.parameters["query"] = evt.detail.elt.value;
     });
 
     document.body.addEventListener("click", (e) => {
       if (
         !(
-          this.dropdown.contains(e.target) ||
-          this.searchInput.contains(e.target)
+          this.dropdown?.contains(e.target) ||
+          this.searchInput?.contains(e.target)
         )
       ) {
         this.dropdown.innerHTML = "";
@@ -34,10 +45,7 @@ export class FormSearchDropdown extends HTMLElement {
     });
   }
 
-  insertDropdownItem(e) {
-    const text = e.currentTarget.outerText;
-    const id = e.currentTarget.dataset.id;
-
+  insertDropdownItem(id, text) {
     this.searchInput.value = text;
     this.idInput.value = id;
 
@@ -48,4 +56,8 @@ export class FormSearchDropdown extends HTMLElement {
     this.dropdown.innerHTML = "";
     this.searchInput.blur();
   }
+}
+
+if (!customElements.get("form-search")) {
+  customElements.define("form-search", FormSearchDropdown);
 }

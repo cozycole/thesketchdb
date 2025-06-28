@@ -42,7 +42,7 @@ func CharacterPageView(character *models.Character, popular []*models.Sketch, ba
 				*character.Portrayal.Slug)
 		}
 
-		page.PortrayalName = printPersonName(character.Portrayal)
+		page.PortrayalName = PrintPersonName(character.Portrayal)
 	}
 	var err error
 	page.Popular, err = SketchGalleryView(

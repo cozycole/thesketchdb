@@ -16,16 +16,22 @@
             />
             <div class="text-center space-y-1">
               <h1 class="text-2xl font-medium">{{ .CharacterName }}</h1>
+              {{ if $.IsEditor }}
+                <a href="/character/{{ .ID }}/update" class="text-sm font-bold"
+                  >(Edit)</a
+                >
+              {{ end }}
               <div class="metadata rounded-md">
                 <p class="text-lg">
-                  Portrayal of <br />
-                  <a
-                    {{ with .PortrayalUrl }}
-                      href="{{ . }}" class="hover:underline font-medium"
-                    {{ end }}
-                  >
-                    {{ .PortrayalName }}
-                  </a>
+                  {{ if .PortrayalUrl }}
+                    Portrayal of <br />
+                    <a
+                      href="{{ .PortrayalUrl }}"
+                      class="hover:underline font-medium"
+                    >
+                      {{ .PortrayalName }}
+                    </a>
+                  {{ end }}
                 </p>
               </div>
             </div>

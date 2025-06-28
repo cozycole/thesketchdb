@@ -23,13 +23,13 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 	// public routes
 	r.Group(func(r chi.Router) {
 		r.Use(
+			app.recoverPanic,
 			app.sessionManager.LoadAndSave,
 			app.logRequest,
 			app.authenticate,
 		)
 
 		r.HandleFunc("/ping", ping)
-		r.HandleFunc("/testing", app.testing)
 
 		r.HandleFunc("/browse", app.browse)
 		r.HandleFunc("/", app.home)
@@ -51,7 +51,7 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Get("/creator/{id}/{slug}", app.creatorView)
 		r.Get("/creator/search", app.creatorSearch)
 
-		r.Get("/person/{id}/{slug}", app.personView)
+		r.Get("/person/{id}/{slug}", app.viewPerson)
 		r.Get("/person/search", app.personSearch)
 
 		r.Get("/character/{id}/{slug}", app.characterView)
@@ -78,9 +78,11 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 	// role routes
 	r.Group(func(r chi.Router) {
 		r.Use(
+			app.recoverPanic,
 			app.sessionManager.LoadAndSave,
 			app.logRequest,
 			app.authenticate,
+			app.requireAuthentication,
 		)
 
 		editorAdmin := []string{"editor", "admin"}
@@ -88,13 +90,15 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Get("/sketch/add", app.requireRoles(editorAdmin, app.sketchAddPage))
 		r.Post("/sketch/add", app.requireRoles(editorAdmin, app.sketchAdd))
 		r.Get("/sketch/{id}/update", app.requireRoles(editorAdmin, app.sketchUpdatePage))
-		r.Patch("/sketch/{id}", app.requireRoles(editorAdmin, app.sketchUpdate))
-		r.Put("/sketch/{id}/tag", app.requireRoles(editorAdmin, app.sketchUpdateTags))
+		r.Post("/sketch/{id}/update", app.requireRoles(editorAdmin, app.sketchUpdate))
+		r.Post("/sketch/{id}/tag", app.requireRoles(editorAdmin, app.sketchUpdateTags))
 
-		r.Get("/cast/add", app.requireRoles(editorAdmin, app.addCastPage))
+		r.Get("/sketch/{id}/cast", app.requireRoles(editorAdmin, app.addCastPage))
 		r.Post("/sketch/{id}/cast", app.requireRoles(editorAdmin, app.addCast))
-		r.Patch("/sketch/{id}/cast/{castId}", app.requireRoles(editorAdmin, app.updateCast))
-		r.Patch("/sketch/{id}/tag", app.requireRoles(editorAdmin, app.sketchAdd))
+		r.Get("/cast/{id}/update", app.updateCastPage)
+		r.Post("/cast/{castId}/update", app.requireRoles(editorAdmin, app.updateCast))
+		r.Delete("/cast/{castId}", app.requireRoles(editorAdmin, app.deleteCast))
+		r.Patch("/sketch/{id}/cast/order", app.requireRoles(editorAdmin, app.orderCast))
 
 		r.Get("/show/add", app.requireRoles(editorAdmin, app.addShowPage))
 		r.Post("/show/add", app.requireRoles(editorAdmin, app.addShow))
@@ -108,17 +112,27 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Patch("/episode/{id}", app.requireRoles(editorAdmin, app.updateEpisode))
 		r.Delete("/episode/{id}", app.requireRoles(admin, app.deleteEpisode))
 
-		r.Get("/creator/add", app.requireRoles(editorAdmin, app.creatorAdd))
-		r.Post("/creator/add", app.requireRoles(editorAdmin, app.creatorAddPost))
+		r.Get("/creator/add", app.requireRoles(editorAdmin, app.addCreatorPage))
+		r.Post("/creator/add", app.requireRoles(editorAdmin, app.addCreator))
+		r.Get("/creator/{id}/update", app.requireRoles(editorAdmin, app.updateCreatorPage))
+		r.Post("/creator/{id}/update", app.requireRoles(editorAdmin, app.updateCreator))
 
-		r.Get("/person/add", app.requireRoles(editorAdmin, app.personAdd))
-		r.Post("/person/add", app.requireRoles(editorAdmin, app.personAddPost))
+		r.Get("/person/add", app.requireRoles(editorAdmin, app.addPersonPage))
+		r.Post("/person/add", app.requireRoles(editorAdmin, app.addPerson))
+		r.Get("/person/{id}/update", app.requireRoles(editorAdmin, app.updatePersonPage))
+		r.Post("/person/{id}/update", app.requireRoles(editorAdmin, app.updatePerson))
+
+		r.Get("/character/add", app.requireRoles(editorAdmin, app.addCharacterPage))
+		r.Post("/character/add", app.requireRoles(editorAdmin, app.addCharacter))
+		r.Get("/character/{id}/update", app.requireRoles(editorAdmin, app.updateCharacterPage))
+		r.Post("/character/{id}/update", app.requireRoles(editorAdmin, app.updateCharacter))
 
 		r.Get("/category/add", app.requireRoles(editorAdmin, app.categoryAddPage))
 		r.Post("/category/add", app.requireRoles(editorAdmin, app.categoryAdd))
 
 		r.Get("/tag/add", app.requireRoles(editorAdmin, app.tagAddPage))
 		r.Post("/tag/add", app.requireRoles(editorAdmin, app.tagAdd))
+		r.Get("/tag/row", app.requireRoles(editorAdmin, app.tagRow))
 	})
 
 	return r

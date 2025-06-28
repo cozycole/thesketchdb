@@ -174,7 +174,7 @@ import "./components/flashMessage.js";
     case "add-sketch":
       initAddSketch();
       break;
-    case "update-sketch":
+    case "sketch-form":
       initUpdateSketch();
       break;
     case "add-tag":

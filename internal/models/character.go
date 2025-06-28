@@ -21,13 +21,16 @@ type Character struct {
 }
 
 type CharacterModelInterface interface {
+	Delete(id int) error
 	Exists(id int) (bool, error)
 	Get(filter *Filter) ([]*Character, error)
 	GetById(id int) (*Character, error)
 	GetCharacters(ids []int) ([]*Character, error)
 	GetCount(filter *Filter) (int, error)
+	Insert(character *Character) (int, error)
 	Search(search string) ([]*Character, error)
 	SearchCount(query string) (int, error)
+	Update(character *Character) error
 	VectorSearch(query string, limit, offset int) ([]*ProfileResult, error)
 }
 
@@ -36,7 +39,6 @@ type CharacterModel struct {
 }
 
 func (m *CharacterModel) Get(filter *Filter) ([]*Character, error) {
-
 	query := `SELECT c.id, c.slug, c.name, c.img_name,
 			p.id, p.slug, p.first, p.last, p.profile_img %s
 			FROM character as c
@@ -150,7 +152,7 @@ func (m *CharacterModel) GetCharacters(ids []int) ([]*Character, error) {
 }
 
 func (m *CharacterModel) GetById(id int) (*Character, error) {
-	stmt := `SELECT c.id, c.slug, c.name, c.img_name,
+	stmt := `SELECT c.id, c.slug, c.name, c.character_type, c.img_name,
 			p.id, p.slug, p.first, p.last
 			FROM character AS c
 			LEFT JOIN person AS p ON c.person_id = p.id
@@ -161,7 +163,7 @@ func (m *CharacterModel) GetById(id int) (*Character, error) {
 	c := &Character{}
 	p := &Person{}
 
-	err := row.Scan(&c.ID, &c.Slug, &c.Name, &c.Image,
+	err := row.Scan(&c.ID, &c.Slug, &c.Name, &c.Type, &c.Image,
 		&p.ID, &p.Slug, &p.First, &p.Last)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -218,6 +220,42 @@ func (m *CharacterModel) GetCount(filter *Filter) (int, error) {
 	return count, nil
 }
 
+func (m *CharacterModel) Delete(id int) error {
+	stmt := `
+		DELETE FROM character
+		WHERE id = $1
+	`
+	_, err := m.DB.Exec(context.Background(), stmt, id)
+	return err
+}
+
+func (m *CharacterModel) Insert(character *Character) (int, error) {
+	stmt := `
+	INSERT INTO character (name, character_type, slug, img_name, person_id)
+	VALUES ($1,$2,$3,$4,$5)
+	RETURNING id;
+	`
+	var personId *int
+	if character.Portrayal != nil &&
+		character.Portrayal.ID != nil &&
+		*character.Portrayal.ID != 0 {
+		personId = character.Portrayal.ID
+	}
+
+	var id int
+	row := m.DB.QueryRow(
+		context.Background(), stmt, character.Name,
+		character.Type, character.Slug, character.Image,
+		personId,
+	)
+	err := row.Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, err
+}
+
 func (m *CharacterModel) Search(query string) ([]*Character, error) {
 	query = query + "%"
 	stmt := `SELECT c.id, c.slug, c.name, c.img_name
@@ -262,6 +300,27 @@ func (m *CharacterModel) Exists(id int) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func (m *CharacterModel) Update(character *Character) error {
+	stmt := `
+		UPDATE character SET name = $1, character_type = $2, img_name = $3, 
+		person_id = $4, slug = $5
+		WHERE id = $6
+	`
+	var personId *int
+	if character.Portrayal != nil &&
+		character.Portrayal.ID != nil &&
+		*character.Portrayal.ID != 0 {
+		personId = character.Portrayal.ID
+	}
+
+	_, err := m.DB.Exec(
+		context.Background(), stmt, character.Name,
+		character.Type, character.Image, personId,
+		character.Slug, character.ID,
+	)
+	return err
 }
 
 func (m *CharacterModel) VectorSearch(query string, limit, offset int) ([]*ProfileResult, error) {

@@ -26,20 +26,35 @@ func (c *Creator) HasId() bool {
 }
 
 type CreatorModelInterface interface {
+	Delete(id int) error
 	Exists(id int) (bool, error)
 	Get(filter *Filter) ([]*Creator, error)
 	GetCount(filter *Filter) (int, error)
 	GetById(id int) (*Creator, error)
 	GetBySlug(slug string) (*Creator, error)
 	GetCreators(*[]int) ([]*Creator, error)
-	Insert(name, url, imgName, imgExt string, establishedDate time.Time) (int, string, string, error)
+	Insert(creator *Creator) (int, error)
 	Search(query string) ([]*Creator, error)
 	SearchCount(query string) (int, error)
+	Update(creator *Creator) error
 	VectorSearch(query string) ([]*ProfileResult, error)
 }
 
 type CreatorModel struct {
 	DB *pgxpool.Pool
+}
+
+func (m *CreatorModel) Delete(id int) error {
+	stmt := `
+		DELETE FROM creator
+		WHERE id = $1
+	`
+
+	_, err := m.DB.Exec(context.Background(), stmt, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m *CreatorModel) GetBySlug(slug string) (*Creator, error) {
@@ -209,24 +224,23 @@ func (m *CreatorModel) GetCreators(ids *[]int) ([]*Creator, error) {
 	return creators, nil
 }
 
-func (m *CreatorModel) Insert(name, url, slug, imgExt string, establishedDate time.Time) (int, string, string, error) {
+func (m *CreatorModel) Insert(creator *Creator) (int, error) {
 	stmt := `
 	INSERT INTO creator (name, page_url, date_established, slug, profile_img)
-	VALUES ($1,$2,$3,
-		CONCAT($4::text, '-', currval(pg_get_serial_sequence('creator', 'id'))),
-		CONCAT($4::text, '-', currval(pg_get_serial_sequence('creator', 'id')), $5::text))
-	RETURNING id, slug, profile_img;`
+	VALUES ($1,$2,$3,$4,$5)
+	RETURNING id;
+	`
 
 	var id int
-	var fullImgName string
-
-	row := m.DB.QueryRow(context.Background(), stmt, name, url, establishedDate, slug, imgExt)
-	err := row.Scan(&id, &slug, &fullImgName)
+	row := m.DB.QueryRow(
+		context.Background(), stmt, creator.Name, creator.URL,
+		creator.EstablishedDate, creator.Slug, creator.ProfileImage)
+	err := row.Scan(&id)
 	if err != nil {
-		return 0, "", "", err
+		return 0, err
 	}
 
-	return id, slug, fullImgName, err
+	return id, err
 }
 
 func (m *CreatorModel) Search(query string) ([]*Creator, error) {
@@ -334,6 +348,20 @@ func (m *CreatorModel) VectorSearch(query string) ([]*ProfileResult, error) {
 	}
 
 	return results, nil
+}
+
+func (m *CreatorModel) Update(creator *Creator) error {
+	stmt := `
+		UPDATE creator SET name = $1, page_url = $2, 
+		date_established = $3, profile_img = $4, slug = $5
+		WHERE id = $6
+	`
+	_, err := m.DB.Exec(
+		context.Background(), stmt, creator.Name,
+		creator.URL, creator.EstablishedDate, creator.ProfileImage,
+		creator.Slug, creator.ID,
+	)
+	return err
 }
 
 func (m *CreatorModel) SearchCount(query string) (int, error) {
