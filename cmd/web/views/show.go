@@ -280,3 +280,88 @@ func ShowCardView(show *models.Show, baseImgUrl string) (*ShowCard, error) {
 
 	return card, nil
 }
+
+type FormModal struct {
+	Title string
+	Form  any
+}
+
+type SeasonDropdowns struct {
+	ShowID          int
+	SeasonDropdowns []SeasonDropdown
+}
+
+type SeasonDropdown struct {
+	SeasonID     int
+	SeasonNumber int
+	EpisodeCount int
+	EpisodeTable EpisodeTable
+}
+
+type EpisodeTable struct {
+	SeasonId    int
+	EpisodeRows []EpisodeRow
+}
+
+type EpisodeRow struct {
+	ID           int
+	Number       int
+	Title        string
+	AirDate      string
+	ThumbnailUrl string
+	SketchCount  int
+	EpisodeUrl   string
+	SeasonId     int
+}
+
+func SeasonDropdownsView(show *models.Show, baseImgUrl string) SeasonDropdowns {
+	var dropdowns []SeasonDropdown
+	showUrl := fmt.Sprintf("/show/%d/%s", safeDeref(show.ID), safeDeref(show.Slug))
+	for _, season := range show.Seasons {
+		d := SeasonDropdownView(season, baseImgUrl, showUrl)
+		dropdowns = append(dropdowns, d)
+	}
+
+	return SeasonDropdowns{
+		ShowID:          safeDeref(show.ID),
+		SeasonDropdowns: dropdowns,
+	}
+}
+
+func SeasonDropdownView(season *models.Season, baseImgUrl, showUrl string) SeasonDropdown {
+	var d SeasonDropdown
+	d.SeasonNumber = safeDeref(season.Number)
+	d.EpisodeCount = len(season.Episodes)
+	d.EpisodeTable = EpisodeTableView(season, baseImgUrl, showUrl)
+	d.SeasonID = safeDeref(season.ID)
+	return d
+}
+
+func EpisodeTableView(season *models.Season, baseImgUrl, showUrl string) EpisodeTable {
+	var rows []EpisodeRow
+	for _, episode := range season.Episodes {
+		er := EpisodeRow{}
+		er.ID = safeDeref(episode.ID)
+		er.Number = safeDeref(episode.Number)
+		er.Title = safeDeref(episode.Title)
+		er.AirDate = humanDate(episode.AirDate)
+
+		er.ThumbnailUrl = fmt.Sprintf("%s/episode/%s", baseImgUrl, safeDeref(episode.Thumbnail))
+		er.SketchCount = len(episode.Sketches)
+		er.EpisodeUrl = fmt.Sprintf(
+			"%s/season/%d/episode/%d",
+			showUrl,
+			safeDeref(season.Number),
+			er.Number,
+		)
+
+		er.SeasonId = safeDeref(season.ID)
+
+		rows = append(rows, er)
+	}
+
+	return EpisodeTable{
+		SeasonId:    safeDeref(season.ID),
+		EpisodeRows: rows,
+	}
+}

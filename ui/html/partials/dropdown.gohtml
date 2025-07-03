@@ -25,7 +25,7 @@
       <p class="w-fit font-bold">No results</p>
     </li>
   {{ end }}
-  {{ if $.IsEditor }}
+  {{ if and $.IsEditor .Redirect }}
     <a href="{{ .Redirect }}" target="blank_">
       <li class="hover:bg-slate-200 py-2 px-1 border">
         {{ .RedirectText }}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -53,6 +54,7 @@ func (s *Season) AirYear() string {
 
 type Episode struct {
 	ID           *int
+	Slug         *string
 	Number       *int
 	Title        *string
 	AirDate      *time.Time
@@ -68,6 +70,7 @@ type Episode struct {
 type ShowModelInterface interface {
 	AddSeason(showId int) (int, error)
 	DeleteEpisode(episodeId int) error
+	DeleteSeason(seasonid int) error
 	Get(filter *Filter) ([]*Show, error)
 	GetById(id int) (*Show, error)
 	GetBySlug(slug string) (*Show, error)
@@ -80,6 +83,7 @@ type ShowModelInterface interface {
 	InsertEpisode(episode *Episode) (int, error)
 	Delete(show *Show) error
 	Search(query string) ([]*Show, error)
+	SearchEpisodes(query string) ([]*Episode, error)
 	Update(show *Show) error
 	UpdateEpisode(episode *Episode) error
 }
@@ -110,7 +114,8 @@ func (m *ShowModel) AddSeason(showId int) (int, error) {
 func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	stmt := `
 		SELECT e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name,
-		v.id, v.title, v.slug, v.sketch_url, v.sketch_number, e.episode_number, se.season_number,
+		v.id, v.title, v.slug, v.sketch_url, v.sketch_number, 
+		se.id, e.episode_number, se.season_number,
 		v.thumbnail_name, v.upload_date, 
 		sh.id, sh.name, sh.profile_img, sh.slug
 		FROM episode as e
@@ -132,8 +137,8 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 		s := &Show{}
 		rows.Scan(
 			&e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
-			&v.ID, &v.Title, &v.Slug, &v.URL, &v.Number, &v.EpisodeNumber,
-			&v.SeasonNumber, &v.ThumbnailName, &v.UploadDate,
+			&v.ID, &v.Title, &v.Slug, &v.URL, &v.Number, &e.SeasonId,
+			&v.EpisodeNumber, &e.SeasonNumber, &v.ThumbnailName, &v.UploadDate,
 			&s.ID, &s.Name, &s.ProfileImg, &s.Slug,
 		)
 
@@ -146,6 +151,10 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 		}
 		v.Show = s
 
+		if e.SeasonNumber != nil {
+			v.SeasonNumber = new(int)
+			*v.SeasonNumber = *e.SeasonNumber
+		}
 		e.Sketches = append(e.Sketches, v)
 	}
 
@@ -264,6 +273,19 @@ func (m *ShowModel) DeleteEpisode(episodeId int) error {
 	`
 
 	_, err := m.DB.Exec(context.Background(), stmt, episodeId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ShowModel) DeleteSeason(seasonId int) error {
+	stmt := `
+		DELETE FROM season
+		WHERE id = $1
+	`
+
+	_, err := m.DB.Exec(context.Background(), stmt, seasonId)
 	if err != nil {
 		return err
 	}
@@ -647,6 +669,96 @@ func (m *ShowModel) Search(query string) ([]*Show, error) {
 		return nil, err
 	}
 	return shows, nil
+}
+
+type EpisodeQuery struct {
+	ShowName      string
+	SeasonNumber  *int
+	EpisodeNumber *int
+}
+
+func (m *ShowModel) SearchEpisodes(query string) ([]*Episode, error) {
+	stmt := `
+		SELECT e.id, s.season_number, e.episode_number, sh.name
+		FROM episode as e
+		JOIN season as s ON e.season_id = s.id
+		JOIN show as sh ON s.show_id = sh.id
+		WHERE 
+		  LOWER(sh.name) ILIKE '%' || LOWER($1) || '%'
+		AND (COALESCE($2, s.season_number) = s.season_number)
+		AND (COALESCE($3, e.episode_number) = e.episode_number)
+		ORDER BY sh.name, s.season_number, e.episode_number
+		LIMIT 10;
+	`
+	fmt.Println(query)
+	epQuery, err := ExtractEpisodeQuery(query)
+	if err != nil {
+		return nil, err
+	}
+
+	// fmt.Printf("%+v\n", epQuery)
+	rows, err := m.DB.Query(context.Background(), stmt, epQuery.ShowName,
+		epQuery.SeasonNumber, epQuery.EpisodeNumber)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var episodes []*Episode
+	for rows.Next() {
+		e := &Episode{}
+		err := rows.Scan(&e.ID, &e.SeasonNumber, &e.Number, &e.ShowName)
+		if err != nil {
+			return nil, err
+		}
+		episodes = append(episodes, e)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return episodes, nil
+}
+
+func ExtractEpisodeQuery(input string) (EpisodeQuery, error) {
+	normalized := strings.ToLower(strings.TrimSpace(input))
+	episodeQuery := EpisodeQuery{}
+
+	// First check for s01e02 or s1e2 pattern
+	seRe := regexp.MustCompile(`s(\d{1,2})e(\d{1,2})`)
+	seMatch := seRe.FindStringSubmatch(normalized)
+
+	if len(seMatch) == 3 {
+		season, err := strconv.Atoi(seMatch[1])
+		if err != nil {
+			return EpisodeQuery{}, err
+		}
+		episode, err := strconv.Atoi(seMatch[2])
+		if err != nil {
+			return EpisodeQuery{}, err
+		}
+		episodeQuery.SeasonNumber = &season
+		episodeQuery.EpisodeNumber = &episode
+
+		normalized = strings.Replace(normalized, seMatch[0], "", 1)
+	} else {
+		// Fallback: check for just s01 or s1 pattern
+		sRe := regexp.MustCompile(`s(\d{1,2})`)
+		sMatch := sRe.FindStringSubmatch(normalized)
+		if len(sMatch) == 2 {
+			season, err := strconv.Atoi(sMatch[1])
+			if err != nil {
+				return EpisodeQuery{}, err
+			}
+			episodeQuery.SeasonNumber = &season
+
+			normalized = strings.Replace(normalized, sMatch[0], "", 1)
+		}
+	}
+
+	episodeQuery.ShowName = strings.TrimSpace(normalized)
+
+	return episodeQuery, nil
 }
 
 func (m *ShowModel) UpdateEpisode(episode *Episode) error {

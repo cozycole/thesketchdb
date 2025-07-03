@@ -21,10 +21,11 @@ func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
 
 	show, err := app.shows.GetById(showId)
 	if err != nil {
-		app.serverError(r, w, err)
-		return
-	} else if show.ID == nil {
-		app.notFound(w)
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
 		return
 	}
 
@@ -193,11 +194,20 @@ func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "view-episode.gohtml", "base", data)
 }
 
+type showFormPage struct {
+	Title           string
+	ShowID          int
+	ShowForm        showForm
+	SeasonDropdowns views.SeasonDropdowns
+}
+
 func (app *application) addShowPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
-	data.Show = &models.Show{}
-	data.Forms.Show = &showForm{}
-	app.render(r, w, http.StatusOK, "add-show.gohtml", "base", data)
+	data.Page = showFormPage{
+		Title: "Add Show",
+	}
+
+	app.render(r, w, http.StatusOK, "update-show.gohtml", "base", data)
 }
 
 func (app *application) addShow(w http.ResponseWriter, r *http.Request) {
@@ -211,10 +221,8 @@ func (app *application) addShow(w http.ResponseWriter, r *http.Request) {
 
 	app.validateShowForm(&form)
 	if !form.Valid() {
-		data := app.newTemplateData(r)
-		data.Forms.Show = &form
-		data.Show = &models.Show{}
-		app.render(r, w, http.StatusUnprocessableEntity, "add-show.gohtml", "base", data)
+		form.Action = "/show/add"
+		app.render(r, w, http.StatusUnprocessableEntity, "update-show.gohtml", "show-form", form)
 		return
 	}
 
@@ -244,6 +252,12 @@ func (app *application) addShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isHxRequest := r.Header.Get("HX-Request") == "true"
+	if isHxRequest {
+		w.Header().Add("Hx-Redirect", fmt.Sprintf("/show/%d/update", id))
+		return
+	}
+
 	http.Redirect(w, r, fmt.Sprintf("/show/%d/%s", *show.ID, *show.Slug), http.StatusSeeOther)
 }
 
@@ -258,28 +272,32 @@ func (app *application) updateShowPage(w http.ResponseWriter, r *http.Request) {
 
 	show, err := app.shows.GetById(showId)
 	if err != nil {
-		app.serverError(r, w, err)
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
 		return
 	}
 
-	data := app.newTemplateData(r)
-	data.Show = show
-	for _, season := range data.Show.Seasons {
-		for _, ep := range season.Episodes {
-			app.infoLog.Printf("Episode %d\n", *ep.Number)
-			for _, vid := range ep.Sketches {
-				app.infoLog.Printf("Sketch %d\n", *vid.ID)
-			}
-		}
-	}
-	data.Episode = &models.Episode{}
-	data.Forms.Show = &showForm{}
-	data.Forms.Episode = &episodeForm{}
-	for _, ep := range data.Show.Seasons[0].Episodes {
-		if ep.Title != nil {
-			app.infoLog.Println(*ep.Title)
-		}
+	// for _, season := range show.Seasons {
+	// 	for _, ep := range season.Episodes {
+	// 		app.infoLog.Printf("Episode %d\n", *ep.Number)
+	// 		for _, vid := range ep.Sketches {
+	// 			app.infoLog.Printf("Sketch %d\n", *vid.ID)
+	// 		}
+	// 	}
+	// }
 
+	form := app.convertShowtoForm(show)
+	form.ProfileImgUrl = fmt.Sprintf("%s/show/%s", app.baseImgUrl, safeDeref(show.ProfileImg))
+	form.Action = fmt.Sprintf("/show/%d/update", showId)
+	data := app.newTemplateData(r)
+	data.Page = showFormPage{
+		Title:           "Update Show",
+		ShowID:          showId,
+		ShowForm:        form,
+		SeasonDropdowns: views.SeasonDropdownsView(show, app.baseImgUrl),
 	}
 	app.render(r, w, http.StatusOK, "update-show.gohtml", "base", data)
 }
@@ -311,7 +329,7 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.validateUpdateShowForm(&form)
+	app.validateShowForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Forms.Show = &form
@@ -390,32 +408,89 @@ func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := app.newTemplateData(r)
-	data.Season = season
-	data.Episode = &models.Episode{}
-	data.Forms.Episode = &episodeForm{}
-	app.render(r, w, http.StatusOK, "season-form.gohtml", "season-form", data)
+	show, err := app.shows.GetById(showId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	showUrl := fmt.Sprintf("/show/%d/%s", safeDeref(show.ID), safeDeref(show.Slug))
+	data := views.SeasonDropdownView(season, app.baseImgUrl, showUrl)
+	app.render(r, w, http.StatusOK, "update-show.gohtml", "season-dropdown", data)
 }
 
-func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
+func (app *application) deleteSeason(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	var form episodeForm
 
-	err := app.decodePostForm(r, &form)
+	seasonIdParam := r.PathValue("id")
+	seasonId, err := strconv.Atoi(seasonIdParam)
 	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
+		app.badRequest(w)
 		app.errorLog.Print(err)
 		return
 	}
 
-	app.infoLog.Printf("EP FORM: %+v\n", form)
+	err = app.shows.DeleteSeason(seasonId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (app *application) addEpisodeForm(w http.ResponseWriter, r *http.Request) {
+	seasonIdParam := r.PathValue("id")
+	seasonId, err := strconv.Atoi(seasonIdParam)
+	if err != nil {
+		app.badRequest(w)
+		app.errorLog.Print(err)
+		return
+	}
+
+	season, _ := app.shows.GetSeason(seasonId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	formModal := views.FormModal{
+		Title: fmt.Sprintf("Add Episode to Season %d", safeDeref(season.Number)),
+		Form: episodeForm{
+			Action:   fmt.Sprintf("/season/%d/episode/add", seasonId),
+			SeasonId: seasonId,
+		},
+	}
+
+	app.render(r, w, http.StatusOK, "update-show.gohtml", "episode-form-modal", formModal)
+}
+
+func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
+	seasonIdParam := r.PathValue("id")
+	seasonId, err := strconv.Atoi(seasonIdParam)
+	if err != nil {
+		app.badRequest(w)
+		app.errorLog.Print(err)
+		return
+	}
+
+	r.ParseForm()
+	var form episodeForm
+
+	err = app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
 
 	app.validateEpisodeForm(&form)
 	if !form.Valid() {
-		data := app.newTemplateData(r)
-		data.Forms.Episode = &form
-		data.Episode = &models.Episode{}
-		app.render(r, w, http.StatusUnprocessableEntity, "episode-form.gohtml", "episode-form", data)
+		form.Action = fmt.Sprintf("/season/%d/episode/add", seasonId)
+		app.render(r, w, http.StatusUnprocessableEntity, "update-show.gohtml", "episode-form", form)
 		return
 	}
 
@@ -444,13 +519,45 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.infoLog.Printf("Season: %+v\n", season)
-	data := app.newTemplateData(r)
-	data.Season = season
-	data.Episode = &models.Episode{}
-	data.Forms.Episode = &episodeForm{}
-	data.Flash = flashMessage{Level: "success", Message: "Episode added!"}
-	app.render(r, w, http.StatusOK, "season-form.gohtml", "season-form", data)
+	table := views.EpisodeTableView(
+		season, app.baseImgUrl,
+		fmt.Sprintf("/show/%d/%s", safeDeref(season.ShowId), safeDeref(season.ShowSlug)),
+	)
+	app.render(r, w, http.StatusOK, "update-show.gohtml", "episode-table", table)
+}
+
+func (app *application) updateEpisodeForm(w http.ResponseWriter, r *http.Request) {
+	epIdParam := r.PathValue("id")
+	epId, err := strconv.Atoi(epIdParam)
+	if err != nil {
+		app.badRequest(w)
+		app.errorLog.Print(err)
+		return
+	}
+
+	episode, err := app.shows.GetEpisode(epId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	form := convertEpisodeToForm(episode)
+	form.ThumbnailUrl = fmt.Sprintf("%s/episode/%s", app.baseImgUrl, form.ThumbnailName)
+	form.Action = fmt.Sprintf("/episode/%d/update", epId)
+
+	formModal := views.FormModal{
+		Title: fmt.Sprintf("Update Season %d Episode %d",
+			safeDeref(episode.SeasonNumber),
+			safeDeref(episode.Number),
+		),
+		Form: form,
+	}
+
+	app.render(r, w, http.StatusOK, "update-show.gohtml", "episode-form-modal", formModal)
 }
 
 func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
@@ -479,13 +586,11 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.validateUpdateEpisodeForm(&form)
-	app.infoLog.Printf("%+v\n", form)
+	app.validateEpisodeForm(&form)
 	if !form.Valid() {
-		data := app.newTemplateData(r)
-		data.Forms.Episode = &form
-		data.Episode = oldEpisode
-		app.render(r, w, http.StatusUnprocessableEntity, "episode-form.gohtml", "episode-form", data)
+		form.Action = fmt.Sprintf("/episode/%d/update", epId)
+		form.ThumbnailUrl = fmt.Sprintf("%s/episode/%s", app.baseImgUrl, safeDeref(oldEpisode.Thumbnail))
+		app.render(r, w, http.StatusUnprocessableEntity, "update-show.gohtml", "episode-form", form)
 		return
 	}
 
@@ -530,15 +635,17 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	data := app.newTemplateData(r)
-	data.Forms.Episode = &form
-	data.Episode = &episode
-	data.Flash = flashMessage{
-		Level:   "success",
-		Message: "Episode updated successfully!",
+	season, err := app.shows.GetSeason(safeDeref(episode.SeasonId))
+	if err != nil {
+		app.serverError(r, w, err)
+		return
 	}
 
-	app.render(r, w, http.StatusOK, "episode-form.gohtml", "episode-form", data)
+	table := views.EpisodeTableView(season, app.baseImgUrl,
+		fmt.Sprintf("/show/%d/%s", safeDeref(season.ShowId), safeDeref(season.ShowSlug)),
+	)
+
+	app.render(r, w, http.StatusOK, "update-show.gohtml", "episode-table", table)
 }
 
 func (app *application) deleteEpisode(w http.ResponseWriter, r *http.Request) {
@@ -550,49 +657,36 @@ func (app *application) deleteEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := app.newTemplateData(r)
 	episode, err := app.shows.GetEpisode(epId)
 	if err != nil {
-		var status int
 		if errors.Is(err, models.ErrNoRecord) {
-			data.Flash = flashMessage{
-				Level:   "error",
-				Message: "404 Episode does not exist",
-			}
-			status = http.StatusNotFound
+			app.notFound(w)
 		} else {
-			data.Flash = flashMessage{
-				Level:   "error",
-				Message: "500 Internal Server Error",
-			}
-			status = http.StatusInternalServerError
+			app.serverError(r, w, err)
 		}
-		app.render(r, w, status, "flash-message.gohtml", "flash-message", data)
 		return
 	}
 
 	if len(episode.Sketches) != 0 {
-		data.Flash = flashMessage{
-			Level:   "error",
-			Message: "400 Cannot delete episode with sketches",
-		}
-		app.render(r, w, http.StatusBadRequest, "flash-message.gohtml", "flash-message", data)
+		app.clientError(w, http.StatusConflict)
 		return
 	}
 
 	err = app.shows.DeleteEpisode(*episode.ID)
 	if err != nil {
-		data.Flash = flashMessage{
-			Level:   "error",
-			Message: "500 Internal Server Error",
-		}
-		app.render(r, w, http.StatusInternalServerError, "flash-message.gohtml", "flash-message", data)
+		app.serverError(r, w, err)
 		return
 	}
 
-	data.Flash = flashMessage{
-		Level:   "success",
-		Message: "Episode deleted successfully!",
+	season, err := app.shows.GetSeason(safeDeref(episode.SeasonId))
+	if err != nil {
+		app.serverError(r, w, err)
+		return
 	}
-	app.render(r, w, http.StatusOK, "flash-message.gohtml", "flash-message", data)
+
+	table := views.EpisodeTableView(season, app.baseImgUrl,
+		fmt.Sprintf("/show/%d/%s", safeDeref(season.ShowId), safeDeref(season.ShowSlug)),
+	)
+
+	app.render(r, w, http.StatusOK, "update-show.gohtml", "episode-table", table)
 }

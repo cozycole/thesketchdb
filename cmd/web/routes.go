@@ -62,6 +62,7 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Get("/show/{id}/{slug}/season/{snum}", app.viewSeason)
 		r.Get("/show/{id}/{slug}/season/{snum}/episode/{enum}", app.viewEpisode)
 		r.Get("/show/search", app.showSearch)
+		r.Get("/episode/search", app.episodeSearch)
 
 		r.Get("/category/search", app.categorySearch)
 		r.Get("/tag/search", app.tagSearch)
@@ -106,10 +107,12 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 		r.Patch("/show/{id}/update", app.requireRoles(editorAdmin, app.updateShow))
 
 		r.Post("/show/{id}/season/add", app.requireRoles(editorAdmin, app.addSeason))
-		r.Delete("/show/{id}/season/add", app.requireRoles(admin, app.updateShow))
+		r.Delete("/season/{id}", app.requireRoles(admin, app.deleteSeason))
 
-		r.Post("/episode/add", app.requireRoles(editorAdmin, app.addEpisode))
-		r.Patch("/episode/{id}", app.requireRoles(editorAdmin, app.updateEpisode))
+		r.Get("/season/{id}/episode/add", app.requireRoles(editorAdmin, app.addEpisodeForm))
+		r.Post("/season/{id}/episode/add", app.requireRoles(editorAdmin, app.addEpisode))
+		r.Get("/episode/{id}/update", app.requireRoles(editorAdmin, app.updateEpisodeForm))
+		r.Post("/episode/{id}/update", app.requireRoles(editorAdmin, app.updateEpisode))
 		r.Delete("/episode/{id}", app.requireRoles(admin, app.deleteEpisode))
 
 		r.Get("/creator/add", app.requireRoles(editorAdmin, app.addCreatorPage))

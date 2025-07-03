@@ -17,7 +17,7 @@
         >
       {{ else }}
         <a
-          class="htmxSearchPage inline-block leading-8 h-8 text-gray-600 px-3 rounded-md bg-gray-300 hover:cursor-pointer hover:bg-gray-400"
+          class="htmxSearchPage inline-block leading-8 h-8 text-slate-600 px-3 rounded-md bg-slate-300 hover:cursor-pointer hover:bg-slate-400"
           hx-get="{{ .URL }}"
           hx-swap="innerHTML"
           hx-target="#results"
@@ -26,7 +26,7 @@
       {{ end }}
     {{ else }}
       <span
-        class="inline-block leading-8 h-8 font-bold px-3 rounded-md bg-gray-300"
+        class="inline-block leading-8 h-8 font-bold px-3 rounded-md bg-slate-300"
         >0</span
       >
     {{ end }}

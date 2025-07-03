@@ -33,6 +33,10 @@
       <tbody class="sortable">
         {{ range .CastRows }}
           {{ template "cast-row" . }}
+        {{ else }}
+          <td id="noCastRow" colspan="8">
+            <div class="text-center p-4 font-bold">No Cast Members</div>
+          </td>
         {{ end }}
       </tbody>
     </table>

@@ -19,7 +19,7 @@
         <input
           name="categoryName"
           value="{{ with .Forms.Category.Name }}{{ . }}{{ end }}"
-          class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+          class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
           placeholder="Enter category name"
         />
       </div>
@@ -37,7 +37,7 @@
           type="search"
           name="parentInput"
           value="{{ with .Forms.Category.ParentInput }}{{ . }}{{ end }}"
-          class="w-full p-1 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+          class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
           placeholder="Search for parent category"
           hx-get="/category/search"
           hx-params="query"
@@ -48,7 +48,7 @@
       </div>
       <button
         type="submit"
-        class="my-2 p-1 bg-gray-50 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        class="my-2 p-1 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
       >
         Submit
       </button>

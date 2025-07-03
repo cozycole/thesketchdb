@@ -108,6 +108,43 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
+func (app *application) episodeSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("query")
+
+	results := dropdownSearchResults{}
+
+	if q != "" {
+		episodes, err := app.shows.SearchEpisodes(q)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverError(r, w, err)
+			}
+			return
+		}
+
+		if episodes != nil {
+			res := []result{}
+			for _, e := range episodes {
+				r := result{}
+				r.Type = "episode"
+				r.Text = views.PrintEpisodeName(e)
+				r.ID = safeDeref(e.ID)
+				res = append(res, r)
+			}
+
+			results.Results = res
+		}
+	}
+
+	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
+
+	data := app.newTemplateData(r)
+	data.DropdownResults = results
+
+	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
+
+}
+
 func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
@@ -146,6 +183,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 			results.Results = res
 		}
 	}
+
 	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
 
 	data := app.newTemplateData(r)

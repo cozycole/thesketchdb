@@ -77,7 +77,7 @@ function showToast(message, type = "info", duration = 3000) {
           ? "bg-red-500"
           : type === "warning"
             ? "bg-yellow-500 text-black"
-            : "bg-gray-800"
+            : "bg-slate-800"
     }
   `;
   toast.innerHTML = `

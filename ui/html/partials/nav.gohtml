@@ -144,11 +144,13 @@
               {{ with .User }}
                 <a
                   href="/user/{{ .Username }}"
-                  class="block px-4 py-2 hover:bg-slate-200"
+                  class="block px-4 py-2 hover:bg-slate-200 rounded-md"
                   >View Account</a
                 >
                 <form class="block" action="/logout" method="POST">
-                  <button class="w-full px-4 py-2 text-left hover:bg-slate-200">
+                  <button
+                    class="w-full px-4 py-2 text-left hover:bg-slate-200 rounded-md"
+                  >
                     Logout
                   </button>
                 </form>

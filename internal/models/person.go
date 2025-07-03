@@ -320,7 +320,8 @@ func (m *PersonModel) Search(query string) ([]*Person, error) {
 	stmt := `SELECT id, slug, first, last, profile_img, birthdate
 			FROM person
 			WHERE CONCAT(LOWER(first), LOWER(last)) LIKE LOWER($1)
-			OR LOWER(last) LIKE LOWER($1)`
+			OR LOWER(last) LIKE LOWER($1)
+			LIMIT 10`
 
 	rows, err := m.DB.Query(context.Background(), stmt, query)
 	if err != nil {

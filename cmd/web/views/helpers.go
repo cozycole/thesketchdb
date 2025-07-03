@@ -50,6 +50,22 @@ func PrintPersonName(a *models.Person) string {
 	return name + " " + *a.Last
 }
 
+func PrintEpisodeName(e *models.Episode) string {
+	if e == nil {
+		return ""
+	}
+
+	out := safeDeref(e.ShowName)
+	if e.SeasonNumber != nil {
+		out += fmt.Sprintf(" S%d", safeDeref(e.SeasonNumber))
+	}
+	if e.Number != nil {
+		out += fmt.Sprintf("E%d", safeDeref(e.Number))
+	}
+
+	return out
+}
+
 func uppercaseFirst(s string) string {
 	if s == "" {
 		return s
@@ -60,7 +76,7 @@ func uppercaseFirst(s string) string {
 }
 
 func humanDate(t *time.Time) string {
-	if t.IsZero() {
+	if t == nil || t.IsZero() {
 		return ""
 	}
 	return t.UTC().Format("Jan 2, 2006")

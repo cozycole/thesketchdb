@@ -22,3 +22,7 @@ export class YoutubeEmbed extends HTMLElement {
     }
   }
 }
+
+if (!customElements.get("youtube-embed")) {
+  customElements.define("youtube-embed", YoutubeEmbed);
+}

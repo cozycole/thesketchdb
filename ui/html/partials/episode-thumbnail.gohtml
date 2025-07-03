@@ -15,7 +15,9 @@
           </a>
         </h3>
         <p>{{ .Info }}</p>
-        <p>Aired {{ .AirDate }}</p>
+        {{ if .AirDate }}
+          <p>Aired {{ .AirDate }}</p>
+        {{ end }}
       </div>
     </div>
   </div>

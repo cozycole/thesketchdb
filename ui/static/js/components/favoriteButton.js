@@ -71,3 +71,7 @@ export class FavoriteButton extends HTMLElement {
     }, 2000);
   }
 }
+
+if (!customElements.get("favorite-button")) {
+  customElements.define("favorite-button", FavoriteButton);
+}

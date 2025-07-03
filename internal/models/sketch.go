@@ -98,9 +98,11 @@ type Sketch struct {
 	Creator       *Creator
 	Cast          []*CastMember
 	Tags          *[]*Tag
+	Episode       *Episode
 	Show          *Show
 	SeasonNumber  *int
 	EpisodeNumber *int
+	EpisodeID     *int
 	Number        *int
 	Liked         *bool
 }
@@ -553,7 +555,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		sh.id, sh.name, sh.slug, sh.profile_img,
 		p.id, p.slug, p.first, p.last, p.profile_img,
 		ch.id, ch.name, ch.slug, ch.img_name,
-		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name
+		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
+		e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name
 		FROM sketch AS v
 		LEFT JOIN sketch_creator_rel as vcr ON v.id = vcr.sketch_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
@@ -579,6 +582,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	v := &Sketch{}
 	c := &Creator{}
 	sh := &Show{}
+	e := &Episode{}
 	members := []*CastMember{}
 	hasRows := false
 	for rows.Next() {
@@ -594,7 +598,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 			&ch.ID, &ch.Name, &ch.Slug, &ch.Image,
 			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg,
-			&cm.ThumbnailName,
+			&cm.ThumbnailName, &e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 		)
 		if err != nil {
 			return nil, err
@@ -619,6 +623,10 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
+
+	e.ShowName = sh.Name
+	e.SeasonNumber = v.SeasonNumber
+	v.Episode = e
 
 	v.Show = sh
 	v.Creator = c
@@ -845,14 +853,21 @@ func (m *SketchModel) HasLike(sketchId, userId int) (bool, error) {
 }
 
 func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
+	var episodeId *int
+	if sketch.Episode != nil {
+		episodeId = sketch.Episode.ID
+	}
+
 	stmt := `
-	INSERT INTO sketch (title, sketch_url, thumbnail_name, upload_date, slug, youtube_id)
-	VALUES ($1,$2,$3,$4,$5,$6)
+	INSERT INTO sketch (
+		title, sketch_url, thumbnail_name, upload_date, slug, youtube_id, sketch_number,
+		episode_id)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 	RETURNING id;`
 	result := m.DB.QueryRow(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.ThumbnailName, sketch.UploadDate,
-		sketch.Slug, sketch.YoutubeID,
+		sketch.Slug, sketch.YoutubeID, sketch.Number, episodeId,
 	)
 
 	var id int
@@ -960,14 +975,21 @@ func (m *SketchModel) IsSlugDuplicate(sketchId int, slug string) bool {
 }
 
 func (m *SketchModel) Update(sketch *Sketch) error {
+	var episodeId *int
+	if sketch.Episode != nil {
+		episodeId = sketch.Episode.ID
+	}
+
 	stmt := `
 	UPDATE sketch SET title = $1, sketch_url = $2, upload_date = $3, 
-	slug = $4, thumbnail_name = $5
-	WHERE id = $6`
+	slug = $4, thumbnail_name = $5, sketch_number = $6, episode_id = $7
+	WHERE id = $8
+	`
 	_, err := m.DB.Exec(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.UploadDate,
-		sketch.Slug, sketch.ThumbnailName, sketch.ID,
+		sketch.Slug, sketch.ThumbnailName, sketch.Number, episodeId,
+		sketch.ID,
 	)
 	return err
 }

@@ -75,13 +75,6 @@ func extractUrlParamIDs(idParams []string) []int {
 	return ids
 }
 
-// For consistency, we'll also implement a notFound helper. This is simply a
-// convenience wrapper around clientError which sends a 404 Not Found response to
-// the user.
-// func (app *application) notFound(w http.ResponseWriter) {
-// 	app.clientError(w, http.StatusNotFound)
-// }
-
 func (app *application) newTemplateData(r *http.Request) *templateData {
 	user, ok := r.Context().Value(userContextKey).(*models.User)
 	var isEditor, isAdmin bool

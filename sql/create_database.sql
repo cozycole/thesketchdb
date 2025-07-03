@@ -6,5 +6,5 @@ CREATE DATABASE sketch_data_test
     IS_TEMPLATE = False;
 
 CREATE EXTENSION IF NOT EXISTS citext;
-CREATE TYPE cast_role AS ENUM ('cast', 'guest', 'host', 'minor');
+CREATE TYPE cast_role AS ENUM ('cast', 'guest', 'host', '');
 CREATE TYPE character_type AS ENUM ('original', 'impression', 'generic');

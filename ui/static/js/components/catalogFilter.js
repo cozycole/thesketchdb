@@ -42,7 +42,7 @@ export class CatalogFilter extends HTMLElement {
     this.dropdown.addEventListener("htmx:afterSwap", (e) => {
       let dropdownItems = e.detail.target.children;
 
-      // clear an empty response such that there isnt a gray
+      // clear an empty response such that there isnt a slate
       // little line below on empty query
       if (!dropdownItems.length) {
         e.detail.target.innerHTML = "";

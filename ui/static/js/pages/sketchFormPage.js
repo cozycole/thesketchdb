@@ -1,6 +1,6 @@
 import Sortable from "sortablejs";
 
-export function initUpdateSketch() {
+export function initSketchFormPage() {
   // Drag and drop sortable cast table
   htmx.onLoad(function (content) {
     var sortables = content.querySelectorAll(".sortable");
@@ -57,6 +57,7 @@ export function initUpdateSketch() {
       formViewer.classList.remove("flex");
       formViewer.classList.add("hidden");
     }
+
     if (evt.target.tagName === "TBODY") {
       document.querySelector("#noTagRow")?.remove();
     }

@@ -87,13 +87,8 @@ func (app *application) sketchAdd(w http.ResponseWriter, r *http.Request) {
 
 	app.validateSketchForm(&form)
 	if !form.Valid() {
-		data := app.newTemplateData(r)
-		data.Page = sketchFormPage{
-			Title:      "Add Sketch",
-			SketchForm: form,
-		}
-		app.infoLog.Printf("%+v\n", form)
-		app.render(r, w, http.StatusUnprocessableEntity, "sketch-form-page.gohtml", "base", data)
+		form.Action = "/sketch/add"
+		app.render(r, w, http.StatusUnprocessableEntity, "sketch-form-page.gohtml", "sketch-form", form)
 		return
 	}
 
@@ -119,7 +114,7 @@ func (app *application) sketchAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if sketch.Creator.ID != nil {
+	if sketch.Creator != nil {
 		err = app.sketches.InsertSketchCreatorRelation(id, *sketch.Creator.ID)
 		if err != nil {
 			app.serverError(r, w, err)
@@ -191,11 +186,7 @@ func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request)
 		},
 		TagTable: views.TagTableView(tags, sketchId),
 	}
-	// data.Forms.SketchTags = &sketchTagsForm{}
 
-	// need to instantiate empty struct to load
-	// castUpdate form on the page
-	data.CastMember = &models.CastMember{}
 	app.render(r, w, http.StatusOK, "sketch-form-page.gohtml", "base", data)
 }
 
@@ -263,10 +254,12 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.sketches.UpdateCreatorRelation(*sketch.ID, *sketch.Creator.ID)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
+	if sketch.Creator != nil && sketch.Creator.ID != nil {
+		err = app.sketches.UpdateCreatorRelation(*sketch.ID, *sketch.Creator.ID)
+		if err != nil {
+			app.serverError(r, w, err)
+			return
+		}
 	}
 
 	if form.Thumbnail != nil && oldSketch.ThumbnailName != nil {

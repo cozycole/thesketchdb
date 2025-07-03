@@ -45,7 +45,8 @@
     class="w-full max-w-lg space-y-3"
     enctype="multipart/form-data"
     hx-post="{{ .Action }}"
-    hx-target-*="this"
+    hx-target="this"
+    hx-target-422="this"
     hx-swap="outerHTML"
   >
     <input type="hidden" name="id" value="{{ .ID }}" />
@@ -150,6 +151,44 @@
           ></ul>
         </div>
       </form-search>
+    </div>
+    <div>
+      <form-search>
+        <label class="inline-block">Show Episode</label>
+        {{ with .FieldErrors.creatorId }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <div class="relative">
+          <input type="hidden" name="episodeId" value="{{ .EpisodeID }}" />
+          <input
+            type="search"
+            name="episodeInput"
+            value="{{ .EpisodeInput }}"
+            class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
+            placeholder="Search episodes e.g. saturday night live s1e2"
+            hx-get="/episode/search"
+            hx-trigger="focus, input changed delay:500ms, search"
+            hx-target="next"
+            hx-swap="innerHTML"
+          />
+          <ul
+            class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-slate-300 rounded shadow-lg z-10 empty:hidden"
+          ></ul>
+        </div>
+      </form-search>
+    </div>
+    <div>
+      <label class="inline-block">Sketch Number</label>
+      {{ with .FieldErrors.number }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="number"
+        name="number"
+        value="{{ .Number }}"
+        class="max-w-24 p-1 border border-slate-300 rounded-lg bg-slate-50 
+                  text-slate-700 placeholder-slate-400"
+      />
     </div>
     <button
       type="submit"

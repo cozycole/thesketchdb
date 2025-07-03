@@ -1,16 +1,19 @@
 import { initHome } from "./pages/home.js";
 import { initViewSketch } from "./pages/viewSketch.js";
-import { initAddSketch } from "./pages/addSketch.js";
-import { initUpdateSketch } from "./pages/updateSketch.js";
+import { initSketchFormPage } from "./pages/sketchFormPage.js";
 import { initAddTag } from "./pages/addTag.js";
 import { initAddCategory } from "./pages/addCategory.js";
 import { initSearch } from "./pages/search.js";
 import { initBrowse } from "./pages/browse.js";
-import { initUpdateShow } from "./pages/updateShow.js";
+import { initShowFormPage } from "./pages/showFormPage.js";
 import { initViewShow } from "./pages/viewShow.js";
 import { initViewSeason } from "./pages/viewSeason.js";
 import { initViewCatalog } from "./pages/viewCatalog.js";
+
+import { UploadImagePreview } from "./components/uploadImagePreview.js";
 import { CollapsibleContent } from "./components/collapseContent.js";
+import { FavoriteButton } from "./components/favoriteButton.js";
+import { YoutubeEmbed } from "./components/youtubeEmbed.js";
 
 import "./components/flashMessage.js";
 
@@ -171,11 +174,11 @@ import "./components/flashMessage.js";
     case "search":
       initSearch();
       break;
-    case "add-sketch":
-      initAddSketch();
-      break;
     case "sketch-form":
-      initUpdateSketch();
+      initSketchFormPage();
+      break;
+    case "show-form":
+      initShowFormPage();
       break;
     case "add-tag":
       initAddTag();
@@ -185,9 +188,6 @@ import "./components/flashMessage.js";
       break;
     case "view-show":
       initViewShow();
-      break;
-    case "update-show":
-      initUpdateShow();
       break;
     case "view-season":
       initViewSeason();
