@@ -5,7 +5,7 @@
     {{ range .CastCards }}
       <div class="relative w-full rounded-md">
         <a {{ with .CardUrl }}href="{{ . }}"{{ end }}>
-          <img class="rounded-md w-full" src="{{ .Image }}" />
+          <img class="rounded-md w-full aspect-square" src="{{ .Image }}" />
         </a>
         <div
           class="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black bg-opacity-50 rounded-b-md"
@@ -19,10 +19,10 @@
                 hover:border-white pb-[0.5px]" href="{{ . }}"
               {{ end }}}
             >
-              <p class="text-lg">{{ .CharacterName }}</p>
+              <p class="sm:text-lg">{{ .CharacterName }}</p>
             </a>
           </h3>
-          <h4 class="text-white w-fit">
+          <h4 class="text-white text-sm sm:text-base w-fit">
             <a
               {{ with .ActorUrl }}
                 href="{{ . }}" class="hover:border-b border-white pb-[0.5px]"

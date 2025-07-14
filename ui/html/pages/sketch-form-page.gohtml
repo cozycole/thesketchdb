@@ -5,7 +5,15 @@
     <div
       class="max-w-screen-lg mx-auto mt-2 p-3 space-y-3 bg-slate-50 rounded-lg"
     >
-      <h1 class="text-xl font-bold">{{ .Page.Title }}</h1>
+      <div class="flex justify-between items-center">
+        <h1 class="text-xl font-bold">{{ .Page.Title }}</h1>
+        <div>
+          {{ with .Page.SketchUrl }}
+            <a href="{{ . }}">View Sketch</a>
+          {{ end }}
+
+        </div>
+      </div>
       {{ with .Page.SketchForm }}
         {{ template "sketch-form" . }}
       {{ end }}
@@ -176,6 +184,15 @@
           ></ul>
         </div>
       </form-search>
+    </div>
+    <div>
+      <label class="inline-block">Sketch Episode Start Time (seconds)</label>
+      <input
+        type="text"
+        name="episodeStart"
+        value="{{ .EpisodeStart }}"
+        class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
+      />
     </div>
     <div>
       <label class="inline-block">Sketch Number</label>

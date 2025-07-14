@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"math"
 	"net/http"
 	"net/url"
@@ -21,10 +22,9 @@ type HomePage struct {
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	// this will get replaced by a playlist at some point
 
 	featured, err := app.sketches.GetFeatured()
-	if err != nil {
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
 	}

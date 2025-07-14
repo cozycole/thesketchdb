@@ -94,6 +94,14 @@ func createEpisodeTitle(episode *models.Episode) string {
 	return title
 }
 
+func determineEpisodeWatchURL(episode *models.Episode) (string, string) {
+	if safeDeref(episode.YoutubeID) != "" {
+		return fmt.Sprintf("https://www.youtube.com/watch?v=%s", *episode.YoutubeID),
+			"/static/img/youtube-logo.jpg"
+	}
+	return "", ""
+}
+
 func seasonEpisodeInfo(episode *models.Episode) string {
 	var info string
 

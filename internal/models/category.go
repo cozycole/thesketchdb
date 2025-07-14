@@ -22,6 +22,7 @@ type CategoryInterface interface {
 	GetAll() ([]*Category, error)
 	Insert(category *Category) (int, error)
 	Search(query string) (*[]*Category, error)
+	Update(*Category) error
 }
 
 type CategoryModel struct {
@@ -133,7 +134,7 @@ func (m *CategoryModel) GetAll() ([]*Category, error) {
 func (m *CategoryModel) Insert(category *Category) (int, error) {
 	stmt := `
 	INSERT INTO categories (name, slug)
-	VALUES ($1,$2,$3)
+	VALUES ($1,$2)
 	RETURNING id;
 	`
 	var id int
@@ -147,9 +148,18 @@ func (m *CategoryModel) Insert(category *Category) (int, error) {
 	return id, nil
 }
 
+func (m *CategoryModel) Update(category *Category) error {
+	stmt := `
+		UPDATE categories SET name = $1, slug = $2
+		WHERE id = $3
+	`
+	_, err := m.DB.Exec(context.Background(), stmt, category.Name, category.Slug, category.ID)
+	return err
+}
+
 func (m *CategoryModel) Search(query string) (*[]*Category, error) {
 	query = "%" + query + "%"
-	stmt := `SELECT c.id, c.slug, c.name,
+	stmt := `SELECT c.id, c.slug, c.name
 			FROM categories as c
 			WHERE name ILIKE $1
 			ORDER BY name`

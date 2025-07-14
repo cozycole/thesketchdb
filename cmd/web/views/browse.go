@@ -10,7 +10,7 @@ type BrowseSectionDefinition struct {
 	Sketches []*models.Sketch
 }
 
-var FEATURED_ID = 4
+var FEATURED_ID = 1
 var BrowseSectionDefinitions = []BrowseSectionDefinition{
 	{
 		Title: "Featured Sketches",

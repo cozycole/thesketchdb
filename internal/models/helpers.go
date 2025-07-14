@@ -35,3 +35,11 @@ func GetTimeStampHash() string {
 	encoded := base64.URLEncoding.EncodeToString(hash[:])
 	return strings.TrimRight(encoded[:22], "=")
 }
+
+func safeDeref[T any](ptr *T) T {
+	if ptr != nil {
+		return *ptr
+	}
+	var zero T
+	return zero
+}

@@ -85,6 +85,7 @@
       <button
         class="p-1 bg-slate-100 border border-slate-300 
                   rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        type="button"
       >
         <div class="drag-icon w-6 text-slate-900">
           {{ template "drag-icon" }}
@@ -93,6 +94,7 @@
       <button
         class="p-1 bg-slate-100 border border-slate-300 
                   rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        type="button"
         hx-get="/cast/{{ .ID }}/update"
         hx-target="#castFormViewer"
         hx-swap="innerHTML"
@@ -104,6 +106,7 @@
       <button
         class="p-1 bg-slate-100 border border-slate-300 
                   rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+        type="button"
         hx-delete="/cast/{{ .ID }}"
         hx-confirm="Are you sure you want to delete {{ .PersonName }} as {{ .CharacterName }}?"
         hx-target="#castTable"

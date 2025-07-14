@@ -7,6 +7,14 @@ FOR EACH ROW EXECUTE FUNCTION tsvector_update_trigger(
   name, description
 );
 
+CREATE OR REPLACE TRIGGER show_search_update 
+BEFORE INSERT OR UPDATE ON show
+FOR EACH ROW EXECUTE FUNCTION tsvector_update_trigger(
+  search_vector, 
+  'pg_catalog.english', 
+  name
+);
+
 CREATE OR REPLACE TRIGGER creator_search_update 
 BEFORE INSERT OR UPDATE ON creator
 FOR EACH ROW EXECUTE FUNCTION tsvector_update_trigger(

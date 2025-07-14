@@ -118,7 +118,10 @@ func (app *application) validateCharacterForm(form *characterForm) {
 		form.CheckField(form.ProfileImage != nil, "profileImg", "Please upload an image")
 	}
 
-	form.CheckField(validator.PermittedValue(form.Type, "original", "impression", "generic"),
+	form.CheckField(
+		validator.PermittedValue(
+			form.Type, "original", "impression", "fictional_impression", "generic",
+		),
 		"type", "Character must be either Original, Impression or Generic")
 	form.CheckField(
 		form.Type != "impression" || form.PersonID > 0,
@@ -151,6 +154,7 @@ type sketchForm struct {
 	CreatorInput        string                `form:"creatorInput"`
 	EpisodeID           int                   `form:"episodeId"`
 	EpisodeInput        string                `form:"episodeInput"`
+	EpisodeStart        int                   `form:"episodeStart"`
 	Action              string                `form:"-"`
 	ImageUrl            string                `form:"-"`
 	validator.Validator `form:"-"`
@@ -239,10 +243,8 @@ func (app *application) validateCastForm(form *castForm) {
 	}
 
 	thumb := form.CharacterThumbnail
-	// if new insert
-	if form.ID == 0 {
-		form.CheckField(thumb != nil, "characterThumbnail", "Please upload an image")
-	}
+	// cast members don't need a thumbnail or a profile image,
+	// it will default to the sketch thumbnail and the person's profile image
 	if thumb != nil {
 		thumbnail, err := thumb.Open()
 		if err != nil {
@@ -270,9 +272,6 @@ func (app *application) validateCastForm(form *castForm) {
 	}
 
 	profile := form.CharacterProfile
-	if form.ID == 0 {
-		form.CheckField(thumb != nil, "characterProfile", "Please upload an image")
-	}
 
 	if profile == nil {
 		return
@@ -322,35 +321,30 @@ func (app *application) validateUserLoginForm(form *userLoginForm) {
 }
 
 type categoryForm struct {
+	ID                  int    `form:"id"`
 	Name                string `form:"categoryName"`
-	ParentId            int    `form:"parentId"`
-	ParentInput         string `form:"parentInput"`
+	Action              string `form:"-"`
 	validator.Validator `form:"-"`
 }
 
 func (app *application) validateCategoryForm(form *categoryForm) {
 	form.CheckField(validator.NotBlank(form.Name), "categoryName", "Field cannot be blank")
-	if form.ParentId != 0 {
-		form.CheckField(
-			validator.BoolWithError(app.categories.Exists(form.ParentId)),
-			"parentId",
-			"Category does not exist. Please add it, then resubmit category!",
-		)
-	}
 }
 
 type tagForm struct {
-	Name                string `form:"tagName"`
-	CategoryId          int    `form:"categoryId"`
+	ID                  int    `form:"id"`
+	Name                string `form:"tag"`
+	CategoryID          int    `form:"categoryId"`
 	CategoryInput       string `form:"categoryInput"`
+	Action              string `form:"-"`
 	validator.Validator `form:"-"`
 }
 
 func (app *application) validateTagForm(form *tagForm) {
-	form.CheckField(validator.NotBlank(form.Name), "tagName", "Field cannot be blank")
-	if form.CategoryId != 0 {
+	form.CheckField(validator.NotBlank(form.Name), "tag", "Field cannot be blank")
+	if form.CategoryID != 0 {
 		form.CheckField(
-			validator.BoolWithError(app.categories.Exists(form.CategoryId)),
+			validator.BoolWithError(app.categories.Exists(form.CategoryID)),
 			"categoryId",
 			"Category does not exist. Please add it, then resubmit tag!",
 		)
@@ -413,6 +407,7 @@ type episodeForm struct {
 	ID                  int                   `form:"id"`
 	Number              int                   `form:"number"`
 	Title               string                `form:"title"`
+	URL                 string                `form:"url"`
 	AirDate             string                `form:"airDate"`
 	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
 	ThumbnailName       string                `form:"-"`

@@ -210,7 +210,7 @@
       {{ .Number }}
     </td>
     <td scope="col" class="border-b border-black p-3 text-center w-52">
-      <div class="flex items-center justify-center w-fit">
+      <div class="aspect-square flex items-center justify-center w-fit">
         <img src="{{ .ThumbnailUrl }}" />
       </div>
     </td>
@@ -300,6 +300,15 @@
         type="text"
         name="title"
         value="{{ .Title }}"
+        class="w-full max-w-xl p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none"
+      />
+    </div>
+    <div>
+      <label class="block my-2">Episode URL</label>
+      <input
+        type="text"
+        name="url"
+        value="{{ .URL }}"
         class="w-full max-w-xl p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none"
       />
     </div>

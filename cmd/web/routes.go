@@ -6,18 +6,19 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) http.Handler {
+func (app *application) routes(staticRoute, imageStorageRoot string) http.Handler {
 	r := chi.NewRouter()
 
 	r.Group(func(r chi.Router) {
 		fs := http.FileServer(http.Dir(staticRoute))
 		r.Handle("/static/*", http.StripPrefix("/static/", fs))
 
-		app.infoLog.Printf("Starting image file server rooted at %s\n", imageStorageRoot)
-		app.infoLog.Printf("Image Url: %s\n", imageUrl)
-
-		imgFs := http.FileServer(http.Dir(imageStorageRoot))
-		r.Handle("/images/*", http.StripPrefix(imageUrl, imgFs))
+		if app.fileStorage.Type() == "Local" {
+			app.infoLog.Printf("Starting image file server rooted at %s\n", imageStorageRoot)
+			imgFs := http.FileServer(http.Dir(imageStorageRoot))
+			r.Handle("/images/*", http.StripPrefix(app.baseImgUrl, imgFs))
+			app.infoLog.Printf("Image Url: %s\n", app.baseImgUrl)
+		}
 	})
 
 	// public routes
@@ -31,9 +32,8 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		r.HandleFunc("/ping", ping)
 
-		r.HandleFunc("/browse", app.browse)
 		r.HandleFunc("/", app.home)
-
+		r.HandleFunc("/browse", app.browse)
 		r.Get("/search", app.search)
 		r.Get("/catalog/sketches", app.catalogView)
 		// r.Get("/catalog/people", app.peopleCatalog)
@@ -132,9 +132,13 @@ func (app *application) routes(staticRoute, imageStorageRoot, imageUrl string) h
 
 		r.Get("/category/add", app.requireRoles(editorAdmin, app.categoryAddPage))
 		r.Post("/category/add", app.requireRoles(editorAdmin, app.categoryAdd))
+		r.Get("/category/{id}/update", app.requireRoles(editorAdmin, app.categoryUpdatePage))
+		r.Post("/category/{id}/update", app.requireRoles(editorAdmin, app.categoryUpdate))
 
 		r.Get("/tag/add", app.requireRoles(editorAdmin, app.tagAddPage))
 		r.Post("/tag/add", app.requireRoles(editorAdmin, app.tagAdd))
+		r.Get("/tag/{id}/update", app.requireRoles(editorAdmin, app.tagUpdatePage))
+		r.Post("/tag/{id}/update", app.requireRoles(editorAdmin, app.tagUpdate))
 		r.Get("/tag/row", app.requireRoles(editorAdmin, app.tagRow))
 	})
 

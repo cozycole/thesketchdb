@@ -54,6 +54,7 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 
 type sketchFormPage struct {
 	SketchID    int
+	SketchUrl   string
 	Title       string
 	SketchForm  sketchForm
 	CastSection castSection
@@ -178,6 +179,7 @@ func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request)
 	data := app.newTemplateData(r)
 	data.Page = sketchFormPage{
 		SketchID:   sketchId,
+		SketchUrl:  fmt.Sprintf("/sketch/%d/%s", sketchId, safeDeref(sketch.Slug)),
 		Title:      "Update Sketch",
 		SketchForm: form,
 		CastSection: castSection{

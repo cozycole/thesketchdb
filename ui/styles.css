@@ -7,6 +7,10 @@
     display: flex;
   }
 
+  .collapsed {
+    max-height: 0 !important;
+  }
+
   .browse-flex-to-grid {
     display: flex;
   }

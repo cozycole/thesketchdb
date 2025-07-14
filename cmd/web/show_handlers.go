@@ -207,7 +207,7 @@ func (app *application) addShowPage(w http.ResponseWriter, r *http.Request) {
 		Title: "Add Show",
 	}
 
-	app.render(r, w, http.StatusOK, "update-show.gohtml", "base", data)
+	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "base", data)
 }
 
 func (app *application) addShow(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +222,7 @@ func (app *application) addShow(w http.ResponseWriter, r *http.Request) {
 	app.validateShowForm(&form)
 	if !form.Valid() {
 		form.Action = "/show/add"
-		app.render(r, w, http.StatusUnprocessableEntity, "update-show.gohtml", "show-form", form)
+		app.render(r, w, http.StatusUnprocessableEntity, "show-form-page.gohtml", "show-form", form)
 		return
 	}
 
@@ -299,7 +299,7 @@ func (app *application) updateShowPage(w http.ResponseWriter, r *http.Request) {
 		ShowForm:        form,
 		SeasonDropdowns: views.SeasonDropdownsView(show, app.baseImgUrl),
 	}
-	app.render(r, w, http.StatusOK, "update-show.gohtml", "base", data)
+	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "base", data)
 }
 
 func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
@@ -416,7 +416,7 @@ func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
 
 	showUrl := fmt.Sprintf("/show/%d/%s", safeDeref(show.ID), safeDeref(show.Slug))
 	data := views.SeasonDropdownView(season, app.baseImgUrl, showUrl)
-	app.render(r, w, http.StatusOK, "update-show.gohtml", "season-dropdown", data)
+	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "season-dropdown", data)
 }
 
 func (app *application) deleteSeason(w http.ResponseWriter, r *http.Request) {
@@ -466,7 +466,7 @@ func (app *application) addEpisodeForm(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	app.render(r, w, http.StatusOK, "update-show.gohtml", "episode-form-modal", formModal)
+	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-form-modal", formModal)
 }
 
 func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
@@ -490,7 +490,7 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 	app.validateEpisodeForm(&form)
 	if !form.Valid() {
 		form.Action = fmt.Sprintf("/season/%d/episode/add", seasonId)
-		app.render(r, w, http.StatusUnprocessableEntity, "update-show.gohtml", "episode-form", form)
+		app.render(r, w, http.StatusUnprocessableEntity, "show-form-page.gohtml", "episode-form", form)
 		return
 	}
 
@@ -523,7 +523,7 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 		season, app.baseImgUrl,
 		fmt.Sprintf("/show/%d/%s", safeDeref(season.ShowId), safeDeref(season.ShowSlug)),
 	)
-	app.render(r, w, http.StatusOK, "update-show.gohtml", "episode-table", table)
+	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-table", table)
 }
 
 func (app *application) updateEpisodeForm(w http.ResponseWriter, r *http.Request) {
@@ -557,7 +557,7 @@ func (app *application) updateEpisodeForm(w http.ResponseWriter, r *http.Request
 		Form: form,
 	}
 
-	app.render(r, w, http.StatusOK, "update-show.gohtml", "episode-form-modal", formModal)
+	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-form-modal", formModal)
 }
 
 func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
@@ -590,7 +590,7 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		form.Action = fmt.Sprintf("/episode/%d/update", epId)
 		form.ThumbnailUrl = fmt.Sprintf("%s/episode/%s", app.baseImgUrl, safeDeref(oldEpisode.Thumbnail))
-		app.render(r, w, http.StatusUnprocessableEntity, "update-show.gohtml", "episode-form", form)
+		app.render(r, w, http.StatusUnprocessableEntity, "show-form-page.gohtml", "episode-form", form)
 		return
 	}
 
@@ -645,7 +645,7 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 		fmt.Sprintf("/show/%d/%s", safeDeref(season.ShowId), safeDeref(season.ShowSlug)),
 	)
 
-	app.render(r, w, http.StatusOK, "update-show.gohtml", "episode-table", table)
+	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-table", table)
 }
 
 func (app *application) deleteEpisode(w http.ResponseWriter, r *http.Request) {
@@ -688,5 +688,5 @@ func (app *application) deleteEpisode(w http.ResponseWriter, r *http.Request) {
 		fmt.Sprintf("/show/%d/%s", safeDeref(season.ShowId), safeDeref(season.ShowSlug)),
 	)
 
-	app.render(r, w, http.StatusOK, "update-show.gohtml", "episode-table", table)
+	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-table", table)
 }

@@ -1,11 +1,14 @@
 {{ define "sketch-thumbnail" }}
   <div class="min-w-0">
     <a href="{{ .Url }}">
-      <img
-        src="{{ .Image }}"
-        class="w-full rounded-lg"
-        onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
-      />
+      <div class="aspect-[16/9]">
+        <img
+          src="{{ .Image }}"
+          class="w-full rounded-lg"
+          loading="lazy"
+          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+        />
+      </div>
     </a>
     <div class="flex h-32">
       <div class="w-8 min-w-8 mt-2">

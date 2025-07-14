@@ -81,6 +81,8 @@ CREATE TABLE IF NOT EXISTS episode (
     season_id INTEGER REFERENCES season(id),
     title TEXT,
     episode_number INTEGER NOT NULL,
+    url VARCHAR,
+    youtube_id VARCHAR,
     thumbnail_name TEXT,
     air_date DATE,
     CONSTRAINT unique_season_episode UNIQUE(season_id, episode_number)
@@ -96,6 +98,7 @@ CREATE TABLE IF NOT EXISTS sketch (
     description TEXT,
     upload_date DATE,
     episode_id INT REFERENCES episode(id),
+    episode_start INT, 
     part_number INT,
     sketch_number INT,
     popularity_score REAL DEFAULT 0,
@@ -148,7 +151,7 @@ CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
     name TEXT NOT NULL,
-    slug TEXT NOT NULL,
+    slug TEXT NOT NULL
     -- parent_id INT REFERENCES categories(id) ON DELETE SET NULL
 );
 

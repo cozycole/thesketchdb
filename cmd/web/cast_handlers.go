@@ -67,20 +67,23 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 
 	castMember := convertFormtoCastMember(&form)
 
-	thumbName, err := generateThumbnailName(castMember.ThumbnailFile)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
+	if castMember.ThumbnailFile != nil {
+		thumbName, err := generateThumbnailName(castMember.ThumbnailFile)
+		if err != nil {
+			app.serverError(r, w, err)
+			return
+		}
+		castMember.ThumbnailName = &thumbName
 	}
 
-	profileName, err := generateThumbnailName(castMember.ProfileFile)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
+	if castMember.ProfileFile != nil {
+		profileName, err := generateThumbnailName(castMember.ProfileFile)
+		if err != nil {
+			app.serverError(r, w, err)
+			return
+		}
+		castMember.ProfileImg = &profileName
 	}
-
-	castMember.ThumbnailName = &thumbName
-	castMember.ProfileImg = &profileName
 
 	_, err = app.cast.Insert(sketchId, &castMember)
 	if err != nil {

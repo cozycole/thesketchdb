@@ -6,11 +6,9 @@
     class="max-w-screen-xl w-full mx-auto p-3 text-slate-950"
   >
     <h1 class="my-3 text-xl font-bold">Sketch Categories</h1>
-    <div
-      class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-    >
+    <div class="columns-1 gap-4 sm:columns-2 md:columns-3 lg:columns-4">
       {{ range .Categories }}
-        <collapse-content>
+        <collapse-content class="break-inside-avoid mb-4 block">
           <div class="border p-3 rounded-xl shadow-md bg-white">
             <div class="flex justify-between">
               <h2 class="text-lg font-bold">{{ .Name }}</h2>

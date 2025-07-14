@@ -220,13 +220,13 @@ func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType
 		sketchView.YoutubeUrl = fmt.Sprintf("www.youtube.com/watch?v=%s", *sketch.YoutubeID)
 	}
 
-	if sketch.ThumbnailName != nil {
-		thumbnailSubPath := "sketch"
-		if strings.ToUpper(thumbnailType) == "CAST" {
-			thumbnailSubPath = "cast/thumbnail"
-		}
-		sketchView.Image = fmt.Sprintf("%s/%s/%s", baseImgUrl, thumbnailSubPath, *sketch.ThumbnailName)
-		sketchView.LargeImage = fmt.Sprintf("%s/%s/large/%s", baseImgUrl, thumbnailSubPath, *sketch.ThumbnailName)
+	if strings.ToUpper(thumbnailType) == "CAST" && safeDeref(sketch.CastThumbnail) != "" {
+		sketchView.Image = fmt.Sprintf("%s/cast/thumbnail/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
+		// there are no Large cast images
+		sketchView.LargeImage = fmt.Sprintf("%s/sketch/large/%s", baseImgUrl, safeDeref(sketch.ThumbnailName))
+	} else if sketch.ThumbnailName != nil {
+		sketchView.Image = fmt.Sprintf("%s/sketch/%s", baseImgUrl, *sketch.ThumbnailName)
+		sketchView.LargeImage = fmt.Sprintf("%s/sketch/large/%s", baseImgUrl, *sketch.ThumbnailName)
 	} else {
 		sketchView.Image = fmt.Sprintf("%s/missing-thumbnail.jpg", baseImgUrl)
 		sketchView.LargeImage = fmt.Sprintf("%s/missing-thumbnail.jpg", baseImgUrl)

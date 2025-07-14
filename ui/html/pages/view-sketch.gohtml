@@ -14,11 +14,13 @@
             class="thumbnail toggleSketch basis-auto w-fit lg:basis-[640px] md:max-w-[640px] flex-shrink"
           >
             <button class="block h-full w-full relative">
-              <img
-                class="rounded-lg w-auto lg:object-cover lg:h-full block"
-                src="{{ .Image }}"
-                onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
-              />
+              <div class="aspect-video">
+                <img
+                  class="rounded-lg w-auto lg:object-cover lg:h-full block"
+                  src="{{ .Image }}"
+                  onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+                />
+              </div>
               <div
                 class="absolute right-1 bottom-1 w-12 text-white 
             rounded-full bg-slate-950 bg-opacity-60"

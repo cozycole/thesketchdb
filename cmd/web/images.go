@@ -33,24 +33,30 @@ func (app *application) deleteImage(prefix, imgName string) error {
 }
 
 func (app *application) saveCastImages(member *models.CastMember) error {
-	thumbFile, err := member.ThumbnailFile.Open()
-	if err != nil {
-		return err
-	}
-	defer thumbFile.Close()
+	if member.ThumbnailFile != nil {
+		thumbFile, err := member.ThumbnailFile.Open()
+		if err != nil {
+			return err
+		}
+		defer thumbFile.Close()
 
-	img, err := processThumbnailImage(thumbFile, StandardThumbnailWidth, StandardThumbnailHeight)
-	if err != nil {
-		app.errorLog.Print("error processing thumbnail image")
-		return err
+		img, err := processThumbnailImage(thumbFile, StandardThumbnailWidth, StandardThumbnailHeight)
+		if err != nil {
+			app.errorLog.Print("error processing thumbnail image")
+			return err
+		}
+
+		var dstFile bytes.Buffer
+		jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
+		err = app.fileStorage.SaveFile(path.Join("cast", "thumbnail", *member.ThumbnailName), &dstFile)
+		if err != nil {
+			app.errorLog.Print("error saving thumbnail img")
+			return err
+		}
 	}
 
-	var dstFile bytes.Buffer
-	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
-	err = app.fileStorage.SaveFile(path.Join("cast", "thumbnail", *member.ThumbnailName), &dstFile)
-	if err != nil {
-		app.errorLog.Print("error saving thumbnail img")
-		return err
+	if member.ProfileFile == nil {
+		return nil
 	}
 
 	profileFile, err := member.ProfileFile.Open()
@@ -59,14 +65,15 @@ func (app *application) saveCastImages(member *models.CastMember) error {
 	}
 	defer profileFile.Close()
 
-	img, err = processProfileImage(profileFile)
+	img, err := processProfileImage(profileFile)
 	if err != nil {
 		app.errorLog.Print("error processing profile image")
 		return err
 	}
 
-	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
-	err = app.fileStorage.SaveFile(path.Join("cast", "profile", *member.ProfileImg), &dstFile)
+	var profileDstFile bytes.Buffer
+	jpeg.Encode(&profileDstFile, img, &jpeg.Options{Quality: 85})
+	err = app.fileStorage.SaveFile(path.Join("cast", "profile", *member.ProfileImg), &profileDstFile)
 	if err != nil {
 		app.errorLog.Print("error saving profile img")
 		return err

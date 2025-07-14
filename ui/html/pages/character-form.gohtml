@@ -53,6 +53,16 @@
                 Impression
               </label>
               <label>
+              <label>
+                <input
+                  type="radio"
+                  name="type"
+                  value="fictional_impression"
+                  {{ if eq .Type "fictional_impression" }}checked{{ end }}
+                />
+                Fictional Impression
+              </label>
+              <label>
                 <input
                   type="radio"
                   name="type"

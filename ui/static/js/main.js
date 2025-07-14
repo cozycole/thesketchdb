@@ -14,6 +14,7 @@ import { UploadImagePreview } from "./components/uploadImagePreview.js";
 import { CollapsibleContent } from "./components/collapseContent.js";
 import { FavoriteButton } from "./components/favoriteButton.js";
 import { YoutubeEmbed } from "./components/youtubeEmbed.js";
+import { FormSearchDropdown } from "./components/formSearchDropdown.js";
 
 import "./components/flashMessage.js";
 

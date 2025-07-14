@@ -1,57 +1,68 @@
 {{ define "title" }}Add Tag{{ end }}
 
 {{ define "main" }}
-  <div data-page="add-tag">
-    <h1 class="font-bold text-xl">Add Tag</h1>
-    {{ with .Flash }}
-      <h2
-        class="w-fit p-3 my-2 font-bold text-md text-green-600 border-green-700 bg-green-200 rounded-md"
-      >
-        {{ . }}
-      </h2>
-    {{ end }}
-    <form class="max-w-md" method="POST" action="/tag/add">
-      <div>
-        <label class="inline-block my-2">Tag Name</label>
-        {{ with .Forms.Tag.FieldErrors.tagName }}
-          <label class="block text-red-700">{{ . }}</label>
-        {{ end }}
-        <input
-          name="tagName"
-          value="{{ with .Forms.Tag.Name }}{{ . }}{{ end }}"
-          class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-          placeholder="Enter tag name"
-        />
-      </div>
-      <div id="categoryHtmxDropdown" class="relative w-full">
+  <main data-page="tag-form" class="w-full flex-1 p-3 bg-slate-300">
+    <div class="max-w-screen-lg mx-auto p-3 space-y-3 bg-slate-50 rounded-lg">
+      <h1 class="font-bold text-xl">{{ .Page.Title }}</h1>
+      {{ with .Page.Form }}
+        {{ template "tag-form" . }}
+      {{ end }}
+    </div>
+  </main>
+{{ end }}
+
+{{ define "tag-form" }}
+  <form
+    class="w-full max-w-lg space-y-3"
+    hx-post="{{ .Action }}"
+    hx-target="this"
+    hx-target-422="this"
+  >
+    <input type="hidden" name="id" value="{{ .ID }}" />
+    <div>
+      <label class="inline-block my-2">Tag Name</label>
+      {{ with .FieldErrors.tag }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        name="tag"
+        type="text"
+        value="{{ .Name }}"
+        class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        placeholder="Enter tag name"
+      />
+    </div>
+    <div class="w-full">
+      <form-search>
         <label>Category</label>
-        {{ with .Forms.Tag.FieldErrors.categoryId }}
+        {{ with .FieldErrors.categoryId }}
           <label class="block text-red-700">{{ . }}</label>
         {{ end }}
-        <input
-          type="hidden"
-          name="categoryId"
-          value="{{ with .Forms.Tag.CategoryId }}{{ . }}{{ end }}"
-        />
-        <input
-          type="search"
-          name="categoryInput"
-          value="{{ with .Forms.Tag.CategoryInput }}{{ . }}{{ end }}"
-          class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-          placeholder="Search for category"
-          hx-get="/category/search"
-          hx-params="query"
-          hx-trigger="focus, input changed delay:500ms, search"
-          hx-target="next"
-        />
-        <div></div>
-      </div>
-      <button
-        type="submit"
-        class="my-2 p-1 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-      >
-        Submit
-      </button>
-    </form>
-  </div>
+        <div class="relative">
+          <input type="hidden" name="categoryId" value="{{ .CategoryID }}" />
+          <input
+            type="search"
+            name="categoryInput"
+            autocomplete="off"
+            value="{{ .CategoryInput }}"
+            class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            placeholder="Search for category"
+            hx-get="/category/search"
+            hx-params="query"
+            hx-trigger="focus, input changed delay:500ms, search"
+            hx-target="next"
+          />
+          <ul
+            class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-slate-300 rounded shadow-lg z-10 empty:hidden"
+          ></ul>
+        </div>
+      </form-search>
+    </div>
+    <button
+      type="submit"
+      class="my-2 p-1 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+    >
+      Submit
+    </button>
+  </form>
 {{ end }}

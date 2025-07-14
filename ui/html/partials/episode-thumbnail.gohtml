@@ -1,11 +1,13 @@
 {{ define "episode-thumbnail" }}
   <div class="flex-shrink-0 min-w-0">
     <a {{ with .Url }}href="{{ . }}"{{ end }}>
-      <img
-        src="{{ .Image }}"
-        class="w-full rounded-lg"
-        onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
-      />
+      <div class="aspect-video">
+        <img
+          src="{{ .Image }}"
+          class="w-full rounded-lg"
+          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+        />
+      </div>
     </a>
     <div class="flex h-28">
       <div class="mt-2 ml-2 flex-1 min-w-0">

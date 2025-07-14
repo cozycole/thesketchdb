@@ -26,6 +26,7 @@ type TagModelInterface interface {
 	GetBySketch(sketchId int) ([]*Tag, error)
 	Insert(category *Tag) (int, error)
 	Search(query string) (*[]*Tag, error)
+	Update(*Tag) error
 }
 
 type TagModel struct {
@@ -169,9 +170,16 @@ func (m *TagModel) Insert(tag *Tag) (int, error) {
 	VALUES ($1,$2,$3)
 	RETURNING id;
 	`
+	var categoryId *int
+	if tag.Category != nil &&
+		tag.Category.ID != nil &&
+		*tag.Category.ID != 0 {
+		categoryId = tag.Category.ID
+	}
+
 	var id int
 	err := m.DB.QueryRow(
-		context.Background(), stmt, tag.Name, tag.Slug, tag.Category.ID,
+		context.Background(), stmt, tag.Name, tag.Slug, categoryId,
 	).Scan(&id)
 	if err != nil {
 		return 0, err
@@ -216,4 +224,18 @@ func (m *TagModel) Search(query string) (*[]*Tag, error) {
 		return nil, err
 	}
 	return &tags, nil
+}
+
+func (m *TagModel) Update(tag *Tag) error {
+	stmt := `
+		UPDATE tags SET name = $1, slug = $2, category_id = $3
+		WHERE id = $4
+	`
+	var categoryId *int
+	if tag.Category != nil && safeDeref(tag.Category.ID) != 0 {
+		categoryId = new(int)
+		*categoryId = safeDeref(tag.Category.ID)
+	}
+	_, err := m.DB.Exec(context.Background(), stmt, tag.Name, tag.Slug, categoryId, tag.ID)
+	return err
 }

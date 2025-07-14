@@ -57,6 +57,7 @@ type Episode struct {
 	Slug         *string
 	Number       *int
 	Title        *string
+	URL          *string
 	AirDate      *time.Time
 	Thumbnail    *string
 	SeasonId     *int
@@ -65,6 +66,7 @@ type Episode struct {
 	ShowName     *string
 	ShowSlug     *string
 	Sketches     []*Sketch
+	YoutubeID    *string
 }
 
 type ShowModelInterface interface {
@@ -113,7 +115,7 @@ func (m *ShowModel) AddSeason(showId int) (int, error) {
 
 func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	stmt := `
-		SELECT e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name,
+		SELECT e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.youtube_id,
 		v.id, v.title, v.slug, v.sketch_url, v.sketch_number, 
 		se.id, e.episode_number, se.season_number,
 		v.thumbnail_name, v.upload_date, 
@@ -136,7 +138,7 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 		v := &Sketch{}
 		s := &Show{}
 		rows.Scan(
-			&e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
+			&e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.YoutubeID,
 			&v.ID, &v.Title, &v.Slug, &v.URL, &v.Number, &e.SeasonId,
 			&v.EpisodeNumber, &e.SeasonNumber, &v.ThumbnailName, &v.UploadDate,
 			&s.ID, &s.Name, &s.ProfileImg, &s.Slug,
@@ -232,8 +234,9 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 
 func (m *ShowModel) InsertEpisode(episode *Episode) (int, error) {
 	stmt := `
-		INSERT INTO episode (season_id, episode_number, title, air_date, thumbnail_name)
-		VALUES ($1,$2,$3,$4,$5)
+		INSERT INTO episode 
+		(season_id, episode_number, title, url, air_date, thumbnail_name)
+		VALUES ($1,$2,$3,$4,$5,$6)
 		RETURNING id
 	`
 
@@ -241,7 +244,7 @@ func (m *ShowModel) InsertEpisode(episode *Episode) (int, error) {
 	err := m.DB.QueryRow(
 		context.Background(), stmt,
 		episode.SeasonId, episode.Number, episode.Title,
-		episode.AirDate, episode.Thumbnail,
+		episode.URL, episode.AirDate, episode.Thumbnail,
 	).Scan(&id)
 
 	if err != nil {
@@ -477,6 +480,10 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 		}
 
 		seasonEpisodes[*s.ID][*e.ID] = e
+	}
+
+	if show.ID == nil {
+		return nil, ErrNoRecord
 	}
 
 	for seasonId, episodeMap := range seasonEpisodes {
@@ -764,14 +771,15 @@ func ExtractEpisodeQuery(input string) (EpisodeQuery, error) {
 func (m *ShowModel) UpdateEpisode(episode *Episode) error {
 	stmt := `
 		UPDATE episode 
-		SET episode_number = $1, title = $2, air_date = $3, thumbnail_name = $4
-		WHERE id = $5
+		SET episode_number = $1, title = $2, air_date = $3, thumbnail_name = $4,
+		url = $5	
+		WHERE id = $6
 	`
 
 	_, err := m.DB.Exec(
 		context.Background(), stmt, episode.Number,
 		episode.Title, episode.AirDate, episode.Thumbnail,
-		episode.ID,
+		episode.URL, episode.ID,
 	)
 	return err
 }

@@ -97,12 +97,14 @@ type Sketch struct {
 	UploadDate    *time.Time
 	Creator       *Creator
 	Cast          []*CastMember
+	CastThumbnail *string
 	Tags          *[]*Tag
 	Episode       *Episode
 	Show          *Show
 	SeasonNumber  *int
 	EpisodeNumber *int
 	EpisodeID     *int
+	EpisodeStart  *int
 	Number        *int
 	Liked         *bool
 }
@@ -255,16 +257,6 @@ type Arguements struct {
 	ImgField string
 }
 
-func determineImageField(filter *Filter) string {
-	imgField := "v.thumbnail_name"
-	// only use the cast thumbnail if searching for a specific person, if multiple
-	// are being searched, use the overall thumbnail
-	if len(filter.People) == 1 || len(filter.Characters) == 1 {
-		imgField = "cm.thumbnail_name"
-	}
-	return imgField
-}
-
 func determineFields(filter *Filter, args *Arguements) string {
 	rankParam := ""
 	if filter.Query != "" {
@@ -310,14 +302,37 @@ func determineFields(filter *Filter, args *Arguements) string {
 
 	baseFields := `
 		v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number,
-		v.sketch_url as sketch_url, v.slug as sketch_slug, %s as thumbnail_name, v.upload_date as upload_date,
+		v.sketch_url as sketch_url, v.slug as sketch_slug, v.thumbnail_name as thumbnail_name, v.upload_date as upload_date,
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
 		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
 		sh.profile_img as show_img, sh.slug as show_slug, popularity_score as popularity,
-		se.season_number as season_number, e.episode_number as episode_number %s
+		se.season_number as season_number, e.episode_number as episode_number,
+		(select thumbnail_name from cast_members where %s and sketch_id = v.id order by position limit 1) as cast_thumbnail_name
+		%s
 	`
 
-	fields := fmt.Sprintf(baseFields, args.ImgField, rankParam)
+	castThumbnailClause := ""
+	if len(filter.People) == 0 && len(filter.Characters) == 0 {
+		castThumbnailClause = "1=1"
+	}
+	if len(filter.People) != 0 && filter.People[0].ID != nil {
+		personId := *filter.People[0].ID
+		args.ArgIndex++
+		args.Args = append(args.Args, personId)
+		castThumbnailClause = fmt.Sprintf("person_id = $%d", args.ArgIndex)
+	}
+	if len(filter.Characters) != 0 && filter.Characters[0].ID != nil {
+		characterId := *filter.Characters[0].ID
+		args.ArgIndex++
+		args.Args = append(args.Args, characterId)
+		if castThumbnailClause == "" {
+			castThumbnailClause = fmt.Sprintf("character_id = $%d", args.ArgIndex)
+		} else {
+			castThumbnailClause += fmt.Sprintf(" AND character_id = $%d", args.ArgIndex)
+		}
+	}
+
+	fields := fmt.Sprintf(baseFields, castThumbnailClause, rankParam)
 
 	return fields
 }
@@ -420,11 +435,11 @@ func determineConditions(filter *Filter, args *Arguements) string {
 		}
 
 		clause += fmt.Sprintf(" AND cm.person_id IN (%s)", strings.Join(peoplePlaceholders, ","))
-		clause += fmt.Sprintf(`
+		clause += `
 		GROUP BY v.id, v.title, v.sketch_url, v.slug,
-		         %s, v.upload_date, v.sketch_number,
+		         v.thumbnail_name, v.upload_date, v.sketch_number,
 		         c.id, c.name, c.page_url, c.slug, c.profile_img,
-				sh.id, sh.name, sh.profile_img, sh.slug, se.season_number, e.episode_number`, args.ImgField)
+				sh.id, sh.name, sh.profile_img, sh.slug, se.season_number, e.episode_number`
 
 		if filter.Query != "" {
 			clause += ", rank"
@@ -481,7 +496,8 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 		sketch_slug, thumbnail_name, upload_date, 
 		creator_id, creator_name, creator_slug, 
 		creator_img, show_id, show_name,
-		show_img, show_slug, season_number, episode_number %s
+		show_img, show_slug, season_number, episode_number,
+		cast_thumbnail_name %s
 		FROM ranked_sketches
 		WHERE rn = 1
 		%s
@@ -489,8 +505,6 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 
 	args := &Arguements{ArgIndex: 0}
 
-	imgField := determineImageField(filter)
-	args.ImgField = imgField
 	rank := ""
 	if filter.Query != "" {
 		rank = ", rank"
@@ -525,6 +539,7 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &v.SeasonNumber, &v.EpisodeNumber,
+			&v.CastThumbnail,
 		}
 		var rank *float32
 		if filter.Query != "" {
@@ -550,7 +565,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	stmt := `
 		SELECT v.id, v.title, v.sketch_number, v.sketch_url, 
 		v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
-		se.season_number, e.episode_number,
+		v.episode_start, se.season_number, e.episode_number,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.slug, sh.profile_img,
 		p.id, p.slug, p.first, p.last, p.profile_img,
@@ -592,8 +607,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		hasRows = true
 		err := rows.Scan(
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName,
-			&v.UploadDate, &v.YoutubeID, &v.SeasonNumber, &v.EpisodeNumber,
-			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
+			&v.UploadDate, &v.YoutubeID, &v.EpisodeStart, &v.SeasonNumber,
+			&v.EpisodeNumber, &c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 			&ch.ID, &ch.Name, &ch.Slug, &ch.Image,
@@ -661,8 +676,7 @@ func (m *SketchModel) GetCount(filter *Filter) (int, error) {
 		) as grouped_content
 	`
 
-	args := &Arguements{ArgIndex: 0}
-	args.ImgField = "v.thumbnail_name"
+	args := &Arguements{}
 	fields := determineFields(filter, args)
 	conditionClause := determineConditions(filter, args)
 	query = fmt.Sprintf(query, fields, conditionClause)
@@ -685,7 +699,7 @@ func (m *SketchModel) GetCount(filter *Filter) (int, error) {
 func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 	stmt := `
 		SELECT v.id, v.title, v.sketch_url, v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
-			c.id, c.name, c.profile_img,
+			c.id, c.name, c.profile_img, c.slug,
 			sh.id, sh.name, sh.profile_img, sh.slug,
 			p.id, p.slug, p.first, p.last, p.profile_img,
 			cm.id, cm.position, cm.thumbnail_name, cm.character_name,
@@ -702,6 +716,7 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 		LEFT JOIN person as p ON cm.person_id = p.id
 		LEFT JOIN character as ch ON cm.character_id = ch.id
 		WHERE t.name = 'Featured'
+		ORDER BY v.title, cm.position
 	`
 
 	rows, err := m.DB.Query(context.Background(), stmt)
@@ -726,7 +741,7 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 
 		err := rows.Scan(
 			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate, &v.YoutubeID,
-			&c.ID, &c.Name, &c.ProfileImage,
+			&c.ID, &c.Name, &c.ProfileImage, &c.Slug,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 			&cm.ID, &cm.Position, &cm.ThumbnailName, &cm.CharacterName,
@@ -861,13 +876,14 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 	stmt := `
 	INSERT INTO sketch (
 		title, sketch_url, thumbnail_name, upload_date, slug, youtube_id, sketch_number,
-		episode_id)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+		episode_id, episode_start)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 	RETURNING id;`
 	result := m.DB.QueryRow(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.ThumbnailName, sketch.UploadDate,
 		sketch.Slug, sketch.YoutubeID, sketch.Number, episodeId,
+		sketch.EpisodeStart,
 	)
 
 	var id int
@@ -982,13 +998,13 @@ func (m *SketchModel) Update(sketch *Sketch) error {
 
 	stmt := `
 	UPDATE sketch SET title = $1, sketch_url = $2, upload_date = $3, 
-	slug = $4, thumbnail_name = $5, sketch_number = $6, episode_id = $7
-	WHERE id = $8
+	slug = $4, thumbnail_name = $5, sketch_number = $6, episode_id = $7, episode_start = $8
+	WHERE id = $9
 	`
 	_, err := m.DB.Exec(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.UploadDate,
-		sketch.Slug, sketch.ThumbnailName, sketch.Number, episodeId,
+		sketch.Slug, sketch.ThumbnailName, sketch.Number, episodeId, sketch.EpisodeStart,
 		sketch.ID,
 	)
 	return err

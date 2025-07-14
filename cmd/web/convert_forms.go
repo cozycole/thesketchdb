@@ -26,11 +26,11 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		URL:           &form.URL,
 		Slug:          &form.Slug,
 		ThumbnailFile: form.Thumbnail,
-		Rating:        &form.Rating,
 		UploadDate:    &uploadDate,
 		Number:        &form.Number,
 		Creator:       creator,
 		Episode:       episode,
+		EpisodeStart:  &form.EpisodeStart,
 	}
 }
 
@@ -61,6 +61,7 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		CreatorInput: creatorName,
 		EpisodeID:    episodeID,
 		EpisodeInput: episodeName,
+		EpisodeStart: safeDeref(sketch.EpisodeStart),
 	}
 }
 
@@ -69,6 +70,7 @@ func convertEpisodeToForm(episode *models.Episode) episodeForm {
 		ID:            safeDeref(episode.ID),
 		Number:        safeDeref(episode.Number),
 		Title:         safeDeref(episode.Title),
+		URL:           safeDeref(episode.URL),
 		AirDate:       formDate(episode.AirDate),
 		ThumbnailName: safeDeref(episode.Thumbnail),
 		SeasonId:      safeDeref(episode.SeasonId),
@@ -122,7 +124,15 @@ func convertCastMembertoForm(member *models.CastMember) castForm {
 
 func convertFormtoCategory(form *categoryForm) models.Category {
 	return models.Category{
+		ID:   &form.ID,
 		Name: &form.Name,
+	}
+}
+
+func convertCategoryToForm(category *models.Category) categoryForm {
+	return categoryForm{
+		ID:   safeDeref(category.ID),
+		Name: safeDeref(category.Name),
 	}
 }
 
@@ -211,13 +221,29 @@ func convertCreatortoForm(creator *models.Creator) creatorForm {
 }
 
 func convertFormtoTag(form *tagForm) models.Tag {
-	var categoryId int
-	if form.CategoryId != 0 {
-		categoryId = form.CategoryId
+	var categoryId *int
+	if form.CategoryID != 0 {
+		categoryId = &form.CategoryID
 	}
 	return models.Tag{
+		ID:       &form.ID,
 		Name:     &form.Name,
-		Category: &models.Category{ID: &categoryId},
+		Category: &models.Category{ID: categoryId},
+	}
+}
+
+func convertTagtoForm(tag *models.Tag) tagForm {
+	var categoryId int
+	var categoryName string
+	if tag.Category != nil {
+		categoryId = safeDeref(tag.Category.ID)
+		categoryName = safeDeref(tag.Category.Name)
+	}
+	return tagForm{
+		ID:            safeDeref(tag.ID),
+		Name:          safeDeref(tag.Name),
+		CategoryID:    categoryId,
+		CategoryInput: categoryName,
 	}
 }
 
@@ -253,6 +279,7 @@ func (app *application) convertFormtoEpisode(form *episodeForm) models.Episode {
 		ID:       &form.ID,
 		Title:    &form.Title,
 		Number:   &form.Number,
+		URL:      &form.URL,
 		AirDate:  episodeAirDate,
 		SeasonId: &form.SeasonId,
 	}

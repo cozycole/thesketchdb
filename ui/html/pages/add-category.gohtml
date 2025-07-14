@@ -1,57 +1,42 @@
 {{ define "title" }}Add Category{{ end }}
 
 {{ define "main" }}
-  <div data-page="add-category">
-    <h1 class="font-bold text-xl">Add Category</h1>
-    {{ with .Flash }}
-      <h2
-        class="w-fit p-3 my-2 font-bold text-md text-green-600 border-green-700 bg-green-200 rounded-md"
-      >
-        {{ . }}
-      </h2>
-    {{ end }}
-    <form class="max-w-md" method="POST" action="/category/add">
-      <div>
-        <label class="inline-block my-2">Category Name</label>
-        {{ with .Forms.Category.FieldErrors.categoryName }}
-          <label class="block text-red-700">{{ . }}</label>
-        {{ end }}
-        <input
-          name="categoryName"
-          value="{{ with .Forms.Category.Name }}{{ . }}{{ end }}"
-          class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-          placeholder="Enter category name"
-        />
-      </div>
-      <div id="categoryHtmxDropdown" class="relative w-full">
-        <label>Parent</label>
-        {{ with .Forms.Category.FieldErrors.parentId }}
-          <label class="block text-red-700">{{ . }}</label>
-        {{ end }}
-        <input
-          type="hidden"
-          name="parentId"
-          value="{{ with .Forms.Category.ParentId }}{{ . }}{{ end }}"
-        />
-        <input
-          type="search"
-          name="parentInput"
-          value="{{ with .Forms.Category.ParentInput }}{{ . }}{{ end }}"
-          class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-          placeholder="Search for parent category"
-          hx-get="/category/search"
-          hx-params="query"
-          hx-trigger="focus, input changed delay:500ms, search"
-          hx-target="next"
-        />
-        <div></div>
-      </div>
-      <button
-        type="submit"
-        class="my-2 p-1 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
-      >
-        Submit
-      </button>
-    </form>
-  </div>
+  <main data-page="add-category" class="w-full flex-1 p-3 bg-slate-300">
+    <div class="max-w-screen-lg mx-auto p-3 space-y-3 bg-slate-50 rounded-lg">
+      <h1 class="font-bold text-xl">{{ .Page.Title }}</h1>
+      {{ with .Page.Form }}
+        {{ template "category-form" . }}
+      {{ end }}
+    </div>
+  </main>
+{{ end }}
+
+{{ define "category-form" }}
+  <form
+    class="w-full max-w-lg space-y-3"
+    hx-post="{{ .Action }}"
+    hx-target="this"
+    hx-target-422="this"
+  >
+    <input type="hidden" name="id" value="{{ .ID }}" />
+    <div>
+      <label class="inline-block my-2">Category Name</label>
+      {{ with .FieldErrors.categoryName }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        name="categoryName"
+        value="{{ .Name }}"
+        autocomplete="off"
+        class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        placeholder="Enter category name"
+      />
+    </div>
+    <button
+      type="submit"
+      class="my-2 p-1 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+    >
+      Submit
+    </button>
+  </form>
 {{ end }}

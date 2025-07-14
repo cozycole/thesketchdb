@@ -125,6 +125,8 @@ type EpisodePage struct {
 	ShowImage    string
 	SketchCount  int
 	Sketches     *SketchGallery
+	WatchUrl     string
+	WatchImage   string
 }
 
 func EpisodePageView(show *models.Show, episode *models.Episode, baseImgUrl string) (*EpisodePage, error) {
@@ -138,6 +140,7 @@ func EpisodePageView(show *models.Show, episode *models.Episode, baseImgUrl stri
 
 	page.EpisodeTitle = createEpisodeTitle(episode)
 	page.EpisodeInfo = seasonEpisodeInfo(episode)
+	page.WatchUrl, page.WatchImage = determineEpisodeWatchURL(episode)
 
 	page.Image = "/static/img/missing-thumbnail.jpg"
 	if episode.Thumbnail != nil {

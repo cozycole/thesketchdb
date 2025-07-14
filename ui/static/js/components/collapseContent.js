@@ -10,8 +10,7 @@ export class CollapsibleContent extends HTMLElement {
     this.init();
     window.addEventListener("resize", () => this.updateHeight());
   }
-
-  init() {
+  async init() {
     if (!document.contains(this.toggleBtn)) {
       this.toggleBtn = this.querySelector(".toggleBtn");
       this.toggleBtn.addEventListener("click", () => this.toggleContent());
@@ -23,25 +22,47 @@ export class CollapsibleContent extends HTMLElement {
 
     if (!document.contains(this.content)) {
       this.content = this.querySelector(".content");
-      this.content.style.maxHeight = this.content.scrollHeight + "px";
     }
-    setTimeout(() => {
-      this.content.style.maxHeight = this.isOpen
-        ? this.content.scrollHeight + "px"
-        : "0px";
-    }, 0);
 
     this.arrow.classList.toggle("rotate-180", !this.isOpen);
 
-    if (this.dataset.status === "closed") {
-      this.toggleContent();
+    // Temporarily disable transition classes
+    this.content.classList.remove(
+      "transition-all",
+      "duration-500",
+      "ease-in-out",
+    );
+
+    await this.waitForImagesToLoad();
+
+    if (this.isOpen) {
+      this.content.classList.remove("collapsed");
+      this.content.style.maxHeight = this.content.scrollHeight + "px";
+    } else {
+      // collapsed class should be in the HTML already or added here
+      this.content.classList.add("collapsed");
+      this.content.style.maxHeight = "0px";
     }
+
+    // Force reflow, then re-enable transitions
+    void this.content.offsetHeight;
+
+    // Use requestAnimationFrame to re-enable transitions after layout
+    requestAnimationFrame(() => {
+      this.content.classList.add(
+        "transition-all",
+        "duration-500",
+        "ease-in-out",
+      );
+    });
 
     this.observeContentMutations();
   }
 
   toggleContent() {
-    this.isOpen = this.content.style.maxHeight !== "0px";
+    this.content.classList.remove("collapsed");
+    this.isOpen =
+      this.content.style.maxHeight && this.content.style.maxHeight !== "0px";
     this.content.style.maxHeight = this.isOpen
       ? "0px"
       : this.content.scrollHeight + "px";
@@ -53,6 +74,27 @@ export class CollapsibleContent extends HTMLElement {
     if (this.isOpen) {
       this.content.style.maxHeight = this.content.scrollHeight + "px";
     }
+  }
+
+  contentVisible() {
+    if (
+      this.content.sytle.maxHeight === "0px" ||
+      !this.content.style.maxHeight
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  waitForImagesToLoad() {
+    const images = this.content.querySelectorAll("img");
+    const promises = Array.from(images).map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise((resolve) =>
+        img.addEventListener("load", resolve, { once: true }),
+      );
+    });
+    return Promise.all(promises);
   }
 
   // if the content is mutated in any way we want to update the height to include

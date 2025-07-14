@@ -30,11 +30,14 @@
       </div>
     </div>
     <a href="{{ .Url }}">
-      <img
-        src="{{ .LargeImage }}"
-        class="w-full rounded-lg"
-        onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
-      />
+      <div class="aspect-[16/9]">
+        <img
+          src="{{ .LargeImage }}"
+          class="w-full rounded-lg"
+          fetchpriority="high"
+          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+        />
+      </div>
     </a>
     <div class="h-14 bg-slate-950 rounded-b-lg"></div>
   </div>

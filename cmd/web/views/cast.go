@@ -42,7 +42,7 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 	}
 
 	// Card Image can be, based on priority:
-	// 1) Cast Image 2) Character Profile 3) Actor Profile 4) Missing Profile
+	// 1) Cast Image 2) Actor Profile 3) Missing Profile
 	card.Image = fmt.Sprintf("/static/img/missing-profile.jpg")
 	if member.Actor != nil {
 		if member.Actor.ID != nil && member.Actor.Slug != nil {
@@ -70,12 +70,12 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 				*member.Character.ID,
 				*member.Character.Slug)
 
-			if member.Character.Image != nil {
-				card.Image = fmt.Sprintf(
-					"%s/character/%s",
-					baseImgUrl,
-					*member.Character.Image)
-			}
+			// if member.Character.Image != nil {
+			// 	card.Image = fmt.Sprintf(
+			// 		"%s/character/%s",
+			// 		baseImgUrl,
+			// 		*member.Character.Image)
+			// }
 		}
 	}
 
@@ -85,7 +85,6 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 				"%s/cast/profile/%s",
 				baseImgUrl,
 				*member.ProfileImg)
-
 	}
 
 	card.CardUrl = card.ActorUrl
@@ -119,7 +118,9 @@ func CastTableView(cast []*models.CastMember, sketchID int, baseImgUrl string) C
 	for _, c := range cast {
 		row := CastRow{}
 		row.ID = safeDeref(c.ID)
-		if c.ProfileImg != nil {
+		if c.ProfileImg == nil && c.Actor != nil {
+			row.ImageUrl = fmt.Sprintf("%s/person/%s", baseImgUrl, safeDeref(c.Actor.ProfileImg))
+		} else {
 			row.ImageUrl = fmt.Sprintf("%s/cast/profile/%s", baseImgUrl, safeDeref(c.ProfileImg))
 		}
 
