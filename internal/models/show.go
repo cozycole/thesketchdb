@@ -115,7 +115,7 @@ func (m *ShowModel) AddSeason(showId int) (int, error) {
 
 func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	stmt := `
-		SELECT e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.youtube_id,
+		SELECT e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.url, e.youtube_id,
 		v.id, v.title, v.slug, v.sketch_url, v.sketch_number, 
 		se.id, e.episode_number, se.season_number,
 		v.thumbnail_name, v.upload_date, 
@@ -138,7 +138,7 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 		v := &Sketch{}
 		s := &Show{}
 		rows.Scan(
-			&e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.YoutubeID,
+			&e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.URL, &e.YoutubeID,
 			&v.ID, &v.Title, &v.Slug, &v.URL, &v.Number, &e.SeasonId,
 			&v.EpisodeNumber, &e.SeasonNumber, &v.ThumbnailName, &v.UploadDate,
 			&s.ID, &s.Name, &s.ProfileImg, &s.Slug,
@@ -156,6 +156,10 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 		if e.SeasonNumber != nil {
 			v.SeasonNumber = new(int)
 			*v.SeasonNumber = *e.SeasonNumber
+		}
+		if s.Name != nil {
+			e.ShowName = new(string)
+			*e.ShowName = *s.Name
 		}
 		e.Sketches = append(e.Sketches, v)
 	}
@@ -235,8 +239,8 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 func (m *ShowModel) InsertEpisode(episode *Episode) (int, error) {
 	stmt := `
 		INSERT INTO episode 
-		(season_id, episode_number, title, url, air_date, thumbnail_name)
-		VALUES ($1,$2,$3,$4,$5,$6)
+		(season_id, episode_number, title, url, air_date, thumbnail_name, youtube_id)
+		VALUES ($1,$2,$3,$4,$5,$6,$7)
 		RETURNING id
 	`
 
@@ -244,7 +248,7 @@ func (m *ShowModel) InsertEpisode(episode *Episode) (int, error) {
 	err := m.DB.QueryRow(
 		context.Background(), stmt,
 		episode.SeasonId, episode.Number, episode.Title,
-		episode.URL, episode.AirDate, episode.Thumbnail,
+		episode.URL, episode.AirDate, episode.Thumbnail, &episode.YoutubeID,
 	).Scan(&id)
 
 	if err != nil {
@@ -772,14 +776,14 @@ func (m *ShowModel) UpdateEpisode(episode *Episode) error {
 	stmt := `
 		UPDATE episode 
 		SET episode_number = $1, title = $2, air_date = $3, thumbnail_name = $4,
-		url = $5	
-		WHERE id = $6
+		url = $5, youtube_id = $6
+		WHERE id = $7
 	`
 
 	_, err := m.DB.Exec(
 		context.Background(), stmt, episode.Number,
 		episode.Title, episode.AirDate, episode.Thumbnail,
-		episode.URL, episode.ID,
+		episode.URL, episode.YoutubeID, episode.ID,
 	)
 	return err
 }

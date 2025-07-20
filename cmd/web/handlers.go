@@ -50,6 +50,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	latestViews, err := views.SketchThumbnailsView(latest, app.baseImgUrl, "")
 
 	popularFilter := models.Filter{
+		SortBy: "popular",
 		Limit:  20,
 		Offset: 0,
 	}

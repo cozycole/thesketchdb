@@ -89,6 +89,7 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 		ImageBaseUrl: app.baseImgUrl,
 		Forms:        Forms{},
 		User:         user,
+		Origin:       app.settings.origin,
 		IsEditor:     isEditor,
 		IsAdmin:      isAdmin,
 	}

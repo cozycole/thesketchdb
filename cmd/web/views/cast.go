@@ -63,20 +63,15 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 	card.ActorName = PrintPersonName(member.Actor)
 	card.CastRole = uppercaseFirst(safeDeref(member.CastRole))
 
+	var characterType string
 	if member.Character != nil {
 		if member.Character.ID != nil && member.Character.Slug != nil {
 			card.CharacterUrl = fmt.Sprintf(
 				"/character/%d/%s",
 				*member.Character.ID,
 				*member.Character.Slug)
-
-			// if member.Character.Image != nil {
-			// 	card.Image = fmt.Sprintf(
-			// 		"%s/character/%s",
-			// 		baseImgUrl,
-			// 		*member.Character.Image)
-			// }
 		}
+		characterType = safeDeref(member.Character.Type)
 	}
 
 	if member.ProfileImg != nil {
@@ -88,7 +83,11 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 	}
 
 	card.CardUrl = card.ActorUrl
-	if card.CharacterUrl != "" {
+
+	// we only want to route to a character page on card click if it's
+	// an interesting character (i.e. not generic)
+	useCharacterUrl := characterType != "" && characterType != "generic"
+	if card.CharacterUrl != "" && useCharacterUrl {
 		card.CardUrl = card.CharacterUrl
 	}
 

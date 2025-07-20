@@ -35,6 +35,7 @@ type application struct {
 	people         models.PersonModelInterface
 	profile        models.ProfileModelInterface
 	shows          models.ShowModelInterface
+	series         models.SeriesModelInterface
 	tags           models.TagModelInterface
 	users          models.UserModelInterface
 	sketches       models.SketchModelInterface
@@ -49,6 +50,7 @@ type settings struct {
 	maxSearchResults  int
 	localImageServer  bool
 	localImageStorage bool
+	origin            string
 }
 
 func main() {
@@ -68,13 +70,14 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	var dbUrl, imgStoragePath, imgBaseUrl string
+	var dbUrl, imgStoragePath, imgBaseUrl, origin string
 	var fileStorage img.FileStorageInterface
 	if *testing {
 		*debug = true
 		infoLog.Println("Testing env selected, debug mode set")
 		dbUrl = os.Getenv("TEST_DB_URL")
 		imgBaseUrl = os.Getenv("TEST_IMG_URL")
+		origin = os.Getenv("TEST_ORIGIN")
 		if *localImgServer {
 			imgStoragePath = os.Getenv("TEST_IMG_DISK_STORAGE")
 			fileStorage = &img.FileStorage{RootPath: imgStoragePath}
@@ -93,6 +96,7 @@ func main() {
 		infoLog.Println("Production env selected")
 		dbUrl = os.Getenv("DB_URL")
 		imgBaseUrl = os.Getenv("IMG_URL")
+		origin = os.Getenv("ORIGIN")
 		client := S3Client(
 			os.Getenv("S3_ENDPOINT"),
 			os.Getenv("S3_KEY"),
@@ -145,6 +149,7 @@ func main() {
 		tags:           &models.TagModel{DB: dbpool},
 		users:          &models.UserModel{DB: dbpool},
 		sketches:       &models.SketchModel{DB: dbpool},
+		series:         &models.SeriesModel{DB: dbpool},
 		sessionManager: sessionManager,
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,
@@ -153,8 +158,10 @@ func main() {
 			maxSearchResults:  12,
 			localImageServer:  *localImgServer,
 			localImageStorage: *localImgStorage,
+			origin:            origin,
 		},
 	}
+	app.infoLog.Println("ORIGIN: ", origin)
 
 	srv := &http.Server{
 		Addr:     *addr,

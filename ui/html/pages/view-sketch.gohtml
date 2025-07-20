@@ -35,7 +35,7 @@
               mt-3 lg:mt-0 p-5 rounded-xl bg-white"
           >
             <div class="mb-3">
-              <h1 class="text-2xl font-bold my-1 md:line-clamp-2">
+              <h1 class="text-2xl font-bold md:line-clamp-2">
                 {{ .Title }}
                 {{- if $.IsEditor -}}
                   <span class="text-sm">
@@ -46,7 +46,7 @@
               </h1>
             </div>
             <div class="flex flex-nowrap items-start mb-6">
-              <div class="w-12 md:w-14 min-w-8 mr-3">
+              <div class="w-12 mt-2 min-w-8 mr-3">
                 <a href="{{ .CreatorUrl }}">
                   <img
                     src="{{ .CreatorImage }}"
@@ -133,7 +133,7 @@
                 Watch Now
               </button>
             </div>
-            <div class="mt-4">
+            <div class="mt-3">
               <h3
                 class="mb-3 py-1 font-medium text-slate-500 border-b border-slate-200"
               >
@@ -143,7 +143,7 @@
                 {{ with .YoutubeUrl }}
                   <a href="{{ . }}" target="_blank">
                     <img
-                      class="w-14 rounded-full transition-all duration-300 hover:shadow-lg"
+                      class="w-12 rounded-full transition-all duration-300 hover:shadow-lg"
                       src="/static/img/youtube-logo.jpg"
                     />
                   </a>
@@ -151,6 +151,48 @@
               </div>
             </div>
           </div>
+        </div>
+        <div id="infoSection" class="w-full my-3 bg-white p-4 rounded-md">
+          <collapse-content>
+            <div class="castHeader flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="w-6 text-slate-900">
+                  {{ template "description-icon" }}
+                </div>
+                <h2 class="ml-2 text-xl font-bold">Sketch Info</h2>
+              </div>
+              <button class="toggleBtn transition-all">
+                <svg
+                  class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  focusable="false"
+                >
+                  <path
+                    d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
+                    fill="currentColor"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+            <div
+              class="content overflow-hidden transition-all duration-500 ease-in-out"
+            >
+              <div class="mt-3">
+                {{ if .InSeries }}
+                  <p class="font-medium italic line-clamp-1">
+                    Part {{ .SeriesPart }} of
+                    <a class="underline" href="{{ .SeriesUrl }}"
+                      >{{ .SeriesTitle }}</a
+                    >
+                  </p>
+                {{ end }}
+                <p>
+                  {{ .Description }}
+                </p>
+              </div>
+            </div>
+          </collapse-content>
         </div>
         <div id="castSection" class="w-full my-3 bg-white p-4 rounded-md">
           <collapse-content>
@@ -226,8 +268,8 @@
         </div>
       {{ end }}
     </div>
-    {{ with .Page.YoutubeId }}
-      <youtube-embed>
+    {{ if .Page.YoutubeId }}
+      <youtube-embed start="{{ .Page.StartTime }}">
         <div
           id="watchNow"
           class="toggleSketch hidden items-center justify-center fixed inset-0"
@@ -239,7 +281,7 @@
                 id="watchNowIframe"
                 allowfullscreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                src="https://www.youtube.com/embed/{{ . }}?enablejsapi=1&origin=localhost:4000"
+                src="https://www.youtube.com/embed/{{ .Page.YoutubeId }}?enablejsapi=1&origin={{ .Origin }}"
                 title="YouTube sketch player"
                 frameborder="0"
                 allowscriptaccess="always"

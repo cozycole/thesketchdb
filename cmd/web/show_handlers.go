@@ -31,7 +31,7 @@ func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
 
 	filter := &models.Filter{
 		Limit:  8,
-		SortBy: "az",
+		SortBy: "popular",
 		Shows:  []*models.Show{show},
 	}
 
@@ -495,6 +495,10 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	episode := app.convertFormtoEpisode(&form)
+	youtubeID, _ := extractYouTubeVideoID(safeDeref(episode.URL))
+	if youtubeID != "" {
+		episode.YoutubeID = &youtubeID
+	}
 
 	thumbnailName, err := generateThumbnailName(form.Thumbnail)
 	if err != nil {
@@ -511,7 +515,12 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 	}
 	episode.ID = &id
 
-	app.saveLargeThumbnail(thumbnailName, "episode", form.Thumbnail)
+	err = app.saveLargeThumbnail(thumbnailName, "episode", form.Thumbnail)
+	if err != nil {
+		app.serverError(r, w, err)
+		app.shows.DeleteEpisode(id)
+		return
+	}
 
 	season, err := app.shows.GetSeason(*episode.SeasonId)
 	if err != nil {
@@ -595,6 +604,10 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	episode := app.convertFormtoEpisode(&form)
+	youtubeID, _ := extractYouTubeVideoID(safeDeref(episode.URL))
+	if youtubeID != "" {
+		episode.YoutubeID = &youtubeID
+	}
 
 	var thumbnailName string
 	if oldEpisode.Thumbnail != nil {

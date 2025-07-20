@@ -39,6 +39,7 @@ type templateData struct {
 	ImageBaseUrl    string
 	IsAdmin         bool
 	IsEditor        bool
+	Origin          string
 	Season          *models.Season
 	SectionType     string
 	Show            *models.Show

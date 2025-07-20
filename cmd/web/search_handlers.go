@@ -369,6 +369,47 @@ func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
+func (app *application) seriesSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("query")
+
+	redirLink := "/series/add"
+	redirText := "Add Series +"
+	results := dropdownSearchResults{
+		Redirect:     redirLink,
+		RedirectText: redirText,
+	}
+
+	if q != "" {
+		q = strings.Replace(q, " ", "", -1)
+		series, err := app.series.Search(q)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverError(r, w, err)
+				return
+			}
+		}
+
+		if series != nil {
+			res := []result{}
+			for _, s := range series {
+				r := result{}
+				r.ID = safeDeref(s.ID)
+				r.Text = safeDeref(s.Title)
+				r.Image = fmt.Sprintf("%s/series/%s", app.baseImgUrl, safeDeref(s.ThumbnailName))
+				res = append(res, r)
+			}
+
+			results.Results = res
+		}
+	}
+	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
+
+	data := app.newTemplateData(r)
+	data.DropdownResults = results
+
+	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
+}
+
 func getFormattedQueries(query string) (string, string, string) {
 	// to be used in the ui
 	rawQuery, _ := url.QueryUnescape(query)

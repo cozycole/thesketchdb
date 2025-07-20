@@ -136,7 +136,7 @@
     </div>
     <div>
       <form-search>
-        <label class="inline-block">Creator Name</label>
+        <label class="inline-block font-bold text-lg">Creator</label>
         {{ with .FieldErrors.creatorId }}
           <label class="block text-red-700">{{ . }}</label>
         {{ end }}
@@ -144,6 +144,7 @@
           <input type="hidden" name="creatorId" value="{{ .CreatorID }}" />
           <input
             type="search"
+            autocomplete="off"
             name="creatorInput"
             value="{{ .CreatorInput }}"
             class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
@@ -162,7 +163,7 @@
     </div>
     <div>
       <form-search>
-        <label class="inline-block">Show Episode</label>
+        <label class="inline-block font-bold text-lg">Show Episode</label>
         {{ with .FieldErrors.creatorId }}
           <label class="block text-red-700">{{ . }}</label>
         {{ end }}
@@ -170,6 +171,7 @@
           <input type="hidden" name="episodeId" value="{{ .EpisodeID }}" />
           <input
             type="search"
+            autocomplete="off"
             name="episodeInput"
             value="{{ .EpisodeInput }}"
             class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
@@ -189,6 +191,7 @@
       <label class="inline-block">Sketch Episode Start Time (seconds)</label>
       <input
         type="text"
+        autocomplete="off"
         name="episodeStart"
         value="{{ .EpisodeStart }}"
         class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
@@ -200,9 +203,50 @@
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
       <input
+        autocomplete="off"
         type="number"
         name="number"
         value="{{ .Number }}"
+        class="max-w-24 p-1 border border-slate-300 rounded-lg bg-slate-50 
+                  text-slate-700 placeholder-slate-400"
+      />
+    </div>
+    <div>
+      <form-search>
+        <label class="inline-block font-bold text-lg">Series</label>
+        {{ with .FieldErrors.seriesId }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <div class="relative">
+          <input type="hidden" name="seriesId" value="{{ .SeriesID }}" />
+          <input
+            type="search"
+            autocomplete="off"
+            name="seriesInput"
+            value="{{ .SeriesInput }}"
+            class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
+            placeholder="Search series"
+            hx-get="/series/search"
+            hx-trigger="focus, input changed delay:500ms, search"
+            hx-target="next"
+            hx-swap="innerHTML"
+          />
+          <ul
+            class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-slate-300 rounded shadow-lg z-10 empty:hidden"
+          ></ul>
+        </div>
+      </form-search>
+    </div>
+    <div>
+      <label class="inline-block">Series Part Number</label>
+      {{ with .FieldErrors.seriesPart }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="number"
+        autocomplete="off"
+        name="seriesPart"
+        value="{{ .SeriesPart }}"
         class="max-w-24 p-1 border border-slate-300 rounded-lg bg-slate-50 
                   text-slate-700 placeholder-slate-400"
       />

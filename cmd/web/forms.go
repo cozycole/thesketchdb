@@ -155,6 +155,9 @@ type sketchForm struct {
 	EpisodeID           int                   `form:"episodeId"`
 	EpisodeInput        string                `form:"episodeInput"`
 	EpisodeStart        int                   `form:"episodeStart"`
+	SeriesID            int                   `form:"seriesId"`
+	SeriesInput         string                `form:"seriesInput"`
+	SeriesPart          int                   `form:"seriesPart"`
 	Action              string                `form:"-"`
 	ImageUrl            string                `form:"-"`
 	validator.Validator `form:"-"`
@@ -164,7 +167,6 @@ type sketchForm struct {
 // to validate based on database queries
 func (app *application) validateSketchForm(form *sketchForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
 	form.CheckField(form.CreatorID != 0 || form.EpisodeID != 0, "creatorId", "A creator or episode must be defined")
 	form.CheckField(validator.NotBlank(form.UploadDate), "uploadDate", "This field cannot be blank")
 	form.CheckField(validator.ValidDate(form.UploadDate), "uploadDate", "Date must be of the format YYYY-MM-DD")
@@ -440,6 +442,48 @@ func (app *application) validateEpisodeForm(form *episodeForm) {
 	if form.AirDate != "" {
 		form.CheckField(validator.ValidDate(form.AirDate), "airDate", "Date must be of the format YYYY-MM-DD")
 	}
+
+	if form.ID == 0 {
+		form.CheckField(form.Thumbnail != nil, "thumbnail", "Please upload an image")
+	}
+
+	if form.Thumbnail == nil {
+		return
+	}
+
+	thumbnail, err := form.Thumbnail.Open()
+	if err != nil {
+		form.AddFieldError("thumbnail", "Unable to open file, ensure it is a valid jpg")
+		return
+	}
+	defer thumbnail.Close()
+
+	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg")
+	width, height, err := utils.GetImageDimensions(thumbnail)
+	if err != nil {
+		form.AddFieldError("thumbnail", "Unable to determine image dimensions")
+		return
+	}
+
+	form.CheckField(
+		width >= LargeThumbnailWidth && height >= LargeThumbnailHeight,
+		"thumbnail",
+		fmt.Sprintf("Thumbnail dimensions must be at least %dx%d", LargeThumbnailWidth, LargeThumbnailHeight),
+	)
+}
+
+type seriesForm struct {
+	ID                  int                   `form:"id"`
+	Title               string                `form:"title"`
+	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
+	ThumbnailName       string                `form:"-"`
+	ImageUrl            string                `form:"-"`
+	Action              string                `form:"-"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateSeriesForm(form *seriesForm) {
+	form.CheckField(validator.NotBlank(form.Title), "title", "Please enter a title")
 
 	if form.ID == 0 {
 		form.CheckField(form.Thumbnail != nil, "thumbnail", "Please upload an image")

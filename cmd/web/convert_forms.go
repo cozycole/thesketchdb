@@ -10,6 +10,7 @@ import (
 func convertFormToSketch(form *sketchForm) models.Sketch {
 	uploadDate, _ := time.Parse(time.DateOnly, form.UploadDate)
 	var episode *models.Episode
+	var series *models.Series
 	var creator *models.Creator
 	if form.CreatorID != 0 {
 		creator = &models.Creator{
@@ -18,6 +19,12 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 	}
 	if form.EpisodeID != 0 {
 		episode = &models.Episode{ID: &form.EpisodeID}
+	}
+
+	if form.SeriesID != 0 {
+		series = &models.Series{
+			ID: &form.SeriesID,
+		}
 	}
 
 	return models.Sketch{
@@ -31,6 +38,8 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		Creator:       creator,
 		Episode:       episode,
 		EpisodeStart:  &form.EpisodeStart,
+		Series:        series,
+		SeriesPart:    &form.SeriesPart,
 	}
 }
 
@@ -50,6 +59,13 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		episodeID = safeDeref(sketch.Episode.ID)
 		episodeName = views.PrintEpisodeName(sketch.Episode)
 	}
+
+	var seriesID int
+	var seriesName string
+	if sketch.Series != nil {
+		seriesID = safeDeref(sketch.Series.ID)
+		seriesName = safeDeref(sketch.Series.Title)
+	}
 	return sketchForm{
 		ID:           safeDeref(sketch.ID),
 		Title:        safeDeref(sketch.Title),
@@ -62,6 +78,9 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		EpisodeID:    episodeID,
 		EpisodeInput: episodeName,
 		EpisodeStart: safeDeref(sketch.EpisodeStart),
+		SeriesID:     seriesID,
+		SeriesInput:  seriesName,
+		SeriesPart:   safeDeref(sketch.SeriesPart),
 	}
 }
 
@@ -291,4 +310,21 @@ func (app *application) convertShowtoForm(show *models.Show) showForm {
 		Name: safeDeref(show.Name),
 		Slug: safeDeref(show.Slug),
 	}
+}
+
+func (app *application) convertSeriestoForm(series *models.Series) seriesForm {
+	return seriesForm{
+		ID:            safeDeref(series.ID),
+		Title:         safeDeref(series.Title),
+		ThumbnailName: safeDeref(series.ThumbnailName),
+	}
+}
+
+func (app *application) convertFormtoSeries(form *seriesForm) models.Series {
+	return models.Series{
+		ID:            &form.ID,
+		Title:         &form.Title,
+		ThumbnailName: &form.ThumbnailName,
+	}
+
 }

@@ -115,18 +115,19 @@ func SeasonSelectGalleryView(seasons []*models.Season, selected *models.Season, 
 }
 
 type EpisodePage struct {
-	ID           int
-	EpisodeTitle string
-	EpisodeInfo  string
-	Image        string
-	AirDate      string
-	ShowName     string
-	ShowUrl      string
-	ShowImage    string
-	SketchCount  int
-	Sketches     *SketchGallery
-	WatchUrl     string
-	WatchImage   string
+	ID               int
+	EpisodeTitle     string
+	EpisodeInfo      string
+	Image            string
+	AirDate          string
+	ShowName         string
+	ShowUrl          string
+	ShowImage        string
+	SketchCount      int
+	Sketches         *SketchGallery
+	WatchUrl         string
+	WatchImage       string
+	UpdateEpisodeUrl string
 }
 
 func EpisodePageView(show *models.Show, episode *models.Episode, baseImgUrl string) (*EpisodePage, error) {
@@ -163,6 +164,10 @@ func EpisodePageView(show *models.Show, episode *models.Episode, baseImgUrl stri
 			*show.ID,
 			*show.Slug,
 		)
+		page.UpdateEpisodeUrl = fmt.Sprintf(
+			"/show/%d/update",
+			*show.ID,
+		)
 	}
 
 	page.ShowImage = "/static/img/missing-profile.jpg"
@@ -173,6 +178,7 @@ func EpisodePageView(show *models.Show, episode *models.Episode, baseImgUrl stri
 			*show.ProfileImg,
 		)
 	}
+
 	var err error
 	page.SketchCount = len(episode.Sketches)
 	page.Sketches, err = SketchGalleryView(

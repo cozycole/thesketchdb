@@ -195,10 +195,10 @@
         </button>
         <nav class="mt-10 space-y-3 text-xl">
           <a href="/browse" class="block ml-4">Browse</a>
-          <collapse-content data-status="closed" class="block">
+          <collapse-content default="closed" class="block">
             <div class="toggleBtn flex items-center hover:cursor-pointer">
-              <h2 class="ml-4 text-xl">Catalog</h2>
-              <button class=" transition-all">
+              <h2 class="ml-4 text-xl cursor-pointer">Catalog</h2>
+              <button class="transition-all">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -212,7 +212,7 @@
               </button>
             </div>
             <div
-              class="content overflow-hidden transition-all duration-300 ease-in-out"
+              class="content collapsed overflow-hidden transition-all duration-300 ease-in-out"
             >
               <a href="/catalog/sketches" class="text-lg font-medium">
                 <div class="flex flex-wrap items-center gap-2 mt-2">
@@ -283,9 +283,7 @@
             </div>
           </collapse-content>
           {{ with .User }}
-            <a href="/user/{{ .Username }}" class="block px-4 py-2"
-              >View Account</a
-            >
+            <a href="/user/{{ .Username }}" class="block px-4">View Account</a>
             <form class="block" action="/logout" method="POST">
               <button class="w-full ml-4 text-left">Logout</button>
             </form>

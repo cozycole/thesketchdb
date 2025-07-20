@@ -1,0 +1,69 @@
+{{ define "title" }}{{ .Page.Title }}{{ end }}
+
+{{ define "main" }}
+  <main data-page="series-form" class="w-full flex-1 p-3 bg-slate-300">
+    <div class="max-w-screen-lg mx-auto p-3 space-y-3 bg-slate-50 rounded-lg">
+      <h1 class="font-bold text-xl">{{ .Page.Title }}</h1>
+      {{ with .Page.Form }}
+        {{ template "series-form" . }}
+      {{ end }}
+    </div>
+  </main>
+{{ end }}
+
+{{ define "series-form" }}
+  <form
+    class="w-full max-w-lg space-y-3"
+    enctype="multipart/form-data"
+    hx-post="{{ .Action }}"
+    hx-target="this"
+    hx-target-422="this"
+  >
+    <input type="hidden" name="id" value="{{ .ID }}" />
+    <div>
+      <label class="inline-block ">Series Title</label>
+      {{ with .FieldErrors.title }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        name="title"
+        type="text"
+        autocomplete="off"
+        value="{{ .Title }}"
+        class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        placeholder="Enter series title"
+      />
+    </div>
+    <div>
+      {{- with .FieldErrors.thumbnail -}}
+        <label class="block text-red-700">{{ . }}</label>
+      {{- end -}}
+      <h3>Series Thumbnail</h3>
+      <img-preview>
+        <label
+          class="inline-block cursor-pointer p-2 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100"
+        >
+          Upload Thumbnail
+          <input type="file" name="thumbnail" accept="image/*" class="hidden" />
+        </label>
+        <button type="button" class="remove ml-2 hover:bg-slate-300">
+          <div class="w-7 text-slate-950">
+            {{ template "close-icon" }}
+          </div>
+        </button>
+        <div class="imagePreview">
+          {{ if .ImageUrl }}
+            <img src="{{ .ImageUrl }}" class="max-w-72" />
+          {{ end }}
+        </div>
+      </img-preview>
+    </div>
+    <button
+      type="submit"
+      class="block p-2 bg-slate-900 text-white border rounded-lg 
+            hover:bg-slate-800 outline-none ring-0 focus:outline-none focus:ring-0"
+    >
+      Submit
+    </button>
+  </form>
+{{ end }}

@@ -94,7 +94,14 @@ func (app *application) sketchAdd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sketch := convertFormToSketch(&form)
-	slug := models.CreateSlugName(form.Title)
+	if sketch.Episode != nil {
+		sketch.Episode, _ = app.shows.GetEpisode(safeDeref(sketch.Episode.ID))
+	}
+	if sketch.Creator != nil {
+		sketch.Creator, _ = app.creators.GetById(safeDeref(sketch.Creator.ID))
+	}
+
+	slug := createSketchSlug(&sketch)
 	sketch.Slug = &slug
 
 	thumbName, err := generateThumbnailName(form.Thumbnail)
@@ -225,6 +232,15 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sketch := convertFormToSketch(&form)
+	if sketch.Episode != nil {
+		sketch.Episode, _ = app.shows.GetEpisode(safeDeref(sketch.Episode.ID))
+	}
+	if sketch.Creator != nil {
+		sketch.Creator, _ = app.creators.GetById(safeDeref(sketch.Creator.ID))
+	}
+
+	slug := createSketchSlug(&sketch)
+	sketch.Slug = &slug
 
 	var thumbnailName string
 	if oldSketch.ThumbnailName != nil {
@@ -407,4 +423,25 @@ func (app *application) sketchUpdateTags(w http.ResponseWriter, r *http.Request)
 	}
 
 	app.render(r, w, http.StatusOK, "tag-table.gohtml", "tag-table", views.TagTableView(tags, sketchId))
+}
+
+func createSketchSlug(sketch *models.Sketch) string {
+	var slugInput string
+	if sketch.Episode != nil {
+		episode := sketch.Episode
+		showString := safeDeref(episode.ShowName)
+		seasonNumber := safeDeref(episode.SeasonNumber)
+		episodeNumber := safeDeref(episode.Number)
+		slugInput += fmt.Sprintf("%s s%d e%d", showString, seasonNumber, episodeNumber)
+	}
+
+	if sketch.Creator != nil {
+		slugInput += safeDeref(sketch.Creator.Name)
+	}
+
+	if slugInput == "" {
+		return safeDeref(sketch.Title)
+	}
+
+	return models.CreateSlugName(slugInput + " " + safeDeref(sketch.Title))
 }

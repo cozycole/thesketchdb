@@ -10,19 +10,21 @@
         <div
           class="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black bg-opacity-50 rounded-b-md"
         >
-          <h3
-            class="block text-nowrap overflow-hidden text-ellipsis text-white font-medium"
-          >
+          <h3 class="block text-nowrap overflow-hidden text-white font-medium">
             <a
               {{ with .CharacterUrl }}
                 class="block w-fit border-b border-transparent
                 hover:border-white pb-[0.5px]" href="{{ . }}"
               {{ end }}}
             >
-              <p class="sm:text-lg">{{ .CharacterName }}</p>
+              <p class="md:text-lg line-clamp-1 break-all">
+                {{ .CharacterName }}
+              </p>
             </a>
           </h3>
-          <h4 class="text-white text-sm sm:text-base w-fit">
+          <h4
+            class="text-white text-xs sm:text-sm md:text-base w-fit line-clamp-1 break-all"
+          >
             <a
               {{ with .ActorUrl }}
                 href="{{ . }}" class="hover:border-b border-white pb-[0.5px]"

@@ -9,11 +9,12 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-const YOUTUBE_URL = "https://www.youtube.com/watch?v=%s"
+const YOUTUBE_URL = "https://www.youtube.com/watch?v=%s&t=%ds"
 
 type SketchPage struct {
 	SketchID      int
 	Title         string
+	Description   string
 	Image         string
 	UpdateUrl     string
 	YoutubeId     string
@@ -28,6 +29,11 @@ type SketchPage struct {
 	EpisodeNumber int
 	EpisodeUrl    string
 	SketchNumber  int
+	StartTime     int
+	SeriesPart    int
+	SeriesTitle   string
+	SeriesUrl     string
+	InSeries      bool
 	Cast          CastGallery
 	Tags          []*Tag
 }
@@ -54,13 +60,19 @@ func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string
 		page.Title = "Missing Title"
 	}
 
+	page.Description = safeDeref(sketch.Description)
+
 	if sketch.UploadDate != nil {
 		page.Date = sketch.UploadDate.UTC().Format("Jan 2, 2006")
 	}
 
 	if sketch.YoutubeID != nil {
 		page.YoutubeId = *sketch.YoutubeID
-		page.YoutubeUrl = fmt.Sprintf(YOUTUBE_URL, *sketch.YoutubeID)
+		page.YoutubeUrl = fmt.Sprintf(YOUTUBE_URL, *sketch.YoutubeID, 0)
+	} else if sketch.Episode != nil {
+		page.YoutubeId = safeDeref(sketch.Episode.YoutubeID)
+		page.YoutubeUrl = fmt.Sprintf(YOUTUBE_URL, page.YoutubeId, safeDeref(sketch.EpisodeStart))
+		page.StartTime = safeDeref(sketch.EpisodeStart)
 	}
 
 	if sketch.Liked != nil {
@@ -124,6 +136,20 @@ func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string
 	} else {
 		page.CreatorName = "Missing Creator"
 		page.CreatorImage = fmt.Sprintf("%s/missing-profile.jpg", baseImgUrl)
+	}
+
+	if sketch.Series != nil {
+		page.SeriesTitle = safeDeref(sketch.Series.Title)
+		page.SeriesUrl = fmt.Sprintf(
+			"/series/%d/%s",
+			safeDeref(sketch.Series.ID),
+			safeDeref(sketch.Series.Slug),
+		)
+		page.SeriesPart = safeDeref(sketch.SeriesPart)
+
+		page.InSeries = page.SeriesTitle != "" &&
+			sketch.Series.ID != nil &&
+			safeDeref(sketch.SeriesPart) != 0
 	}
 
 	return &page, nil
@@ -460,17 +486,13 @@ func CreatorsSelectedJSON(creators []*models.Creator, baseURL string) (string, e
 	items := make([]SelectedItem, 0, len(creators))
 	for _, c := range creators {
 
-		var name string
-		if c.Name != nil {
-			name = *c.Name
-		}
 		var image string
 		if c.ProfileImage != nil {
 			image = fmt.Sprintf("%s/creator/%s", baseURL, *c.ProfileImage)
 		}
 		items = append(items, SelectedItem{
 			ID:    strconv.Itoa(*c.ID),
-			Name:  name,
+			Name:  safeDeref(c.Name),
 			Image: image,
 		})
 	}
@@ -482,17 +504,13 @@ func ShowsSelectedJSON(shows []*models.Show, baseURL string) (string, error) {
 	items := make([]SelectedItem, 0, len(shows))
 	for _, s := range shows {
 
-		var name string
-		if s.Name != nil {
-			name = *s.Name
-		}
 		var image string
 		if s.ProfileImg != nil {
 			image = fmt.Sprintf("%s/show/%s", baseURL, *s.ProfileImg)
 		}
 		items = append(items, SelectedItem{
 			ID:    strconv.Itoa(*s.ID),
-			Name:  name,
+			Name:  safeDeref(s.Name),
 			Image: image,
 		})
 	}
@@ -504,17 +522,13 @@ func CharactersSelectedJSON(characters []*models.Character, baseURL string) (str
 	items := make([]SelectedItem, 0, len(characters))
 	for _, c := range characters {
 
-		var name string
-		if c.Name != nil {
-			name = *c.Name
-		}
 		var image string
 		if c.Image != nil {
 			image = fmt.Sprintf("%s/character/%s", baseURL, *c.Image)
 		}
 		items = append(items, SelectedItem{
 			ID:    strconv.Itoa(*c.ID),
-			Name:  name,
+			Name:  safeDeref(c.Name),
 			Image: image,
 		})
 	}
@@ -527,9 +541,10 @@ func TagsSelectedJSON(tags []*models.Tag) (string, error) {
 	for _, t := range tags {
 
 		var name string
-		if t.Name != nil {
-			name = *t.Name
+		if t.Category != nil && safeDeref(t.Category.Name) != "" {
+			name = fmt.Sprintf("%s / ", safeDeref(t.Category.Name))
 		}
+		name += safeDeref(t.Name)
 		items = append(items, SelectedItem{
 			ID:   strconv.Itoa(*t.ID),
 			Name: name,

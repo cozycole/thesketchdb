@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS person (
     birthdate DATE, 
     profile_img TEXT,
     search_vector tsvector,
+    popularity_score REAL DEFAULT 0,
     insert_timestamp TIMESTAMP DEFAULT now()
 );
 
@@ -22,7 +23,9 @@ CREATE TABLE IF NOT EXISTS character (
     img_name TEXT,
     insert_timestamp TIMESTAMP DEFAULT now(),
     search_vector tsvector,
-    person_id INT REFERENCES person(id)
+    person_id INT REFERENCES person(id),
+    popularity_score REAL DEFAULT 0,
+    insert_timestamp TIMESTAMP DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS creator (
@@ -34,14 +37,26 @@ CREATE TABLE IF NOT EXISTS creator (
     profile_img TEXT, 
     date_established DATE,
     search_vector tsvector,
+    popularity_score REAL DEFAULT 0,
     insert_timestamp TIMESTAMP DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS show (
     id SERIAL PRIMARY KEY,
+    slug TEXT NOT NULL,
     name TEXT NOT NULL,
     profile_img TEXT,
-    slug TEXT NOT NULL
+    popularity_score REAL DEFAULT 0,
+    insert_timestamp TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS series (
+    id SERIAL PRIMARY KEY,
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    thumbnail_name TEXT,
+    insert_timestamp TIMESTAMP DEFAULT now()
 );
 
 -- CREATE TABLE IF NOT EXISTS show_creator (
@@ -99,6 +114,7 @@ CREATE TABLE IF NOT EXISTS sketch (
     upload_date DATE,
     episode_id INT REFERENCES episode(id),
     episode_start INT, 
+    series_id INT REFERENCES series(id), 
     part_number INT,
     sketch_number INT,
     popularity_score REAL DEFAULT 0,

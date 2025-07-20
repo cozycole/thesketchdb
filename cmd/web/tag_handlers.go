@@ -28,7 +28,6 @@ func (app *application) tagAddPage(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 	var form tagForm
-	app.infoLog.Println("tag add POST")
 
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -39,7 +38,7 @@ func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 
 	app.validateTagForm(&form)
 	if !form.Valid() {
-		form.Action = "/add/tag"
+		form.Action = "/tag/add"
 		app.render(r, w, http.StatusUnprocessableEntity, "add-tag.gohtml", "tag-form", form)
 		return
 	}
