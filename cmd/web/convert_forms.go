@@ -85,6 +85,10 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 }
 
 func convertEpisodeToForm(episode *models.Episode) episodeForm {
+	var seasonId int
+	if episode.Season != nil {
+		seasonId = safeDeref(episode.Season.ID)
+	}
 	return episodeForm{
 		ID:            safeDeref(episode.ID),
 		Number:        safeDeref(episode.Number),
@@ -92,7 +96,26 @@ func convertEpisodeToForm(episode *models.Episode) episodeForm {
 		URL:           safeDeref(episode.URL),
 		AirDate:       formDate(episode.AirDate),
 		ThumbnailName: safeDeref(episode.Thumbnail),
-		SeasonId:      safeDeref(episode.SeasonId),
+		SeasonId:      seasonId,
+	}
+}
+
+func (app *application) convertFormtoEpisode(form *episodeForm) models.Episode {
+	airDate, err := time.Parse(time.DateOnly, form.AirDate)
+	episodeAirDate := &airDate
+	if err != nil {
+		episodeAirDate = nil
+	}
+
+	return models.Episode{
+		ID:      &form.ID,
+		Title:   &form.Title,
+		Number:  &form.Number,
+		URL:     &form.URL,
+		AirDate: episodeAirDate,
+		Season: &models.Season{
+			ID: &form.SeasonId,
+		},
 	}
 }
 
@@ -286,22 +309,6 @@ func (app *application) convertFormtoShow(form *showForm) models.Show {
 		Slug: &form.Slug,
 	}
 
-}
-
-func (app *application) convertFormtoEpisode(form *episodeForm) models.Episode {
-	airDate, err := time.Parse(time.DateOnly, form.AirDate)
-	episodeAirDate := &airDate
-	if err != nil {
-		episodeAirDate = nil
-	}
-	return models.Episode{
-		ID:       &form.ID,
-		Title:    &form.Title,
-		Number:   &form.Number,
-		URL:      &form.URL,
-		AirDate:  episodeAirDate,
-		SeasonId: &form.SeasonId,
-	}
 }
 
 func (app *application) convertShowtoForm(show *models.Show) showForm {

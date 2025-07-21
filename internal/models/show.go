@@ -25,11 +25,24 @@ type Show struct {
 
 type Season struct {
 	ID       *int
+	Slug     *string
 	Number   *int
-	ShowId   *int
-	ShowName *string
-	ShowSlug *string
+	Show     *Show
 	Episodes []*Episode
+}
+
+type Episode struct {
+	ID        *int
+	Slug      *string
+	Number    *int
+	Title     *string
+	URL       *string
+	AirDate   *time.Time
+	Thumbnail *string
+	Season    *Season
+	Show      *Show
+	Sketches  []*Sketch
+	YoutubeID *string
 }
 
 func (s *Season) AirYear() string {
@@ -52,25 +65,9 @@ func (s *Season) AirYear() string {
 	return strconv.Itoa(min.Year())
 }
 
-type Episode struct {
-	ID           *int
-	Slug         *string
-	Number       *int
-	Title        *string
-	URL          *string
-	AirDate      *time.Time
-	Thumbnail    *string
-	SeasonId     *int
-	SeasonNumber *int
-	ShowID       *int
-	ShowName     *string
-	ShowSlug     *string
-	Sketches     []*Sketch
-	YoutubeID    *string
-}
-
 type ShowModelInterface interface {
-	AddSeason(showId int) (int, error)
+	AddSeason(*Season) (int, error)
+	Delete(show *Show) error
 	DeleteEpisode(episodeId int) error
 	DeleteSeason(seasonid int) error
 	Get(filter *Filter) ([]*Show, error)
@@ -83,7 +80,6 @@ type ShowModelInterface interface {
 	GetShows(ids *[]int) ([]*Show, error)
 	Insert(show *Show) (int, error)
 	InsertEpisode(episode *Episode) (int, error)
-	Delete(show *Show) error
 	Search(query string) ([]*Show, error)
 	SearchEpisodes(query string) ([]*Episode, error)
 	Update(show *Show) error
@@ -94,19 +90,14 @@ type ShowModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *ShowModel) AddSeason(showId int) (int, error) {
+func (m *ShowModel) AddSeason(season *Season) (int, error) {
 	stmt := `
-		WITH latest_season AS (
-			SELECT max(season_number) as last_season
-			FROM season
-			WHERE show_id = $1
-		)
-		INSERT INTO season (show_id, season_number)
-		VALUES ($1, COALESCE((select last_season from latest_season), 0) + 1)
+		INSERT INTO season (show_id, season_number, slug)
+		VALUES ($1, $2, $3)
 		RETURNING id
 	`
 	var id int
-	err := m.DB.QueryRow(context.Background(), stmt, showId).Scan(&id)
+	err := m.DB.QueryRow(context.Background(), stmt, season.Show.ID, season.Number, season.Slug).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -115,10 +106,11 @@ func (m *ShowModel) AddSeason(showId int) (int, error) {
 
 func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	stmt := `
-		SELECT e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.url, e.youtube_id,
+		SELECT e.id, e.slug, e.episode_number, e.title, e.air_date, 
+		e.thumbnail_name, e.url, e.youtube_id,
 		v.id, v.title, v.slug, v.sketch_url, v.sketch_number, 
-		se.id, e.episode_number, se.season_number,
 		v.thumbnail_name, v.upload_date, 
+		se.id, se.slug, se.season_number,
 		sh.id, sh.name, sh.profile_img, sh.slug
 		FROM episode as e
 		LEFT JOIN sketch as v ON e.id = v.episode_id
@@ -134,35 +126,31 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	}
 
 	e := &Episode{}
+	se := &Season{}
+	sh := &Show{}
 	for rows.Next() {
 		v := &Sketch{}
-		s := &Show{}
 		rows.Scan(
-			&e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.URL, &e.YoutubeID,
-			&v.ID, &v.Title, &v.Slug, &v.URL, &v.Number, &e.SeasonId,
-			&v.EpisodeNumber, &e.SeasonNumber, &v.ThumbnailName, &v.UploadDate,
-			&s.ID, &s.Name, &s.ProfileImg, &s.Slug,
+			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
+			&e.URL, &e.YoutubeID,
+			&v.ID, &v.Title, &v.Slug, &v.URL, &v.Number,
+			&v.ThumbnailName, &v.UploadDate,
+			&se.ID, &se.Slug, &se.Number,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
 		)
 
 		if v.ID == nil {
 			continue
 		}
-		if v.SeasonNumber != nil {
-			e.SeasonNumber = new(int)
-			*e.SeasonNumber = *v.SeasonNumber
-		}
-		v.Show = s
+		v.Show = sh
+		v.Season = se
+		v.Episode = e
 
-		if e.SeasonNumber != nil {
-			v.SeasonNumber = new(int)
-			*v.SeasonNumber = *e.SeasonNumber
-		}
-		if s.Name != nil {
-			e.ShowName = new(string)
-			*e.ShowName = *s.Name
-		}
 		e.Sketches = append(e.Sketches, v)
 	}
+
+	e.Show = sh
+	e.Season = se
 
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -173,9 +161,11 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 
 func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 	stmt := `
-		SELECT DISTINCT se.id, se.season_number, 
-		e.id, e.episode_number, e.air_date, e.thumbnail_name, e.title, v.id
-		FROM season as se 
+		SELECT DISTINCT se.id, se.slug, se.season_number,
+		sh.id, sh.slug, sh.name, sh.profile_img,
+		e.id, e.slug, e.episode_number, e.air_date, e.thumbnail_name, e.title, v.id
+		FROM season as se
+		LEFT JOIN show as sh ON se.show_id = sh.id
 		LEFT JOIN episode as e ON se.id = e.season_id
 		LEFT JOIN sketch as v ON e.id = v.episode_id
 		WHERE se.id = $1
@@ -192,12 +182,14 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 
 	episodes := map[int]*Episode{}
 	s := &Season{}
+	sh := &Show{}
 	for rows.Next() {
 		e := &Episode{}
 		v := &Sketch{}
 		err := rows.Scan(
-			&s.ID, &s.Number,
-			&e.ID, &e.Number, &e.AirDate,
+			&s.ID, &s.Slug, &s.Number,
+			&sh.ID, &sh.Slug, &sh.Name, &sh.ProfileImg,
+			&e.ID, &e.Slug, &e.Number, &e.AirDate,
 			&e.Thumbnail, &e.Title, &v.ID,
 		)
 		if err != nil {
@@ -208,10 +200,7 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 			continue
 		}
 
-		e.SeasonNumber = new(int)
-		if s.Number != nil {
-			*e.SeasonNumber = *s.Number
-		}
+		e.Season = s
 
 		// If episode already exists, want to append its sketches
 		if currEpisode, ok := episodes[*e.ID]; ok {
@@ -224,7 +213,9 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 
 		episodes[*e.ID] = e
 	}
-	fmt.Printf("%+v\n", episodes)
+
+	s.Show = sh
+
 	for _, ep := range episodes {
 		s.Episodes = append(s.Episodes, ep)
 	}
@@ -239,16 +230,16 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 func (m *ShowModel) InsertEpisode(episode *Episode) (int, error) {
 	stmt := `
 		INSERT INTO episode 
-		(season_id, episode_number, title, url, air_date, thumbnail_name, youtube_id)
-		VALUES ($1,$2,$3,$4,$5,$6,$7)
+		(season_id, episode_number, title, url, air_date, thumbnail_name, youtube_id, slug)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 		RETURNING id
 	`
 
 	var id int
 	err := m.DB.QueryRow(
 		context.Background(), stmt,
-		episode.SeasonId, episode.Number, episode.Title,
-		episode.URL, episode.AirDate, episode.Thumbnail, &episode.YoutubeID,
+		episode.Season.ID, episode.Number, episode.Title,
+		episode.URL, episode.AirDate, episode.Thumbnail, &episode.YoutubeID, &episode.Slug,
 	).Scan(&id)
 
 	if err != nil {
@@ -399,8 +390,8 @@ func (m *ShowModel) GetCount(filter *Filter) (int, error) {
 func (m *ShowModel) GetById(id int) (*Show, error) {
 	stmt := `
 		SELECT DISTINCT s.id, s.name, s.profile_img, s.slug,
-		se.id, se.season_number, 
-		e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name,
+		se.id, se.slug, se.season_number, 
+		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name,
 		v.id
 		FROM show as s
 		LEFT JOIN season as se ON s.id = se.show_id
@@ -428,8 +419,8 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 		v := &Sketch{}
 		err := rows.Scan(
 			&show.ID, &show.Name, &show.ProfileImg, &show.Slug,
-			&s.ID, &s.Number,
-			&e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
+			&s.ID, &s.Slug, &s.Number,
+			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&v.ID,
 		)
 		if err != nil {
@@ -442,13 +433,7 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 			continue
 		}
 
-		s.ShowId = new(int)
-		*s.ShowId = *show.ID
-		s.ShowName = new(string)
-		*s.ShowName = *show.Name
-		s.ShowSlug = new(string)
-		*s.ShowSlug = *show.Slug
-
+		s.Show = show
 		// add season to map if not already added
 		if _, ok := seasonMap[*s.ID]; !ok {
 			seasonMap[*s.ID] = s
@@ -460,15 +445,8 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 			continue
 		}
 
-		e.ShowID = new(int)
-		*e.ShowID = *show.ID
-		e.ShowName = new(string)
-		*e.ShowName = *show.Name
-		e.ShowSlug = new(string)
-		*e.ShowSlug = *show.Slug
-		e.SeasonNumber = new(int)
-		*e.SeasonNumber = *s.Number
-
+		e.Show = show
+		e.Season = s
 		if _, ok := episodes[*e.ID]; !ok {
 			episodes[*e.ID] = e
 		}
@@ -690,7 +668,10 @@ type EpisodeQuery struct {
 
 func (m *ShowModel) SearchEpisodes(query string) ([]*Episode, error) {
 	stmt := `
-		SELECT e.id, s.season_number, e.episode_number, sh.name
+		SELECT e.id, e.slug, e.episode_number, e.title, e.url, e.air_date, e.thumbnail_name,
+		e.youtube_id,
+		s.id, s.slug, s.season_number,
+		sh.id, sh.slug, sh.name, sh.profile_img,
 		FROM episode as e
 		JOIN season as s ON e.season_id = s.id
 		JOIN show as sh ON s.show_id = sh.id
@@ -717,10 +698,18 @@ func (m *ShowModel) SearchEpisodes(query string) ([]*Episode, error) {
 	var episodes []*Episode
 	for rows.Next() {
 		e := &Episode{}
-		err := rows.Scan(&e.ID, &e.SeasonNumber, &e.Number, &e.ShowName)
+		sh := &Show{}
+		se := &Season{}
+		err := rows.Scan(
+			&e.ID, &e.Slug, &e.Number, &e.Title, &e.URL, &e.AirDate, &e.Thumbnail,
+			&e.YoutubeID, &se.ID, &se.Slug, &se.Number, &sh.ID, &sh.Slug, &sh.Name,
+			&sh.ProfileImg,
+		)
 		if err != nil {
 			return nil, err
 		}
+		e.Show = sh
+		e.Season = se
 		episodes = append(episodes, e)
 	}
 

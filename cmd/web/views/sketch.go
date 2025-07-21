@@ -98,28 +98,26 @@ func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string
 			page.CreatorImage = fmt.Sprintf("%s/missing-profile.jpg", baseImgUrl)
 		}
 
-		if sketch.SeasonNumber != nil {
-			page.SeasonNumber = *sketch.SeasonNumber
+		if sketch.Season != nil {
+			page.SeasonNumber = safeDeref(sketch.Season.Number)
 			page.SeasonUrl = fmt.Sprintf(
-				"/show/%d/%s/season/%d",
-				*sketch.Show.ID,
-				*sketch.Show.Slug,
-				*sketch.SeasonNumber)
+				"/season/%d/%s",
+				safeDeref(sketch.Season.ID),
+				safeDeref(sketch.Season.Slug),
+			)
 		}
 
-		if sketch.SeasonNumber != nil && sketch.EpisodeNumber != nil {
-			page.EpisodeNumber = *sketch.EpisodeNumber
+		if sketch.Episode != nil && safeDeref(sketch.Episode.ID) != 0 {
+			ep := sketch.Episode
+			page.EpisodeNumber = safeDeref(ep.Number)
 			page.EpisodeUrl = fmt.Sprintf(
-				"/show/%d/%s/season/%d/episode/%d",
-				*sketch.Show.ID,
-				*sketch.Show.Slug,
-				*sketch.SeasonNumber,
-				*sketch.EpisodeNumber)
+				"/episode/%d/%s",
+				safeDeref(ep.ID),
+				safeDeref(ep.Slug),
+			)
 		}
 
-		if sketch.Number != nil {
-			page.SketchNumber = *sketch.Number
-		}
+		page.SketchNumber = safeDeref(sketch.Number)
 
 	} else if sketch.Creator != nil && sketch.Creator.ID != nil {
 		if sketch.Creator.Name != nil {
@@ -278,12 +276,12 @@ func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType
 		}
 
 		var season, episode, number int
-		if sketch.SeasonNumber != nil {
-			season = *sketch.SeasonNumber
+		if sketch.Season != nil && sketch.Season.Number != nil {
+			season = *sketch.Season.Number
 		}
 
-		if sketch.EpisodeNumber != nil {
-			episode = *sketch.EpisodeNumber
+		if sketch.Episode != nil && sketch.Episode.Number != nil {
+			episode = *sketch.Episode.Number
 		}
 
 		if sketch.Number != nil {

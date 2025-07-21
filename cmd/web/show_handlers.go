@@ -60,20 +60,13 @@ func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	snum := r.PathValue("snum")
-	if snum == "" {
-		snum = "1"
-	}
-
-	showId, err := strconv.Atoi(id)
-	seasonNumber, err2 := strconv.Atoi(snum)
-	if err != nil || err2 != nil {
+	seasonId, err := strconv.Atoi(id)
+	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Printf("ID:%s SNUM:%s ERR:%s ERR2:%s", id, snum, err, err2)
 		return
 	}
 
-	show, err := app.shows.GetById(showId)
+	season, err := app.shows.GetSeason(seasonId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -83,19 +76,9 @@ func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var season *models.Season
-	for _, s := range show.Seasons {
-		if s.Number == nil {
-			continue
-		}
-
-		if *s.Number == seasonNumber {
-			season = s
-		}
-	}
-
-	if season == nil {
-		app.notFound(w)
+	show, err := app.shows.GetById(safeDeref(season.Show.ID))
+	if err != nil {
+		app.serverError(r, w, err)
 		return
 	}
 
@@ -103,38 +86,29 @@ func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
 
 	isHxRequest := r.Header.Get("HX-Request") == "true"
 	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
-	data.SectionType = "sub"
 	if isHxRequest && !isHistoryRestore {
 		format := r.URL.Query().Get("format")
-		app.infoLog.Println("FORMAT", format)
-		templateData := views.SeasonSelectGalleryView(show.Seasons, season, app.baseImgUrl, format)
-		app.infoLog.Printf("%+v\n", templateData)
-		app.render(r, w, http.StatusOK, "season-select-gallery.gohtml", "season-select-gallery", templateData)
+		templateData := views.EpisodeGalleryView(season.Episodes, app.baseImgUrl, format, true)
+		w.Header().Add("HX-Push-Url", fmt.Sprintf("/season/%d/%s", *season.ID, *season.Slug))
+		app.render(r, w, http.StatusOK, "episode-gallery.gohtml", "episode-gallery", templateData)
 		return
 	}
 
 	page := views.SeasonPageView(show, season, app.baseImgUrl)
 	data.Page = page
-	app.infoLog.Printf("%+v\n", page.SeasonSelectGallery.EpisodeGallery.EpisodeThumbnails[0])
-
 	app.render(r, w, http.StatusOK, "view-season.gohtml", "base", data)
 }
 
 func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	snum := r.PathValue("snum")
-	enum := r.PathValue("enum")
 
-	showId, err := strconv.Atoi(id)
-	seasonNumber, err2 := strconv.Atoi(snum)
-	episodeNumber, err3 := strconv.Atoi(enum)
-	if err != nil || err2 != nil || err3 != nil {
+	episodeId, err := strconv.Atoi(id)
+	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Printf("ID:%s SNUM:%s ENUM:%s ERR:%s ERR2:%s", id, snum, enum, err, err2)
 		return
 	}
 
-	show, err := app.shows.GetById(showId)
+	episode, err := app.shows.GetEpisode(episodeId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -144,46 +118,8 @@ func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var season *models.Season
-	for _, s := range show.Seasons {
-		if s.Number == nil {
-			continue
-		}
-
-		if *s.Number == seasonNumber {
-			season = s
-		}
-	}
-
-	if season == nil {
-		app.notFound(w)
-		return
-	}
-
-	var episode *models.Episode
-	for _, e := range season.Episodes {
-		if e.Number == nil {
-			continue
-		}
-
-		if *e.Number == episodeNumber {
-			episode = e
-		}
-	}
-
-	if episode == nil {
-		app.notFound(w)
-		return
-	}
-
-	episode, err = app.shows.GetEpisode(*episode.ID)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
-
 	data := app.newTemplateData(r)
-	page, err := views.EpisodePageView(show, episode, app.baseImgUrl)
+	page, err := views.EpisodePageView(episode, app.baseImgUrl)
 	app.infoLog.Printf("%+v\n", page)
 	if err != nil {
 		app.serverError(r, w, err)
@@ -396,19 +332,29 @@ func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	seasonId, err := app.shows.AddSeason(showId)
+	show, err := app.shows.GetById(showId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	newSeasonNumber := getLatestSeasonNumber(show) + 1
+	slug := models.CreateSlugName(safeDeref(show.Name) + fmt.Sprintf(" s%d", newSeasonNumber))
+	newSeason := &models.Season{
+		Number: &newSeasonNumber,
+		Slug:   &slug,
+		Show: &models.Show{
+			ID: show.ID,
+		},
+	}
+
+	seasonId, err := app.shows.AddSeason(newSeason)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	season, err := app.shows.GetSeason(seasonId)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
-
-	show, err := app.shows.GetById(showId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -500,6 +446,19 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 		episode.YoutubeID = &youtubeID
 	}
 
+	season, err := app.shows.GetSeason(seasonId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	slug := createEpisodeSlug(season, safeDeref(episode.Number))
+	episode.Slug = &slug
+
 	thumbnailName, err := generateThumbnailName(form.Thumbnail)
 	if err != nil {
 		app.serverError(r, w, err)
@@ -522,15 +481,15 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	season, err := app.shows.GetSeason(*episode.SeasonId)
+	newSeason, err := app.shows.GetSeason(*episode.Season.ID)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	table := views.EpisodeTableView(
-		season, app.baseImgUrl,
-		fmt.Sprintf("/show/%d/%s", safeDeref(season.ShowId), safeDeref(season.ShowSlug)),
+		newSeason, app.baseImgUrl,
+		fmt.Sprintf("/show/%d/%s", safeDeref(season.Show.ID), safeDeref(season.Show.Slug)),
 	)
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-table", table)
 }
@@ -560,7 +519,7 @@ func (app *application) updateEpisodeForm(w http.ResponseWriter, r *http.Request
 
 	formModal := views.FormModal{
 		Title: fmt.Sprintf("Update Season %d Episode %d",
-			safeDeref(episode.SeasonNumber),
+			safeDeref(episode.Season.Number),
 			safeDeref(episode.Number),
 		),
 		Form: form,
@@ -648,14 +607,14 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	season, err := app.shows.GetSeason(safeDeref(episode.SeasonId))
+	season, err := app.shows.GetSeason(safeDeref(episode.Season.ID))
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	table := views.EpisodeTableView(season, app.baseImgUrl,
-		fmt.Sprintf("/show/%d/%s", safeDeref(season.ShowId), safeDeref(season.ShowSlug)),
+		fmt.Sprintf("/show/%d/%s", safeDeref(season.Show.ID), safeDeref(season.Show.Slug)),
 	)
 
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-table", table)
@@ -691,15 +650,37 @@ func (app *application) deleteEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	season, err := app.shows.GetSeason(safeDeref(episode.SeasonId))
+	season, err := app.shows.GetSeason(safeDeref(episode.Season.ID))
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	table := views.EpisodeTableView(season, app.baseImgUrl,
-		fmt.Sprintf("/show/%d/%s", safeDeref(season.ShowId), safeDeref(season.ShowSlug)),
+		fmt.Sprintf("/show/%d/%s", safeDeref(season.Show.ID), safeDeref(season.Show.Slug)),
 	)
 
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-table", table)
+}
+
+func getLatestSeasonNumber(show *models.Show) int {
+	if show == nil {
+		return 0
+	}
+	var max int
+	for _, s := range show.Seasons {
+		if safeDeref(s.Number) > max {
+			max = safeDeref(s.Number)
+		}
+	}
+	return max
+}
+
+func createEpisodeSlug(season *models.Season, epNumber int) string {
+	var text string
+	if season.Show != nil {
+		text += safeDeref(season.Show.Name)
+	}
+	text += fmt.Sprintf(" s%d e%d", safeDeref(season.Number), epNumber)
+	return models.CreateSlugName(text)
 }

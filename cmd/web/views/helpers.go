@@ -55,11 +55,14 @@ func PrintEpisodeName(e *models.Episode) string {
 		return ""
 	}
 
-	out := safeDeref(e.ShowName)
-	if e.SeasonNumber != nil {
-		out += fmt.Sprintf(" S%d", safeDeref(e.SeasonNumber))
+	out := ""
+	if e.Show != nil {
+		out += safeDeref(e.Show.Name)
 	}
-	if e.Number != nil {
+	if e.Season != nil {
+		out += fmt.Sprintf(" S%d", safeDeref(e.Season.Number))
+	}
+	if safeDeref(e.Number) != 0 {
 		out += fmt.Sprintf("E%d", safeDeref(e.Number))
 	}
 
@@ -105,37 +108,18 @@ func determineEpisodeWatchURL(episode *models.Episode) (string, string) {
 func seasonEpisodeInfo(episode *models.Episode) string {
 	var info string
 
-	if episode.SeasonNumber != nil &&
+	if episode.Season != nil &&
 		episode.Number != nil {
 
 		info = fmt.Sprintf(
 			"S%d · E%d · %s",
-			*episode.SeasonNumber,
+			safeDeref(episode.Season.Number),
 			*episode.Number,
 			sketchCountLabel(len(episode.Sketches)),
 		)
 	}
 
 	return info
-}
-
-func seasonEpisodeUrl(episode *models.Episode) string {
-	var url string
-	if episode.ShowID != nil &&
-		episode.ShowSlug != nil &&
-		episode.SeasonNumber != nil &&
-		episode.Number != nil {
-
-		url = fmt.Sprintf(
-			"/show/%d/%s/season/%d/episode/%d",
-			*episode.ShowID,
-			*episode.ShowSlug,
-			*episode.SeasonNumber,
-			*episode.Number,
-		)
-	}
-
-	return url
 }
 
 func getAge(birthDate *time.Time) int {
@@ -183,6 +167,16 @@ func sketchCountLabel(count int) string {
 	return fmt.Sprintf(labelString, count)
 }
 
+func episodeCountLabel(count int) string {
+	labelString := "%d Episode"
+	if count != 1 {
+		labelString += "s"
+	}
+
+	return fmt.Sprintf(labelString, count)
+
+}
+
 func intSliceContains(list []int, value int) bool {
 	for _, n := range list {
 		if n == value {
@@ -190,15 +184,6 @@ func intSliceContains(list []int, value int) bool {
 		}
 	}
 	return false
-}
-
-func getSeasonSketchCount(season *models.Season) int {
-	var count int
-	for _, ep := range season.Episodes {
-		count += len(ep.Sketches)
-	}
-
-	return count
 }
 
 func getShowEpisodeCount(show *models.Show) int {

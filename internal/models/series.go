@@ -43,9 +43,11 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 		SELECT s.id, s.slug, s.title, s.description, s.thumbnail_name,
 		sk.id, sk.slug, sk.title, sk.sketch_url, sk.thumbnail_name, 
 		sk.upload_date, sk.episode_start, sk.sketch_number, sk.part_number,
-		se.season_number, e.episode_number,
+		e.id, e.slug, e.episode_number, e.title, e.air_date, 
+		e.thumbnail_name, e.url, e.youtube_id,
+		se.id, se.slug, se.season_number,
 		c.id, c.name, c.slug, c.profile_img,
-		sh.id, sh.name, sh.slug, sh.profile_img
+		sh.id, sh.name, sh.profile_img, sh.slug
 		FROM series as s
 		LEFT JOIN sketch AS sk ON s.id = sk.series_id
 		LEFT JOIN episode as e ON sk.episode_id = e.id
@@ -71,12 +73,16 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 		sk := &Sketch{}
 		c := &Creator{}
 		sh := &Show{}
+		ep := &Episode{}
+		se := &Season{}
 		hasRows = true
 		err := rows.Scan(
 			&s.ID, &s.Slug, &s.Title, &s.Description, &s.ThumbnailName,
 			&sk.ID, &sk.Slug, &sk.Title, &sk.URL, &sk.ThumbnailName,
 			&sk.UploadDate, &sk.EpisodeStart, &sk.Number, &sk.SeriesPart,
-			&sk.SeasonNumber, &sk.EpisodeNumber,
+			&ep.ID, &ep.Slug, &ep.Number, &ep.Title, &ep.AirDate, &ep.Thumbnail,
+			&ep.URL, &ep.YoutubeID,
+			&se.ID, &se.Slug, &se.Number,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 		)

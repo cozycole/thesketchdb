@@ -99,13 +99,11 @@ type Sketch struct {
 	Cast          []*CastMember
 	CastThumbnail *string
 	Tags          *[]*Tag
-	Episode       *Episode
 	Show          *Show
-	SeasonNumber  *int
-	EpisodeNumber *int
-	EpisodeID     *int
+	Season        *Season
+	Episode       *Episode
 	EpisodeStart  *int
-	Number        *int
+	Number        *int // order number in episode
 	Series        *Series
 	SeriesPart    *int
 	Liked         *bool
@@ -537,10 +535,12 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 		v := &Sketch{}
 		c := &Creator{}
 		sh := &Show{}
+		se := &Season{}
+		ep := &Episode{}
 		destinations := []any{
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
-			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &v.SeasonNumber, &v.EpisodeNumber,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &se.Number, &ep.Number,
 			&v.CastThumbnail,
 		}
 		var rank *float32
@@ -553,6 +553,8 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 		}
 		v.Creator = c
 		v.Show = sh
+		v.Season = se
+		v.Episode = ep
 		sketches = append(sketches, v)
 	}
 
@@ -567,14 +569,14 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	stmt := `
 		SELECT v.id, v.title, v.sketch_number, v.sketch_url, v.description,
 		v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
-		v.episode_start, se.season_number, e.episode_number,
-		v.part_number,
+		v.episode_start, v.part_number,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.slug, sh.profile_img,
 		p.id, p.slug, p.first, p.last, p.profile_img,
 		ch.id, ch.name, ch.slug, ch.img_name, ch.character_type,
 		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
-		e.id, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.youtube_id,
+		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.youtube_id,
+		se.id, se.slug, se.season_number,
 		ser.id, ser.slug, ser.title
 		FROM sketch AS v
 		LEFT JOIN sketch_creator_rel as vcr ON v.id = vcr.sketch_id
@@ -604,6 +606,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	sh := &Show{}
 	se := &Series{}
 	e := &Episode{}
+	s := &Season{}
 	members := []*CastMember{}
 	hasRows := false
 	for rows.Next() {
@@ -613,15 +616,14 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		hasRows = true
 		err := rows.Scan(
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Description, &v.Slug, &v.ThumbnailName,
-			&v.UploadDate, &v.YoutubeID, &v.EpisodeStart, &v.SeasonNumber,
-			&v.EpisodeNumber, &v.SeriesPart,
+			&v.UploadDate, &v.YoutubeID, &v.EpisodeStart, &v.SeriesPart,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 			&ch.ID, &ch.Name, &ch.Slug, &ch.Image, &ch.Type,
-			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg,
-			&cm.ThumbnailName,
-			&e.ID, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.YoutubeID,
+			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg, &cm.ThumbnailName,
+			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.YoutubeID,
+			&s.ID, &s.Slug, &s.Number,
 			&se.ID, &se.Slug, &se.Title,
 		)
 		if err != nil {
@@ -648,14 +650,15 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		return nil, err
 	}
 
-	e.ShowName = sh.Name
-	e.SeasonNumber = v.SeasonNumber
-	v.Episode = e
+	e.Show = sh
+	e.Season = s
 
-	v.Show = sh
-	v.Series = se
 	v.Creator = c
 	v.Cast = members
+	v.Show = sh
+	v.Season = s
+	v.Episode = e
+	v.Series = se
 	return v, nil
 }
 
@@ -848,10 +851,12 @@ func (m *SketchModel) GetByUserLikes(userId int) ([]*Sketch, error) {
 		v := &Sketch{}
 		c := &Creator{}
 		sh := &Show{}
+		se := &Season{}
+		ep := &Episode{}
 		destinations := []any{
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
-			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &v.SeasonNumber, &v.EpisodeNumber,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &se.Number, &ep.Number,
 		}
 		err := rows.Scan(destinations...)
 		if err != nil {
@@ -859,6 +864,8 @@ func (m *SketchModel) GetByUserLikes(userId int) ([]*Sketch, error) {
 		}
 		v.Creator = c
 		v.Show = sh
+		v.Season = se
+		v.Episode = ep
 		sketches = append(sketches, v)
 	}
 

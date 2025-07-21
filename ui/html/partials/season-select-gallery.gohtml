@@ -1,29 +1,47 @@
 <!--See SeasonSelectGallery for view data-->
 {{ define "season-select-gallery" }}
-  <div class="seasonGallery ">
+  <div class="seasonGallery">
     {{ if .Seasons }}
-      <div class="flex items-center gap-2">
-        <select
-          id="seasonDropdown"
-          name="season"
-          hx-get="{{ .SeasonUrl }}"
-          hx-target="closest .seasonGallery"
-          hx-swap="outerHTML"
-          autocomplete="off"
-          class="my-2 p-2 border border-slate-300 rounded-lg bg-slate-50"
-        >
-          {{ range .Seasons }}
-            <option
-              value="{{ . }}"
-              {{ if eq . $.SelectedSeason }}selected{{ end }}
+      <select-dropdown default-label="Season 1">
+        <div class="my-3 flex items-center">
+          <div class="relative inline-block">
+            <div
+              data-dropdown-button
+              class="flex items-center gap-2 bg-white border px-3 py-2 rounded cursor-pointer"
             >
-              Season
-              {{ . }}
-            </option>
-          {{ end }}
-        </select>
-        <p class="text-lg font-medium">• {{ .EpisodeCount }} Episodes</p>
-      </div>
+              <button class="font-medium">
+                Season
+                {{ $.SelectedSeason }}
+
+              </button>
+              <div class="w-6 stroke-slate-950">
+                {{ template "down-arrow" }}
+              </div>
+            </div>
+            <ul
+              data-dropdown-list
+              class="w-full border rounded bg-white hidden absolute right-0 z-50"
+            >
+              {{ range .Seasons }}
+                <li
+                  data-dropdown-item
+                  data-label="Season {{ .Number }}"
+                  hx-get="{{ .Url }}"
+                  hx-target="#episodes"
+                  hx-trigger="click"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  Season
+                  {{ .Number }}
+                </li>
+              {{ end }}
+            </ul>
+          </div>
+          <p id="episodeCount" class="ml-2 font-medium">
+            • {{ .EpisodeCount }} Episodes
+          </p>
+        </div>
+      </select-dropdown>
       <div id="episodes">
         {{ template "episode-gallery" .EpisodeGallery }}
       </div>

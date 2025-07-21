@@ -61,10 +61,11 @@ func (app *application) routes(staticRoute, imageStorageRoot string) http.Handle
 		r.Get("/series/search", app.seriesSearch)
 
 		r.Get("/show/{id}/{slug}", app.viewShow)
-		r.Get("/show/{id}/{slug}/season", app.viewSeason)
-		r.Get("/show/{id}/{slug}/season/{snum}", app.viewSeason)
-		r.Get("/show/{id}/{slug}/season/{snum}/episode/{enum}", app.viewEpisode)
 		r.Get("/show/search", app.showSearch)
+		r.Get("/show/{id}/{slug}/season", app.viewSeason)
+		r.Get("/season/{id}/{slug}", app.viewSeason)
+
+		r.Get("/episode/{id}/{slug}", app.viewEpisode)
 		r.Get("/episode/search", app.episodeSearch)
 
 		r.Get("/category/search", app.categorySearch)

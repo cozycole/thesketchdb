@@ -8,7 +8,12 @@
     <main data-page="view-season" class="flex-1 w-full p-3 bg-slate-300">
       <div class="max-w-screen-xl mx-auto">
         <section class="p-4 bg-white rounded-lg">
-          <header class="font-bold text-xl">{{ .ShowName }} Seasons</header>
+          <header class="flex items-center gap-2 font-bold text-xl">
+            <a href="{{ .ShowUrl }}">
+              <img class="rounded-full w-12" src="{{ .ShowImage }}" />
+            </a>
+            <p>{{ .ShowName }} Seasons</p>
+          </header>
           {{ template "season-select-gallery" .SeasonSelectGallery }}
         </section>
       </div>

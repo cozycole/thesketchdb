@@ -429,8 +429,8 @@ func createSketchSlug(sketch *models.Sketch) string {
 	var slugInput string
 	if sketch.Episode != nil {
 		episode := sketch.Episode
-		showString := safeDeref(episode.ShowName)
-		seasonNumber := safeDeref(episode.SeasonNumber)
+		showString := safeDeref(episode.Show.Name)
+		seasonNumber := safeDeref(episode.Season.Number)
 		episodeNumber := safeDeref(episode.Number)
 		slugInput += fmt.Sprintf("%s s%d e%d", showString, seasonNumber, episodeNumber)
 	}
