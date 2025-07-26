@@ -11,7 +11,6 @@
           {{ with .Page.SketchUrl }}
             <a href="{{ . }}">View Sketch</a>
           {{ end }}
-
         </div>
       </div>
       {{ with .Page.SketchForm }}
@@ -67,6 +66,7 @@
         type="text"
         name="title"
         value="{{ .Title }}"
+        autocomplete="off"
         class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 
                   text-slate-700 placeholder-slate-400"
       />
@@ -80,6 +80,7 @@
         type="text"
         name="url"
         value="{{ .URL }}"
+        autocomplete="off"
         class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 
                     text-slate-700 placeholder-slate-400"
       />
@@ -111,6 +112,50 @@
       />
     </div>
     <div>
+      <label class="inline-block">Sketch Duration (seconds)</label>
+      {{ with .FieldErrors.duration }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="text"
+        autocomplete="off"
+        name="duration"
+        value="{{ .Duration }}"
+        class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
+      />
+    </div>
+    <div>
+      <label class="inline-block">Description</label>
+      {{ with .FieldErrors.description }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <textarea
+        class="block"
+        name="description"
+        rows="5"
+        cols="50"
+        autocomplete="off"
+      >
+      {{- .Description -}}
+      </textarea
+      >
+    </div>
+    <div>
+      <label class="inline-block">Transcript</label>
+      {{ with .FieldErrors.transcript }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <textarea
+        class="block"
+        name="transcript"
+        rows="5"
+        cols="50"
+        autocomplete="off"
+      >
+      {{- .Transcript -}}
+    </textarea>
+    </div>
+    <div>
       {{- with .FieldErrors.thumbnail -}}
         <label class="block text-red-700">{{ . }}</label>
       {{- end -}}
@@ -134,6 +179,7 @@
         </div>
       </img-preview>
     </div>
+
     <div>
       <form-search>
         <label class="inline-block font-bold text-lg">Creator</label>
@@ -164,7 +210,7 @@
     <div>
       <form-search>
         <label class="inline-block font-bold text-lg">Show Episode</label>
-        {{ with .FieldErrors.creatorId }}
+        {{ with .FieldErrors.episodeId }}
           <label class="block text-red-700">{{ . }}</label>
         {{ end }}
         <div class="relative">
@@ -250,6 +296,32 @@
         class="max-w-24 p-1 border border-slate-300 rounded-lg bg-slate-50 
                   text-slate-700 placeholder-slate-400"
       />
+    </div>
+    <div>
+      <form-search>
+        <label class="inline-block font-bold text-lg">Recurring</label>
+        {{ with .FieldErrors.recurringId }}
+          <label class="block text-red-700">{{ . }}</label>
+        {{ end }}
+        <div class="relative">
+          <input type="hidden" name="recurringId" value="{{ .RecurringID }}" />
+          <input
+            type="search"
+            autocomplete="off"
+            name="recurringInput"
+            value="{{ .RecurringInput }}"
+            class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
+            placeholder="Search recurring"
+            hx-get="/recurring/search"
+            hx-trigger="focus, input changed delay:500ms, search"
+            hx-target="next"
+            hx-swap="innerHTML"
+          />
+          <ul
+            class="dropdown list-none cursor-pointer absolute left-0 min-w-full bg-white border border-slate-300 rounded shadow-lg z-10 empty:hidden"
+          ></ul>
+        </div>
+      </form-search>
     </div>
     <button
       type="submit"

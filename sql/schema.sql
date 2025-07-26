@@ -59,6 +59,15 @@ CREATE TABLE IF NOT EXISTS series (
     insert_timestamp TIMESTAMP DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS recurring (
+    id SERIAL PRIMARY KEY,
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    thumbnail_name TEXT,
+    insert_timestamp TIMESTAMP DEFAULT now()
+)
+
 -- CREATE TABLE IF NOT EXISTS show_creator (
 --     id SERIAL PRIMARY KEY,
 --     show_id INTEGER REFERENCES show(id),
@@ -105,18 +114,21 @@ CREATE TABLE IF NOT EXISTS episode (
 
 CREATE TABLE IF NOT EXISTS sketch (
     id SERIAL PRIMARY KEY,
+    slug TEXT NOT NULL,
     title TEXT NOT NULL,
     sketch_url TEXT,
     youtube_id TEXT, 
-    slug TEXT NOT NULL,
     thumbnail_name TEXT,
     description TEXT,
+    transcript TEXT, 
     upload_date DATE,
+    duration INT,
     episode_id INT REFERENCES episode(id),
     episode_start INT, 
+    sketch_number INT,
     series_id INT REFERENCES series(id), 
     part_number INT,
-    sketch_number INT,
+    recurring_id INT REFERENCES recurring(id),
     popularity_score REAL DEFAULT 0,
     search_vector tsvector,
     insert_timestamp timestamp DEFAULT now()

@@ -671,7 +671,7 @@ func (m *ShowModel) SearchEpisodes(query string) ([]*Episode, error) {
 		SELECT e.id, e.slug, e.episode_number, e.title, e.url, e.air_date, e.thumbnail_name,
 		e.youtube_id,
 		s.id, s.slug, s.season_number,
-		sh.id, sh.slug, sh.name, sh.profile_img,
+		sh.id, sh.slug, sh.name, sh.profile_img
 		FROM episode as e
 		JOIN season as s ON e.season_id = s.id
 		JOIN show as sh ON s.show_id = sh.id
@@ -682,7 +682,10 @@ func (m *ShowModel) SearchEpisodes(query string) ([]*Episode, error) {
 		ORDER BY sh.name, s.season_number, e.episode_number
 		LIMIT 10;
 	`
-	fmt.Println(query)
+	fmt.Println("QUERY:", query)
+	if query == "" {
+		return []*Episode{}, nil
+	}
 	epQuery, err := ExtractEpisodeQuery(query)
 	if err != nil {
 		return nil, err

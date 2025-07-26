@@ -86,11 +86,13 @@ func (f *Filter) ParamsString() string {
 
 type Sketch struct {
 	ID            *int
+	Slug          *string
 	Title         *string
 	URL           *string
+	Duration      *int
 	Description   *string
+	Transcript    *string
 	YoutubeID     *string
-	Slug          *string
 	ThumbnailName *string
 	ThumbnailFile *multipart.FileHeader
 	Rating        *string
@@ -106,6 +108,7 @@ type Sketch struct {
 	Number        *int // order number in episode
 	Series        *Series
 	SeriesPart    *int
+	Recurring     *Recurring
 	Liked         *bool
 }
 
@@ -569,7 +572,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	stmt := `
 		SELECT v.id, v.title, v.sketch_number, v.sketch_url, v.description,
 		v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
-		v.episode_start, v.part_number,
+		v.episode_start, v.part_number, v.duration, v.transcript,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.slug, sh.profile_img,
 		p.id, p.slug, p.first, p.last, p.profile_img,
@@ -577,7 +580,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
 		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.youtube_id,
 		se.id, se.slug, se.season_number,
-		ser.id, ser.slug, ser.title
+		ser.id, ser.slug, ser.title,
+		rec.id, rec.slug, rec.title
 		FROM sketch AS v
 		LEFT JOIN sketch_creator_rel as vcr ON v.id = vcr.sketch_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
@@ -588,8 +592,9 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		LEFT JOIN person as p ON cm.person_id = p.id
 		LEFT JOIN character as ch ON cm.character_id = ch.id
 		LEFT JOIN series as ser ON v.series_id = ser.id
+		LEFT JOIN recurring as rec ON v.recurring_id = rec.id
 		WHERE v.id = $1
-		ORDER BY cm.position asc
+		ORDER BY cm.position asc, cm.id asc
 	`
 
 	rows, err := m.DB.Query(context.Background(), stmt, id)
@@ -607,6 +612,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	se := &Series{}
 	e := &Episode{}
 	s := &Season{}
+	rec := &Recurring{}
 	members := []*CastMember{}
 	hasRows := false
 	for rows.Next() {
@@ -616,7 +622,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		hasRows = true
 		err := rows.Scan(
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Description, &v.Slug, &v.ThumbnailName,
-			&v.UploadDate, &v.YoutubeID, &v.EpisodeStart, &v.SeriesPart,
+			&v.UploadDate, &v.YoutubeID, &v.EpisodeStart, &v.SeriesPart, &v.Duration, &v.Transcript,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
@@ -625,6 +631,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.YoutubeID,
 			&s.ID, &s.Slug, &s.Number,
 			&se.ID, &se.Slug, &se.Title,
+			&rec.ID, &rec.Slug, &rec.Title,
 		)
 		if err != nil {
 			return nil, err
@@ -659,6 +666,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	v.Season = s
 	v.Episode = e
 	v.Series = se
+	v.Recurring = rec
 	return v, nil
 }
 
@@ -894,17 +902,24 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 		seriesId = sketch.Series.ID
 	}
 
+	var recurringId *int
+	if sketch.Recurring != nil {
+		recurringId = sketch.Recurring.ID
+	}
+
 	stmt := `
 	INSERT INTO sketch (
 		title, sketch_url, thumbnail_name, upload_date, slug, youtube_id, sketch_number,
-		episode_id, episode_start, series_id, part_number)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+		episode_id, episode_start, series_id, part_number, recurring_id, duration, description,
+		transcript)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
 	RETURNING id;`
 	result := m.DB.QueryRow(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.ThumbnailName, sketch.UploadDate,
 		sketch.Slug, sketch.YoutubeID, sketch.Number, episodeId,
-		sketch.EpisodeStart, seriesId, sketch.SeriesPart,
+		sketch.EpisodeStart, seriesId, sketch.SeriesPart, recurringId,
+		sketch.Duration, sketch.Description, sketch.Transcript,
 	)
 
 	var id int
@@ -1020,19 +1035,24 @@ func (m *SketchModel) Update(sketch *Sketch) error {
 	if sketch.Series != nil {
 		seriesId = sketch.Series.ID
 	}
+	var recurringId *int
+	if sketch.Recurring != nil {
+		recurringId = sketch.Recurring.ID
+	}
 
 	stmt := `
 	UPDATE sketch SET title = $1, sketch_url = $2, upload_date = $3, 
 	slug = $4, thumbnail_name = $5, sketch_number = $6, episode_id = $7, episode_start = $8,
-	series_id = $9, part_number = $10	
-	WHERE id = $11
+	series_id = $9, part_number = $10, recurring_id = $11, duration = $12, description = $13,
+	transcript = $14
+	WHERE id = $15
 	`
 	_, err := m.DB.Exec(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.UploadDate,
 		sketch.Slug, sketch.ThumbnailName, sketch.Number, episodeId, sketch.EpisodeStart,
-		seriesId, sketch.SeriesPart,
-		sketch.ID,
+		seriesId, sketch.SeriesPart, recurringId, sketch.Duration, sketch.Description,
+		sketch.Transcript, sketch.ID,
 	)
 	return err
 }

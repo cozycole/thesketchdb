@@ -148,7 +148,10 @@ type sketchForm struct {
 	Slug                string                `form:"slug"`
 	Rating              string                `form:"rating"`
 	UploadDate          string                `form:"uploadDate"`
+	Duration            int                   `form:"duration"`
 	Number              int                   `form:"number"`
+	Description         string                `form:"description"`
+	Transcript          string                `form:"transcript"`
 	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
 	CreatorID           int                   `form:"creatorId"`
 	CreatorInput        string                `form:"creatorInput"`
@@ -158,6 +161,8 @@ type sketchForm struct {
 	SeriesID            int                   `form:"seriesId"`
 	SeriesInput         string                `form:"seriesInput"`
 	SeriesPart          int                   `form:"seriesPart"`
+	RecurringID         int                   `form:"recurringId"`
+	RecurringInput      string                `form:"recurringInput"`
 	Action              string                `form:"-"`
 	ImageUrl            string                `form:"-"`
 	validator.Validator `form:"-"`
@@ -475,6 +480,7 @@ func (app *application) validateEpisodeForm(form *episodeForm) {
 type seriesForm struct {
 	ID                  int                   `form:"id"`
 	Title               string                `form:"title"`
+	Description         string                `form:"description"`
 	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
 	ThumbnailName       string                `form:"-"`
 	ImageUrl            string                `form:"-"`
@@ -483,6 +489,49 @@ type seriesForm struct {
 }
 
 func (app *application) validateSeriesForm(form *seriesForm) {
+	form.CheckField(validator.NotBlank(form.Title), "title", "Please enter a title")
+
+	if form.ID == 0 {
+		form.CheckField(form.Thumbnail != nil, "thumbnail", "Please upload an image")
+	}
+
+	if form.Thumbnail == nil {
+		return
+	}
+
+	thumbnail, err := form.Thumbnail.Open()
+	if err != nil {
+		form.AddFieldError("thumbnail", "Unable to open file, ensure it is a valid jpg")
+		return
+	}
+	defer thumbnail.Close()
+
+	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg")
+	width, height, err := utils.GetImageDimensions(thumbnail)
+	if err != nil {
+		form.AddFieldError("thumbnail", "Unable to determine image dimensions")
+		return
+	}
+
+	form.CheckField(
+		width >= LargeThumbnailWidth && height >= LargeThumbnailHeight,
+		"thumbnail",
+		fmt.Sprintf("Thumbnail dimensions must be at least %dx%d", LargeThumbnailWidth, LargeThumbnailHeight),
+	)
+}
+
+type recurringForm struct {
+	ID                  int                   `form:"id"`
+	Title               string                `form:"title"`
+	Description         string                `form:"description"`
+	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
+	ThumbnailName       string                `form:"-"`
+	ImageUrl            string                `form:"-"`
+	Action              string                `form:"-"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateRecurringForm(form *recurringForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "Please enter a title")
 
 	if form.ID == 0 {

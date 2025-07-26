@@ -9,21 +9,29 @@ import (
 
 func convertFormToSketch(form *sketchForm) models.Sketch {
 	uploadDate, _ := time.Parse(time.DateOnly, form.UploadDate)
-	var episode *models.Episode
-	var series *models.Series
 	var creator *models.Creator
 	if form.CreatorID != 0 {
 		creator = &models.Creator{
 			ID: &form.CreatorID,
 		}
 	}
+
+	var episode *models.Episode
 	if form.EpisodeID != 0 {
 		episode = &models.Episode{ID: &form.EpisodeID}
 	}
 
+	var series *models.Series
 	if form.SeriesID != 0 {
 		series = &models.Series{
 			ID: &form.SeriesID,
+		}
+	}
+
+	var recurring *models.Recurring
+	if form.RecurringID != 0 {
+		recurring = &models.Recurring{
+			ID: &form.RecurringID,
 		}
 	}
 
@@ -32,6 +40,9 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		Title:         &form.Title,
 		URL:           &form.URL,
 		Slug:          &form.Slug,
+		Duration:      &form.Duration,
+		Description:   &form.Description,
+		Transcript:    &form.Transcript,
 		ThumbnailFile: form.Thumbnail,
 		UploadDate:    &uploadDate,
 		Number:        &form.Number,
@@ -40,6 +51,7 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		EpisodeStart:  &form.EpisodeStart,
 		Series:        series,
 		SeriesPart:    &form.SeriesPart,
+		Recurring:     recurring,
 	}
 }
 
@@ -66,21 +78,33 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		seriesID = safeDeref(sketch.Series.ID)
 		seriesName = safeDeref(sketch.Series.Title)
 	}
+
+	var recurringID int
+	var recurringName string
+	if sketch.Recurring != nil {
+		recurringID = safeDeref(sketch.Recurring.ID)
+		recurringName = safeDeref(sketch.Recurring.Title)
+	}
 	return sketchForm{
-		ID:           safeDeref(sketch.ID),
-		Title:        safeDeref(sketch.Title),
-		Slug:         safeDeref(sketch.Slug),
-		URL:          safeDeref(sketch.URL),
-		UploadDate:   formDate(sketch.UploadDate),
-		Number:       safeDeref(sketch.Number),
-		CreatorID:    creatorID,
-		CreatorInput: creatorName,
-		EpisodeID:    episodeID,
-		EpisodeInput: episodeName,
-		EpisodeStart: safeDeref(sketch.EpisodeStart),
-		SeriesID:     seriesID,
-		SeriesInput:  seriesName,
-		SeriesPart:   safeDeref(sketch.SeriesPart),
+		ID:             safeDeref(sketch.ID),
+		Slug:           safeDeref(sketch.Slug),
+		Title:          safeDeref(sketch.Title),
+		URL:            safeDeref(sketch.URL),
+		Duration:       safeDeref(sketch.Duration),
+		Description:    safeDeref(sketch.Description),
+		Transcript:     safeDeref(sketch.Transcript),
+		UploadDate:     formDate(sketch.UploadDate),
+		Number:         safeDeref(sketch.Number),
+		CreatorID:      creatorID,
+		CreatorInput:   creatorName,
+		EpisodeID:      episodeID,
+		EpisodeInput:   episodeName,
+		EpisodeStart:   safeDeref(sketch.EpisodeStart),
+		SeriesID:       seriesID,
+		SeriesInput:    seriesName,
+		SeriesPart:     safeDeref(sketch.SeriesPart),
+		RecurringID:    recurringID,
+		RecurringInput: recurringName,
 	}
 }
 
@@ -323,6 +347,7 @@ func (app *application) convertSeriestoForm(series *models.Series) seriesForm {
 	return seriesForm{
 		ID:            safeDeref(series.ID),
 		Title:         safeDeref(series.Title),
+		Description:   safeDeref(series.Description),
 		ThumbnailName: safeDeref(series.ThumbnailName),
 	}
 }
@@ -331,6 +356,26 @@ func (app *application) convertFormtoSeries(form *seriesForm) models.Series {
 	return models.Series{
 		ID:            &form.ID,
 		Title:         &form.Title,
+		Description:   &form.Description,
+		ThumbnailName: &form.ThumbnailName,
+	}
+
+}
+
+func (app *application) convertRecurringtoForm(recurring *models.Recurring) recurringForm {
+	return recurringForm{
+		ID:            safeDeref(recurring.ID),
+		Title:         safeDeref(recurring.Title),
+		ThumbnailName: safeDeref(recurring.ThumbnailName),
+		Description:   safeDeref(recurring.Description),
+	}
+}
+
+func (app *application) convertFormtoRecurring(form *recurringForm) models.Recurring {
+	return models.Recurring{
+		ID:            &form.ID,
+		Title:         &form.Title,
+		Description:   &form.Description,
 		ThumbnailName: &form.ThumbnailName,
 	}
 

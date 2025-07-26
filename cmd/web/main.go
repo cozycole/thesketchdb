@@ -34,6 +34,7 @@ type application struct {
 	creators       models.CreatorModelInterface
 	people         models.PersonModelInterface
 	profile        models.ProfileModelInterface
+	recurring      models.RecurringModelInterface
 	shows          models.ShowModelInterface
 	series         models.SeriesModelInterface
 	tags           models.TagModelInterface
@@ -145,6 +146,7 @@ func main() {
 		creators:       &models.CreatorModel{DB: dbpool},
 		people:         &models.PersonModel{DB: dbpool},
 		profile:        &models.ProfileModel{DB: dbpool},
+		recurring:      &models.RecurringModel{DB: dbpool},
 		shows:          &models.ShowModel{DB: dbpool},
 		tags:           &models.TagModel{DB: dbpool},
 		users:          &models.UserModel{DB: dbpool},

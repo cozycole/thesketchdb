@@ -60,6 +60,9 @@ func (app *application) routes(staticRoute, imageStorageRoot string) http.Handle
 		r.Get("/series/{id}/{slug}", app.seriesView)
 		r.Get("/series/search", app.seriesSearch)
 
+		r.Get("/recurring/{id}/{slug}", app.recurringView)
+		r.Get("/recurring/search", app.recurringSearch)
+
 		r.Get("/show/{id}/{slug}", app.viewShow)
 		r.Get("/show/search", app.showSearch)
 		r.Get("/show/{id}/{slug}/season", app.viewSeason)
@@ -143,6 +146,11 @@ func (app *application) routes(staticRoute, imageStorageRoot string) http.Handle
 		r.Post("/series/add", app.requireRoles(editorAdmin, app.seriesAdd))
 		r.Get("/series/{id}/update", app.requireRoles(editorAdmin, app.seriesUpdatePage))
 		r.Post("/series/{id}/update", app.requireRoles(editorAdmin, app.seriesUpdate))
+
+		r.Get("/recurring/add", app.requireRoles(editorAdmin, app.recurringAddPage))
+		r.Post("/recurring/add", app.requireRoles(editorAdmin, app.recurringAdd))
+		r.Get("/recurring/{id}/update", app.requireRoles(editorAdmin, app.recurringUpdatePage))
+		r.Post("/recurring/{id}/update", app.requireRoles(editorAdmin, app.recurringUpdate))
 
 		r.Get("/tag/add", app.requireRoles(editorAdmin, app.tagAddPage))
 		r.Post("/tag/add", app.requireRoles(editorAdmin, app.tagAdd))

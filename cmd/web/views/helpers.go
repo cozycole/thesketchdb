@@ -59,7 +59,7 @@ func PrintEpisodeName(e *models.Episode) string {
 	if e.Show != nil {
 		out += safeDeref(e.Show.Name)
 	}
-	if e.Season != nil {
+	if e.Season != nil && safeDeref(e.Season.ID) != 0 {
 		out += fmt.Sprintf(" S%d", safeDeref(e.Season.Number))
 	}
 	if safeDeref(e.Number) != 0 {

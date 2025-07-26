@@ -410,6 +410,47 @@ func (app *application) seriesSearch(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
+func (app *application) recurringSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("query")
+
+	redirLink := "/recurring/add"
+	redirText := "Add Recurring +"
+	results := dropdownSearchResults{
+		Redirect:     redirLink,
+		RedirectText: redirText,
+	}
+
+	if q != "" {
+		q = strings.Replace(q, " ", "", -1)
+		recurring, err := app.recurring.Search(q)
+		if err != nil {
+			if !errors.Is(err, models.ErrNoRecord) {
+				app.serverError(r, w, err)
+				return
+			}
+		}
+
+		if recurring != nil {
+			res := []result{}
+			for _, s := range recurring {
+				r := result{}
+				r.ID = safeDeref(s.ID)
+				r.Text = safeDeref(s.Title)
+				r.Image = fmt.Sprintf("%s/recurring/%s", app.baseImgUrl, safeDeref(s.ThumbnailName))
+				res = append(res, r)
+			}
+
+			results.Results = res
+		}
+	}
+	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
+
+	data := app.newTemplateData(r)
+	data.DropdownResults = results
+
+	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
+}
+
 func getFormattedQueries(query string) (string, string, string) {
 	// to be used in the ui
 	rawQuery, _ := url.QueryUnescape(query)

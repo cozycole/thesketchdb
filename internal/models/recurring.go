@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Series struct {
+type Recurring struct {
 	ID            *int
 	Slug          *string
 	Title         *string
@@ -17,30 +17,30 @@ type Series struct {
 	Sketches      []*Sketch
 }
 
-type SeriesModelInterface interface {
+type RecurringModelInterface interface {
 	Delete(id int) error
-	GetById(id int) (*Series, error)
-	Insert(*Series) (int, error)
-	Search(string) ([]*Series, error)
-	Update(*Series) error
+	GetById(id int) (*Recurring, error)
+	Insert(*Recurring) (int, error)
+	Search(string) ([]*Recurring, error)
+	Update(*Recurring) error
 }
 
-type SeriesModel struct {
+type RecurringModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *SeriesModel) Delete(id int) error {
+func (m *RecurringModel) Delete(id int) error {
 	stmt := `
-		DELETE FROM series where id = $1
+		DELETE FROM recurring where id = $1
 	`
 
 	_, err := m.DB.Exec(context.Background(), stmt, id)
 	return err
 }
 
-func (m *SeriesModel) GetById(id int) (*Series, error) {
+func (m *RecurringModel) GetById(id int) (*Recurring, error) {
 	stmt := `
-		SELECT s.id, s.slug, s.title, s.description, s.thumbnail_name,
+		SELECT r.id, r.slug, r.title, r.description, r.thumbnail_name,
 		sk.id, sk.slug, sk.title, sk.sketch_url, sk.thumbnail_name, 
 		sk.upload_date, sk.episode_start, sk.sketch_number, sk.part_number,
 		e.id, e.slug, e.episode_number, e.title, e.air_date, 
@@ -48,15 +48,15 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 		se.id, se.slug, se.season_number,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.profile_img, sh.slug
-		FROM series as s
-		LEFT JOIN sketch AS sk ON s.id = sk.series_id
+		FROM recurring as r
+		LEFT JOIN sketch AS sk ON r.id = sk.recurring_id
 		LEFT JOIN episode as e ON sk.episode_id = e.id
 		LEFT JOIN season as se ON e.season_id = se.id
 		LEFT JOIN show as sh ON se.show_id = sh.id
 		LEFT JOIN sketch_creator_rel as skcr ON sk.id = skcr.sketch_id
 		LEFT JOIN creator as c ON skcr.creator_id = c.id
-		WHERE s.id = $1
-		ORDER BY sk.part_number
+		WHERE r.id = $1
+		ORDER BY sk.upload_date asc
 	`
 	rows, err := m.DB.Query(context.Background(), stmt, id)
 	if err != nil {
@@ -67,7 +67,7 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 		}
 	}
 
-	s := &Series{}
+	s := &Recurring{}
 	hasRows := false
 	for rows.Next() {
 		sk := &Sketch{}
@@ -84,7 +84,7 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 			&ep.URL, &ep.YoutubeID,
 			&se.ID, &se.Slug, &se.Number,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
-			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
+			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 		)
 
 		if err != nil {
@@ -93,8 +93,6 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 
 		sk.Creator = c
 		sk.Show = sh
-		sk.Episode = ep
-		sk.Season = se
 		if sk.ID != nil {
 			s.Sketches = append(s.Sketches, sk)
 		}
@@ -111,17 +109,17 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 	return s, nil
 }
 
-func (m *SeriesModel) Insert(series *Series) (int, error) {
+func (m *RecurringModel) Insert(recurring *Recurring) (int, error) {
 	stmt := `
-		INSERT INTO series (slug, title, description, thumbnail_name)
+		INSERT INTO recurring (slug, title, description, thumbnail_name)
 		VALUES ($1,$2,$3,$4)
 		RETURNING id;
 		`
 
 	result := m.DB.QueryRow(
 		context.Background(),
-		stmt, series.Slug, series.Title,
-		series.Description, series.ThumbnailName,
+		stmt, recurring.Slug, recurring.Title,
+		recurring.Description, recurring.ThumbnailName,
 	)
 
 	var id int
@@ -132,12 +130,12 @@ func (m *SeriesModel) Insert(series *Series) (int, error) {
 	return id, nil
 }
 
-func (m *SeriesModel) Search(query string) ([]*Series, error) {
+func (m *RecurringModel) Search(query string) ([]*Recurring, error) {
 	query = "%" + query + "%"
-	stmt := `SELECT s.id, s.slug, s.title, s.thumbnail_name
-			FROM series as s
-			WHERE s.title ILIKE $1
-			ORDER BY s.title`
+	stmt := `SELECT r.id, r.slug, r.title, r.thumbnail_name
+			FROM recurring as r
+			WHERE r.title ILIKE $1
+			ORDER BY r.title`
 
 	rows, err := m.DB.Query(context.Background(), stmt, query)
 	if err != nil {
@@ -145,9 +143,9 @@ func (m *SeriesModel) Search(query string) ([]*Series, error) {
 	}
 	defer rows.Close()
 
-	series := []*Series{}
+	recurring := []*Recurring{}
 	for rows.Next() {
-		s := &Series{}
+		s := &Recurring{}
 		err := rows.Scan(
 			&s.ID, &s.Slug, &s.Title, &s.ThumbnailName,
 		)
@@ -155,27 +153,29 @@ func (m *SeriesModel) Search(query string) ([]*Series, error) {
 			return nil, err
 		}
 
-		series = append(series, s)
+		recurring = append(recurring, s)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return series, nil
+	return recurring, nil
 }
 
-func (m *SeriesModel) Update(series *Series) error {
+func (m *RecurringModel) Update(recurring *Recurring) error {
 	stmt := `
-		UPDATE series 
-		SET slug = $1, title = $2, description = $3, thumbnail_name = $4
+		UPDATE recurring 
+		SET slug = $1, title = $2, 
+		description =$3, thumbnail_name = $4
 		WHERE id = $5
 	`
 
 	_, err := m.DB.Exec(
 		context.Background(),
-		stmt, series.Slug, series.Title, series.Description,
-		series.ThumbnailName, series.ID,
+		stmt, recurring.Slug, recurring.Title,
+		recurring.Description, recurring.ThumbnailName,
+		recurring.ID,
 	)
 
 	return err

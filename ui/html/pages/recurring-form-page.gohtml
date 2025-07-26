@@ -1,26 +1,26 @@
 {{ define "title" }}{{ .Page.Title }}{{ end }}
 
 {{ define "main" }}
-  <main data-page="series-form" class="w-full flex-1 p-3 bg-slate-300">
+  <main data-page="recurring-form" class="w-full flex-1 p-3 bg-slate-300">
     <div class="max-w-screen-lg mx-auto p-3 space-y-3 bg-slate-50 rounded-lg">
       <div class="flex justify-between items-center">
         <h1 class="font-bold text-xl">{{ .Page.Title }}</h1>
         <div>
-          {{ with .Page.SeriesUrl }}
+          {{ with .Page.RecurringUrl }}
             <a href="{{ . }}" class="hover:underline italic"
-              >View Series Page</a
+              >View Recurring Page</a
             >
           {{ end }}
         </div>
       </div>
       {{ with .Page.Form }}
-        {{ template "series-form" . }}
+        {{ template "recurring-form" . }}
       {{ end }}
     </div>
   </main>
 {{ end }}
 
-{{ define "series-form" }}
+{{ define "recurring-form" }}
   <form
     class="w-full max-w-lg space-y-3"
     enctype="multipart/form-data"
@@ -30,7 +30,7 @@
   >
     <input type="hidden" name="id" value="{{ .ID }}" />
     <div>
-      <label class="inline-block ">Series Title</label>
+      <label class="inline-block ">Recurring Title</label>
       {{ with .FieldErrors.title }}
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
@@ -40,7 +40,7 @@
         autocomplete="off"
         value="{{ .Title }}"
         class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-        placeholder="Enter series title"
+        placeholder="Enter recurring title"
       />
     </div>
     <div>
@@ -63,7 +63,7 @@
       {{- with .FieldErrors.thumbnail -}}
         <label class="block text-red-700">{{ . }}</label>
       {{- end -}}
-      <h3>Series Thumbnail</h3>
+      <h3>Recurring Thumbnail</h3>
       <img-preview>
         <label
           class="inline-block cursor-pointer p-2 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100"

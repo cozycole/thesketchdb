@@ -12,30 +12,33 @@ import (
 const YOUTUBE_URL = "https://www.youtube.com/watch?v=%s&t=%ds"
 
 type SketchPage struct {
-	SketchID      int
-	Title         string
-	Description   string
-	Image         string
-	UpdateUrl     string
-	YoutubeId     string
-	YoutubeUrl    string
-	Date          string
-	Liked         bool
-	CreatorName   string
-	CreatorImage  string
-	CreatorUrl    string
-	SeasonNumber  int
-	SeasonUrl     string
-	EpisodeNumber int
-	EpisodeUrl    string
-	SketchNumber  int
-	StartTime     int
-	SeriesPart    int
-	SeriesTitle   string
-	SeriesUrl     string
-	InSeries      bool
-	Cast          CastGallery
-	Tags          []*Tag
+	SketchID       int
+	Title          string
+	Description    string
+	Image          string
+	UpdateUrl      string
+	YoutubeId      string
+	YoutubeUrl     string
+	Date           string
+	Liked          bool
+	CreatorName    string
+	CreatorImage   string
+	CreatorUrl     string
+	SeasonNumber   int
+	SeasonUrl      string
+	EpisodeNumber  int
+	EpisodeUrl     string
+	SketchNumber   int
+	StartTime      int
+	InSeries       bool
+	SeriesPart     int
+	SeriesTitle    string
+	SeriesUrl      string
+	InRecurring    bool
+	RecurringTitle string
+	RecurringUrl   string
+	Cast           CastGallery
+	Tags           []*Tag
 }
 
 func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string) (*SketchPage, error) {
@@ -148,6 +151,18 @@ func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string
 		page.InSeries = page.SeriesTitle != "" &&
 			sketch.Series.ID != nil &&
 			safeDeref(sketch.SeriesPart) != 0
+	}
+
+	if sketch.Recurring != nil {
+		page.RecurringTitle = safeDeref(sketch.Recurring.Title)
+		page.RecurringUrl = fmt.Sprintf(
+			"/recurring/%d/%s",
+			safeDeref(sketch.Recurring.ID),
+			safeDeref(sketch.Recurring.Slug),
+		)
+
+		page.InRecurring = page.RecurringTitle != "" &&
+			sketch.Recurring.ID != nil
 	}
 
 	return &page, nil

@@ -40,8 +40,9 @@ func (app *application) seriesView(w http.ResponseWriter, r *http.Request) {
 }
 
 type seriesFormPage struct {
-	Title string
-	Form  seriesForm
+	Title     string
+	SeriesUrl string
+	Form      seriesForm
 }
 
 func (app *application) seriesAddPage(w http.ResponseWriter, r *http.Request) {
@@ -128,8 +129,9 @@ func (app *application) seriesUpdatePage(w http.ResponseWriter, r *http.Request)
 
 	data := app.newTemplateData(r)
 	data.Page = seriesFormPage{
-		Title: "Update Series",
-		Form:  form,
+		Title:     "Update Series",
+		SeriesUrl: fmt.Sprintf("/series/%d/%s", seriesId, safeDeref(series.Slug)),
+		Form:      form,
 	}
 
 	app.render(r, w, http.StatusOK, "series-form-page.gohtml", "base", data)

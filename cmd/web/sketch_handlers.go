@@ -94,6 +94,7 @@ func (app *application) sketchAdd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sketch := convertFormToSketch(&form)
+	// need to get these to create slug
 	if sketch.Episode != nil {
 		sketch.Episode, _ = app.shows.GetEpisode(safeDeref(sketch.Episode.ID))
 	}
