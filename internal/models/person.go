@@ -16,6 +16,7 @@ type Person struct {
 	Slug        *string
 	First       *string
 	Last        *string
+	Alias       *string
 	Professions *string
 	ProfileImg  *string
 	BirthDate   *time.Time
@@ -31,10 +32,10 @@ type PersonStats struct {
 
 type PersonModelInterface interface {
 	Delete(id int) error
-	GetBySlug(slug string) (*Person, error)
 	Get(filter *Filter) ([]*Person, error)
 	GetById(id int) (*Person, error)
 	GetCount(filter *Filter) (int, error)
+	GetCreatorShowCounts(id int) ([]*CreatorShowCounts, error)
 	GetPeople(ids []int) ([]*Person, error)
 	GetPersonStats(id int) (*PersonStats, error)
 	Exists(id int) (bool, error)
@@ -42,7 +43,6 @@ type PersonModelInterface interface {
 	Search(query string) ([]*Person, error)
 	SearchCount(query string) (int, error)
 	Update(person *Person) error
-	VectorSearch(query string) ([]*ProfileResult, error)
 }
 
 type PersonModel struct {
@@ -91,13 +91,13 @@ func (m *PersonModel) GetPersonStats(id int) (*PersonStats, error) {
 
 func (m *PersonModel) Insert(person *Person) (int, error) {
 	stmt := `
-	INSERT INTO person (first, last, birthdate, professions, slug, profile_img)
-	VALUES ($1,$2,$3,$4,$5,$6)
+	INSERT INTO person (first, last, aliases, birthdate, professions, slug, profile_img)
+	VALUES ($1,$2,$3,$4,$5,$6,$7)
 	RETURNING id;
 	`
 	var id int
 	row := m.DB.QueryRow(
-		context.Background(), stmt, person.First, person.Last,
+		context.Background(), stmt, person.First, person.Last, person.Alias,
 		person.BirthDate, person.Professions, person.Slug, person.ProfileImg,
 	)
 	err := row.Scan(&id)
@@ -123,7 +123,7 @@ func (m *PersonModel) Exists(id int) (bool, error) {
 }
 
 func (m *PersonModel) Get(filter *Filter) ([]*Person, error) {
-	query := `SELECT p.id, p.first, p.last, p.profile_img, p.birthdate, p.slug%s
+	query := `SELECT p.id, p.first, p.last, p.aliases, p.profile_img, p.birthdate, p.slug%s
 			FROM person as p
 			WHERE 1=1
 	`
@@ -135,8 +135,9 @@ func (m *PersonModel) Get(filter *Filter) ([]*Person, error) {
 		rankParam := fmt.Sprintf(`
 		, ts_rank(
 			setweight(to_tsvector('simple', p.first), 'A') ||
-			setweight(to_tsvector('simple', p.last), 'A'),
-			to_tsquery('simple', $%d)
+			setweight(to_tsvector('simple', p.last), 'A') ||
+			setweight(to_tsvector('simple', COALESCE(p.aliases, '')), 'B'),
+			websearch_to_tsquery('simple', $%d)
 		) AS rank
 		`, argIndex)
 
@@ -144,8 +145,8 @@ func (m *PersonModel) Get(filter *Filter) ([]*Person, error) {
 
 		query += fmt.Sprintf(`AND
             to_tsvector('simple', p.first || ' ' ||
-            p.last
-		) @@ to_tsquery('simple', $%d)
+            p.last || ' ' || COALESCE(p.aliases, '')
+		) @@ websearch_to_tsquery('simple', $%d)
 		`, argIndex)
 
 		args = append(args, filter.Query)
@@ -163,7 +164,8 @@ func (m *PersonModel) Get(filter *Filter) ([]*Person, error) {
 	for rows.Next() {
 		var p Person
 		destinations := []any{
-			&p.ID, &p.First, &p.Last, &p.ProfileImg, &p.BirthDate, &p.Slug,
+			&p.ID, &p.First, &p.Last, &p.Alias,
+			&p.ProfileImg, &p.BirthDate, &p.Slug,
 		}
 
 		var rank *float32
@@ -185,16 +187,6 @@ func (m *PersonModel) Get(filter *Filter) ([]*Person, error) {
 	return people, nil
 }
 
-func (m *PersonModel) GetBySlug(slug string) (*Person, error) {
-	person_id, err := m.GetIdBySlug(slug)
-	if err != nil {
-		return nil, err
-	}
-
-	return m.GetById(person_id)
-
-}
-
 func (m *PersonModel) GetIdBySlug(slug string) (int, error) {
 	stmt := `SELECT p.id FROM person AS p WHERE p.slug = $1`
 	id_row := m.DB.QueryRow(context.Background(), stmt, slug)
@@ -213,7 +205,7 @@ func (m *PersonModel) GetIdBySlug(slug string) (int, error) {
 }
 
 func (m *PersonModel) GetById(id int) (*Person, error) {
-	stmt := `SELECT id, first, last, profile_img, birthdate, slug, professions
+	stmt := `SELECT id, first, last, aliases, profile_img, birthdate, slug, professions
 			FROM person
 			WHERE id = $1`
 
@@ -222,7 +214,9 @@ func (m *PersonModel) GetById(id int) (*Person, error) {
 	p := &Person{}
 
 	err := row.Scan(
-		&p.ID, &p.First, &p.Last, &p.ProfileImg, &p.BirthDate, &p.Slug, &p.Professions)
+		&p.ID, &p.First, &p.Last, &p.Alias, &p.ProfileImg,
+		&p.BirthDate, &p.Slug, &p.Professions,
+	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -292,7 +286,10 @@ func (m *PersonModel) GetCount(filter *Filter) (int, error) {
 
 	if filter.Query != "" {
 		query += fmt.Sprintf(`AND
-            to_tsvector('simple', COALESCE(p.first,'') || ' ' || COALESCE(p.last,'')) @@ to_tsquery('simple', $%d)
+            to_tsvector(
+			'simple', COALESCE(p.first,'') || ' ' 
+				|| COALESCE(p.last,'') || ' ' || 
+				COALESCE(p.aliases, '')) @@ websearch_to_tsquery('simple', $%d)
 		`, argIndex)
 
 		args = append(args, filter.Query)
@@ -313,6 +310,88 @@ func (m *PersonModel) GetCount(filter *Filter) (int, error) {
 	}
 
 	return count, nil
+}
+
+type CreatorShowCounts struct {
+	Type      *string
+	ID        *int
+	Slug      *string
+	ImageName *string
+	Name      *string
+	Count     *int
+}
+
+func (m *PersonModel) GetCreatorShowCounts(id int) ([]*CreatorShowCounts, error) {
+	stmt := `
+		SELECT
+		  type,
+		  id,
+		  slug,
+		  image,
+		  name,
+		  COUNT(DISTINCT sketch_id) AS sketch_count
+		FROM (
+		  SELECT
+			'show' AS type,
+			s.id as id,
+			s.slug as slug,
+			s.profile_img as image,
+			s.name AS name,
+			cm.sketch_id
+		  FROM
+			cast_members cm
+			JOIN sketch sk ON cm.sketch_id = sk.id
+			JOIN episode e ON sk.episode_id = e.id
+			JOIN season se ON e.season_id = se.id
+			JOIN show s ON se.show_id = s.id
+		  WHERE
+			cm.person_id = $1
+
+		  UNION ALL
+		 
+		  SELECT
+			'creator' AS type,
+			c.id as id,
+			c.slug as slug,
+			c.profile_img as image,
+			c.name AS name,
+			cm.sketch_id
+		  FROM
+			cast_members cm
+			JOIN sketch sk ON cm.sketch_id = sk.id
+			JOIN sketch_creator_rel scr ON sk.id = scr.sketch_id
+			JOIN creator c ON scr.creator_id = c.id
+		  WHERE
+			cm.person_id = $1
+		) combined
+		GROUP BY
+		  type, id, slug, image, name
+		ORDER BY
+		  sketch_count DESC;
+		`
+
+	rows, err := m.DB.Query(context.Background(), stmt, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	counts := []*CreatorShowCounts{}
+	for rows.Next() {
+		c := &CreatorShowCounts{}
+		err := rows.Scan(
+			&c.Type, &c.ID, &c.Slug, &c.ImageName, &c.Name, &c.Count,
+		)
+		if err != nil {
+			return nil, err
+		}
+		counts = append(counts, c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return counts, nil
 }
 
 func (m *PersonModel) Search(query string) ([]*Person, error) {
@@ -369,57 +448,12 @@ func (m *PersonModel) SearchCount(query string) (int, error) {
 func (m *PersonModel) Update(person *Person) error {
 	stmt := `
 	UPDATE person SET first = $1, last = $2, professions = $3, 
-	profile_img = $4, birthdate = $5, slug = $6
-	WHERE id = $7`
+	profile_img = $4, birthdate = $5, slug = $6, aliases = $7
+	WHERE id = $8`
 	_, err := m.DB.Exec(
 		context.Background(), stmt, person.First,
 		person.Last, person.Professions, person.ProfileImg,
-		person.BirthDate, person.Slug, person.ID,
+		person.BirthDate, person.Slug, person.Alias, person.ID,
 	)
 	return err
-}
-
-func (m *PersonModel) VectorSearch(query string) ([]*ProfileResult, error) {
-	stmt := `
-		SELECT id, first, last, profile_img, birthdate, slug, ts_rank(search_vector, websearch_to_tsquery('english', $1)) AS rank
-		FROM person
-		WHERE search_vector @@ websearch_to_tsquery('english', $1)
-		ORDER BY rank desc
-	`
-
-	rows, err := m.DB.Query(context.Background(), stmt, query)
-
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
-	defer rows.Close()
-
-	results := []*ProfileResult{}
-	for rows.Next() {
-		pr := &ProfileResult{}
-		var first, last *string
-		err := rows.Scan(
-			&pr.ID, &first, &last, &pr.Img, &pr.Date, &pr.Slug, &pr.Rank,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		name := *first + " " + *last
-		resType := "person"
-		pr.Name = &name
-		pr.Type = &resType
-
-		results = append(results, pr)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return results, nil
 }

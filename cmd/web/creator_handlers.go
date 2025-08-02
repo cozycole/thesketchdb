@@ -30,9 +30,9 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 
 	popularSketches, err := app.sketches.Get(
 		&models.Filter{
-			Limit:  16,
+			Limit:  12,
 			Offset: 0,
-			SortBy: "az",
+			SortBy: "popular",
 			Creators: []*models.Creator{
 				&models.Creator{ID: creator.ID},
 			},
@@ -44,8 +44,17 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cast, err := app.creators.GetCast(creatorId)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		app.serverError(r, w, err)
+		return
+	}
+
 	data := app.newTemplateData(r)
-	page, err := views.CreatorPageView(creator, popularSketches, app.baseImgUrl)
+	page, err := views.CreatorPageView(
+		creator,
+		popularSketches,
+		cast, app.baseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 	}
@@ -213,7 +222,6 @@ func (app *application) updateCreator(w http.ResponseWriter, r *http.Request) {
 	updatedCreator.Slug = &slug
 
 	err = app.creators.Update(&updatedCreator)
-	app.infoLog.Println("UPDATED CREATOR")
 	if err != nil {
 		app.serverError(r, w, err)
 		return

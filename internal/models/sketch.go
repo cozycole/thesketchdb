@@ -92,6 +92,7 @@ type Sketch struct {
 	Duration      *int
 	Description   *string
 	Transcript    *string
+	Diarization   *string
 	YoutubeID     *string
 	ThumbnailName *string
 	ThumbnailFile *multipart.FileHeader
@@ -297,14 +298,14 @@ func determineFields(filter *Filter, args *Arguements) string {
 					JOIN tags AS t ON vt.tag_id = t.id 
 					WHERE vt.sketch_id = v.id
 				), ' ')), 'C'),
-				to_tsquery('english', $%d)
+				websearch_to_tsquery('english', $%d)
 				) AS rank
 		`, args.ArgIndex)
 		args.Args = append(args.Args, filter.Query)
 	}
 
 	baseFields := `
-		v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number,
+		v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number, 
 		v.sketch_url as sketch_url, v.slug as sketch_slug, v.thumbnail_name as thumbnail_name, v.upload_date as upload_date,
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
 		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
@@ -350,6 +351,8 @@ func determineConditions(filter *Filter, args *Arguements) string {
 			to_tsvector(
 				'english',
 				COALESCE(v.title, '') || ' ' || COALESCE(c.name, '') || ' ' ||
+				COALESCE(c.alias, '') || ' ' || COALESCE(sh.name, '') || 
+				' ' || COALESCE(sh.aliases,'') || ' ' ||
 				COALESCE(array_to_string(ARRAY(
 					SELECT a.first
 					FROM cast_members AS cm 
@@ -378,7 +381,7 @@ func determineConditions(filter *Filter, args *Arguements) string {
 					FROM cast_members AS cm 
 					JOIN character as c ON cm.character_id = c.id
 					WHERE cm.sketch_id = v.id
-				), ' '),'')) @@ to_tsquery('english', $%d)
+				), ' '),'')) @@ websearch_to_tsquery('english', $%d)
 			`, args.ArgIndex)
 		args.Args = append(args.Args, filter.Query)
 	}
@@ -459,7 +462,7 @@ func determineConditions(filter *Filter, args *Arguements) string {
 }
 
 func determineSort(filter *Filter, args *Arguements) string {
-	sort := "upload_date ASC, sketch_title ASC"
+	sort := "upload_date ASC, popularity ASC"
 	if val, ok := sortMap[filter.SortBy]; ok {
 		sort = val
 	}
@@ -500,7 +503,7 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 		creator_id, creator_name, creator_slug, 
 		creator_img, show_id, show_name,
 		show_img, show_slug, season_number, episode_number,
-		cast_thumbnail_name %s
+		cast_thumbnail_name, popularity %s
 		FROM ranked_sketches
 		WHERE rn = 1
 		%s
@@ -544,7 +547,7 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &se.Number, &ep.Number,
-			&v.CastThumbnail,
+			&v.CastThumbnail, nil,
 		}
 		var rank *float32
 		if filter.Query != "" {
@@ -572,7 +575,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	stmt := `
 		SELECT v.id, v.title, v.sketch_number, v.sketch_url, v.description,
 		v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
-		v.episode_start, v.part_number, v.duration, v.transcript,
+		v.episode_start, v.part_number, v.duration, v.transcript, v.diarization,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.slug, sh.profile_img,
 		p.id, p.slug, p.first, p.last, p.profile_img,
@@ -623,6 +626,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		err := rows.Scan(
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Description, &v.Slug, &v.ThumbnailName,
 			&v.UploadDate, &v.YoutubeID, &v.EpisodeStart, &v.SeriesPart, &v.Duration, &v.Transcript,
+			&v.Diarization,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
@@ -911,15 +915,15 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 	INSERT INTO sketch (
 		title, sketch_url, thumbnail_name, upload_date, slug, youtube_id, sketch_number,
 		episode_id, episode_start, series_id, part_number, recurring_id, duration, description,
-		transcript)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+		transcript, diarization)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
 	RETURNING id;`
 	result := m.DB.QueryRow(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.ThumbnailName, sketch.UploadDate,
 		sketch.Slug, sketch.YoutubeID, sketch.Number, episodeId,
 		sketch.EpisodeStart, seriesId, sketch.SeriesPart, recurringId,
-		sketch.Duration, sketch.Description, sketch.Transcript,
+		sketch.Duration, sketch.Description, sketch.Transcript, sketch.Diarization,
 	)
 
 	var id int
@@ -965,7 +969,7 @@ func (m *SketchModel) Search(query string, limit, offset int) ([]*Sketch, error)
 		LEFT JOIN creator as c
 		ON vcr.creator_id = c.id
 		WHERE v.search_vector @@ websearch_to_tsquery('english', $1)
-		ORDER BY rank DESC, name ASC
+		ORDER BY rank DESC, v.popularity_score ASC
 		LIMIT $2
 		OFFSET $3;
 	`
@@ -1044,15 +1048,15 @@ func (m *SketchModel) Update(sketch *Sketch) error {
 	UPDATE sketch SET title = $1, sketch_url = $2, upload_date = $3, 
 	slug = $4, thumbnail_name = $5, sketch_number = $6, episode_id = $7, episode_start = $8,
 	series_id = $9, part_number = $10, recurring_id = $11, duration = $12, description = $13,
-	transcript = $14
-	WHERE id = $15
+	transcript = $14, diarization = $15
+	WHERE id = $16
 	`
 	_, err := m.DB.Exec(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.UploadDate,
 		sketch.Slug, sketch.ThumbnailName, sketch.Number, episodeId, sketch.EpisodeStart,
 		seriesId, sketch.SeriesPart, recurringId, sketch.Duration, sketch.Description,
-		sketch.Transcript, sketch.ID,
+		sketch.Transcript, sketch.Diarization, sketch.ID,
 	)
 	return err
 }

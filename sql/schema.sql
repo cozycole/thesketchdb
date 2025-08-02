@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS person (
     slug TEXT NOT NULL,
     first TEXT NOT NULL,
     last TEXT NOT NULL,
+    aliases TEXT,
     professions TEXT NOT NULL,
     description TEXT,
     birthdate DATE, 
@@ -18,6 +19,7 @@ CREATE TABLE IF NOT EXISTS character (
     id SERIAL PRIMARY KEY, 
     slug TEXT NOT NULL,
     name TEXT NOT NULL, 
+    aliases TEXT,
     character_type character_type NOT NULL,
     description TEXT, 
     img_name TEXT,
@@ -30,8 +32,9 @@ CREATE TABLE IF NOT EXISTS character (
 
 CREATE TABLE IF NOT EXISTS creator (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
     slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    aliases TEXT,
     page_url TEXT NOT NULL,
     description TEXT,
     profile_img TEXT, 
@@ -45,8 +48,10 @@ CREATE TABLE IF NOT EXISTS show (
     id SERIAL PRIMARY KEY,
     slug TEXT NOT NULL,
     name TEXT NOT NULL,
+    aliases TEXT,
     profile_img TEXT,
     popularity_score REAL DEFAULT 0,
+    search_vector tsvector,
     insert_timestamp TIMESTAMP DEFAULT now()
 );
 
@@ -121,6 +126,7 @@ CREATE TABLE IF NOT EXISTS sketch (
     thumbnail_name TEXT,
     description TEXT,
     transcript TEXT, 
+    diarization TEXT,
     upload_date DATE,
     duration INT,
     episode_id INT REFERENCES episode(id),

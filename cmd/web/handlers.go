@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -63,11 +64,22 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	popularSketchViews, err := views.SketchThumbnailsView(popularSketches, app.baseImgUrl, "")
 
-	people, err := app.people.GetPeople([]int{1, 2, 3, 4, 5, 6, 7, 8})
+	peopleIds := []int{61, 52, 42, 1, 2, 3, 39, 54, 56}
+	people, err := app.people.GetPeople(peopleIds)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
+
+	idIndex := make(map[int]int)
+	for i, id := range peopleIds {
+		idIndex[id] = i
+	}
+
+	// Sort items based on the order slice
+	sort.Slice(people, func(i, j int) bool {
+		return idIndex[safeDeref(people[i].ID)] < idIndex[safeDeref(people[j].ID)]
+	})
 
 	homePageData := HomePage{
 		Featured:        featuredSketchViews,

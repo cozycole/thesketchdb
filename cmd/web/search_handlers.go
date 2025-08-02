@@ -25,7 +25,7 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 			Query:  filterQuery,
 			Limit:  app.settings.maxSearchResults,
 			Offset: 0,
-			SortBy: "latest",
+			SortBy: "popular",
 		}
 
 		results, err = app.getSearchResults(filter)

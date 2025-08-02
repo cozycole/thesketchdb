@@ -59,8 +59,8 @@
               </div>
             </div>
           </section>
-          <div id="contentSections" class="flex-1 min-w-0">
-            <section class="w-full bg-white rounded-lg py-4 p-2 sm:px-4">
+          <div id="contentSections" class="flex flex-col gap-4 flex-1 min-w-0">
+            <section class="w-full bg-white rounded-lg py-4 p-3 sm:px-4">
               <collapse-content>
                 <header class="w-full flex items-center justify-between">
                   <h2 class="text-xl font-bold hover:underline">
@@ -86,7 +86,34 @@
                   class="content w-full overflow-hidden transition-all duration-500 ease-in-out"
                 >
                   <div class="mt-4">
-                    {{ template "thumbnail-gallery" .Popular }}
+                    {{ template "browse-gallery" .Popular }}
+                  </div>
+                </div>
+              </collapse-content>
+            </section>
+            <section class="w-full bg-white rounded-lg py-4 px-4">
+              <collapse-content>
+                <header class="w-full flex items-center justify-between">
+                  <h2 class="text-xl font-bold">Shows & Creators</h2>
+                  <button class="toggleBtn transition-all">
+                    <svg
+                      class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      focusable="false"
+                    >
+                      <path
+                        d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
+                        fill="currentColor"
+                      ></path>
+                    </svg>
+                  </button>
+                </header>
+                <div
+                  class="content w-full overflow-hidden transition-all duration-500 ease-in-out"
+                >
+                  <div class="mt-4">
+                    {{ template "profile-gallery" .ShowCreators }}
                   </div>
                 </div>
               </collapse-content>

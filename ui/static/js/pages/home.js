@@ -1,4 +1,3 @@
-import { SketchCarousel } from "../components/sketchCarousel.js";
 import Glide from "@glidejs/glide";
 
 const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
@@ -73,23 +72,23 @@ export function initHome() {
           focusAt: 0,
           bound: true,
           gap: 8,
-          peek: { before: 0, after: 50 },
+          peek: { before: 0, after: 40 },
           breakpoints: {
             1100: {
               perView: 4,
-              peek: { before: 0, after: 50 },
+              peek: { before: 0, after: 40 },
             },
             850: {
               perView: 3,
-              peek: { before: 0, after: 50 },
+              peek: { before: 0, after: 40 },
             },
             575: {
               perView: 2,
-              peek: { before: 0, after: 50 },
+              peek: { before: 0, after: 40 },
             },
             400: {
               perView: 1,
-              peek: { before: 0, after: 50 },
+              peek: { before: 0, after: 40 },
             },
           },
           keyboard: false,
@@ -134,13 +133,4 @@ export function initHome() {
       }
     }
   }
-
-  //const carouselSections = document.getElementsByClassName('carouselSection');
-  //for (let section of carouselSections) {
-  //  new SketchCarousel(
-  //    section.querySelector('.carousel'),
-  //    section.querySelector('.carouselPrevBtn'),
-  //    section.querySelector('.carouselNextBtn'),
-  //  );
-  //}
 }

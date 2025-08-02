@@ -45,27 +45,30 @@ func CharacterPageView(character *models.Character, popular []*models.Sketch, ba
 		page.PortrayalName = PrintPersonName(character.Portrayal)
 	}
 	var err error
+	popularPageSize := 12
 	page.Popular, err = SketchGalleryView(
 		popular,
 		baseImgUrl,
 		"cast",
 		"sub",
-		12,
+		popularPageSize,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	if len(popular) == popularPageSize {
+		page.Popular.SeeMore = true
+		page.Popular.SeeMoreUrl = fmt.Sprintf(
+			"/catalog/sketches?character=%d", safeDeref(character.ID),
+		)
+	}
+
 	return &page, nil
 }
 
 type CharacterGallery struct {
-	CharacterCards []*CharacterCard
-}
-
-type CharacterCard struct {
-	Name  string
-	Url   string
-	Image string
+	Cards []*Card
 }
 
 func CharacterGalleryView(characters []*models.Character, baseImgUrl string) (*CharacterGallery, error) {
@@ -77,14 +80,14 @@ func CharacterGalleryView(characters []*models.Character, baseImgUrl string) (*C
 			return nil, err
 		}
 
-		characterGallery.CharacterCards = append(characterGallery.CharacterCards, characterCard)
+		characterGallery.Cards = append(characterGallery.Cards, characterCard)
 	}
 
 	return &characterGallery, nil
 }
 
-func CharacterCardView(character *models.Character, baseImgUrl string) (*CharacterCard, error) {
-	card := &CharacterCard{}
+func CharacterCardView(character *models.Character, baseImgUrl string) (*Card, error) {
+	card := &Card{}
 
 	if character.ID == nil {
 		return nil, fmt.Errorf("Character ID not defined")
@@ -94,15 +97,12 @@ func CharacterCardView(character *models.Character, baseImgUrl string) (*Charact
 		return nil, fmt.Errorf("Character slug not defined")
 	}
 
-	card.Name = "Missing Character Name"
-	if character.Name != nil {
-		card.Name = *character.Name
-	}
+	card.Title = safeDeref(character.Name)
 
 	card.Url = fmt.Sprintf("/character/%d/%s", *character.ID, *character.Slug)
-	card.Image = "/static/img/missing-profile.jpg"
+	card.ImageUrl = "/static/img/missing-profile.jpg"
 	if character.Image != nil {
-		card.Image = fmt.Sprintf("%s/character/%s", baseImgUrl, *character.Image)
+		card.ImageUrl = fmt.Sprintf("%s/character/%s", baseImgUrl, *character.Image)
 	}
 
 	return card, nil

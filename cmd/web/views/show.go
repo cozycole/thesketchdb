@@ -48,9 +48,18 @@ func ShowPageView(show *models.Show, popular []*models.Sketch, cast []*models.Pe
 	page.SeasonSection = SeasonSelectGalleryView(show.Seasons, show.Seasons[0], baseImgUrl, "sub")
 
 	var err error
-	page.PopularSection, err = SketchGalleryView(popular, baseImgUrl, baseImgUrl, "sub", 8)
+	popularPageSize := 12
+	page.PopularSection, err = SketchGalleryView(
+		popular, baseImgUrl, baseImgUrl, "sub", popularPageSize)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(popular) == popularPageSize {
+		page.PopularSection.SeeMore = true
+		page.PopularSection.SeeMoreUrl = fmt.Sprintf(
+			"/catalog/sketches?show=%d", show.ID,
+		)
 	}
 
 	page.CastSection, err = PersonGalleryView(cast, baseImgUrl)
@@ -118,6 +127,9 @@ func SeasonSelectGalleryView(seasons []*models.Season, selected *models.Season, 
 			safeDeref(s.ID),
 			safeDeref(s.Slug),
 		)
+		if sectionType == "sub" {
+			url += "?format=sub"
+		}
 		seasonData := SeasonData{
 			Url:    url,
 			Number: safeDeref(s.Number),
@@ -269,13 +281,7 @@ func EpisodeThumbnailView(episode *models.Episode, baseImgUrl string) *EpisodeTh
 }
 
 type ShowGallery struct {
-	ShowCards []*ShowCard
-}
-
-type ShowCard struct {
-	Name  string
-	Url   string
-	Image string
+	Cards []*Card
 }
 
 func ShowGalleryView(shows []*models.Show, baseImgUrl string) (*ShowGallery, error) {
@@ -287,14 +293,14 @@ func ShowGalleryView(shows []*models.Show, baseImgUrl string) (*ShowGallery, err
 			return nil, err
 		}
 
-		showGallery.ShowCards = append(showGallery.ShowCards, showCard)
+		showGallery.Cards = append(showGallery.Cards, showCard)
 	}
 
 	return &showGallery, nil
 }
 
-func ShowCardView(show *models.Show, baseImgUrl string) (*ShowCard, error) {
-	card := &ShowCard{}
+func ShowCardView(show *models.Show, baseImgUrl string) (*Card, error) {
+	card := &Card{}
 
 	if show.ID == nil {
 		return nil, fmt.Errorf("Show ID not defined")
@@ -304,15 +310,12 @@ func ShowCardView(show *models.Show, baseImgUrl string) (*ShowCard, error) {
 		return nil, fmt.Errorf("Show slug not defined")
 	}
 
-	card.Name = "Missing Show Name"
-	if show.Name != nil {
-		card.Name = *show.Name
-	}
+	card.Title = safeDeref(show.Name)
 
 	card.Url = fmt.Sprintf("/show/%d/%s", *show.ID, *show.Slug)
-	card.Image = "/static/img/missing-profile.jpg"
+	card.ImageUrl = "/static/img/missing-profile.jpg"
 	if show.ProfileImg != nil {
-		card.Image = fmt.Sprintf("%s/show/%s", baseImgUrl, *show.ProfileImg)
+		card.ImageUrl = fmt.Sprintf("%s/show/%s", baseImgUrl, *show.ProfileImg)
 	}
 
 	return card, nil

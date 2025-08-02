@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
@@ -30,7 +32,7 @@ func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filter := &models.Filter{
-		Limit:  8,
+		Limit:  12,
 		SortBy: "popular",
 		Shows:  []*models.Show{show},
 	}
@@ -89,7 +91,11 @@ func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
 	if isHxRequest && !isHistoryRestore {
 		format := r.URL.Query().Get("format")
 		templateData := views.EpisodeGalleryView(season.Episodes, app.baseImgUrl, format, true)
-		w.Header().Add("HX-Push-Url", fmt.Sprintf("/season/%d/%s", *season.ID, *season.Slug))
+
+		if isSeasonPath(r) {
+			w.Header().Add("HX-Push-Url", fmt.Sprintf("/season/%d/%s", *season.ID, *season.Slug))
+		}
+
 		app.render(r, w, http.StatusOK, "episode-gallery.gohtml", "episode-gallery", templateData)
 		return
 	}
@@ -266,11 +272,10 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.validateShowForm(&form)
+	form.Action = fmt.Sprintf("/show/%d/update", showId)
+	form.ProfileImgUrl = fmt.Sprintf("%s/show/%s", app.baseImgUrl, safeDeref(oldShow.ProfileImg))
 	if !form.Valid() {
-		data := app.newTemplateData(r)
-		data.Forms.Show = &form
-		data.Show = oldShow
-		app.render(r, w, http.StatusUnprocessableEntity, "show-form.gohtml", "show-form", data)
+		app.render(r, w, http.StatusUnprocessableEntity, "show-form.gohtml", "show-form", form)
 		return
 	}
 
@@ -311,14 +316,16 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	data := app.newTemplateData(r)
-	data.Forms.Show = &form
-	data.Show = &newShow
-	data.Flash = flashMessage{
-		Level:   "success",
-		Message: "Show successfully updated!",
+	updatedShow, err := app.shows.GetById(showId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
 	}
-	app.render(r, w, http.StatusOK, "show-form.gohtml", "show-form", data)
+
+	form = app.convertShowtoForm(updatedShow)
+	form.Action = fmt.Sprintf("/show/%d/update", showId)
+	form.ProfileImgUrl = fmt.Sprintf("%s/show/%s", app.baseImgUrl, safeDeref(oldShow.ProfileImg))
+	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "show-form", form)
 }
 
 func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
@@ -683,4 +690,18 @@ func createEpisodeSlug(season *models.Season, epNumber int) string {
 	}
 	text += fmt.Sprintf(" s%d e%d", safeDeref(season.Number), epNumber)
 	return models.CreateSlugName(text)
+}
+
+func isSeasonPath(r *http.Request) bool {
+	rawURL := r.Header.Get("Hx-Current-URL")
+	if rawURL == "" {
+		return false
+	}
+
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+
+	return strings.HasPrefix(parsedURL.Path, "/season")
 }

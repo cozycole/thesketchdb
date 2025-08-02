@@ -18,12 +18,14 @@ type PersonPage struct {
 	CharacterCount int
 	CreatorCount   int
 	Popular        *SketchGallery
+	ShowCreators   ProfileGallery
 }
 
 func PersonPageView(
 	person *models.Person,
 	stats *models.PersonStats,
 	popular []*models.Sketch,
+	creatorShowCounts []*models.CreatorShowCounts,
 	baseImgUrl string) (*PersonPage, error) {
 	page := PersonPage{}
 
@@ -60,22 +62,26 @@ func PersonPageView(
 		"sub",
 		12,
 	)
+	if len(popular) == 12 {
+		page.Popular.SeeMore = true
+		page.Popular.SeeMoreUrl = fmt.Sprintf("/catalog/sketches?person=%d", page.ID)
+	}
 	if err != nil {
 		return nil, err
 	}
+
+	page.ShowCreators = ShowCreatorGalleryView(
+		creatorShowCounts,
+		safeDeref(person.ID),
+		baseImgUrl,
+	)
 
 	return &page, nil
 
 }
 
 type PersonGallery struct {
-	PersonCards []*PersonCard
-}
-
-type PersonCard struct {
-	Name  string
-	Url   string
-	Image string
+	Cards []*Card
 }
 
 func PersonGalleryView(people []*models.Person, baseImgUrl string) (*PersonGallery, error) {
@@ -87,14 +93,14 @@ func PersonGalleryView(people []*models.Person, baseImgUrl string) (*PersonGalle
 			return nil, err
 		}
 
-		personGallery.PersonCards = append(personGallery.PersonCards, personCard)
+		personGallery.Cards = append(personGallery.Cards, personCard)
 	}
 
 	return &personGallery, nil
 }
 
-func PersonCardView(person *models.Person, baseImgUrl string) (*PersonCard, error) {
-	card := &PersonCard{}
+func PersonCardView(person *models.Person, baseImgUrl string) (*Card, error) {
+	card := &Card{}
 
 	if person.ID == nil {
 		return nil, fmt.Errorf("Person ID not defined")
@@ -104,16 +110,54 @@ func PersonCardView(person *models.Person, baseImgUrl string) (*PersonCard, erro
 		return nil, fmt.Errorf("Person slug not defined")
 	}
 
-	card.Name = PrintPersonName(person)
-	if card.Name == "" {
-		card.Name = "Missing Name"
-	}
-
+	card.Title = PrintPersonName(person)
 	card.Url = fmt.Sprintf("/person/%d/%s", *person.ID, *person.Slug)
-	card.Image = "/static/img/missing-profile.jpg"
+	card.ImageUrl = "/static/img/missing-profile.jpg"
 	if person.ProfileImg != nil {
-		card.Image = fmt.Sprintf("%s/person/%s", baseImgUrl, *person.ProfileImg)
+		card.ImageUrl = fmt.Sprintf("%s/person/%s", baseImgUrl, *person.ProfileImg)
 	}
 
 	return card, nil
+}
+
+type ProfileGallery struct {
+	Cards []*Card
+}
+
+type Card struct {
+	Url      string
+	ImageUrl string
+	Title    string
+	Subtitle string
+}
+
+func ShowCreatorGalleryView(creatorShows []*models.CreatorShowCounts, personId int, baseImageUrl string) ProfileGallery {
+	cards := []*Card{}
+	for _, cs := range creatorShows {
+		subtitle := fmt.Sprintf(
+			"Featured in %s", sketchCountLabel(safeDeref(cs.Count)),
+		)
+		url := fmt.Sprintf("/catalog/sketches?person=%d&%s=%d",
+			personId,
+			safeDeref(cs.Type),
+			safeDeref(cs.ID),
+		)
+
+		imageUrl := fmt.Sprintf("%s/%s/%s",
+			baseImageUrl,
+			safeDeref(cs.Type),
+			safeDeref(cs.ImageName),
+		)
+
+		card := Card{
+			Url:      url,
+			ImageUrl: imageUrl,
+			Title:    safeDeref(cs.Name),
+			Subtitle: subtitle,
+		}
+
+		cards = append(cards, &card)
+	}
+
+	return ProfileGallery{Cards: cards}
 }

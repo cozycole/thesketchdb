@@ -41,9 +41,9 @@ func (m *ProfileModel) Search(query string) ([]*ProfileResult, error) {
        NULL AS creator, 
        NULL AS creator_slug, 
 	   NULL AS creator_img,
-       ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
+       ts_rank(search_vector, websearch_to_tsquery('english', $1)) AS rank
 	FROM person
-	WHERE search_vector @@ plainto_tsquery('english', $1)
+	WHERE search_vector @@ websearch_to_tsquery('english', $1)
 
 	UNION ALL
 
@@ -56,9 +56,9 @@ func (m *ProfileModel) Search(query string) ([]*ProfileResult, error) {
 		NULL AS creator, 
 		NULL AS creator_slug, 
 		NULL AS creator_img,
-		ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
+		ts_rank(search_vector, websearch_to_tsquery('english', $1)) AS rank
 	FROM character
-	WHERE search_vector @@ plainto_tsquery('english', $1)
+	WHERE search_vector @@ websearch_to_tsquery('english', $1)
 
 	UNION ALL
 
@@ -71,9 +71,9 @@ func (m *ProfileModel) Search(query string) ([]*ProfileResult, error) {
 		NULL AS creator, 
 		NULL AS creator_slug, 
 		NULL AS creator_img,
-		ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
+		ts_rank(search_vector, websearch_to_tsquery('english', $1)) AS rank
 	FROM creator
-	WHERE search_vector @@ plainto_tsquery('english', $1)
+	WHERE search_vector @@ websearch_to_tsquery('english', $1)
 	`
 
 	rows, err := m.DB.Query(context.Background(), stmt, query)

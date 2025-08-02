@@ -12,13 +12,13 @@ import (
 
 func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
-	persondId, err := strconv.Atoi(idParam)
+	personId, err := strconv.Atoi(idParam)
 	if err != nil {
 		app.badRequest(w)
 		return
 	}
 
-	person, err := app.people.GetById(persondId)
+	person, err := app.people.GetById(personId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -30,21 +30,33 @@ func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 
 	popular, err := app.sketches.Get(
 		&models.Filter{
-			Limit:  16,
+			Limit:  12,
 			Offset: 0,
-			SortBy: "az",
+			SortBy: "popular",
 			People: []*models.Person{
 				&models.Person{ID: person.ID},
 			},
 		},
 	)
 
-	stats, err := app.people.GetPersonStats(persondId)
-
-	data := app.newTemplateData(r)
-	page, err := views.PersonPageView(person, stats, popular, app.baseImgUrl)
+	showCreatorCounts, err := app.people.GetCreatorShowCounts(personId)
 	if err != nil {
 		app.serverError(r, w, err)
+		return
+	}
+
+	stats, err := app.people.GetPersonStats(personId)
+
+	data := app.newTemplateData(r)
+	page, err := views.PersonPageView(
+		person,
+		stats,
+		popular,
+		showCreatorCounts,
+		app.baseImgUrl)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
 	}
 
 	data.Page = page

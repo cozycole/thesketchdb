@@ -8,7 +8,7 @@
     <div class="max-w-screen-xl mx-auto">
       {{ with .Page }}
         <div
-          class="flex flex-col w-full gap-4 items-center min-[775px]:flex-row sm:items-start"
+          class="flex flex-col w-full gap-3 items-center min-[775px]:flex-row sm:items-start"
         >
           <section
             id="profile"
@@ -42,7 +42,39 @@
               <p>{{ .SketchCount }}</p>
             </div>
           </section>
-          <div class="w-full flex flex-col gap-4">
+          <div class="w-full flex flex-col gap-3">
+            <section
+              id="popular"
+              class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md"
+            >
+              <collapse-content>
+                <header class="w-full flex items-center justify-between">
+                  <h2 class="text-xl font-bold hover:underline">
+                    <a href="/catalog/sketches?show={{ .ID }}">Popular</a>
+                  </h2>
+                  <button class="toggleBtn transition-all">
+                    <svg
+                      class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      focusable="false"
+                    >
+                      <path
+                        d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
+                        fill="currentColor"
+                      ></path>
+                    </svg>
+                  </button>
+                </header>
+                <div
+                  class="content w-full overflow-hidden transition-all duration-500 ease-in-out"
+                >
+                  <div class="mt-4">
+                    {{- template "browse-gallery" .PopularSection -}}
+                  </div>
+                </div>
+              </collapse-content>
+            </section>
             <section id="seasons" class="p-4 bg-white rounded-lg border">
               <collapse-content>
                 <header class="w-full flex items-center justify-between">
@@ -71,38 +103,6 @@
               </collapse-content>
             </section>
             <section
-              id="popular"
-              class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md"
-            >
-              <collapse-content>
-                <header class="w-full flex items-center justify-between">
-                  <h2 class="text-xl font-bold hover:underline">
-                    <a href="/catalog/sketches?show={{ .ID }}">Popular</a>
-                  </h2>
-                  <button class="toggleBtn transition-all">
-                    <svg
-                      class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      focusable="false"
-                    >
-                      <path
-                        d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
-                        fill="currentColor"
-                      ></path>
-                    </svg>
-                  </button>
-                </header>
-                <div
-                  class="content w-full overflow-hidden transition-all duration-500 ease-in-out"
-                >
-                  <div class="mt-4">
-                    {{- template "thumbnail-gallery" .PopularSection -}}
-                  </div>
-                </div>
-              </collapse-content>
-            </section>
-            <section
               id="cast"
               class="p-4 bg-white rounded-lg border shadow-slate-500 shadow-md"
             >
@@ -127,7 +127,7 @@
                   class="content w-full overflow-hidden transition-all duration-500 ease-in-out text-center"
                 >
                   <div class="mt-4">
-                    {{- template "person-gallery" .CastSection -}}
+                    {{- template "profile-gallery" .CastSection -}}
                   </div>
                 </div>
               </collapse-content>

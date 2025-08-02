@@ -36,11 +36,13 @@ func (app *application) getSearchResults(filter *models.Filter) (*models.SearchR
 	}
 
 	creators, err := app.creators.Get(filter)
+	println("CREATORS: ", len(creators))
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		return nil, fmt.Errorf("search creator error: %s", err)
 	}
 
 	creatorCount, err := app.creators.GetCount(filter)
+	println("CREATOR COUNT: ", creatorCount)
 	if err != nil {
 		return nil, fmt.Errorf("search creator count error: %s", err)
 	}

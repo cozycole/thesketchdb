@@ -43,6 +43,7 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		Duration:      &form.Duration,
 		Description:   &form.Description,
 		Transcript:    &form.Transcript,
+		Diarization:   &form.Diarization,
 		ThumbnailFile: form.Thumbnail,
 		UploadDate:    &uploadDate,
 		Number:        &form.Number,
@@ -93,6 +94,7 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		Duration:       safeDeref(sketch.Duration),
 		Description:    safeDeref(sketch.Description),
 		Transcript:     safeDeref(sketch.Transcript),
+		Diarization:    safeDeref(sketch.Diarization),
 		UploadDate:     formDate(sketch.UploadDate),
 		Number:         safeDeref(sketch.Number),
 		CreatorID:      creatorID,
@@ -212,6 +214,7 @@ func convertFormtoPerson(form *personForm) models.Person {
 		ID:          id,
 		First:       &form.First,
 		Last:        &form.Last,
+		Alias:       &form.Alias,
 		BirthDate:   &bdate,
 		Professions: &form.Professions,
 	}
@@ -222,6 +225,7 @@ func convertPersontoForm(person *models.Person) personForm {
 		ID:          safeDeref(person.ID),
 		First:       safeDeref(person.First),
 		Last:        safeDeref(person.Last),
+		Alias:       safeDeref(person.Alias),
 		Professions: safeDeref(person.Professions),
 		BirthDate:   formDate(person.BirthDate),
 		ImageUrl:    safeDeref(person.ProfileImg),
@@ -236,6 +240,7 @@ func convertFormtoCharacter(form *characterForm) models.Character {
 	return models.Character{
 		ID:        id,
 		Name:      &form.Name,
+		Aliases:   &form.Aliases,
 		Type:      &form.Type,
 		Portrayal: &models.Person{ID: &form.PersonID},
 	}
@@ -255,6 +260,7 @@ func convertCharactertoForm(character *models.Character) characterForm {
 	return characterForm{
 		ID:          safeDeref(character.ID),
 		Name:        safeDeref(character.Name),
+		Aliases:     safeDeref(character.Aliases),
 		Type:        safeDeref(character.Type),
 		ImageUrl:    safeDeref(character.Image),
 		PersonID:    personId,
@@ -271,6 +277,7 @@ func convertFormtoCreator(form *creatorForm) models.Creator {
 	return models.Creator{
 		ID:              id,
 		Name:            &form.Name,
+		Alias:           &form.Alias,
 		URL:             &form.URL,
 		EstablishedDate: &date,
 	}
@@ -280,6 +287,7 @@ func convertCreatortoForm(creator *models.Creator) creatorForm {
 	return creatorForm{
 		ID:              safeDeref(creator.ID),
 		Name:            safeDeref(creator.Name),
+		Alias:           safeDeref(creator.Alias),
 		URL:             safeDeref(creator.URL),
 		EstablishedDate: formDate(creator.EstablishedDate),
 		ImageUrl:        safeDeref(creator.ProfileImage),
@@ -329,17 +337,19 @@ func (app *application) convertFormtoSketchTags(form *sketchTagsForm) ([]*models
 
 func (app *application) convertFormtoShow(form *showForm) models.Show {
 	return models.Show{
-		Name: &form.Name,
-		Slug: &form.Slug,
+		ID:      &form.ID,
+		Name:    &form.Name,
+		Aliases: &form.Aliases,
+		Slug:    &form.Slug,
 	}
-
 }
 
 func (app *application) convertShowtoForm(show *models.Show) showForm {
 	return showForm{
-		ID:   safeDeref(show.ID),
-		Name: safeDeref(show.Name),
-		Slug: safeDeref(show.Slug),
+		ID:      safeDeref(show.ID),
+		Aliases: safeDeref(show.Aliases),
+		Name:    safeDeref(show.Name),
+		Slug:    safeDeref(show.Slug),
 	}
 }
 

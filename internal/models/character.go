@@ -14,6 +14,7 @@ type Character struct {
 	ID          *int
 	Slug        *string
 	Name        *string
+	Aliases     *string
 	Type        *string
 	Image       *string
 	Description *string
@@ -53,17 +54,18 @@ func (m *CharacterModel) Get(filter *Filter) ([]*Character, error) {
 		rankParam := fmt.Sprintf(`
 		, ts_rank(
 			setweight(to_tsvector('english', c.name), 'A') ||
+			setweight(to_tsvector('english', c.aliases), 'A') ||
 			setweight(to_tsvector('simple', p.first), 'B') ||
 			setweight(to_tsvector('simple', p.last), 'B'),
-			to_tsquery('english', $%d)
+			websearch_to_tsquery('english', $%d)
 		) AS rank
 		`, argIndex)
 
 		query = fmt.Sprintf(query, rankParam)
 
 		query += fmt.Sprintf(`AND
-            to_tsvector('english', COALESCE(c.name, '') || ' ' || COALESCE(p.first,'') 
-				|| ' ' || COALESCE(p.last,'')) @@ to_tsquery('english', $%d)
+            to_tsvector('english', COALESCE(c.name, '') || ' ' || COALESCE(c.aliases, '') || 
+			' ' || COALESCE(p.first,'') || ' ' || COALESCE(p.last,'')) @@ websearch_to_tsquery('english', $%d)
 		`, argIndex)
 
 		args = append(args, filter.Query)
@@ -152,7 +154,7 @@ func (m *CharacterModel) GetCharacters(ids []int) ([]*Character, error) {
 }
 
 func (m *CharacterModel) GetById(id int) (*Character, error) {
-	stmt := `SELECT c.id, c.slug, c.name, c.character_type, c.img_name,
+	stmt := `SELECT c.id, c.slug, c.name, c.aliases, c.character_type, c.img_name,
 			p.id, p.slug, p.first, p.last
 			FROM character AS c
 			LEFT JOIN person AS p ON c.person_id = p.id
@@ -163,7 +165,7 @@ func (m *CharacterModel) GetById(id int) (*Character, error) {
 	c := &Character{}
 	p := &Person{}
 
-	err := row.Scan(&c.ID, &c.Slug, &c.Name, &c.Type, &c.Image,
+	err := row.Scan(&c.ID, &c.Slug, &c.Name, &c.Aliases, &c.Type, &c.Image,
 		&p.ID, &p.Slug, &p.First, &p.Last)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -196,8 +198,8 @@ func (m *CharacterModel) GetCount(filter *Filter) (int, error) {
 
 	if filter.Query != "" {
 		query += fmt.Sprintf(`AND
-            to_tsvector('english', COALESCE(c.name, '') || ' ' || COALESCE(p.first,'') 
-				|| ' ' || COALESCE(p.last,'')) @@ to_tsquery('english', $%d)
+            to_tsvector('english', c.name || ' ' || COALESCE(c.aliases, '') || ' ' ||
+			COALESCE(p.first,'') || ' ' || COALESCE(p.last,'')) @@ websearch_to_tsquery('english', $%d)
 		`, argIndex)
 
 		args = append(args, filter.Query)
@@ -231,8 +233,8 @@ func (m *CharacterModel) Delete(id int) error {
 
 func (m *CharacterModel) Insert(character *Character) (int, error) {
 	stmt := `
-	INSERT INTO character (name, character_type, slug, img_name, person_id)
-	VALUES ($1,$2,$3,$4,$5)
+	INSERT INTO character (name, aliases, character_type, slug, img_name, person_id)
+	VALUES ($1,$2,$3,$4,$5,$6)
 	RETURNING id;
 	`
 	var personId *int
@@ -245,8 +247,8 @@ func (m *CharacterModel) Insert(character *Character) (int, error) {
 	var id int
 	row := m.DB.QueryRow(
 		context.Background(), stmt, character.Name,
-		character.Type, character.Slug, character.Image,
-		personId,
+		character.Aliases, character.Type, character.Slug,
+		character.Image, personId,
 	)
 	err := row.Scan(&id)
 	if err != nil {
@@ -304,9 +306,9 @@ func (m *CharacterModel) Exists(id int) (bool, error) {
 
 func (m *CharacterModel) Update(character *Character) error {
 	stmt := `
-		UPDATE character SET name = $1, character_type = $2, img_name = $3, 
-		person_id = $4, slug = $5
-		WHERE id = $6
+		UPDATE character SET name = $1, aliases = $2, character_type = $3, img_name = $4, 
+		person_id = $5, slug = $6
+		WHERE id = $7
 	`
 	var personId *int
 	if character.Portrayal != nil &&
@@ -317,8 +319,8 @@ func (m *CharacterModel) Update(character *Character) error {
 
 	_, err := m.DB.Exec(
 		context.Background(), stmt, character.Name,
-		character.Type, character.Image, personId,
-		character.Slug, character.ID,
+		character.Aliases, character.Type, character.Image,
+		personId, character.Slug, character.ID,
 	)
 	return err
 }
@@ -326,9 +328,9 @@ func (m *CharacterModel) Update(character *Character) error {
 func (m *CharacterModel) VectorSearch(query string, limit, offset int) ([]*ProfileResult, error) {
 	fmt.Printf("Got here %s %d %d\n", query, limit, offset)
 	stmt := `
-		SELECT id, name, img_name, slug, ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
+		SELECT id, name, img_name, slug, ts_rank(search_vector, websearch_to_tsquery('english', $1)) AS rank
 		FROM character
-		WHERE search_vector @@ plainto_tsquery('english', $1)
+		WHERE search_vector @@ websearch_to_tsquery('english', $1)
 		ORDER BY rank desc
 		LIMIT $2
 		OFFSET $3;
@@ -368,7 +370,7 @@ func (m *CharacterModel) SearchCount(query string) (int, error) {
 	stmt := `
 		SELECT count(*)
 		FROM character as c
-		WHERE c.search_vector @@ plainto_tsquery('english', $1)
+		WHERE c.search_vector @@ websearch_to_tsquery('english', $1)
 	`
 	var count int
 	row := m.DB.QueryRow(context.Background(), stmt, query)

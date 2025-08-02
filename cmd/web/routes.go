@@ -111,7 +111,7 @@ func (app *application) routes(staticRoute, imageStorageRoot string) http.Handle
 		r.Get("/show/add", app.requireRoles(editorAdmin, app.addShowPage))
 		r.Post("/show/add", app.requireRoles(editorAdmin, app.addShow))
 		r.Get("/show/{id}/update", app.requireRoles(editorAdmin, app.updateShowPage))
-		r.Patch("/show/{id}/update", app.requireRoles(editorAdmin, app.updateShow))
+		r.Post("/show/{id}/update", app.requireRoles(editorAdmin, app.updateShow))
 
 		r.Post("/show/{id}/season/add", app.requireRoles(editorAdmin, app.addSeason))
 		r.Delete("/season/{id}", app.requireRoles(admin, app.deleteSeason))

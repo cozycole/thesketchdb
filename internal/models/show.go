@@ -17,6 +17,7 @@ import (
 type Show struct {
 	ID         *int
 	Name       *string
+	Aliases    *string
 	Slug       *string
 	ProfileImg *string
 	Creator    *Creator
@@ -292,7 +293,7 @@ func (m *ShowModel) DeleteSeason(seasonId int) error {
 
 func (m *ShowModel) Get(filter *Filter) ([]*Show, error) {
 	query := `
-		SELECT s.id, s.slug, s.name, s.profile_img %s
+		SELECT s.id, s.slug, s.aliases, s.name, s.profile_img %s
 		FROM show as s
 		WHERE 1=1
 	`
@@ -303,15 +304,16 @@ func (m *ShowModel) Get(filter *Filter) ([]*Show, error) {
 	if filter.Query != "" {
 		rankParam := fmt.Sprintf(`
 		, ts_rank(
-			setweight(to_tsvector('english', s.name), 'A'),
-			to_tsquery('english', $%d)
+			setweight(to_tsvector('english', s.name || 
+			' ' || COALESCE(s.aliases, '')), 'A'),
+			websearch_to_tsquery('english', $%d)
 		) AS rank
 		`, argIndex)
 
 		query = fmt.Sprintf(query, rankParam)
 
 		query += fmt.Sprintf(`AND
-            to_tsvector('english', s.name) @@ to_tsquery('english', $%d)
+            to_tsvector('english', s.name || ' ' || COALESCE(s.aliases, '')) @@ websearch_to_tsquery('english', $%d)
 		`, argIndex)
 
 		args = append(args, filter.Query)
@@ -329,7 +331,7 @@ func (m *ShowModel) Get(filter *Filter) ([]*Show, error) {
 	for rows.Next() {
 		var s Show
 		destinations := []any{
-			&s.ID, &s.Slug, &s.Name, &s.ProfileImg,
+			&s.ID, &s.Slug, &s.Aliases, &s.Name, &s.ProfileImg,
 		}
 
 		var rank *float32
@@ -362,7 +364,8 @@ func (m *ShowModel) GetCount(filter *Filter) (int, error) {
 	if filter.Query != "" {
 
 		query += fmt.Sprintf(`AND
-            to_tsvector('english', s.name) @@ to_tsquery('english', $%d)
+            to_tsvector('english', s.name || ' ' 
+			|| COALESCE(s.aliases, '')) @@ websearch_to_tsquery('english', $%d)
 		`, argIndex)
 
 		args = append(args, filter.Query)
@@ -389,7 +392,7 @@ func (m *ShowModel) GetCount(filter *Filter) (int, error) {
 
 func (m *ShowModel) GetById(id int) (*Show, error) {
 	stmt := `
-		SELECT DISTINCT s.id, s.name, s.profile_img, s.slug,
+		SELECT DISTINCT s.id, s.name, s.aliases, s.profile_img, s.slug,
 		se.id, se.slug, se.season_number, 
 		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name,
 		v.id
@@ -418,7 +421,7 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 		e := &Episode{}
 		v := &Sketch{}
 		err := rows.Scan(
-			&show.ID, &show.Name, &show.ProfileImg, &show.Slug,
+			&show.ID, &show.Name, &show.Aliases, &show.ProfileImg, &show.Slug,
 			&s.ID, &s.Slug, &s.Number,
 			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&v.ID,
@@ -561,11 +564,12 @@ func (m *ShowModel) GetShowCast(id int) ([]*Person, error) {
 
 func (m *ShowModel) Insert(show *Show) (int, error) {
 	stmt := `
-	INSERT INTO show (name, slug, profile_img)
-	VALUES ($1,$2,$3)
+	INSERT INTO show (name, aliases, slug, profile_img)
+	VALUES ($1,$2,$3,$4)
 	RETURNING id`
 	result := m.DB.QueryRow(
-		context.Background(), stmt, show.Name, show.Slug, show.ProfileImg,
+		context.Background(), stmt, show.Name,
+		show.Aliases, show.Slug, show.ProfileImg,
 	)
 	var id int
 	err := result.Scan(&id)
@@ -577,10 +581,11 @@ func (m *ShowModel) Insert(show *Show) (int, error) {
 
 func (m *ShowModel) Update(show *Show) error {
 	stmt := `
-	UPDATE show SET name = $1, slug = $2, profile_img = $3
-	WHERE id = $4`
+	UPDATE show SET name = $1, aliases = $2, slug = $3, profile_img = $4
+	WHERE id = $5`
 	_, err := m.DB.Exec(
-		context.Background(), stmt, show.Name, show.Slug, show.ProfileImg, show.ID,
+		context.Background(), stmt, show.Name, show.Aliases,
+		show.Slug, show.ProfileImg, show.ID,
 	)
 	return err
 }

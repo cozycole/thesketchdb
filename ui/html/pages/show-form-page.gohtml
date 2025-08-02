@@ -20,7 +20,8 @@
     class="w-full max-w-xl space-y-2"
     enctype="multipart/form-data"
     hx-post="{{ .Action }}"
-    hx-target-*="this"
+    hx-target="this"
+    hx-target-422="this"
   >
     <input type="hidden" name="id" value="{{ .ID }}" />
     <div>
@@ -32,6 +33,18 @@
         type="text"
         name="name"
         value="{{ .Name }}"
+        class="w-full max-w-xl p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+      />
+    </div>
+    <div>
+      <label class="block">Aliases</label>
+      {{ with .FieldErrors.alias }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="text"
+        name="alias"
+        value="{{ .Aliases }}"
         class="w-full max-w-xl p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
       />
     </div>

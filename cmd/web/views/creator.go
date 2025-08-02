@@ -12,9 +12,14 @@ type CreatorPage struct {
 	Image           string
 	EstablishedDate string
 	Popular         *SketchGallery
+	CastSection     *PersonGallery
 }
 
-func CreatorPageView(creator *models.Creator, popular []*models.Sketch, baseImgUrl string) (*CreatorPage, error) {
+func CreatorPageView(
+	creator *models.Creator,
+	popular []*models.Sketch,
+	cast []*models.Person,
+	baseImgUrl string) (*CreatorPage, error) {
 	if creator.ID == nil {
 		return nil, fmt.Errorf("Creator has no defined ID")
 	}
@@ -50,17 +55,16 @@ func CreatorPageView(creator *models.Creator, popular []*models.Sketch, baseImgU
 		return nil, err
 	}
 
+	page.CastSection, err = PersonGalleryView(cast, baseImgUrl)
+	if err != nil {
+		return nil, err
+	}
+
 	return &page, nil
 }
 
 type CreatorGallery struct {
-	CreatorCards []*CreatorCard
-}
-
-type CreatorCard struct {
-	Name  string
-	Url   string
-	Image string
+	Cards []*Card
 }
 
 func CreatorGalleryView(creators []*models.Creator, baseImgUrl string) (*CreatorGallery, error) {
@@ -72,14 +76,14 @@ func CreatorGalleryView(creators []*models.Creator, baseImgUrl string) (*Creator
 			return nil, err
 		}
 
-		creatorGallery.CreatorCards = append(creatorGallery.CreatorCards, creatorCard)
+		creatorGallery.Cards = append(creatorGallery.Cards, creatorCard)
 	}
 
 	return &creatorGallery, nil
 }
 
-func CreatorCardView(creator *models.Creator, baseImgUrl string) (*CreatorCard, error) {
-	card := &CreatorCard{}
+func CreatorCardView(creator *models.Creator, baseImgUrl string) (*Card, error) {
+	card := &Card{}
 
 	if creator.ID == nil {
 		return nil, fmt.Errorf("Creator ID not defined")
@@ -89,15 +93,12 @@ func CreatorCardView(creator *models.Creator, baseImgUrl string) (*CreatorCard, 
 		return nil, fmt.Errorf("Creator slug not defined")
 	}
 
-	card.Name = "Missing Creator Name"
-	if creator.Name != nil {
-		card.Name = *creator.Name
-	}
+	card.Title = safeDeref(creator.Name)
 
-	card.Url = fmt.Sprintf("/creator/%d/%s", *creator.ID, *creator.Slug)
-	card.Image = "/static/img/missing-profile.jpg"
+	card.Url = fmt.Sprintf("/creator/%d/%s", safeDeref(creator.ID), safeDeref(creator.Slug))
+	card.ImageUrl = "/static/img/missing-profile.jpg"
 	if creator.ProfileImage != nil {
-		card.Image = fmt.Sprintf("%s/creator/%s", baseImgUrl, *creator.ProfileImage)
+		card.ImageUrl = fmt.Sprintf("%s/creator/%s", baseImgUrl, *creator.ProfileImage)
 	}
 
 	return card, nil

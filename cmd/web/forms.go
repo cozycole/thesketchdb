@@ -27,6 +27,7 @@ type Forms struct {
 type creatorForm struct {
 	ID                  int                   `form:"id"`
 	Name                string                `form:"name"`
+	Alias               string                `form:"alias"`
 	URL                 string                `form:"url"`
 	EstablishedDate     string                `form:"establishedDate"`
 	ProfileImage        *multipart.FileHeader `img:"profileImg"`
@@ -64,6 +65,7 @@ type personForm struct {
 	ID                  int                   `form:"id"`
 	First               string                `form:"first"`
 	Last                string                `form:"last"`
+	Alias               string                `form:"alias"`
 	BirthDate           string                `form:"birthDate"`
 	Professions         string                `form:"professions"`
 	ProfileImage        *multipart.FileHeader `img:"profileImg"`
@@ -101,6 +103,7 @@ func (app *application) validatePersonForm(form *personForm) {
 type characterForm struct {
 	ID                  int                   `form:"id"`
 	Name                string                `form:"name"`
+	Aliases             string                `form:"alias"`
 	Type                string                `form:"type"`
 	ProfileImage        *multipart.FileHeader `img:"profileImg"`
 	PersonID            int                   `form:"personId"`
@@ -152,6 +155,7 @@ type sketchForm struct {
 	Number              int                   `form:"number"`
 	Description         string                `form:"description"`
 	Transcript          string                `form:"transcript"`
+	Diarization         string                `form:"diarization"`
 	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
 	CreatorID           int                   `form:"creatorId"`
 	CreatorInput        string                `form:"creatorInput"`
@@ -379,6 +383,7 @@ func (app *application) validateSketchTagsForm(form *sketchTagsForm) {
 type showForm struct {
 	ID                  int                   `form:"id"`
 	Name                string                `form:"name"`
+	Aliases             string                `form:"alias"`
 	Slug                string                `form:"slug"`
 	ProfileImg          *multipart.FileHeader `img:"profileImg"`
 	ProfileImgUrl       string                `form:"-"`
