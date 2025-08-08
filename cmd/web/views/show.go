@@ -58,7 +58,7 @@ func ShowPageView(show *models.Show, popular []*models.Sketch, cast []*models.Pe
 	if len(popular) == popularPageSize {
 		page.PopularSection.SeeMore = true
 		page.PopularSection.SeeMoreUrl = fmt.Sprintf(
-			"/catalog/sketches?show=%d", show.ID,
+			"/catalog/sketches?show=%d", *show.ID,
 		)
 	}
 

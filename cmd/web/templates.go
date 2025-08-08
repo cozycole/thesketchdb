@@ -25,7 +25,6 @@ type templateData struct {
 	Categories      *[]*models.Category
 	CSRFToken       string
 	Cast            []*models.CastMember
-	CastMember      *models.CastMember
 	CatalogType     string
 	Creator         *models.Creator
 	CurrentYear     int
@@ -47,6 +46,7 @@ type templateData struct {
 	ThumbnailType   string
 	User            *models.User
 	Sketch          *models.Sketch
+	Assets          map[string]string
 	Form            any
 	Page            any
 }

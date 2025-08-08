@@ -85,20 +85,6 @@
                     text-slate-700 placeholder-slate-400"
       />
     </div>
-    {{ if .Slug }}
-      <div>
-        <label class="inline-block">Slug</label>
-        {{ with .FieldErrors.slug }}
-          <label class="block text-red-700">{{ . }}</label>
-        {{ end }}
-        <input
-          type="text"
-          name="slug"
-          value="{{ .Slug }}"
-          class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
-        />
-      </div>
-    {{ end }}
     <div>
       <label class="block">Upload Date</label>
       {{ with .FieldErrors.uploadDate }}
@@ -121,6 +107,20 @@
         autocomplete="off"
         name="duration"
         value="{{ .Duration }}"
+        class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
+      />
+    </div>
+    <div>
+      <label class="inline-block">Popularity Score</label>
+      {{ with .FieldErrors.duration }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <input
+        type="number"
+        autocomplete="off"
+        step="0.01"
+        name="popularity"
+        value="{{ .Popularity }}"
         class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400"
       />
     </div>

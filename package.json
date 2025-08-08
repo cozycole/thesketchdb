@@ -9,6 +9,8 @@
   "dependencies": {
     "@glidejs/glide": "^3.7.1",
     "@tailwindcss/line-clamp": "^0.4.4",
+    "htmx-ext-response-targets": "^2.0.3",
+    "htmx.org": "^2.0.6",
     "sortablejs": "^1.15.6",
     "tailwind-scrollbar-hide": "^2.0.0"
   },

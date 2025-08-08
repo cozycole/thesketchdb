@@ -97,6 +97,7 @@ type Sketch struct {
 	ThumbnailName *string
 	ThumbnailFile *multipart.FileHeader
 	Rating        *string
+	Popularity    *float32
 	UploadDate    *time.Time
 	Creator       *Creator
 	Cast          []*CastMember
@@ -574,7 +575,7 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	stmt := `
 		SELECT v.id, v.title, v.sketch_number, v.sketch_url, v.description,
-		v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
+		v.slug, v.thumbnail_name, v.upload_date, v.youtube_id, v.popularity_score,
 		v.episode_start, v.part_number, v.duration, v.transcript, v.diarization,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.slug, sh.profile_img,
@@ -625,8 +626,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		hasRows = true
 		err := rows.Scan(
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Description, &v.Slug, &v.ThumbnailName,
-			&v.UploadDate, &v.YoutubeID, &v.EpisodeStart, &v.SeriesPart, &v.Duration, &v.Transcript,
-			&v.Diarization,
+			&v.UploadDate, &v.YoutubeID, &v.Popularity, &v.EpisodeStart, &v.SeriesPart,
+			&v.Duration, &v.Transcript, &v.Diarization,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
@@ -915,8 +916,8 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 	INSERT INTO sketch (
 		title, sketch_url, thumbnail_name, upload_date, slug, youtube_id, sketch_number,
 		episode_id, episode_start, series_id, part_number, recurring_id, duration, description,
-		transcript, diarization)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+		transcript, diarization, popularity_score)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
 	RETURNING id;`
 	result := m.DB.QueryRow(
 		context.Background(), stmt, sketch.Title,
@@ -924,6 +925,7 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 		sketch.Slug, sketch.YoutubeID, sketch.Number, episodeId,
 		sketch.EpisodeStart, seriesId, sketch.SeriesPart, recurringId,
 		sketch.Duration, sketch.Description, sketch.Transcript, sketch.Diarization,
+		sketch.Popularity,
 	)
 
 	var id int
@@ -1048,15 +1050,15 @@ func (m *SketchModel) Update(sketch *Sketch) error {
 	UPDATE sketch SET title = $1, sketch_url = $2, upload_date = $3, 
 	slug = $4, thumbnail_name = $5, sketch_number = $6, episode_id = $7, episode_start = $8,
 	series_id = $9, part_number = $10, recurring_id = $11, duration = $12, description = $13,
-	transcript = $14, diarization = $15
-	WHERE id = $16
+	transcript = $14, diarization = $15, popularity_score = $16
+	WHERE id = $17
 	`
 	_, err := m.DB.Exec(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.UploadDate,
 		sketch.Slug, sketch.ThumbnailName, sketch.Number, episodeId, sketch.EpisodeStart,
 		seriesId, sketch.SeriesPart, recurringId, sketch.Duration, sketch.Description,
-		sketch.Transcript, sketch.Diarization, sketch.ID,
+		sketch.Transcript, sketch.Diarization, sketch.Popularity, sketch.ID,
 	)
 	return err
 }

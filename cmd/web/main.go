@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"html/template"
 	"log"
@@ -43,6 +44,7 @@ type application struct {
 	sessionManager *scs.SessionManager
 	debugMode      bool
 	formDecoder    *form.Decoder
+	assets         map[string]string
 	settings       settings
 }
 
@@ -54,22 +56,33 @@ type settings struct {
 	origin            string
 }
 
+var StaticAssets = map[string]string{
+	"css": "styles.css",
+	"js":  "main.js",
+}
+
 func main() {
-	addr := flag.String("addr", ":4000", "HTTP network address")
+	addr := flag.String("addr", "0.0.0.0:8080", "HTTP network address")
 	debug := flag.Bool("debug", false, "debug mode")
 	testing := flag.Bool("testing", false, "use testing config and set debug true")
 	localImgServer := flag.Bool("localimg", false, "serve images from local directory")
 	localImgStorage := flag.Bool("localstorage", false, "store/delete images in local directory")
+	serveStatic := flag.Bool("serve-static", false, "serve css, js and images")
 
 	flag.Parse()
 
 	err := godotenv.Load()
-	if err != nil {
+	if err != nil && *testing {
 		log.Fatal("Error loading .env file")
 	}
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	err = loadAssets()
+	if err != nil && !*testing {
+		errorLog.Println("No manifest found in production build")
+	}
 
 	var dbUrl, imgStoragePath, imgBaseUrl, origin string
 	var fileStorage img.FileStorageInterface
@@ -155,6 +168,7 @@ func main() {
 		sessionManager: sessionManager,
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,
+		assets:         StaticAssets,
 		settings: settings{
 			pageSize:          24,
 			maxSearchResults:  12,
@@ -168,7 +182,7 @@ func main() {
 	srv := &http.Server{
 		Addr:     *addr,
 		ErrorLog: errorLog,
-		Handler:  app.routes("./ui/static/", imgStoragePath),
+		Handler:  app.routes("./ui/static/", imgStoragePath, *serveStatic),
 	}
 
 	infoLog.Println("Starting server on", *addr)
@@ -199,4 +213,25 @@ func S3Client(endpoint, key, secret string) *s3.S3 {
 	newSession := session.Must(session.NewSession(s3Config))
 	return s3.New(newSession)
 
+}
+
+func loadAssets() error {
+	f, err := os.Open("./dist/manifest.json")
+	if err != nil {
+		log.Println("No asset manifest found — using default asset names")
+		return err
+	}
+	defer f.Close()
+
+	manifest := map[string]string{}
+	if err := json.NewDecoder(f).Decode(&manifest); err != nil {
+		log.Printf("Failed to parse manifest.json: %v — using default asset names", err)
+		return err
+	}
+
+	// Merge manifest into StaticAssets (overrides defaults if present)
+	for k, v := range manifest {
+		StaticAssets[k] = v
+	}
+	return nil
 }

@@ -44,15 +44,23 @@ func CreatorPageView(
 	page.EstablishedDate = humanDate(creator.EstablishedDate)
 
 	var err error
+	popularPageSize := 12
 	page.Popular, err = SketchGalleryView(
 		popular,
 		baseImgUrl,
 		"base",
 		"sub",
-		12,
+		popularPageSize,
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(popular) == popularPageSize {
+		page.Popular.SeeMore = true
+		page.Popular.SeeMoreUrl = fmt.Sprintf(
+			"/catalog/sketches?creator=%d", *creator.ID,
+		)
 	}
 
 	page.CastSection, err = PersonGalleryView(cast, baseImgUrl)

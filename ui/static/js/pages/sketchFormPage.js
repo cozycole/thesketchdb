@@ -1,3 +1,4 @@
+import htmx from "htmx.org";
 import Sortable from "sortablejs";
 
 export function initSketchFormPage() {

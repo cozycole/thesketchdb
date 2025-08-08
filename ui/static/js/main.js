@@ -1,3 +1,6 @@
+import "htmx.org";
+import "htmx-ext-response-targets";
+
 import { initHome } from "./pages/home.js";
 import { initViewSketch } from "./pages/viewSketch.js";
 import { initSketchFormPage } from "./pages/sketchFormPage.js";
@@ -25,6 +28,7 @@ import "./components/flashMessage.js";
     ? firstDiv.dataset.page
     : "No page attribute found!";
   console.log(pageType);
+  console.log("Another test for you");
 
   const dropdownMenuButtons = document.querySelectorAll(".dropdownBtn");
   const dropdownMenus = document.querySelectorAll(".dropdownMenu");

@@ -1,4 +1,7 @@
 .env
+certbot
+db-seed
+old.docker-compose.yml
 go.sum
 *notes.md
 quick*
@@ -13,3 +16,4 @@ images
 cmd/testing
 ui/static/css/styles.css
 ui/static/js/dist
+dist

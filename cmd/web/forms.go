@@ -153,6 +153,7 @@ type sketchForm struct {
 	UploadDate          string                `form:"uploadDate"`
 	Duration            int                   `form:"duration"`
 	Number              int                   `form:"number"`
+	Popularity          float32               `form:"popularity"`
 	Description         string                `form:"description"`
 	Transcript          string                `form:"transcript"`
 	Diarization         string                `form:"diarization"`
@@ -413,6 +414,16 @@ func (app *application) validateShowForm(form *showForm) {
 	defer thumbnail.Close()
 
 	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg")
+}
+
+type seasonForm struct {
+	ShowID              int `form:"-"`
+	Number              int `form:"number"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateSeasonForm(form *seasonForm) {
+	form.CheckField(form.Number > 0, "number", "Input valid season number")
 }
 
 type episodeForm struct {

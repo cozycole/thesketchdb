@@ -139,8 +139,11 @@ func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
 type showFormPage struct {
 	Title           string
 	ShowID          int
+	ViewShowUrl     string
 	ShowForm        showForm
+	DisplaySeasons  bool
 	SeasonDropdowns views.SeasonDropdowns
+	SeasonForm      seasonForm
 }
 
 func (app *application) addShowPage(w http.ResponseWriter, r *http.Request) {
@@ -222,15 +225,6 @@ func (app *application) updateShowPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// for _, season := range show.Seasons {
-	// 	for _, ep := range season.Episodes {
-	// 		app.infoLog.Printf("Episode %d\n", *ep.Number)
-	// 		for _, vid := range ep.Sketches {
-	// 			app.infoLog.Printf("Sketch %d\n", *vid.ID)
-	// 		}
-	// 	}
-	// }
-
 	form := app.convertShowtoForm(show)
 	form.ProfileImgUrl = fmt.Sprintf("%s/show/%s", app.baseImgUrl, safeDeref(show.ProfileImg))
 	form.Action = fmt.Sprintf("/show/%d/update", showId)
@@ -239,7 +233,10 @@ func (app *application) updateShowPage(w http.ResponseWriter, r *http.Request) {
 		Title:           "Update Show",
 		ShowID:          showId,
 		ShowForm:        form,
+		ViewShowUrl:     fmt.Sprintf("/show/%d/%s", showId, safeDeref(show.Slug)),
+		DisplaySeasons:  true,
 		SeasonDropdowns: views.SeasonDropdownsView(show, app.baseImgUrl),
+		SeasonForm:      seasonForm{ShowID: showId},
 	}
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "base", data)
 }
@@ -329,7 +326,20 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+
+	var form seasonForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.badRequest(w)
+		app.errorLog.Print(err)
+		return
+	}
+
+	app.validateSeasonForm(&form)
+	if !form.Valid() {
+		app.render(r, w, http.StatusUnprocessableEntity, "show-form-page.gohtml", "season-form", form)
+		return
+	}
 
 	showIdParam := r.PathValue("id")
 	showId, err := strconv.Atoi(showIdParam)
@@ -345,31 +355,29 @@ func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSeasonNumber := getLatestSeasonNumber(show) + 1
-	slug := models.CreateSlugName(safeDeref(show.Name) + fmt.Sprintf(" s%d", newSeasonNumber))
+	slug := models.CreateSlugName(safeDeref(show.Name) + fmt.Sprintf(" s%d", form.Number))
 	newSeason := &models.Season{
-		Number: &newSeasonNumber,
+		Number: &form.Number,
 		Slug:   &slug,
 		Show: &models.Show{
 			ID: show.ID,
 		},
 	}
 
-	seasonId, err := app.shows.AddSeason(newSeason)
+	_, err = app.shows.AddSeason(newSeason)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	season, err := app.shows.GetSeason(seasonId)
+	show, err = app.shows.GetById(showId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	showUrl := fmt.Sprintf("/show/%d/%s", safeDeref(show.ID), safeDeref(show.Slug))
-	data := views.SeasonDropdownView(season, app.baseImgUrl, showUrl)
-	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "season-dropdown", data)
+	data := views.SeasonDropdownsView(show, app.baseImgUrl)
+	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "season-dropdowns", data)
 }
 
 func (app *application) deleteSeason(w http.ResponseWriter, r *http.Request) {

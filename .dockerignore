@@ -1,0 +1,8 @@
+.git
+*.md
+testdata/
+*log
+./dist
+node_modules
+backups
+db-seed

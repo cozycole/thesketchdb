@@ -1,3 +1,5 @@
+import htmx from "htmx.org";
+
 export class FilterContent extends HTMLElement {
   constructor() {
     super();

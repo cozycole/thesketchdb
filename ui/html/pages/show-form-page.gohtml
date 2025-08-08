@@ -6,9 +6,17 @@
       class="max-w-screen-lg mx-auto mt-2 p-3 space-y-3 bg-slate-50 rounded-lg"
     >
       {{ with .Page }}
-        <h1 class="text-2xl font-bold">{{ .Title }}</h1>
+        <div class="flex justify-between">
+          <h1 class="text-2xl font-bold">{{ .Title }}</h1>
+          {{ with .ViewShowUrl }}
+            <a class="italic hover:underline" href="{{ . }}">View Show</a>
+          {{ end }}
+        </div>
         {{ template "show-form" .ShowForm }}
-        {{ template "season-dropdowns" .SeasonDropdowns }}
+        {{ if .DisplaySeasons }}
+          {{ template "season-dropdowns" .SeasonDropdowns }}
+          {{ template "season-form" .SeasonForm }}
+        {{ end }}
       {{ end }}
     </div>
     <div id="episodeFormViewer"></div>
@@ -109,13 +117,27 @@
       {{ template "season-dropdown" . }}
     {{ end }}
   </div>
+{{ end }}
+
+{{ define "season-form" }}
   <form
-    class="my-2 w-fit p-1 bg-slate-50 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"
+    class="my-2 w-fit"
     hx-post="/show/{{ .ShowID }}/season/add"
     hx-target="#seasons"
-    hx-swap="beforeend"
+    hx-target-422="this"
   >
-    <button>Add Season</button>
+    <input
+      type="text"
+      class="w-20 p-1 rounded-lg border border-slate-950"
+      autocomplete="off"
+      name="number"
+      value="{{ with .Number }}{{ . }}{{ end }}"
+    />
+    <button
+      class="p-1 bg-slate-950 font-bold text-white border border-slate-300 rounded-lg hover:bg-slate-800"
+    >
+      Add Season +
+    </button>
   </form>
 {{ end }}
 
@@ -215,30 +237,30 @@
 
 {{ define "episode-row" }}
   <tr data-episode-id="{{ .ID }}">
-    <td scope="col" class="border-b border-black p-3 text-center w-12">
+    <td scope="col" class="border-b border-black p-2 text-center w-12">
       {{ .ID }}
       <input type="hidden" name="id" value="{{ .ID }}" />
     </td>
-    <td scope="col" class="border-b border-black p-3 text-center w-16">
+    <td scope="col" class="border-b border-black p-2 text-center w-16">
       {{ .Number }}
     </td>
-    <td scope="col" class="border-b border-black p-3 text-center w-52">
-      <div class="aspect-square flex items-center justify-center w-fit">
+    <td scope="col" class="border-b border-black p-2 text-center w-52">
+      <div class="aspect-video flex items-center justify-center w-fit">
         <img src="{{ .ThumbnailUrl }}" />
       </div>
     </td>
-    <td scope="col" class="border-b border-black p-3 text-center w-52">
+    <td scope="col" class="border-b border-black p-2 text-center w-52">
       {{ .Title }}
     </td>
-    <td scope="col" class="border-b border-black p-3 text-center w-32">
+    <td scope="col" class="border-b border-black p-2 text-center w-32">
       {{ .AirDate }}
     </td>
-    <td scope="col" class="border-b border-black p-3 text-center">
+    <td scope="col" class="border-b border-black p-2 text-center">
       <a href="{{ .EpisodeUrl }}" class="hover:underline" target="_blank">
         {{ .SketchCount }}
       </a>
     </td>
-    <td class="border-b border-black p-3 text-center">
+    <td class="border-b border-black p-2 text-center">
       <button
         class="p-1 bg-slate-100 border border-slate-300 
                   rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-black-500"

@@ -6,12 +6,15 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *application) routes(staticRoute, imageStorageRoot string) http.Handler {
+func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic bool) http.Handler {
 	r := chi.NewRouter()
 
 	r.Group(func(r chi.Router) {
-		fs := http.FileServer(http.Dir(staticRoute))
-		r.Handle("/static/*", http.StripPrefix("/static/", fs))
+		if serveStatic {
+			fs := http.FileServer(http.Dir(staticRoute))
+			app.infoLog.Printf("Starting static file server rooted at %s\n", staticRoute)
+			r.Handle("/static/*", http.StripPrefix("/static/", fs))
+		}
 
 		if app.fileStorage.Type() == "Local" {
 			app.infoLog.Printf("Starting image file server rooted at %s\n", imageStorageRoot)

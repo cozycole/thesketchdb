@@ -86,6 +86,7 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	}
 	return &templateData{
 		CurrentYear:  time.Now().Year(),
+		Assets:       app.assets,
 		ImageBaseUrl: app.baseImgUrl,
 		Forms:        Forms{},
 		User:         user,
