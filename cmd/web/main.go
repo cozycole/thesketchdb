@@ -64,7 +64,7 @@ var StaticAssets = map[string]string{
 func main() {
 	addr := flag.String("addr", "0.0.0.0:8080", "HTTP network address")
 	debug := flag.Bool("debug", false, "debug mode")
-	testing := flag.Bool("testing", false, "use testing config and set debug true")
+	dev := flag.Bool("dev", false, "use dev config and set debug true")
 	localImgServer := flag.Bool("localimg", false, "serve images from local directory")
 	localImgStorage := flag.Bool("localstorage", false, "store/delete images in local directory")
 	serveStatic := flag.Bool("serve-static", false, "serve css, js and images")
@@ -72,38 +72,45 @@ func main() {
 	flag.Parse()
 
 	err := godotenv.Load()
-	if err != nil && *testing {
+	if err != nil && *dev {
 		log.Fatal("Error loading .env file")
 	}
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	err = loadAssets()
-	if err != nil && !*testing {
-		errorLog.Println("No manifest found in production build")
+	if err != nil && !*dev {
+		log.Fatal("No manifest found in production build")
 	}
 
 	var dbUrl, imgStoragePath, imgBaseUrl, origin string
 	var fileStorage img.FileStorageInterface
-	if *testing {
+	if *dev {
 		*debug = true
+		*serveStatic = true
+
 		infoLog.Println("Testing env selected, debug mode set")
-		dbUrl = os.Getenv("TEST_DB_URL")
-		imgBaseUrl = os.Getenv("TEST_IMG_URL")
-		origin = os.Getenv("TEST_ORIGIN")
+
+		dbUrl = os.Getenv("DEV_DB_URL")
+		imgBaseUrl = os.Getenv("DEV_IMG_URL")
+		origin = os.Getenv("DEV_ORIGIN")
+
+		// set paths for serving js and css
+		StaticAssets["css"] = "/dist/styles.css"
+		StaticAssets["js"] = "/dist/main.js"
+
 		if *localImgServer {
-			imgStoragePath = os.Getenv("TEST_IMG_DISK_STORAGE")
+			imgStoragePath = os.Getenv("DEV_IMG_DISK_STORAGE")
 			fileStorage = &img.FileStorage{RootPath: imgStoragePath}
 		} else {
 			client := S3Client(
-				os.Getenv("TEST_S3_ENDPOINT"),
-				os.Getenv("TEST_S3_KEY"),
-				os.Getenv("TEST_S3_SECRET"),
+				os.Getenv("DEV_S3_ENDPOINT"),
+				os.Getenv("DEV_S3_KEY"),
+				os.Getenv("DEV_S3_SECRET"),
 			)
 			fileStorage = &img.S3Storage{
 				Client:     client,
-				BucketName: os.Getenv("TEST_S3_BUCKET"),
+				BucketName: os.Getenv("DEV_S3_BUCKET"),
 			}
 		}
 	} else {
@@ -116,6 +123,8 @@ func main() {
 			os.Getenv("S3_KEY"),
 			os.Getenv("S3_SECRET"),
 		)
+
+		err = loadAssets()
 		fileStorage = &img.S3Storage{
 			Client:     client,
 			BucketName: os.Getenv("S3_BUCKET"),

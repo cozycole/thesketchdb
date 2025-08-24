@@ -71,34 +71,11 @@ CREATE TABLE IF NOT EXISTS recurring (
     description TEXT,
     thumbnail_name TEXT,
     insert_timestamp TIMESTAMP DEFAULT now()
-)
-
--- CREATE TABLE IF NOT EXISTS show_creator (
---     id SERIAL PRIMARY KEY,
---     show_id INTEGER REFERENCES show(id),
---     creator_id INTEGER REFERENCES creator(id),
---     person_id INTEGER REFERENCES person(id),
---     CONSTRAINT unique_show_creator UNIQUE(show_id, creator_id),
---     CONSTRAINT unique_show_person UNIQUE(show_id, person_id),
---     CONSTRAINT at_least_one_creator CHECK(
--- 	creator_id IS NOT NULL OR person_id IS NOT NULL
---     )
--- );
-
--- CREATE TABLE IF NOT EXISTS network (
---     id SERIAL PRIMARY KEY,
---     name TEXT NOT NULL,
---     profile_img TEXT
--- );
-
--- CREATE TABLE IF NOT EXISTS show_network (
---     show_id INTEGER REFERENCES show(id),
---     network_id INTEGER REFERENCES network(id),
---     PRIMARY KEY(show_id, network_id)
--- );
+);
 
 CREATE TABLE IF NOT EXISTS season (
     id SERIAL PRIMARY KEY,
+    slug TEXT,
     show_id INTEGER REFERENCES show(id),
     season_number INTEGER NOT NULL,
     air_date DATE,
@@ -107,6 +84,7 @@ CREATE TABLE IF NOT EXISTS season (
 
 CREATE TABLE IF NOT EXISTS episode (
     id SERIAL PRIMARY KEY,
+    slug TEXT,
     season_id INTEGER REFERENCES season(id),
     title TEXT,
     episode_number INTEGER NOT NULL,

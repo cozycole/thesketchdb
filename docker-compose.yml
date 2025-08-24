@@ -21,7 +21,7 @@ services:
       dockerfile: Dockerfile
       context: .
     environment:
-      - VIRTUAL_HOST=localhost
+      - VIRTUAL_HOST=thesketchdb.com
       - LETSENCRYPT_HOST=thesketchdb.com
     volumes:
       - ./dist:/app/dist
@@ -44,5 +44,6 @@ services:
     volumes:
       - ./certbot/www/:/var/www/certbot/:rw
       - ./certbot/conf/:/etc/letsencrypt/:rw
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 volumes:
   pgdata:

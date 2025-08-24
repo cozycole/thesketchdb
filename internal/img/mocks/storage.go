@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"os"
@@ -9,7 +10,7 @@ import (
 
 type FileStorage struct{}
 
-func (s *FileStorage) SaveFile(subPath string, file io.Reader) error {
+func (s *FileStorage) SaveFile(subPath string, file *bytes.Buffer) error {
 	imgPath := path.Join(os.TempDir(), subPath)
 	imgDir := path.Dir(imgPath)
 	// Make the dir if it doesn't exist
@@ -30,4 +31,12 @@ func (s *FileStorage) SaveFile(subPath string, file io.Reader) error {
 		return err
 	}
 	return nil
+}
+
+func (s *FileStorage) DeleteFile(key string) error {
+	return nil
+}
+
+func (s *FileStorage) Type() string {
+	return "Mock"
 }

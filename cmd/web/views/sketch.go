@@ -181,6 +181,8 @@ type SketchThumbnail struct {
 	Url          string
 	YoutubeUrl   string
 	Image        string
+	SmallImage   string
+	MediumImage  string
 	LargeImage   string
 	Date         string
 	Liked        bool
@@ -188,6 +190,7 @@ type SketchThumbnail struct {
 	CreatorImage string
 	CreatorUrl   string
 	CreatorInfo  string
+	InCarousel   bool
 }
 
 func SketchGalleryView(
@@ -197,7 +200,26 @@ func SketchGalleryView(
 	sectionType string,
 	maxResults int,
 ) (*SketchGallery, error) {
-	sketchViews, err := SketchThumbnailsView(sketches, baseImgUrl, thumbnailType)
+	sketchViews, err := SketchThumbnailsView(sketches, baseImgUrl, thumbnailType, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SketchGallery{
+		Sketches:    sketchViews,
+		SectionType: sectionType,
+	}, nil
+}
+
+// for sketch displays where either it's a carousel or a grid to carousel (carousel on mobile)
+func SketchCarouselView(
+	sketches []*models.Sketch,
+	baseImgUrl,
+	thumbnailType,
+	sectionType string,
+	maxResults int,
+) (*SketchGallery, error) {
+	sketchViews, err := SketchThumbnailsView(sketches, baseImgUrl, thumbnailType, true)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +233,7 @@ func SketchGalleryView(
 func FeaturedSketchesView(sketches []*models.Sketch, baseImgUrl string) ([]*SketchThumbnail, error) {
 	var sketchViews []*SketchThumbnail
 	for _, sketch := range sketches {
-		sketchView, err := SketchThumbnailView(sketch, baseImgUrl, "")
+		sketchView, err := SketchThumbnailView(sketch, baseImgUrl, "", false)
 		if err != nil {
 			return nil, err
 		}
@@ -224,10 +246,10 @@ func FeaturedSketchesView(sketches []*models.Sketch, baseImgUrl string) ([]*Sket
 	return sketchViews, nil
 }
 
-func SketchThumbnailsView(sketches []*models.Sketch, baseImgUrl string, thumbnailType string) ([]*SketchThumbnail, error) {
+func SketchThumbnailsView(sketches []*models.Sketch, baseImgUrl string, thumbnailType string, inCarousel bool) ([]*SketchThumbnail, error) {
 	var sketchViews []*SketchThumbnail
 	for _, sketch := range sketches {
-		sketchView, err := SketchThumbnailView(sketch, baseImgUrl, thumbnailType)
+		sketchView, err := SketchThumbnailView(sketch, baseImgUrl, thumbnailType, inCarousel)
 		if err != nil {
 			return nil, err
 		}
@@ -237,7 +259,7 @@ func SketchThumbnailsView(sketches []*models.Sketch, baseImgUrl string, thumbnai
 	return sketchViews, nil
 }
 
-func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType string) (*SketchThumbnail, error) {
+func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType string, inCarousel bool) (*SketchThumbnail, error) {
 	sketchView := &SketchThumbnail{}
 	if sketch.ID == nil {
 		return nil, fmt.Errorf("Sketch ID not defined")
@@ -259,16 +281,22 @@ func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType
 		sketchView.YoutubeUrl = fmt.Sprintf("www.youtube.com/watch?v=%s", *sketch.YoutubeID)
 	}
 
-	if strings.ToUpper(thumbnailType) == "CAST" && safeDeref(sketch.CastThumbnail) != "" {
-		sketchView.Image = fmt.Sprintf("%s/cast/thumbnail/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
-		// there are no Large cast images
+	if safeDeref(sketch.ThumbnailName) != "" {
+		sketchView.SmallImage = fmt.Sprintf("%s/sketch/small/%s", baseImgUrl, safeDeref(sketch.ThumbnailName))
+		sketchView.MediumImage = fmt.Sprintf("%s/sketch/medium/%s", baseImgUrl, safeDeref(sketch.ThumbnailName))
 		sketchView.LargeImage = fmt.Sprintf("%s/sketch/large/%s", baseImgUrl, safeDeref(sketch.ThumbnailName))
-	} else if sketch.ThumbnailName != nil {
-		sketchView.Image = fmt.Sprintf("%s/sketch/%s", baseImgUrl, *sketch.ThumbnailName)
-		sketchView.LargeImage = fmt.Sprintf("%s/sketch/large/%s", baseImgUrl, *sketch.ThumbnailName)
+		sketchView.Image = sketchView.SmallImage
 	} else {
 		sketchView.Image = fmt.Sprintf("%s/missing-thumbnail.jpg", baseImgUrl)
+		sketchView.SmallImage = fmt.Sprintf("%s/missing-thumbnail.jpg", baseImgUrl)
+		sketchView.MediumImage = fmt.Sprintf("%s/missing-thumbnail.jpg", baseImgUrl)
 		sketchView.LargeImage = fmt.Sprintf("%s/missing-thumbnail.jpg", baseImgUrl)
+	}
+
+	if strings.ToUpper(thumbnailType) == "CAST" && safeDeref(sketch.CastThumbnail) != "" {
+		sketchView.Image = fmt.Sprintf("%s/cast/thumbnail/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
+		sketchView.SmallImage = fmt.Sprintf("%s/cast/thumbnail/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
+		sketchView.MediumImage = fmt.Sprintf("%s/cast/thumbnail/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
 	}
 
 	if sketch.UploadDate != nil {
@@ -387,6 +415,7 @@ func SketchCatalogResultView(
 		results.SketchResults,
 		baseImgUrl,
 		thumbnailType,
+		false,
 	)
 	if err != nil {
 		return nil, err

@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-playground/form/v4"
 	imgmock "sketchdb.cozycole.net/internal/img/mocks"
-	"sketchdb.cozycole.net/internal/models/mocks"
 	"sketchdb.cozycole.net/internal/utils"
 )
 
@@ -27,18 +26,8 @@ func newTestApplication(t *testing.T) *application {
 		fileStorage:   &imgmock.FileStorage{},
 		formDecoder:   formDecoder,
 		templateCache: templateCache,
-		sketches:      &mocks.SketchModel{},
-		creators:      &mocks.CreatorModel{},
-		people:        &mocks.PersonModel{},
-		characters:    &mocks.CharacterModel{},
 		debugMode:     true,
 	}
-}
-
-func resetMocks(app *application) {
-	app.sketches = &mocks.SketchModel{}
-	app.creators = &mocks.CreatorModel{}
-	app.people = &mocks.PersonModel{}
 }
 
 type testServer struct {

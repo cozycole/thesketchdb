@@ -17,15 +17,21 @@ import (
 )
 
 const (
-	LargeThumbnailWidth     = 640
-	LargeThumbnailHeight    = 360
-	StandardThumbnailWidth  = 480
-	StandardThumbnailHeight = 270
+	ThumbnailAspectRatio    = 16 / 9
+	JPGQuality              = 82
+	LargeThumbnailWidth     = 1280
+	LargeThumbnailHeight    = 720
+	StandardThumbnailWidth  = 640
+	StandardThumbnailHeight = 360
+	SmallThumbnailWidth     = 320
+	SmallThumbnailHeight    = 180
+	LargeProfileWidth       = 512
+	MediumProfileWidth      = 176
+	SmallProfileWidth       = 88
 	MinProfileWidth         = 160
 	TargetProfileWidth      = 176
 )
 
-// Functions used within handlers that save images
 func (app *application) deleteImage(prefix, imgName string) error {
 	imgSubPath := path.Join(prefix, imgName)
 	app.infoLog.Printf("Deleting %s\n", imgSubPath)
@@ -40,7 +46,12 @@ func (app *application) saveCastImages(member *models.CastMember) error {
 		}
 		defer thumbFile.Close()
 
-		img, err := processThumbnailImage(thumbFile, StandardThumbnailWidth, StandardThumbnailHeight)
+		img, _, err := image.Decode(thumbFile)
+		if err != nil {
+			return err
+		}
+
+		img, err = processThumbnailImage(img, StandardThumbnailWidth, StandardThumbnailHeight)
 		if err != nil {
 			app.errorLog.Print("error processing thumbnail image")
 			return err
@@ -81,6 +92,7 @@ func (app *application) saveCastImages(member *models.CastMember) error {
 	return nil
 }
 
+// saveLargeThumbnail saves large, medium and small resolutions
 func (app *application) saveLargeThumbnail(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
 	file, err := fileHeader.Open()
 	if err != nil {
@@ -88,33 +100,54 @@ func (app *application) saveLargeThumbnail(imgName string, prefix string, fileHe
 	}
 	defer file.Close()
 
-	img, err := processThumbnailImage(file, LargeThumbnailWidth, LargeThumbnailHeight)
+	width, _, err := utils.GetImageDimensions(file)
 	if err != nil {
 		return err
 	}
 
-	var dstFile bytes.Buffer
-	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
-	err = app.fileStorage.SaveFile(path.Join(prefix, "large", imgName), &dstFile)
+	img, _, err := image.Decode(file)
 	if err != nil {
 		return err
 	}
 
-	file.Seek(0, 0)
-
-	img, err = processThumbnailImage(file, StandardThumbnailWidth, StandardThumbnailHeight)
+	images := map[string]image.Image{}
+	images["small"], err = processThumbnailImage(img, SmallThumbnailWidth, SmallThumbnailHeight)
 	if err != nil {
 		return err
 	}
 
-	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
-	err = app.fileStorage.SaveFile(path.Join(prefix, imgName), &dstFile)
+	images["medium"], err = processThumbnailImage(img, StandardThumbnailWidth, StandardThumbnailHeight)
 	if err != nil {
 		return err
+	}
+
+	if width > LargeThumbnailWidth {
+		images["large"], err = processThumbnailImage(img, LargeThumbnailWidth, LargeThumbnailHeight)
+	} else if width > StandardThumbnailWidth {
+		images["large"], err = processThumbnailImage(img, width, int(float64(width)/(16.0/9.0)))
+	} else {
+		images["large"] = images["medium"]
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// 5) Save all files to /small /medium /large respectively
+	for size, img := range images {
+		var dstFile bytes.Buffer
+		err := jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: JPGQuality})
+		if err != nil {
+			return err
+		}
+
+		err = app.fileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
-
 }
 
 func (app *application) saveThumbnail(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
@@ -124,7 +157,12 @@ func (app *application) saveThumbnail(imgName string, prefix string, fileHeader 
 	}
 	defer file.Close()
 
-	img, err := processThumbnailImage(file, StandardThumbnailWidth, StandardThumbnailHeight)
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return err
+	}
+
+	img, err = processThumbnailImage(img, StandardThumbnailWidth, StandardThumbnailHeight)
 	if err != nil {
 		return err
 	}
@@ -169,11 +207,7 @@ func generateThumbnailName(fileHeader *multipart.FileHeader) (string, error) {
 	return thumbnailId + thumbnailExtension, nil
 }
 
-func processThumbnailImage(file io.Reader, width, height int) (image.Image, error) {
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
+func processThumbnailImage(img image.Image, width, height int) (image.Image, error) {
 
 	img = utils.CenterCropToAspectRatio(img, 16.0/9.0)
 	img = utils.ResizeImage(img, width, height)

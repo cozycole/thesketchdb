@@ -48,7 +48,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestViews, err := views.SketchThumbnailsView(latest, app.baseImgUrl, "")
+	latestViews, err := views.SketchThumbnailsView(latest, app.baseImgUrl, "", true)
 
 	popularFilter := models.Filter{
 		SortBy: "popular",
@@ -62,7 +62,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	popularSketchViews, err := views.SketchThumbnailsView(popularSketches, app.baseImgUrl, "")
+	popularSketchViews, err := views.SketchThumbnailsView(popularSketches, app.baseImgUrl, "", true)
 
 	peopleIds := []int{61, 52, 42, 1, 2, 3, 39, 54, 56}
 	people, err := app.people.GetPeople(peopleIds)

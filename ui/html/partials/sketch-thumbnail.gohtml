@@ -4,8 +4,14 @@
       <div class="aspect-[16/9]">
         <img
           src="{{ .Image }}"
+          {{ if .InCarousel }}
+            srcset="{{ .SmallImage }} 1x, {{ .MediumImage }} 2x"
+          {{ else }}
+            srcset="{{ .SmallImage }} 320w, {{ .MediumImage }} 640w"
+            sizes="(max-width: 480px) 640px, 320px"
+          {{ end }}
           class="w-full rounded-lg"
-          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg';this.srcset='';"
         />
       </div>
     </a>

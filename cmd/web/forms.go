@@ -450,7 +450,7 @@ func (app *application) validateEpisodeForm(form *episodeForm) {
 
 	season, err := app.shows.GetSeason(form.SeasonId)
 	if err != nil {
-		app.errorLog.Printf("Error getting season for episode form validation: $s", err)
+		app.errorLog.Printf("Error getting season for episode form validation: %s", err)
 		form.AddNonFieldError("Error getting season")
 	}
 

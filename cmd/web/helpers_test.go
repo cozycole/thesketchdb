@@ -122,7 +122,7 @@ func TestSketchDecodePostForm(t *testing.T) {
 	app := newTestApplication(t)
 
 	t.Run("Correct Form", func(t *testing.T) {
-		var form addSketchForm
+		var form sketchForm
 
 		app.decodePostForm(r, &form)
 
@@ -131,18 +131,6 @@ func TestSketchDecodePostForm(t *testing.T) {
 		assert.Equal(t, form.UploadDate, fields["uploadDate"])
 		assert.Equal(t, form.Rating, fields["rating"])
 		assert.Equal(t, form.CreatorID, 1)
-		assert.DeepEqual(t, form.PersonIDs, []int{1, 2, 3})
-		assert.DeepEqual(t, form.PersonInputs, []string{"Tim", "Nathan", "James"})
-		assert.DeepEqual(t, form.CharacterIDs, []int{4, 5, 6})
-		assert.DeepEqual(t, form.CharacterInputs, []string{"David", "Dave", "Davey"})
 		assert.Equal(t, form.Thumbnail.Filename, path.Base(filepath))
-		assert.Equal(t, len(form.CharacterThumbnails), 3)
-		assert.Equal(t, form.CharacterThumbnails[0].Filename, path.Base(filepath1))
-		assert.Equal(t, form.CharacterThumbnails[2].Filename, path.Base(filepath2))
 	})
-}
-
-func TestHash(t *testing.T) {
-	str := toURLSafeBase64MD5("1-2-2")
-	t.Logf("Hash (%d): %s\n", len(str), str)
 }

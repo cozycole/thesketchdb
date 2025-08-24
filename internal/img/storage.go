@@ -66,11 +66,12 @@ type S3Storage struct {
 func (s *S3Storage) SaveFile(subPath string, file *bytes.Buffer) error {
 	body := bytes.NewReader(file.Bytes())
 	_, err := s.Client.PutObject(&s3.PutObjectInput{
-		Bucket:      &s.BucketName,
-		Key:         &subPath,
-		Body:        body,
-		ACL:         aws.String("public-read"),
-		ContentType: aws.String(http.DetectContentType(file.Bytes())),
+		Bucket:       &s.BucketName,
+		Key:          &subPath,
+		Body:         body,
+		ACL:          aws.String("public-read"),
+		ContentType:  aws.String(http.DetectContentType(file.Bytes())),
+		CacheControl: aws.String("public, max-age=31536000, immutable"),
 	})
 	return err
 }

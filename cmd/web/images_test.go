@@ -1,139 +1,98 @@
 package main
 
 import (
+	"mime/multipart"
+	"os"
+	"path"
 	"testing"
 
 	"sketchdb.cozycole.net/internal/assert"
-	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/utils"
 )
 
-func TestAddSketchImageNames(t *testing.T) {
-	validThumbnail, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail.jpg")
+type Size struct {
+	Width  int
+	Height int
+}
+
+func TestSaveLargeThumbnail(t *testing.T) {
+	app := newTestApplication(t)
+
+	directoryName := "test-save-large-thumb"
+
+	// Each of these files test a different logical output for saving files based on their size
+	thumbnail1920x1080, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail-1920x1080.jpg")
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
-	validImg, err := utils.CreateMultipartFileHeader("./testdata/test-img.jpg")
+
+	thumbnail320x240, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail-320x240.jpg")
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
-	validImg2, err := utils.CreateMultipartFileHeader("./testdata/test-img2.jpg")
+
+	thumbnail800x450, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail-800x450.jpg")
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
 
 	tests := []struct {
-		name           string
-		sketch         models.Sketch
-		wantVidThumb   string
-		wantCharThumb1 string
-		wantCharThumb2 string
+		name              string
+		thumbnail         *multipart.FileHeader
+		thumbnailName     string
+		desiredDimensions map[string]Size
 	}{
 		{
-			name: "Valid Entry",
-			sketch: models.Sketch{
-				ID:            1,
-				Title:         "Test sketch",
-				ThumbnailFile: validThumbnail,
-				Creator:       &models.Creator{ID: 1},
-				Cast: []*models.CastMember{
-					{
-						Position:      utils.GetIntPtr(0),
-						Actor:         &models.Person{ID: utils.GetIntPtr(1)},
-						Character:     &models.Character{ID: utils.GetIntPtr(1)},
-						ThumbnailFile: validImg,
-					},
-					{
-						Position:      utils.GetIntPtr(1),
-						Actor:         &models.Person{ID: utils.GetIntPtr(2)},
-						Character:     &models.Character{ID: utils.GetIntPtr(2)},
-						ThumbnailFile: validImg2,
-					},
-				},
+			name:          "1920x1080",
+			thumbnail:     thumbnail1920x1080,
+			thumbnailName: "1920x1080.jpg",
+			desiredDimensions: map[string]Size{
+				"small":  {Width: 320, Height: 180},
+				"medium": {Width: 640, Height: 360},
+				"large":  {Width: 1280, Height: 720},
 			},
-			wantVidThumb:   "test-sketch-1.jpg",
-			wantCharThumb1: "LyIaGOuGOANpVwsu0UfYtA.jpg",
-			wantCharThumb2: "5hcw5nF7F4fPCdRJFP-5IA.jpg",
+		},
+		{
+			name:          "320x240",
+			thumbnail:     thumbnail320x240,
+			thumbnailName: "320x240.jpg",
+			desiredDimensions: map[string]Size{
+				"small":  {Width: 320, Height: 180},
+				"medium": {Width: 640, Height: 360},
+				"large":  {Width: 640, Height: 360},
+			},
+		},
+		{
+			name:          "800x450",
+			thumbnail:     thumbnail800x450,
+			thumbnailName: "800x450.jpg",
+			desiredDimensions: map[string]Size{
+				"small":  {Width: 320, Height: 180},
+				"medium": {Width: 640, Height: 360},
+				"large":  {Width: 800, Height: 450},
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := addSketchImageNames(&tt.sketch)
+			err := app.saveLargeThumbnail(tt.thumbnailName, directoryName, tt.thumbnail)
 			if err != nil {
 				t.Fatal(err)
 			}
+			for size, dimensions := range tt.desiredDimensions {
+				thumbnail, err := os.Open(path.Join(os.TempDir(), directoryName, size, tt.thumbnailName))
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			assert.Equal(t, tt.sketch.ThumbnailName, tt.wantVidThumb)
-			assert.Equal(t, *tt.sketch.Cast[0].ThumbnailName, tt.wantCharThumb1)
-			assert.Equal(t, *tt.sketch.Cast[1].ThumbnailName, tt.wantCharThumb2)
+				width, height, err := utils.GetImageDimensions(thumbnail)
+				assert.Equal(t, width, dimensions.Width)
+				assert.Equal(t, height, dimensions.Height)
+			}
 		})
 	}
-}
-
-func TestSaveSketchImages(t *testing.T) {
-	validThumbnail, err := utils.CreateMultipartFileHeader("./testdata/test-thumbnail.jpg")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-	validImg, err := utils.CreateMultipartFileHeader("./testdata/test-img.jpg")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-	validImg2, err := utils.CreateMultipartFileHeader("./testdata/test-img2.jpg")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-
-	app := newTestApplication(t)
-
-	wantCharThumb1 := "LyIaGOuGOANpVwsu0UfYtA.jpg"
-	wantCharThumb2 := "5hcw5nF7F4fPCdRJFP-5IA.jpg"
-
-	tests := []struct {
-		name      string
-		sketch    models.Sketch
-		wantError error
-	}{
-		{
-			name: "Valid Entry",
-			sketch: models.Sketch{
-				ID:            1,
-				Title:         "Test sketch",
-				ThumbnailFile: validThumbnail,
-				ThumbnailName: "test-sketch-1.jpg",
-				Creator:       &models.Creator{ID: 1},
-				Cast: []*models.CastMember{
-					{
-						Position:      utils.GetIntPtr(0),
-						Actor:         &models.Person{ID: utils.GetIntPtr(1)},
-						Character:     &models.Character{ID: utils.GetIntPtr(1)},
-						ThumbnailFile: validImg,
-						ThumbnailName: &wantCharThumb1,
-					},
-					{
-						Position:      utils.GetIntPtr(1),
-						Actor:         &models.Person{ID: utils.GetIntPtr(2)},
-						Character:     &models.Character{ID: utils.GetIntPtr(2)},
-						ThumbnailFile: validImg2,
-						ThumbnailName: &wantCharThumb2,
-					},
-				},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := app.saveSketchImages(&tt.sketch)
-			assert.Equal(t, err, tt.wantError)
-		})
-	}
-
 }

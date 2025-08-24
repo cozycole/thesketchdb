@@ -3,11 +3,11 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  args_bin = ["--debug"]
+  args_bin = ["--dev"]
   bin = "./tmp/main"
   cmd = "go build -o ./tmp/main ./cmd/web"
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata", "node_modules", "backups", "scripts"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "node_modules", "backups", "scripts","sql"]
   exclude_file = ["quickTest.go"]
   exclude_regex = ["_test.go"]
   exclude_unchanged = false

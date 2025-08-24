@@ -4,8 +4,8 @@ air -c ./.air.toml
 
 npx tailwind \
   -c ./tailwind.config.js \
-  -i ./ui/styles.css \
-  -o ./ui/static/css/styles.css \
+  -i ./ui/static/css/styles.css \
+  -o ./ui/static/css/dist/styles.css \
   --watch 
 
 npx esbuild ./ui/static/js/main.js \
