@@ -79,10 +79,6 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	if err != nil && !*dev {
-		log.Fatal("No manifest found in production build")
-	}
-
 	var dbUrl, imgStoragePath, imgBaseUrl, origin string
 	var fileStorage img.FileStorageInterface
 	if *dev {
@@ -124,6 +120,9 @@ func main() {
 			os.Getenv("S3_SECRET"),
 		)
 
+		if err != nil {
+			log.Fatal("Error loading manifest found in production build")
+		}
 		err = loadAssets()
 		fileStorage = &img.S3Storage{
 			Client:     client,

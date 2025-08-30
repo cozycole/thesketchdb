@@ -226,7 +226,7 @@ func (app *application) updateShowPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	form := app.convertShowtoForm(show)
-	form.ProfileImgUrl = fmt.Sprintf("%s/show/%s", app.baseImgUrl, safeDeref(show.ProfileImg))
+	form.ProfileImgUrl = fmt.Sprintf("%s/show/small/%s", app.baseImgUrl, safeDeref(show.ProfileImg))
 	form.Action = fmt.Sprintf("/show/%d/update", showId)
 	data := app.newTemplateData(r)
 	data.Page = showFormPage{
@@ -270,7 +270,7 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 
 	app.validateShowForm(&form)
 	form.Action = fmt.Sprintf("/show/%d/update", showId)
-	form.ProfileImgUrl = fmt.Sprintf("%s/show/%s", app.baseImgUrl, safeDeref(oldShow.ProfileImg))
+	form.ProfileImgUrl = fmt.Sprintf("%s/show/small/%s", app.baseImgUrl, safeDeref(oldShow.ProfileImg))
 	if !form.Valid() {
 		app.render(r, w, http.StatusUnprocessableEntity, "show-form.gohtml", "show-form", form)
 		return
@@ -321,7 +321,7 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 
 	form = app.convertShowtoForm(updatedShow)
 	form.Action = fmt.Sprintf("/show/%d/update", showId)
-	form.ProfileImgUrl = fmt.Sprintf("%s/show/%s", app.baseImgUrl, safeDeref(oldShow.ProfileImg))
+	form.ProfileImgUrl = fmt.Sprintf("%s/show/small/%s", app.baseImgUrl, safeDeref(oldShow.ProfileImg))
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "show-form", form)
 }
 
@@ -529,7 +529,7 @@ func (app *application) updateEpisodeForm(w http.ResponseWriter, r *http.Request
 	}
 
 	form := convertEpisodeToForm(episode)
-	form.ThumbnailUrl = fmt.Sprintf("%s/episode/%s", app.baseImgUrl, form.ThumbnailName)
+	form.ThumbnailUrl = fmt.Sprintf("%s/episode/small/%s", app.baseImgUrl, form.ThumbnailName)
 	form.Action = fmt.Sprintf("/episode/%d/update", epId)
 
 	formModal := views.FormModal{
@@ -572,7 +572,7 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 	app.validateEpisodeForm(&form)
 	if !form.Valid() {
 		form.Action = fmt.Sprintf("/episode/%d/update", epId)
-		form.ThumbnailUrl = fmt.Sprintf("%s/episode/%s", app.baseImgUrl, safeDeref(oldEpisode.Thumbnail))
+		form.ThumbnailUrl = fmt.Sprintf("%s/episode/small/%s", app.baseImgUrl, safeDeref(oldEpisode.Thumbnail))
 		app.render(r, w, http.StatusUnprocessableEntity, "show-form-page.gohtml", "episode-form", form)
 		return
 	}

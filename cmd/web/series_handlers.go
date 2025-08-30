@@ -122,7 +122,7 @@ func (app *application) seriesUpdatePage(w http.ResponseWriter, r *http.Request)
 	form := app.convertSeriestoForm(series)
 	form.Action = fmt.Sprintf("/series/%d/update", seriesId)
 	form.ImageUrl = fmt.Sprintf(
-		"%s/series/%s",
+		"%s/series/small/%s",
 		app.baseImgUrl,
 		safeDeref(series.ThumbnailName),
 	)
@@ -169,7 +169,7 @@ func (app *application) seriesUpdate(w http.ResponseWriter, r *http.Request) {
 	app.validateSeriesForm(&form)
 	if !form.Valid() {
 		form.ImageUrl = fmt.Sprintf(
-			"%s/series/%s",
+			"%s/series/small/%s",
 			app.baseImgUrl,
 			safeDeref(staleSeries.ThumbnailName),
 		)
@@ -215,7 +215,7 @@ func (app *application) seriesUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	form.ImageUrl = fmt.Sprintf(
-		"%s/series/%s",
+		"%s/series/small/%s",
 		app.baseImgUrl,
 		safeDeref(updateSeries.ThumbnailName),
 	)

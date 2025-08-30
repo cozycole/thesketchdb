@@ -37,7 +37,7 @@ func PersonPageView(
 	page.Name = PrintPersonName(person)
 
 	if person.ProfileImg != nil {
-		page.Image = fmt.Sprintf("%s/person/%s", baseImgUrl, *person.ProfileImg)
+		page.Image = fmt.Sprintf("%s/person/small/%s", baseImgUrl, *person.ProfileImg)
 	}
 
 	if person.BirthDate != nil {
@@ -114,7 +114,7 @@ func PersonCardView(person *models.Person, baseImgUrl string) (*Card, error) {
 	card.Url = fmt.Sprintf("/person/%d/%s", *person.ID, *person.Slug)
 	card.ImageUrl = "/static/img/missing-profile.jpg"
 	if person.ProfileImg != nil {
-		card.ImageUrl = fmt.Sprintf("%s/person/%s", baseImgUrl, *person.ProfileImg)
+		card.ImageUrl = fmt.Sprintf("%s/person/medium/%s", baseImgUrl, *person.ProfileImg)
 	}
 
 	return card, nil

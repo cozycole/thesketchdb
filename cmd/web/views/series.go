@@ -20,7 +20,7 @@ func SeriesPageView(series *models.Series, baseImgUrl string) (*SeriesPage, erro
 	page.SeriesTitle = safeDeref(series.Title)
 	page.Description = safeDeref(series.Description)
 	page.Image = fmt.Sprintf(
-		"%s/series/%s",
+		"%s/series/medium/%s",
 		baseImgUrl,
 		safeDeref(series.ThumbnailName),
 	)

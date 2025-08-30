@@ -96,7 +96,7 @@ func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string
 		}
 
 		if sketch.Show.ProfileImg != nil {
-			page.CreatorImage = fmt.Sprintf("%s/show/%s", baseImgUrl, *sketch.Show.ProfileImg)
+			page.CreatorImage = fmt.Sprintf("%s/show/small/%s", baseImgUrl, *sketch.Show.ProfileImg)
 		} else {
 			page.CreatorImage = fmt.Sprintf("%s/missing-profile.jpg", baseImgUrl)
 		}
@@ -132,7 +132,7 @@ func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string
 		}
 
 		if sketch.Creator.ProfileImage != nil {
-			page.CreatorImage = fmt.Sprintf("%s/creator/%s", baseImgUrl, *sketch.Creator.ProfileImage)
+			page.CreatorImage = fmt.Sprintf("%s/creator/small/%s", baseImgUrl, *sketch.Creator.ProfileImage)
 		}
 	} else {
 		page.CreatorName = "Missing Creator"
@@ -315,7 +315,7 @@ func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType
 		}
 
 		if sketch.Show.ProfileImg != nil {
-			sketchView.CreatorImage = fmt.Sprintf("%s/show/%s", baseImgUrl, *sketch.Show.ProfileImg)
+			sketchView.CreatorImage = fmt.Sprintf("%s/show/small/%s", baseImgUrl, *sketch.Show.ProfileImg)
 		} else {
 			sketchView.CreatorImage = fmt.Sprintf("%s/missing-profile.jpg", baseImgUrl)
 		}
@@ -344,7 +344,7 @@ func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType
 		}
 
 		if sketch.Creator.ProfileImage != nil {
-			sketchView.CreatorImage = fmt.Sprintf("%s/creator/%s", baseImgUrl, *sketch.Creator.ProfileImage)
+			sketchView.CreatorImage = fmt.Sprintf("%s/creator/small/%s", baseImgUrl, *sketch.Creator.ProfileImage)
 		}
 	} else {
 		sketchView.CreatorName = "Missing Creator"
@@ -513,7 +513,7 @@ func PeopleSelectedJSON(people []*models.Person, baseURL string) (string, error)
 
 		var image string
 		if p.ProfileImg != nil {
-			image = fmt.Sprintf("%s/person/%s", baseURL, *p.ProfileImg)
+			image = fmt.Sprintf("%s/person/small/%s", baseURL, *p.ProfileImg)
 		}
 
 		items = append(items, SelectedItem{
@@ -532,7 +532,7 @@ func CreatorsSelectedJSON(creators []*models.Creator, baseURL string) (string, e
 
 		var image string
 		if c.ProfileImage != nil {
-			image = fmt.Sprintf("%s/creator/%s", baseURL, *c.ProfileImage)
+			image = fmt.Sprintf("%s/creator/small/%s", baseURL, *c.ProfileImage)
 		}
 		items = append(items, SelectedItem{
 			ID:    strconv.Itoa(*c.ID),
@@ -550,7 +550,7 @@ func ShowsSelectedJSON(shows []*models.Show, baseURL string) (string, error) {
 
 		var image string
 		if s.ProfileImg != nil {
-			image = fmt.Sprintf("%s/show/%s", baseURL, *s.ProfileImg)
+			image = fmt.Sprintf("%s/show/small/%s", baseURL, *s.ProfileImg)
 		}
 		items = append(items, SelectedItem{
 			ID:    strconv.Itoa(*s.ID),
@@ -568,7 +568,7 @@ func CharactersSelectedJSON(characters []*models.Character, baseURL string) (str
 
 		var image string
 		if c.Image != nil {
-			image = fmt.Sprintf("%s/character/%s", baseURL, *c.Image)
+			image = fmt.Sprintf("%s/character/small/%s", baseURL, *c.Image)
 		}
 		items = append(items, SelectedItem{
 			ID:    strconv.Itoa(*c.ID),

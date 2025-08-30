@@ -122,7 +122,7 @@ func (app *application) recurringUpdatePage(w http.ResponseWriter, r *http.Reque
 	form := app.convertRecurringtoForm(recurring)
 	form.Action = fmt.Sprintf("/recurring/%d/update", recurringId)
 	form.ImageUrl = fmt.Sprintf(
-		"%s/recurring/%s",
+		"%s/recurring/small/%s",
 		app.baseImgUrl,
 		safeDeref(recurring.ThumbnailName),
 	)
@@ -169,7 +169,7 @@ func (app *application) recurringUpdate(w http.ResponseWriter, r *http.Request) 
 	app.validateRecurringForm(&form)
 	if !form.Valid() {
 		form.ImageUrl = fmt.Sprintf(
-			"%s/recurring/%s",
+			"%s/recurring/small/%s",
 			app.baseImgUrl,
 			safeDeref(stalerecurring.ThumbnailName),
 		)
@@ -215,7 +215,7 @@ func (app *application) recurringUpdate(w http.ResponseWriter, r *http.Request) 
 	}
 
 	form.ImageUrl = fmt.Sprintf(
-		"%s/recurring/%s",
+		"%s/recurring/small/%s",
 		app.baseImgUrl,
 		safeDeref(updaterecurring.ThumbnailName),
 	)

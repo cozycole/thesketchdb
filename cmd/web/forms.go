@@ -475,17 +475,6 @@ func (app *application) validateEpisodeForm(form *episodeForm) {
 	defer thumbnail.Close()
 
 	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg")
-	width, height, err := utils.GetImageDimensions(thumbnail)
-	if err != nil {
-		form.AddFieldError("thumbnail", "Unable to determine image dimensions")
-		return
-	}
-
-	form.CheckField(
-		width >= LargeThumbnailWidth && height >= LargeThumbnailHeight,
-		"thumbnail",
-		fmt.Sprintf("Thumbnail dimensions must be at least %dx%d", LargeThumbnailWidth, LargeThumbnailHeight),
-	)
 }
 
 type seriesForm struct {
@@ -518,17 +507,6 @@ func (app *application) validateSeriesForm(form *seriesForm) {
 	defer thumbnail.Close()
 
 	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg")
-	width, height, err := utils.GetImageDimensions(thumbnail)
-	if err != nil {
-		form.AddFieldError("thumbnail", "Unable to determine image dimensions")
-		return
-	}
-
-	form.CheckField(
-		width >= LargeThumbnailWidth && height >= LargeThumbnailHeight,
-		"thumbnail",
-		fmt.Sprintf("Thumbnail dimensions must be at least %dx%d", LargeThumbnailWidth, LargeThumbnailHeight),
-	)
 }
 
 type recurringForm struct {
@@ -561,15 +539,4 @@ func (app *application) validateRecurringForm(form *recurringForm) {
 	defer thumbnail.Close()
 
 	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg")
-	width, height, err := utils.GetImageDimensions(thumbnail)
-	if err != nil {
-		form.AddFieldError("thumbnail", "Unable to determine image dimensions")
-		return
-	}
-
-	form.CheckField(
-		width >= LargeThumbnailWidth && height >= LargeThumbnailHeight,
-		"thumbnail",
-		fmt.Sprintf("Thumbnail dimensions must be at least %dx%d", LargeThumbnailWidth, LargeThumbnailHeight),
-	)
 }

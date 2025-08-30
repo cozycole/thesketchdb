@@ -20,7 +20,7 @@ func RecurringPageView(recurring *models.Recurring, baseImgUrl string) (*Recurri
 	page.RecurringTitle = safeDeref(recurring.Title)
 	page.Description = safeDeref(recurring.Description)
 	page.Image = fmt.Sprintf(
-		"%s/recurring/%s",
+		"%s/recurring/medium/%s",
 		baseImgUrl,
 		safeDeref(recurring.ThumbnailName),
 	)

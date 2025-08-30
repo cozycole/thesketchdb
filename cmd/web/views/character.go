@@ -31,7 +31,7 @@ func CharacterPageView(character *models.Character, popular []*models.Sketch, ba
 
 	page.Image = "/static/img/missing-profile.jpg"
 	if character.Image != nil {
-		page.Image = fmt.Sprintf("%s/character/%s", baseImgUrl, *character.Image)
+		page.Image = fmt.Sprintf("%s/character/medium/%s", baseImgUrl, *character.Image)
 	}
 
 	if character.Portrayal != nil && character.Portrayal.ID != nil {
@@ -102,7 +102,7 @@ func CharacterCardView(character *models.Character, baseImgUrl string) (*Card, e
 	card.Url = fmt.Sprintf("/character/%d/%s", *character.ID, *character.Slug)
 	card.ImageUrl = "/static/img/missing-profile.jpg"
 	if character.Image != nil {
-		card.ImageUrl = fmt.Sprintf("%s/character/%s", baseImgUrl, *character.Image)
+		card.ImageUrl = fmt.Sprintf("%s/character/medium/%s", baseImgUrl, *character.Image)
 	}
 
 	return card, nil

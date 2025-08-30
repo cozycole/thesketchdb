@@ -149,7 +149,7 @@ func (app *application) updatePersonPage(w http.ResponseWriter, r *http.Request)
 	}
 
 	personForm := convertPersontoForm(person)
-	personForm.ImageUrl = fmt.Sprintf("%s/person/%s", app.baseImgUrl, personForm.ImageUrl)
+	personForm.ImageUrl = fmt.Sprintf("%s/person/small/%s", app.baseImgUrl, personForm.ImageUrl)
 	personForm.Action = fmt.Sprintf("/person/%d/update", personForm.ID)
 
 	data := app.newTemplateData(r)
@@ -192,7 +192,7 @@ func (app *application) updatePerson(w http.ResponseWriter, r *http.Request) {
 	app.validatePersonForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		form.ImageUrl = fmt.Sprintf("%s/person/%s", app.baseImgUrl, oldProfileImgName)
+		form.ImageUrl = fmt.Sprintf("%s/person/small/%s", app.baseImgUrl, oldProfileImgName)
 		form.Action = fmt.Sprintf("/person/%d/update", form.ID)
 		data.Page = personFormPage{
 			Title: "Update Person",

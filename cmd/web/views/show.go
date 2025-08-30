@@ -35,7 +35,7 @@ func ShowPageView(show *models.Show, popular []*models.Sketch, cast []*models.Pe
 
 	page.Image = "/static/img/missing-thumbnail.jpg"
 	if show.ProfileImg != nil {
-		page.Image = fmt.Sprintf("%s/show/%s", baseImgUrl, *show.ProfileImg)
+		page.Image = fmt.Sprintf("%s/show/medium/%s", baseImgUrl, *show.ProfileImg)
 	}
 
 	page.UpdateUrl = fmt.Sprintf("/show/%d/update", *show.ID)
@@ -84,7 +84,7 @@ func SeasonPageView(show *models.Show, season *models.Season, baseImgUrl string)
 	if show.Name != nil {
 		page.ShowName = *show.Name
 	}
-	page.ShowImage = fmt.Sprintf("%s/show/%s", baseImgUrl, safeDeref(show.ProfileImg))
+	page.ShowImage = fmt.Sprintf("%s/show/small/%s", baseImgUrl, safeDeref(show.ProfileImg))
 	page.ShowUrl = fmt.Sprintf("/show/%d/%s", safeDeref(show.ID), safeDeref(show.Slug))
 
 	if season.Number != nil {
@@ -201,7 +201,7 @@ func EpisodePageView(episode *models.Episode, baseImgUrl string) (*EpisodePage, 
 
 		page.ShowImage = "/static/img/missing-profile.jpg"
 		page.ShowImage = fmt.Sprintf(
-			"%s/show/%s",
+			"%s/show/small/%s",
 			baseImgUrl,
 			safeDeref(episode.Show.ProfileImg),
 		)
@@ -249,11 +249,14 @@ func EpisodeGalleryView(episodes []*models.Episode, baseImgUrl, sectionType stri
 }
 
 type EpisodeThumbnail struct {
-	Title   string
-	Url     string
-	Image   string
-	AirDate string
-	Info    string
+	Title       string
+	Url         string
+	Image       string
+	LargeImage  string
+	MediumImage string
+	SmallImage  string
+	AirDate     string
+	Info        string
 }
 
 func EpisodeThumbnailView(episode *models.Episode, baseImgUrl string) *EpisodeThumbnail {
@@ -261,8 +264,14 @@ func EpisodeThumbnailView(episode *models.Episode, baseImgUrl string) *EpisodeTh
 
 	ep.Title = createEpisodeTitle(episode)
 	ep.Image = "/static/img/missing-thumbnail.jpg"
+	ep.LargeImage = "/static/img/missing-thumbnail.jpg"
+	ep.MediumImage = "/static/img/missing-thumbnail.jpg"
+	ep.SmallImage = "/static/img/missing-thumbnail.jpg"
 	if episode.Thumbnail != nil {
-		ep.Image = fmt.Sprintf("%s/episode/%s", baseImgUrl, *episode.Thumbnail)
+		ep.Image = fmt.Sprintf("%s/episode/small/%s", baseImgUrl, *episode.Thumbnail)
+		ep.LargeImage = fmt.Sprintf("%s/episode/large/%s", baseImgUrl, *episode.Thumbnail)
+		ep.MediumImage = fmt.Sprintf("%s/episode/medium/%s", baseImgUrl, *episode.Thumbnail)
+		ep.SmallImage = fmt.Sprintf("%s/episode/small/%s", baseImgUrl, *episode.Thumbnail)
 	}
 
 	ep.Url = fmt.Sprintf(
@@ -315,7 +324,7 @@ func ShowCardView(show *models.Show, baseImgUrl string) (*Card, error) {
 	card.Url = fmt.Sprintf("/show/%d/%s", *show.ID, *show.Slug)
 	card.ImageUrl = "/static/img/missing-profile.jpg"
 	if show.ProfileImg != nil {
-		card.ImageUrl = fmt.Sprintf("%s/show/%s", baseImgUrl, *show.ProfileImg)
+		card.ImageUrl = fmt.Sprintf("%s/show/medium/%s", baseImgUrl, *show.ProfileImg)
 	}
 
 	return card, nil
@@ -386,7 +395,7 @@ func EpisodeTableView(season *models.Season, baseImgUrl, showUrl string) Episode
 		er.Title = safeDeref(episode.Title)
 		er.AirDate = humanDate(episode.AirDate)
 
-		er.ThumbnailUrl = fmt.Sprintf("%s/episode/%s", baseImgUrl, safeDeref(episode.Thumbnail))
+		er.ThumbnailUrl = fmt.Sprintf("%s/episode/small/%s", baseImgUrl, safeDeref(episode.Thumbnail))
 		er.SketchCount = len(episode.Sketches)
 		er.EpisodeUrl = fmt.Sprintf(
 			"/episode/%d/%s",

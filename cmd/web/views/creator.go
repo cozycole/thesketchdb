@@ -35,7 +35,7 @@ func CreatorPageView(
 	page.Image = "/static/img/missing-profile.jpg"
 	if creator.ProfileImage != nil {
 		page.Image = fmt.Sprintf(
-			"%s/creator/%s",
+			"%s/creator/medium/%s",
 			baseImgUrl,
 			*creator.ProfileImage,
 		)
@@ -106,7 +106,7 @@ func CreatorCardView(creator *models.Creator, baseImgUrl string) (*Card, error) 
 	card.Url = fmt.Sprintf("/creator/%d/%s", safeDeref(creator.ID), safeDeref(creator.Slug))
 	card.ImageUrl = "/static/img/missing-profile.jpg"
 	if creator.ProfileImage != nil {
-		card.ImageUrl = fmt.Sprintf("%s/creator/%s", baseImgUrl, *creator.ProfileImage)
+		card.ImageUrl = fmt.Sprintf("%s/creator/medium/%s", baseImgUrl, *creator.ProfileImage)
 	}
 
 	return card, nil

@@ -148,7 +148,7 @@ func (app *application) updateCreatorPage(w http.ResponseWriter, r *http.Request
 	}
 
 	creatorForm := convertCreatortoForm(creator)
-	creatorForm.ImageUrl = fmt.Sprintf("%s/creator/%s", app.baseImgUrl, creatorForm.ImageUrl)
+	creatorForm.ImageUrl = fmt.Sprintf("%s/creator/small/%s", app.baseImgUrl, creatorForm.ImageUrl)
 	creatorForm.Action = fmt.Sprintf("/creator/%d/update", creatorForm.ID)
 
 	data := app.newTemplateData(r)
@@ -191,7 +191,7 @@ func (app *application) updateCreator(w http.ResponseWriter, r *http.Request) {
 	app.validateCreatorForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		form.ImageUrl = fmt.Sprintf("%s/creator/%s", app.baseImgUrl, oldProfileImgName)
+		form.ImageUrl = fmt.Sprintf("%s/creator/small/%s", app.baseImgUrl, oldProfileImgName)
 		form.Action = fmt.Sprintf("/creator/%d/update", form.ID)
 		data.Page = creatorFormPage{
 			Title: "Update Creator",

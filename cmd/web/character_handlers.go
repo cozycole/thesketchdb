@@ -160,7 +160,7 @@ func (app *application) updateCharacterPage(w http.ResponseWriter, r *http.Reque
 	}
 
 	characterForm := convertCharactertoForm(character)
-	characterForm.ImageUrl = fmt.Sprintf("%s/character/%s", app.baseImgUrl, characterForm.ImageUrl)
+	characterForm.ImageUrl = fmt.Sprintf("%s/character/small/%s", app.baseImgUrl, characterForm.ImageUrl)
 	characterForm.Action = fmt.Sprintf("/character/%d/update", characterForm.ID)
 
 	data := app.newTemplateData(r)
@@ -203,7 +203,7 @@ func (app *application) updateCharacter(w http.ResponseWriter, r *http.Request) 
 	app.validateCharacterForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		form.ImageUrl = fmt.Sprintf("%s/character/%s", app.baseImgUrl, oldProfileImgName)
+		form.ImageUrl = fmt.Sprintf("%s/character/small/%s", app.baseImgUrl, oldProfileImgName)
 		form.Action = fmt.Sprintf("/character/%d/update", form.ID)
 		data.Page = characterFormPage{
 			Title: "Update Character",

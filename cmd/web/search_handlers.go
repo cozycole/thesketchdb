@@ -395,7 +395,7 @@ func (app *application) seriesSearch(w http.ResponseWriter, r *http.Request) {
 				r := result{}
 				r.ID = safeDeref(s.ID)
 				r.Text = safeDeref(s.Title)
-				r.Image = fmt.Sprintf("%s/series/%s", app.baseImgUrl, safeDeref(s.ThumbnailName))
+				r.Image = fmt.Sprintf("%s/series/small/%s", app.baseImgUrl, safeDeref(s.ThumbnailName))
 				res = append(res, r)
 			}
 
@@ -436,7 +436,7 @@ func (app *application) recurringSearch(w http.ResponseWriter, r *http.Request) 
 				r := result{}
 				r.ID = safeDeref(s.ID)
 				r.Text = safeDeref(s.Title)
-				r.Image = fmt.Sprintf("%s/recurring/%s", app.baseImgUrl, safeDeref(s.ThumbnailName))
+				r.Image = fmt.Sprintf("%s/recurring/small/%s", app.baseImgUrl, safeDeref(s.ThumbnailName))
 				res = append(res, r)
 			}
 

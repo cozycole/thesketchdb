@@ -53,7 +53,7 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 
 			if member.Actor.ProfileImg != nil {
 				card.Image = fmt.Sprintf(
-					"%s/person/%s",
+					"%s/person/small/%s",
 					baseImgUrl,
 					*member.Actor.ProfileImg)
 			}
@@ -118,7 +118,7 @@ func CastTableView(cast []*models.CastMember, sketchID int, baseImgUrl string) C
 		row := CastRow{}
 		row.ID = safeDeref(c.ID)
 		if c.ProfileImg == nil && c.Actor != nil {
-			row.ImageUrl = fmt.Sprintf("%s/person/%s", baseImgUrl, safeDeref(c.Actor.ProfileImg))
+			row.ImageUrl = fmt.Sprintf("%s/person/small/%s", baseImgUrl, safeDeref(c.Actor.ProfileImg))
 		} else {
 			row.ImageUrl = fmt.Sprintf("%s/cast/profile/small/%s", baseImgUrl, safeDeref(c.ProfileImg))
 		}
