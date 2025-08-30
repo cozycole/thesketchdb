@@ -260,7 +260,6 @@ func SketchThumbnailsView(sketches []*models.Sketch, baseImgUrl string, thumbnai
 }
 
 func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType string, inCarousel bool) (*SketchThumbnail, error) {
-	sketchView := &SketchThumbnail{}
 	if sketch.ID == nil {
 		return nil, fmt.Errorf("Sketch ID not defined")
 	}
@@ -269,6 +268,7 @@ func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType
 		return nil, fmt.Errorf("Sketch slug not defined")
 	}
 
+	sketchView := &SketchThumbnail{}
 	if sketch.Title != nil && *sketch.Title != "" {
 		sketchView.Title = *sketch.Title
 	} else {
@@ -281,22 +281,24 @@ func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType
 		sketchView.YoutubeUrl = fmt.Sprintf("www.youtube.com/watch?v=%s", *sketch.YoutubeID)
 	}
 
-	if safeDeref(sketch.ThumbnailName) != "" {
+	sketchView.InCarousel = inCarousel
+
+	if safeDeref(sketch.ThumbnailName) != "" && safeDeref(sketch.ThumbnailName) != "missing-thumbnail.jpg" {
 		sketchView.SmallImage = fmt.Sprintf("%s/sketch/small/%s", baseImgUrl, safeDeref(sketch.ThumbnailName))
 		sketchView.MediumImage = fmt.Sprintf("%s/sketch/medium/%s", baseImgUrl, safeDeref(sketch.ThumbnailName))
 		sketchView.LargeImage = fmt.Sprintf("%s/sketch/large/%s", baseImgUrl, safeDeref(sketch.ThumbnailName))
 		sketchView.Image = sketchView.SmallImage
 	} else {
-		sketchView.Image = fmt.Sprintf("%s/missing-thumbnail.jpg", baseImgUrl)
-		sketchView.SmallImage = fmt.Sprintf("%s/missing-thumbnail.jpg", baseImgUrl)
-		sketchView.MediumImage = fmt.Sprintf("%s/missing-thumbnail.jpg", baseImgUrl)
-		sketchView.LargeImage = fmt.Sprintf("%s/missing-thumbnail.jpg", baseImgUrl)
+		sketchView.Image = "/static/img/missing-thumbnail.jpg"
+		sketchView.SmallImage = "/static/img/missing-thumbnail.jpg"
+		sketchView.MediumImage = "/static/img/missing-thumbnail.jpg"
+		sketchView.LargeImage = "/static/img/missing-thumbnail.jpg"
 	}
 
 	if strings.ToUpper(thumbnailType) == "CAST" && safeDeref(sketch.CastThumbnail) != "" {
-		sketchView.Image = fmt.Sprintf("%s/cast/thumbnail/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
-		sketchView.SmallImage = fmt.Sprintf("%s/cast/thumbnail/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
-		sketchView.MediumImage = fmt.Sprintf("%s/cast/thumbnail/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
+		sketchView.SmallImage = fmt.Sprintf("%s/cast/thumbnail/small/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
+		sketchView.MediumImage = fmt.Sprintf("%s/cast/thumbnail/medium/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
+		sketchView.Image = fmt.Sprintf("%s/cast/thumbnail/small/%s", baseImgUrl, safeDeref(sketch.CastThumbnail))
 	}
 
 	if sketch.UploadDate != nil {

@@ -7,21 +7,13 @@
       <meta name="htmx-config" content='{"historyCacheSize": 0}' />
       <meta name="theme-color" content="#0f172a" />
       <title>{{ template "title" . }} - theSketchDB</title>
-      <script src="https://www.youtube.com/iframe_api"></script>
       <link rel="stylesheet" href="/static/css/{{ index .Assets "css" }}" />
       <link
         rel="shortcut icon"
         href="/static/img/favicon.ico"
         type="image/x-icon"
       />
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
-        rel="stylesheet"
-      />
     </head>
-
     <body
       hx-ext="response-targets"
       class="min-h-screen flex flex-col bg-slate-50 text-slate-950 min-w-80 font-sans"

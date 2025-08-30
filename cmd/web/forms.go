@@ -274,11 +274,11 @@ func (app *application) validateCastForm(form *castForm) {
 			return
 		}
 
-		form.CheckField(width >= StandardThumbnailWidth && height >= StandardThumbnailHeight,
+		form.CheckField(width >= MediumThumbnailWidth && height >= MediumThumbnailHeight,
 			"characterThumbnail",
 			fmt.Sprintf(
 				"Thumbnail dimensions must be at least %dx%d",
-				StandardThumbnailWidth, StandardThumbnailHeight,
+				MediumThumbnailWidth, MediumThumbnailHeight,
 			),
 		)
 	}
@@ -298,11 +298,6 @@ func (app *application) validateCastForm(form *castForm) {
 
 	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"),
 		"characterProfile", "Uploaded file must be jpg")
-
-	width, height, err := utils.GetImageDimensions(thumbnail)
-	form.CheckField(width >= MinProfileWidth && height >= MinProfileWidth,
-		"characterProfile",
-		fmt.Sprintf("Ensure photo width is larger than %dx%d", MinProfileWidth, MinProfileWidth))
 }
 
 type userSignupForm struct {

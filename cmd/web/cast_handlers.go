@@ -97,7 +97,7 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cast, _ := app.cast.GetCastMembers(sketchId)
+	cast, err := app.cast.GetCastMembers(sketchId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -130,7 +130,7 @@ func (app *application) updateCastPage(w http.ResponseWriter, r *http.Request) {
 	form.Action = fmt.Sprintf("/cast/%d/update", castId)
 	form.ThumbnailName = fmt.Sprintf("%s/cast/thumbnail/%s",
 		app.baseImgUrl, form.ThumbnailName)
-	form.ProfileImage = fmt.Sprintf("%s/cast/profile/%s",
+	form.ProfileImage = fmt.Sprintf("%s/cast/profile/small/%s",
 		app.baseImgUrl, form.ProfileImage)
 
 	isHxRequest := r.Header.Get("HX-Request") == "true"
@@ -173,9 +173,9 @@ func (app *application) updateCast(w http.ResponseWriter, r *http.Request) {
 	app.validateCastForm(&form)
 	if !form.Valid() {
 		form.ThumbnailName = fmt.Sprintf(
-			"%s/cast/thumbnail/%s", app.baseImgUrl, currentThumbnail)
+			"%s/cast/thumbnail/small/%s", app.baseImgUrl, currentThumbnail)
 		form.ProfileImage = fmt.Sprintf(
-			"%s/cast/profile/%s", app.baseImgUrl, currentProfile)
+			"%s/cast/profile/small/%s", app.baseImgUrl, currentProfile)
 		form.Action = fmt.Sprintf("/cast/%d/update", castId)
 		app.render(r, w, http.StatusUnprocessableEntity, "cast-form.gohtml", "cast-form", form)
 		return
@@ -191,7 +191,7 @@ func (app *application) updateCast(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = app.saveThumbnail(currentThumbnail, "/cast/thumbnail", form.CharacterThumbnail)
+		err = app.saveMediumThumbnail(currentThumbnail, "/cast/thumbnail", form.CharacterThumbnail)
 		if err != nil {
 			app.serverError(r, w, err)
 			return
@@ -206,7 +206,7 @@ func (app *application) updateCast(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = app.saveProfileImage(
+		err = app.saveMediumProfile(
 			currentProfile, "/cast/profile", form.CharacterProfile,
 		)
 		if err != nil {

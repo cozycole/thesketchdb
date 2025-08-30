@@ -190,7 +190,7 @@ func (app *application) addShow(w http.ResponseWriter, r *http.Request) {
 
 	show.ID = &id
 
-	err = app.saveProfileImage(*show.ProfileImg, "show", form.ProfileImg)
+	err = app.saveLargeProfile(*show.ProfileImg, "show", form.ProfileImg)
 	if err != nil {
 		app.shows.Delete(&show)
 		app.serverError(r, w, err)
@@ -291,7 +291,7 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 			app.serverError(r, w, err)
 			return
 		}
-		err = app.saveProfileImage(profileImg, "show", form.ProfileImg)
+		err = app.saveLargeProfile(profileImg, "show", form.ProfileImg)
 		if err != nil {
 			app.serverError(r, w, err)
 			return

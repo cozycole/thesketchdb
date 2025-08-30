@@ -118,7 +118,7 @@ func (app *application) addPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.saveProfileImage(*person.ProfileImg, "person", form.ProfileImage)
+	err = app.saveLargeProfile(*person.ProfileImg, "person", form.ProfileImage)
 	if err != nil {
 		app.serverError(r, w, err)
 		app.people.Delete(id)
@@ -210,7 +210,7 @@ func (app *application) updatePerson(w http.ResponseWriter, r *http.Request) {
 			app.serverError(r, w, err)
 			return
 		}
-		err = app.saveProfileImage(profileImgName, "person", form.ProfileImage)
+		err = app.saveLargeProfile(profileImgName, "person", form.ProfileImage)
 		if err != nil {
 			app.serverError(r, w, err)
 			return

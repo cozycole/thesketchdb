@@ -27,8 +27,6 @@ import "./components/flashMessage.js";
   const pageType = firstDiv
     ? firstDiv.dataset.page
     : "No page attribute found!";
-  console.log(pageType);
-  console.log("Another test for you");
 
   const dropdownMenuButtons = document.querySelectorAll(".dropdownBtn");
   const dropdownMenus = document.querySelectorAll(".dropdownMenu");

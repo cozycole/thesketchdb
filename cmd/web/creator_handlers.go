@@ -118,7 +118,7 @@ func (app *application) addCreator(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.saveProfileImage(thumbName, "creator", form.ProfileImage)
+	err = app.saveLargeProfile(thumbName, "creator", form.ProfileImage)
 	if err != nil {
 		app.serverError(r, w, err)
 		app.creators.Delete(id)
@@ -209,7 +209,7 @@ func (app *application) updateCreator(w http.ResponseWriter, r *http.Request) {
 			app.serverError(r, w, err)
 			return
 		}
-		err = app.saveProfileImage(profileImgName, "creator", form.ProfileImage)
+		err = app.saveLargeProfile(profileImgName, "creator", form.ProfileImage)
 		if err != nil {
 			app.serverError(r, w, err)
 			return

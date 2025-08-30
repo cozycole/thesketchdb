@@ -167,7 +167,7 @@ func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request)
 	}
 
 	form := convertSketchToForm(sketch)
-	form.ImageUrl = fmt.Sprintf("%s/sketch/%s", app.baseImgUrl, safeDeref(sketch.ThumbnailName))
+	form.ImageUrl = fmt.Sprintf("%s/sketch/small/%s", app.baseImgUrl, safeDeref(sketch.ThumbnailName))
 	form.Action = fmt.Sprintf("/sketch/%d/update", safeDeref(sketch.ID))
 
 	cast, err := app.cast.GetCastMembers(*sketch.ID)
@@ -227,7 +227,7 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 
 	app.validateSketchForm(&form)
 	if !form.Valid() {
-		form.ImageUrl = fmt.Sprintf("%s/sketch/%s", app.baseImgUrl, safeDeref(oldSketch.ThumbnailName))
+		form.ImageUrl = fmt.Sprintf("%s/sketch/small/%s", app.baseImgUrl, safeDeref(oldSketch.ThumbnailName))
 		app.render(r, w, http.StatusUnprocessableEntity, "sketch-form-page.gohtml", "sketch-form", form)
 		return
 	}
@@ -291,7 +291,7 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 
 	updatedSketch, _ := app.sketches.GetById(sketchId)
 	newForm := convertSketchToForm(updatedSketch)
-	newForm.ImageUrl = fmt.Sprintf("%s/sketch/%s", app.baseImgUrl, safeDeref(updatedSketch.ThumbnailName))
+	newForm.ImageUrl = fmt.Sprintf("%s/sketch/small/%s", app.baseImgUrl, safeDeref(updatedSketch.ThumbnailName))
 	isHxRequest := r.Header.Get("HX-Request") == "true"
 	if isHxRequest {
 		app.render(r, w, http.StatusOK, "sketch-form-page.gohtml", "sketch-form", newForm)

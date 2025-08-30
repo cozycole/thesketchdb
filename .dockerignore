@@ -1,4 +1,10 @@
+nginx/
+certbot/
+dist/
+
 .git
+.gitignore
+docker-compose.yml
 *.md
 testdata/
 *log

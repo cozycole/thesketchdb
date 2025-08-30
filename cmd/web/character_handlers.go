@@ -130,7 +130,7 @@ func (app *application) addCharacter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.saveProfileImage(thumbName, "character", form.ProfileImage)
+	err = app.saveLargeProfile(thumbName, "character", form.ProfileImage)
 	if err != nil {
 		app.serverError(r, w, err)
 		app.characters.Delete(id)
@@ -221,7 +221,7 @@ func (app *application) updateCharacter(w http.ResponseWriter, r *http.Request) 
 			app.serverError(r, w, err)
 			return
 		}
-		err = app.saveProfileImage(profileImgName, "character", form.ProfileImage)
+		err = app.saveLargeProfile(profileImgName, "character", form.ProfileImage)
 		if err != nil {
 			app.serverError(r, w, err)
 			return

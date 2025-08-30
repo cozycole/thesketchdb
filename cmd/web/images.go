@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
-	"io"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"path"
@@ -17,19 +17,18 @@ import (
 )
 
 const (
-	ThumbnailAspectRatio    = 16 / 9
-	JPGQuality              = 82
-	LargeThumbnailWidth     = 1280
-	LargeThumbnailHeight    = 720
-	StandardThumbnailWidth  = 640
-	StandardThumbnailHeight = 360
-	SmallThumbnailWidth     = 320
-	SmallThumbnailHeight    = 180
-	LargeProfileWidth       = 512
-	MediumProfileWidth      = 176
-	SmallProfileWidth       = 88
-	MinProfileWidth         = 160
-	TargetProfileWidth      = 176
+	ThumbnailAspectRatio  = 16.0 / 9.0
+	JPGQuality            = 82
+	LargeThumbnailWidth   = 1280
+	LargeThumbnailHeight  = 720
+	MediumThumbnailWidth  = 640
+	MediumThumbnailHeight = 360
+	SmallThumbnailWidth   = 320
+	SmallThumbnailHeight  = 180
+	LargeProfileWidth     = 512
+	MediumProfileWidth    = 256
+	SmallProfileWidth     = 88
+	TargetProfileWidth    = 176
 )
 
 func (app *application) deleteImage(prefix, imgName string) error {
@@ -40,28 +39,12 @@ func (app *application) deleteImage(prefix, imgName string) error {
 
 func (app *application) saveCastImages(member *models.CastMember) error {
 	if member.ThumbnailFile != nil {
-		thumbFile, err := member.ThumbnailFile.Open()
-		if err != nil {
-			return err
-		}
-		defer thumbFile.Close()
+		err := app.saveMediumThumbnail(
+			safeDeref(member.ThumbnailName),
+			"/cast/thumbnail", member.ThumbnailFile,
+		)
 
-		img, _, err := image.Decode(thumbFile)
 		if err != nil {
-			return err
-		}
-
-		img, err = processThumbnailImage(img, StandardThumbnailWidth, StandardThumbnailHeight)
-		if err != nil {
-			app.errorLog.Print("error processing thumbnail image")
-			return err
-		}
-
-		var dstFile bytes.Buffer
-		jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
-		err = app.fileStorage.SaveFile(path.Join("cast", "thumbnail", *member.ThumbnailName), &dstFile)
-		if err != nil {
-			app.errorLog.Print("error saving thumbnail img")
 			return err
 		}
 	}
@@ -70,25 +53,15 @@ func (app *application) saveCastImages(member *models.CastMember) error {
 		return nil
 	}
 
-	profileFile, err := member.ProfileFile.Open()
-	if err != nil {
-		return err
-	}
-	defer profileFile.Close()
+	err := app.saveMediumProfile(
+		safeDeref(member.ProfileImg),
+		"/cast/profile", member.ProfileFile,
+	)
 
-	img, err := processProfileImage(profileFile)
 	if err != nil {
-		app.errorLog.Print("error processing profile image")
 		return err
 	}
 
-	var profileDstFile bytes.Buffer
-	jpeg.Encode(&profileDstFile, img, &jpeg.Options{Quality: 85})
-	err = app.fileStorage.SaveFile(path.Join("cast", "profile", *member.ProfileImg), &profileDstFile)
-	if err != nil {
-		app.errorLog.Print("error saving profile img")
-		return err
-	}
 	return nil
 }
 
@@ -100,10 +73,11 @@ func (app *application) saveLargeThumbnail(imgName string, prefix string, fileHe
 	}
 	defer file.Close()
 
-	width, _, err := utils.GetImageDimensions(file)
+	width, height, err := utils.GetImageDimensions(file)
 	if err != nil {
 		return err
 	}
+	width, height = GetLargest16x9Dimensions(width, height)
 
 	img, _, err := image.Decode(file)
 	if err != nil {
@@ -116,15 +90,18 @@ func (app *application) saveLargeThumbnail(imgName string, prefix string, fileHe
 		return err
 	}
 
-	images["medium"], err = processThumbnailImage(img, StandardThumbnailWidth, StandardThumbnailHeight)
-	if err != nil {
-		return err
+	if width > MediumThumbnailWidth {
+		images["medium"], err = processThumbnailImage(img, MediumThumbnailWidth, MediumThumbnailHeight)
+	} else if width > SmallThumbnailWidth {
+		images["medium"], err = processThumbnailImage(img, width, height)
+	} else {
+		images["medium"] = images["small"]
 	}
 
 	if width > LargeThumbnailWidth {
 		images["large"], err = processThumbnailImage(img, LargeThumbnailWidth, LargeThumbnailHeight)
-	} else if width > StandardThumbnailWidth {
-		images["large"], err = processThumbnailImage(img, width, int(float64(width)/(16.0/9.0)))
+	} else if width > MediumThumbnailWidth {
+		images["large"], err = processThumbnailImage(img, width, height)
 	} else {
 		images["large"] = images["medium"]
 	}
@@ -150,51 +127,178 @@ func (app *application) saveLargeThumbnail(imgName string, prefix string, fileHe
 	return nil
 }
 
-func (app *application) saveThumbnail(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
+// saveMediumThumbnail saves medium and small resolutions
+func (app *application) saveMediumThumbnail(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
 	file, err := fileHeader.Open()
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
+	width, height, err := utils.GetImageDimensions(file)
+	if err != nil {
+		return err
+	}
+
+	width, height = GetLargest16x9Dimensions(width, height)
+
 	img, _, err := image.Decode(file)
 	if err != nil {
 		return err
 	}
 
-	img, err = processThumbnailImage(img, StandardThumbnailWidth, StandardThumbnailHeight)
+	images := map[string]image.Image{}
+	images["small"], err = processThumbnailImage(img, SmallThumbnailWidth, SmallThumbnailHeight)
 	if err != nil {
 		return err
 	}
 
-	var dstFile bytes.Buffer
-	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
-	err = app.fileStorage.SaveFile(path.Join(prefix, "large", imgName), &dstFile)
-	return err
+	if width > MediumThumbnailWidth {
+		images["medium"], err = processThumbnailImage(img, MediumThumbnailWidth, MediumThumbnailHeight)
+	} else if width > SmallThumbnailWidth {
+		images["medium"], err = processThumbnailImage(img, width, height)
+	} else {
+		images["medium"] = images["small"]
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// 5) Save all files to /small and /medium respectively
+	for size, img := range images {
+		var dstFile bytes.Buffer
+		err := jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: JPGQuality})
+		if err != nil {
+			return err
+		}
+
+		err = app.fileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (app *application) saveProfileImage(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
-	if imgName == "" {
-		return fmt.Errorf("Image name cannot be blank")
-	}
-
-	profileFile, err := fileHeader.Open()
+func (app *application) saveLargeProfile(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
+	file, err := fileHeader.Open()
 	if err != nil {
 		return err
 	}
-	defer profileFile.Close()
+	defer file.Close()
 
-	img, err := processProfileImage(profileFile)
+	width, height, err := utils.GetImageDimensions(file)
 	if err != nil {
 		return err
 	}
 
-	var dstFile bytes.Buffer
-	jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: 85})
-	err = app.fileStorage.SaveFile(path.Join(prefix, imgName), &dstFile)
+	width = min(width, height)
+
+	img, _, err := image.Decode(file)
 	if err != nil {
 		return err
 	}
+
+	images := map[string]image.Image{}
+	images["small"], err = processProfileImage(img, SmallProfileWidth)
+	if err != nil {
+		return err
+	}
+
+	if width > MediumProfileWidth {
+		images["medium"], err = processProfileImage(img, MediumProfileWidth)
+	} else if width > SmallProfileWidth {
+		images["medium"], err = processProfileImage(img, width)
+	} else {
+		images["medium"] = images["small"]
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if width > LargeProfileWidth {
+		images["large"], err = processProfileImage(img, LargeProfileWidth)
+	} else if width > MediumProfileWidth {
+		images["large"], err = processProfileImage(img, width)
+	} else {
+		images["large"] = images["medium"]
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// 5) Save all files to /small /medium /large respectively
+	for size, img := range images {
+		var dstFile bytes.Buffer
+		err := jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: JPGQuality})
+		if err != nil {
+			return err
+		}
+
+		err = app.fileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (app *application) saveMediumProfile(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
+	file, err := fileHeader.Open()
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	width, height, err := utils.GetImageDimensions(file)
+	if err != nil {
+		return err
+	}
+
+	width = min(width, height)
+
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return err
+	}
+
+	images := map[string]image.Image{}
+	images["small"], err = processProfileImage(img, SmallProfileWidth)
+	if err != nil {
+		return err
+	}
+
+	if width > MediumProfileWidth {
+		images["medium"], err = processProfileImage(img, MediumProfileWidth)
+	} else if width > SmallProfileWidth {
+		images["medium"], err = processProfileImage(img, width)
+	} else {
+		images["medium"] = images["small"]
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// 5) Save all files to /small /medium /large respectively
+	for size, img := range images {
+		var dstFile bytes.Buffer
+		err := jpeg.Encode(&dstFile, img, &jpeg.Options{Quality: JPGQuality})
+		if err != nil {
+			return err
+		}
+
+		err = app.fileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -209,20 +313,27 @@ func generateThumbnailName(fileHeader *multipart.FileHeader) (string, error) {
 
 func processThumbnailImage(img image.Image, width, height int) (image.Image, error) {
 
-	img = utils.CenterCropToAspectRatio(img, 16.0/9.0)
+	img = utils.CenterCropToAspectRatio(img, ThumbnailAspectRatio)
 	img = utils.ResizeImage(img, width, height)
 	return img, nil
 }
 
-func processProfileImage(file io.Reader) (image.Image, error) {
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
-
+func processProfileImage(img image.Image, width int) (image.Image, error) {
 	img = utils.CenterCropToAspectRatio(img, 1.0)
-	img = utils.ResizeImage(img, TargetProfileWidth, TargetProfileWidth)
+	img = utils.ResizeImage(img, width, width)
 	return img, nil
+}
+
+func GetLargest16x9Dimensions(width, height int) (int, int) {
+	const aspectRatio = 16.0 / 9.0
+	widthBasedHeight := int(math.Round(float64(width) / aspectRatio))
+	heightBasedWidth := int(math.Round(float64(height) * aspectRatio))
+
+	if widthBasedHeight <= height {
+		return width, widthBasedHeight
+	} else {
+		return heightBasedWidth, height
+	}
 }
 
 func getFileExtension(header *multipart.FileHeader) (string, error) {
