@@ -128,7 +128,7 @@ func (app *application) updateCastPage(w http.ResponseWriter, r *http.Request) {
 	form := convertCastMembertoForm(castMember)
 	form.ID = safeDeref(castMember.ID)
 	form.Action = fmt.Sprintf("/cast/%d/update", castId)
-	form.ThumbnailName = fmt.Sprintf("%s/cast/thumbnail/%s",
+	form.ThumbnailName = fmt.Sprintf("%s/cast/thumbnail/small/%s",
 		app.baseImgUrl, form.ThumbnailName)
 	form.ProfileImage = fmt.Sprintf("%s/cast/profile/small/%s",
 		app.baseImgUrl, form.ProfileImage)
@@ -311,4 +311,49 @@ func (app *application) deleteCast(w http.ResponseWriter, r *http.Request) {
 
 	table := views.CastTableView(cast, sketchId, app.baseImgUrl)
 	app.render(r, w, http.StatusOK, "cast-table.gohtml", "cast-table", table)
+}
+
+func (app *application) castDropdown(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	sketchParam := r.Form.Get("sketch")
+	sketchId, err := strconv.Atoi(sketchParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	castMembers, err := app.cast.GetCastMembers(sketchId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	results := dropdownSearchResults{}
+	res := []result{}
+	for _, cm := range castMembers {
+		r := result{}
+		r.ImageUrl = fmt.Sprintf("%s/cast/profile/small/%s", app.baseImgUrl, *cm.ProfileImg)
+		r.ID = *cm.ID
+		r.Text = PrintPersonName(cm.Actor)
+		if safeDeref(cm.CharacterName) != "" {
+			r.Text += fmt.Sprintf(" as %s", *cm.CharacterName)
+		}
+		if cm.ProfileImg != nil {
+			r.Image = *cm.ProfileImg
+		} else {
+			r.Image = "missing-profile.jpg"
+		}
+		res = append(res, r)
+	}
+
+	results.Results = res
+
+	w.Header().Add("Hx-Trigger-After-Swap", "insertDropdownItem")
+
+	data := app.newTemplateData(r)
+	data.DropdownResults = results
+
+	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
+
 }

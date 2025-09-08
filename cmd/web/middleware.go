@@ -89,6 +89,7 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !app.isAutheticated(r) {
 			app.sessionManager.Put(r.Context(), "postLoginRedirectURL", r.URL.Path)
+			w.Header().Add("Hx-Redirect", "/login")
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}

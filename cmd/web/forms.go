@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mime/multipart"
 
-	"sketchdb.cozycole.net/internal/utils"
 	"sketchdb.cozycole.net/internal/validator"
 )
 
@@ -204,14 +203,7 @@ func (app *application) validateSketchForm(form *sketchForm) {
 	}
 	defer thumbnail.Close()
 
-	form.CheckField(validator.IsMime(thumbnail, "image/jpeg", "image/png"), "thumbnail", "Uploaded file must be jpg or png")
-	width, height, err := utils.GetImageDimensions(thumbnail)
-	if err != nil {
-		form.AddFieldError("thumbnail", "Unable to determine image dimensions")
-		return
-	}
-
-	form.CheckField(width >= LargeThumbnailWidth && height >= LargeThumbnailHeight, "thumbnail", "Thumbnail dimensions must be at least 480x360")
+	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg or png")
 }
 
 type castForm struct {
@@ -266,21 +258,6 @@ func (app *application) validateCastForm(form *castForm) {
 
 		form.CheckField(validator.IsMime(thumbnail, "image/jpeg"),
 			"characterThumbnail", "Uploaded file must be jpg or png")
-
-		width, height, err := utils.GetImageDimensions(thumbnail)
-		if err != nil {
-			app.errorLog.Print(err)
-			form.AddFieldError("characterThumbnail", "Unable to determine image dimensions")
-			return
-		}
-
-		form.CheckField(width >= MediumThumbnailWidth && height >= MediumThumbnailHeight,
-			"characterThumbnail",
-			fmt.Sprintf(
-				"Thumbnail dimensions must be at least %dx%d",
-				MediumThumbnailWidth, MediumThumbnailHeight,
-			),
-		)
 	}
 
 	profile := form.CharacterProfile
@@ -539,4 +516,57 @@ func (app *application) validateRecurringForm(form *recurringForm) {
 	defer thumbnail.Close()
 
 	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg")
+}
+
+type momentForm struct {
+	ID                  int    `form:"id"`
+	SketchID            int    `form:"sketchId"`
+	Timestamp           string `form:"timestamp"`
+	Description         string `form:"description"`
+	Action              string `form:"-"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateMomentForm(form *momentForm) {
+	if form.SketchID == 0 {
+		form.AddNonFieldError("Sketch ID not defined in form")
+		return
+	}
+	_, err := parseTimestamp(form.Timestamp)
+	form.CheckField(err == nil, "timestamp", "Invalid timestamp, ensure it's of the format mm:ss")
+}
+
+type quoteForm struct {
+	SketchID            int          `form:"sketchId"`
+	MomentID            int          `form:"momentId"`
+	QuoteID             []int        `form:"quoteId"`
+	CastMemberID        []int        `form:"castId"`
+	CastImageUrl        []string     `form:"-"`
+	CastMemberName      []string     `form:"-"`
+	LineType            []string     `form:"lineType"`
+	Funny               []string     `form:"funny"`
+	LineText            []string     `form:"lineText"`
+	Action              string       `form:"-"`
+	Flash               flashMessage `form:"-"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateQuoteForm(form *quoteForm) {
+	if form.MomentID == 0 {
+		form.AddNonFieldError("Moment ID not defined")
+		return
+	}
+
+	for i := range len(form.QuoteID) {
+		if form.CastMemberID[i] == 0 {
+			form.AddNonFieldError("Ensure all cast members are defined")
+		}
+	}
+}
+
+type quoteTagForm struct {
+	ID                  int    `form:"id"`
+	Name                string `form:"tag"`
+	Action              string `form:"-"`
+	validator.Validator `form:"-"`
 }

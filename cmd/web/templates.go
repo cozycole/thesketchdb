@@ -70,6 +70,14 @@ func PrintPersonName(a *models.Person) string {
 	return name + " " + *a.Last
 }
 
+func until(n int) []int {
+	out := make([]int, n)
+	for i := range out {
+		out[i] = i
+	}
+	return out
+}
+
 func dict(values ...any) map[string]any {
 	if len(values)%2 != 0 {
 		panic("invalid dict call")
@@ -97,10 +105,9 @@ func derefString(s *string) string {
 // functions from template). NOTE: The tempalte functions should only
 // return a single value
 var functions = template.FuncMap{
-	"dict":            dict,
-	"derefString":     derefString,
-	"formDate":        formDate,
-	"PrintPersonName": PrintPersonName,
+	"dict":        dict,
+	"until":       until,
+	"derefString": derefString,
 }
 
 // Getting mapping of html page filename to template set for the page

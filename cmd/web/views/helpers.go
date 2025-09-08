@@ -50,6 +50,23 @@ func PrintPersonName(a *models.Person) string {
 	return name + " " + *a.Last
 }
 
+func PrintCastBlurb(c *models.CastMember) string {
+	if c == nil {
+		return ""
+	}
+
+	pName := PrintPersonName(c.Actor)
+	if pName == "" {
+		pName = "Undefined Person"
+	}
+
+	cName := safeDeref(c.CharacterName)
+	if cName != "" {
+		return pName + " as " + cName
+	}
+	return pName
+}
+
 func PrintEpisodeName(e *models.Episode) string {
 	if e == nil {
 		return ""
@@ -69,7 +86,7 @@ func PrintEpisodeName(e *models.Episode) string {
 	return out
 }
 
-func uppercaseFirst(s string) string {
+func UppercaseFirst(s string) string {
 	if s == "" {
 		return s
 	}

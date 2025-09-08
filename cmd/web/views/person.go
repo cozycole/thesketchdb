@@ -37,7 +37,7 @@ func PersonPageView(
 	page.Name = PrintPersonName(person)
 
 	if person.ProfileImg != nil {
-		page.Image = fmt.Sprintf("%s/person/small/%s", baseImgUrl, *person.ProfileImg)
+		page.Image = fmt.Sprintf("%s/person/medium/%s", baseImgUrl, *person.ProfileImg)
 	}
 
 	if person.BirthDate != nil {
@@ -143,7 +143,7 @@ func ShowCreatorGalleryView(creatorShows []*models.CreatorShowCounts, personId i
 			safeDeref(cs.ID),
 		)
 
-		imageUrl := fmt.Sprintf("%s/%s/%s",
+		imageUrl := fmt.Sprintf("%s/%s/medium/%s",
 			baseImageUrl,
 			safeDeref(cs.Type),
 			safeDeref(cs.ImageName),

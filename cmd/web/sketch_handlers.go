@@ -53,12 +53,16 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 }
 
 type sketchFormPage struct {
-	SketchID    int
-	SketchUrl   string
-	Title       string
-	SketchForm  sketchForm
-	CastSection castSection
-	TagTable    views.TagTable
+	SketchID       int
+	SketchUrl      string
+	Title          string
+	SketchForm     sketchForm
+	CastSection    castSection
+	TagTable       views.TagTable
+	Moments        []UpdateMoment
+	MomentForm     momentForm
+	EmptyQuoteForm quoteForm
+	QuoteTable     views.QuoteTableForm
 }
 
 func (app *application) sketchAddPage(w http.ResponseWriter, r *http.Request) {
@@ -147,6 +151,16 @@ type castSection struct {
 	CastTable views.CastTable
 }
 
+var emptyQuoteForm = quoteForm{
+	QuoteID:        []int{0},
+	CastMemberID:   []int{0},
+	CastImageUrl:   []string{""},
+	CastMemberName: []string{""},
+	LineText:       []string{""},
+	Funny:          []string{""},
+	LineType:       []string{""},
+}
+
 func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
@@ -171,7 +185,7 @@ func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request)
 	form.Action = fmt.Sprintf("/sketch/%d/update", safeDeref(sketch.ID))
 
 	cast, err := app.cast.GetCastMembers(*sketch.ID)
-	if err != nil && errors.Is(err, models.ErrNoRecord) {
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
 	}
@@ -184,6 +198,23 @@ func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	moments, err := app.moments.GetBySketch(sketchId)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		app.serverError(r, w, err)
+		return
+	}
+
+	// couple moment update form with their respective quote table form
+	updateMoments := []UpdateMoment{}
+	for _, m := range moments {
+		mid := safeDeref(m.ID)
+		momentForm := app.convertMomenttoForm(m)
+		momentForm.Action = fmt.Sprintf("/moment/%d", mid)
+		quoteForm := app.convertQuotestoForm(sketchId, mid, m.Quotes)
+		updateMoments = append(updateMoments, UpdateMoment{mid, momentForm, quoteForm})
+	}
+
+	emptyQuoteForm.SketchID = sketchId
 	data := app.newTemplateData(r)
 	data.Page = sketchFormPage{
 		SketchID:   sketchId,
@@ -194,7 +225,10 @@ func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request)
 			SketchID:  sketchId,
 			CastTable: castTable,
 		},
-		TagTable: views.TagTableView(tags, sketchId),
+		Moments:        updateMoments,
+		MomentForm:     momentForm{SketchID: sketchId, Action: "/moment/add"},
+		EmptyQuoteForm: emptyQuoteForm, // for template
+		TagTable:       views.TagTableView(tags, sketchId),
 	}
 
 	app.render(r, w, http.StatusOK, "sketch-form-page.gohtml", "base", data)

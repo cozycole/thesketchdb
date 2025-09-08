@@ -87,6 +87,15 @@ func (m *CastModel) GetById(id int) (*CastMember, error) {
 }
 
 func (m *CastModel) Insert(sketchId int, member *CastMember) (int, error) {
+	var actorId, characterId *int
+	if member.Actor != nil && safeDeref(member.Actor.ID) != 0 {
+		actorId = member.Actor.ID
+	}
+
+	if member.Character != nil && safeDeref(member.Character.ID) != 0 {
+		characterId = member.Character.ID
+	}
+
 	stmt := `
 	INSERT INTO cast_members (
 	sketch_id, person_id, character_name, character_id, position, role, minor,
@@ -94,8 +103,8 @@ func (m *CastModel) Insert(sketchId int, member *CastMember) (int, error) {
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	RETURNING id;`
 	result := m.DB.QueryRow(
-		context.Background(), stmt, sketchId, member.Actor.ID, member.CharacterName,
-		member.Character.ID, member.Position, member.CastRole, member.MinorRole,
+		context.Background(), stmt, sketchId, actorId, member.CharacterName,
+		characterId, member.Position, member.CastRole, member.MinorRole,
 		member.ThumbnailName, member.ProfileImg)
 
 	var id int

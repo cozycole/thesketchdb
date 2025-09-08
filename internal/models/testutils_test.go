@@ -7,14 +7,20 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 )
 
 func newTestDB(t *testing.T) *pgxpool.Pool {
-	godotenv.Load()
-	cleanup := false
-
 	db, err := pgxpool.New(context.Background(), os.Getenv("TEST_DB_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	teardownScript, err := os.ReadFile("../../sql/teardown.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.Exec(context.Background(), string(teardownScript))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,24 +39,22 @@ func newTestDB(t *testing.T) *pgxpool.Pool {
 		}
 	}
 
-	if cleanup {
-		t.Cleanup(func() {
-			script, err := os.ReadFile("../../sql/teardown.sql")
-			if err != nil {
-				t.Fatal(err)
-			}
+	t.Cleanup(func() {
+		_, err = db.Exec(context.Background(), string(teardownScript))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			_, err = db.Exec(context.Background(), string(script))
-			if err != nil {
-				t.Fatal(err)
-			}
+		db.Close()
+	})
 
-			db.Close()
-		})
-	}
 	return db
 }
 
 func restoreDbScript(path string) error {
 	return exec.Command("psql", os.Getenv("TEST_DB_URL"), "-f", path).Run()
+}
+
+func ptr[T any](v T) *T {
+	return &v
 }

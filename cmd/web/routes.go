@@ -14,6 +14,13 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 			fs := http.FileServer(http.Dir(staticRoute))
 			app.infoLog.Printf("Starting static file server rooted at %s\n", staticRoute)
 			r.Handle("/static/*", http.StripPrefix("/static/", fs))
+
+			r.Handle("/static/*", http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+				w.Header().Set("Pragma", "no-cache")
+				w.Header().Set("Expires", "0")
+				fs.ServeHTTP(w, r)
+			})))
 		}
 
 		if app.fileStorage.Type() == "Local" {
@@ -74,6 +81,11 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 		r.Get("/episode/{id}/{slug}", app.viewEpisode)
 		r.Get("/episode/search", app.episodeSearch)
 
+		r.Post("/moment/add", app.momentAdd)
+		r.Post("/moment/{id}", app.momentUpdate)
+		r.Delete("/moment/{id}", app.momentDelete)
+		r.Post("/moment/quotes", app.quoteUpdate)
+
 		r.Get("/category/search", app.categorySearch)
 		r.Get("/tag/search", app.tagSearch)
 
@@ -106,10 +118,13 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 
 		r.Get("/sketch/{id}/cast", app.requireRoles(editorAdmin, app.addCastPage))
 		r.Post("/sketch/{id}/cast", app.requireRoles(editorAdmin, app.addCast))
+
 		r.Get("/cast/{id}/update", app.updateCastPage)
 		r.Post("/cast/{castId}/update", app.requireRoles(editorAdmin, app.updateCast))
 		r.Delete("/cast/{castId}", app.requireRoles(editorAdmin, app.deleteCast))
 		r.Patch("/sketch/{id}/cast/order", app.requireRoles(editorAdmin, app.orderCast))
+
+		r.Get("/cast", app.requireRoles(editorAdmin, app.castDropdown))
 
 		r.Get("/show/add", app.requireRoles(editorAdmin, app.addShowPage))
 		r.Post("/show/add", app.requireRoles(editorAdmin, app.addShow))

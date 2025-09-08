@@ -28,13 +28,18 @@ const (
 	LargeProfileWidth     = 512
 	MediumProfileWidth    = 256
 	SmallProfileWidth     = 88
-	TargetProfileWidth    = 176
 )
 
 func (app *application) deleteImage(prefix, imgName string) error {
-	imgSubPath := path.Join(prefix, imgName)
-	app.infoLog.Printf("Deleting %s\n", imgSubPath)
-	return app.fileStorage.DeleteFile(imgSubPath)
+	for _, size := range []string{"small", "medium", "large"} {
+		imgSubPath := path.Join(prefix, size, imgName)
+		app.infoLog.Printf("Deleting %s\n", imgSubPath)
+		err := app.fileStorage.DeleteFile(imgSubPath)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (app *application) saveCastImages(member *models.CastMember) error {

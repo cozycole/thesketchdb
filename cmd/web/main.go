@@ -33,6 +33,7 @@ type application struct {
 	categories     models.CategoryInterface
 	characters     models.CharacterModelInterface
 	creators       models.CreatorModelInterface
+	moments        models.MomentModelInterface
 	people         models.PersonModelInterface
 	profile        models.ProfileModelInterface
 	recurring      models.RecurringModelInterface
@@ -92,8 +93,8 @@ func main() {
 		origin = os.Getenv("DEV_ORIGIN")
 
 		// set paths for serving js and css
-		StaticAssets["css"] = "/dist/styles.css"
-		StaticAssets["js"] = "/dist/main.js"
+		StaticAssets["css"] = "dist/styles.css"
+		StaticAssets["js"] = "dist/main.js"
 
 		if *localImgServer {
 			imgStoragePath = os.Getenv("DEV_IMG_DISK_STORAGE")
@@ -165,6 +166,7 @@ func main() {
 		categories:     &models.CategoryModel{DB: dbpool},
 		characters:     &models.CharacterModel{DB: dbpool},
 		creators:       &models.CreatorModel{DB: dbpool},
+		moments:        &models.MomentModel{DB: dbpool},
 		people:         &models.PersonModel{DB: dbpool},
 		profile:        &models.ProfileModel{DB: dbpool},
 		recurring:      &models.RecurringModel{DB: dbpool},

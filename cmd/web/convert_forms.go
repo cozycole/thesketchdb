@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"sketchdb.cozycole.net/cmd/web/views"
@@ -391,4 +392,78 @@ func (app *application) convertFormtoRecurring(form *recurringForm) models.Recur
 		ThumbnailName: &form.ThumbnailName,
 	}
 
+}
+
+func (app *application) convertFormtoMoment(form *momentForm) models.Moment {
+	intTime, _ := parseTimestamp(form.Timestamp)
+	return models.Moment{
+		ID:        &form.ID,
+		Timestamp: &intTime,
+		Sketch:    &models.Sketch{ID: &form.SketchID},
+	}
+
+}
+
+func (app *application) convertMomenttoForm(moment *models.Moment) momentForm {
+	var sketchId int
+	if moment.Sketch != nil {
+		sketchId = safeDeref(moment.Sketch.ID)
+	}
+
+	timestampString := secondsToMMSS(safeDeref(moment.Timestamp))
+	return momentForm{
+		ID:        safeDeref(moment.ID),
+		SketchID:  sketchId,
+		Timestamp: timestampString,
+	}
+
+}
+
+func (app *application) convertFormtoQuotes(f *quoteForm) []*models.Quote {
+	n := len(f.QuoteID)
+	quotes := make([]*models.Quote, 0, n)
+	for i := range n {
+		quotes = append(quotes, &models.Quote{
+			ID:         &f.QuoteID[i],
+			CastMember: &models.CastMember{ID: &f.CastMemberID[i]},
+			Text:       &f.LineText[i],
+			Type:       &f.LineType[i],
+			Funny:      &f.Funny[i],
+			Position:   ptr(i),
+		})
+	}
+
+	return quotes
+}
+
+func (app *application) convertQuotestoForm(sketchId int, momentId int, quotes []*models.Quote) quoteForm {
+	f := quoteForm{SketchID: sketchId, MomentID: momentId}
+	for _, q := range quotes {
+		if q.CastMember != nil {
+			var img, text string
+			castId := safeDeref(q.CastMember.ID)
+			cm, _ := app.cast.GetById(castId)
+			if cm == nil {
+				castId = 0
+			} else {
+				img = fmt.Sprintf(
+					"%s/cast/profile/small/%s",
+					app.baseImgUrl,
+					safeDeref(q.CastMember.ProfileImg))
+
+				text = views.PrintCastBlurb(cm)
+			}
+
+			f.CastMemberID = append(f.CastMemberID, castId)
+			f.CastImageUrl = append(f.CastImageUrl, img)
+			f.CastMemberName = append(f.CastMemberName, text)
+		}
+
+		f.QuoteID = append(f.QuoteID, safeDeref(q.ID))
+		f.LineText = append(f.LineText, safeDeref(q.Text))
+		f.LineType = append(f.LineType, views.UppercaseFirst(safeDeref(q.Type)))
+		f.Funny = append(f.Funny, views.UppercaseFirst(safeDeref(q.Type)))
+	}
+
+	return f
 }

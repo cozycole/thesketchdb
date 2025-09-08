@@ -1,23 +1,38 @@
 {{ define "flash-message" }}
   {{ with .Flash }}
-    {{- if eq .Level "error" -}}
-      <flash-message type="error" duration="7000">
-        <p class="w-fit bg-red-100 text-red-800 px-4 py-2 rounded-md">
-          {{- .Message -}}
-        </p>
-      </flash-message>
-    {{- else if eq .Level "success" -}}
-      <flash-message type="success" duration="5000">
-        <p class="w-fit bg-green-100 text-green-800 px-4 py-2 rounded-md">
-          {{- .Message -}}
-        </p>
-      </flash-message>
-    {{- else if eq .Level "info" -}}
-      <flash-message type="info" duration="5000">
-        <p class="w-fit bg-blue-100 text-blue-800 px-4 py-2 rounded-md">
-          {{- .Message -}}
-        </p>
-      </flash-message>
-    {{- end -}}
+    <div id="flash" hx-swap-oob="true">
+      {{- if eq .Level "error" -}}
+        <flash-message
+          class="fixed z-50 top-3 right-3"
+          type="error"
+          duration="7000"
+        >
+          <p class="w-fit bg-red-100 text-red-800 px-4 py-2 rounded-md">
+            {{- .Message -}}
+          </p>
+        </flash-message>
+      {{- else if eq .Level "success" -}}
+        <flash-message
+          class="fixed z-50 top-3 right-3"
+          type="success"
+          duration="5000"
+        >
+          <p class="w-fit bg-green-100 text-green-800 px-4 py-2 rounded-md">
+            {{- .Message -}}
+          </p>
+        </flash-message>
+      {{- else if eq .Level "info" -}}
+        <flash-message
+          class="fixed z-50 top-3 right-3"
+          type="info"
+          duration="5000"
+        >
+          <p class="w-fit bg-blue-100 text-blue-800 px-4 py-2 rounded-md">
+            {{- .Message -}}
+          </p>
+        </flash-message>
+      {{- end -}}
+
+    </div>
   {{- end -}}
 {{ end }}

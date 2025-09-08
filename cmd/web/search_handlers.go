@@ -57,10 +57,10 @@ type dropdownSearchResults struct {
 }
 
 type result struct {
-	Type  string
-	ID    int
-	Text  string
-	Image string
+	ImageUrl string
+	ID       int
+	Text     string
+	Image    string
 }
 
 func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +87,7 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 			res := []result{}
 			for _, row := range dbResults {
 				r := result{}
-				r.Type = "person"
+				r.ImageUrl = fmt.Sprintf("%s/person/small/%s", app.baseImgUrl, safeDeref(row.ProfileImg))
 				r.Text = *row.First + " " + *row.Last
 				r.ID = *row.ID
 				if row.ProfileImg != nil {
@@ -126,7 +126,7 @@ func (app *application) episodeSearch(w http.ResponseWriter, r *http.Request) {
 			res := []result{}
 			for _, e := range episodes {
 				r := result{}
-				r.Type = "episode"
+				r.ImageUrl = fmt.Sprintf("%s/episode/small/%s", app.baseImgUrl, safeDeref(e.Thumbnail))
 				r.Text = views.PrintEpisodeName(e)
 				r.ID = safeDeref(e.ID)
 				res = append(res, r)
@@ -169,7 +169,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 			res := []result{}
 			for _, c := range characters {
 				r := result{}
-				r.Type = "character"
+				r.ImageUrl = fmt.Sprintf("%s/character/small/%s", app.baseImgUrl, safeDeref(c.Image))
 				r.Text = *c.Name
 				r.ID = *c.ID
 				if c.Image != nil {
@@ -216,7 +216,7 @@ func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 			res := []result{}
 			for _, c := range creators {
 				r := result{}
-				r.Type = "creator"
+				r.ImageUrl = fmt.Sprintf("%s/creator/small/%s", app.baseImgUrl, safeDeref(c.ProfileImage))
 				r.ID = *c.ID
 				r.Text = *c.Name
 				if c.ProfileImage != nil {
@@ -262,7 +262,7 @@ func (app *application) showSearch(w http.ResponseWriter, r *http.Request) {
 			res := []result{}
 			for _, s := range shows {
 				r := result{}
-				r.Type = "show"
+				r.ImageUrl = fmt.Sprintf("%s/show/small/%s", app.baseImgUrl, safeDeref(s.ProfileImg))
 				r.ID = *s.ID
 				r.Text = *s.Name
 				if s.ProfileImg != nil {
@@ -449,14 +449,4 @@ func (app *application) recurringSearch(w http.ResponseWriter, r *http.Request) 
 	data.DropdownResults = results
 
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
-}
-
-func getFormattedQueries(query string) (string, string, string) {
-	// to be used in the ui
-	rawQuery, _ := url.QueryUnescape(query)
-	// to be uised in urls
-	urlQuery := url.QueryEscape(strings.Replace(query, "|", "", -1))
-	// to be used in database query
-	filterQuery := strings.Join(strings.Fields(rawQuery), " | ")
-	return rawQuery, urlQuery, filterQuery
 }

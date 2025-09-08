@@ -48,7 +48,7 @@
         </div>
         <div class="imagePreview">
           {{ with .ThumbnailName }}
-            <img src="{{ . }}" class="max-w-72" />
+            <img src="{{ . }}" class="aspect-video max-w-72" />
           {{ end }}
         </div>
       </img-preview>
@@ -79,7 +79,7 @@
         </div>
         <div class="imagePreview">
           {{ with .ProfileImage }}
-            <img src="{{ . }}" class="max-w-44" />
+            <img src="{{ . }}" class="aspect-square max-w-44" />
           {{ end }}
         </div>
       </img-preview>

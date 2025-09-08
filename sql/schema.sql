@@ -23,7 +23,6 @@ CREATE TABLE IF NOT EXISTS character (
     character_type character_type NOT NULL,
     description TEXT, 
     img_name TEXT,
-    insert_timestamp TIMESTAMP DEFAULT now(),
     search_vector tsvector,
     person_id INT REFERENCES person(id),
     popularity_score REAL DEFAULT 0,
@@ -121,7 +120,7 @@ CREATE TABLE IF NOT EXISTS sketch (
 CREATE TABLE IF NOT EXISTS cast_members (
     id SERIAL PRIMARY KEY,
     sketch_id INT references sketch(id) NOT NULL,
-    person_id INT references person(id) NOT NULL,
+    person_id INT references person(id),
     character_name text DEFAULT '',
     character_id INT references character(id),
     position INT,
@@ -152,6 +151,31 @@ CREATE TABLE IF NOT EXISTS users (
     profile_image TEXT DEFAULT 'missing-profile.jpg'
 );
 
+CREATE TABLE IF NOT EXISTS moment (
+    id SERIAL PRIMARY KEY,
+    sketch_id INT references sketch(id) NOT NULL,
+    timestamp INT NOT NULL,
+    insert_timestamp timestamp DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS quote (
+    id SERIAL PRIMARY KEY,
+    moment_id INT references moment(id) NOT NULL,
+    cast_id INT references cast_members(id) NOT NULL,
+    text TEXT,
+    type TEXT,
+    funny TEXT,
+    position INT
+);
+
+--CREATE TABLE quote_tags_rel (
+--    quote_id INT NOT NULL,
+--    tag_id   INT NOT NULL,
+--    PRIMARY KEY (quote_id, tag_id),
+--    FOREIGN KEY (quote_id) REFERENCES quote(id) ON DELETE CASCADE,
+--    FOREIGN KEY (tag_id)   REFERENCES tag(id)   ON DELETE CASCADE
+--);
+
 CREATE TABLE IF NOT EXISTS likes (
     created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
     user_id INT references users(id) NOT NULL,
@@ -163,8 +187,8 @@ CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
     name TEXT NOT NULL,
-    slug TEXT NOT NULL
-    -- parent_id INT REFERENCES categories(id) ON DELETE SET NULL
+    slug TEXT NOT NULL,
+    parent_id INT REFERENCES categories(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS tags (
@@ -175,7 +199,7 @@ CREATE TABLE IF NOT EXISTS tags (
     category_id INT REFERENCES categories(id) ON DELETE SET NULL
 );
 
-CREATE TABLE sketch_tags (
+CREATE TABLE IF NOT EXISTS sketch_tags (
     sketch_id INT references sketch(id),
     tag_id INT references tags(id),
     PRIMARY KEY (sketch_id, tag_id)
