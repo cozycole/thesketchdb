@@ -20,17 +20,39 @@
   >
     <input type="hidden" name="id" value="{{ .ID }}" />
     <div>
-      <label class="inline-block my-2">Tag Name</label>
+      <label class="inline-block mt-2">Tag Name</label>
       {{ with .FieldErrors.tag }}
         <label class="block text-red-700">{{ . }}</label>
       {{ end }}
       <input
         name="tag"
+        autocomplete="off"
         type="text"
         value="{{ .Name }}"
         class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
         placeholder="Enter tag name"
       />
+    </div>
+    <div>
+      <label class="block mt-2">Type</label>
+      {{ with .FieldErrors.type }}
+        <label class="block text-red-700">{{ . }}</label>
+      {{ end }}
+      <select
+        class="w-24 p-2 border border-slate-300 bg-slate-50 rounded-lg"
+        name="type"
+        value="{{ .Type }}"
+      >
+        <option value="sketch" {{ if eq .Type "sketch" }}selected{{ end }}>
+          Sketch
+        </option>
+        <option value="cast" {{ if eq .Type "cast" }}selected{{ end }}>
+          Cast
+        </option>
+        <option value="quote" {{ if eq .Type "quote" }}selected{{ end }}>
+          Quote
+        </option>
+      </select>
     </div>
     <div class="w-full">
       <form-search>

@@ -13,7 +13,6 @@ npx esbuild ./ui/static/js/main.js \
   --outfile=./ui/static/js/dist/main.js \
   --sourcemap \
   --watch=forever 
-  # --minify FOR PRODUCTION
 
 browser-sync start \
   --watch \

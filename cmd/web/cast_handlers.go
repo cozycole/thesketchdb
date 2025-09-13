@@ -10,6 +10,11 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
+type FormModal struct {
+	Title string
+	Form  any
+}
+
 func (app *application) addCastPage(w http.ResponseWriter, r *http.Request) {
 	// this is a sub template used by htmx to insert into update page. If you want
 	// to make a separate page for it, check the headers and have different template loaded
@@ -40,7 +45,8 @@ func (app *application) addCastPage(w http.ResponseWriter, r *http.Request) {
 	form := castForm{
 		Action: fmt.Sprintf("/sketch/%d/cast", sketchId),
 	}
-	app.render(r, w, http.StatusOK, "cast-form.gohtml", "cast-form-modal", form)
+	modal := FormModal{Title: "Add Cast Member", Form: form}
+	app.render(r, w, http.StatusOK, "cast-form.gohtml", "cast-form-modal", modal)
 }
 
 func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
@@ -138,8 +144,8 @@ func (app *application) updateCastPage(w http.ResponseWriter, r *http.Request) {
 	if isHxRequest {
 		// put the render below here and render full page if necessary
 	}
-
-	app.render(r, w, http.StatusOK, "cast-form.gohtml", "cast-form-modal", form)
+	modal := FormModal{Title: "Update Cast Member", Form: form}
+	app.render(r, w, http.StatusOK, "cast-form.gohtml", "cast-form-modal", modal)
 }
 
 func (app *application) updateCast(w http.ResponseWriter, r *http.Request) {

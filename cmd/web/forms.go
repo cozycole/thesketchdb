@@ -318,6 +318,7 @@ func (app *application) validateCategoryForm(form *categoryForm) {
 type tagForm struct {
 	ID                  int    `form:"id"`
 	Name                string `form:"tag"`
+	Type                string `form:"type"`
 	CategoryID          int    `form:"categoryId"`
 	CategoryInput       string `form:"categoryInput"`
 	Action              string `form:"-"`
@@ -546,6 +547,7 @@ type quoteForm struct {
 	LineType            []string     `form:"lineType"`
 	Funny               []string     `form:"funny"`
 	LineText            []string     `form:"lineText"`
+	TagCount            []int        `form:"-"`
 	Action              string       `form:"-"`
 	Flash               flashMessage `form:"-"`
 	validator.Validator `form:"-"`
@@ -566,7 +568,8 @@ func (app *application) validateQuoteForm(form *quoteForm) {
 
 type quoteTagForm struct {
 	ID                  int    `form:"id"`
-	Name                string `form:"tag"`
+	MomentID            int    `form:"-"`
+	Tags                []int  `form:"tag_ids[]"`
 	Action              string `form:"-"`
 	validator.Validator `form:"-"`
 }

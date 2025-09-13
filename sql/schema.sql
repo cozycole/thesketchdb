@@ -168,21 +168,6 @@ CREATE TABLE IF NOT EXISTS quote (
     position INT
 );
 
---CREATE TABLE quote_tags_rel (
---    quote_id INT NOT NULL,
---    tag_id   INT NOT NULL,
---    PRIMARY KEY (quote_id, tag_id),
---    FOREIGN KEY (quote_id) REFERENCES quote(id) ON DELETE CASCADE,
---    FOREIGN KEY (tag_id)   REFERENCES tag(id)   ON DELETE CASCADE
---);
-
-CREATE TABLE IF NOT EXISTS likes (
-    created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
-    user_id INT references users(id) NOT NULL,
-    sketch_id INT references sketch(id) NOT NULL,
-    PRIMARY KEY (user_id, sketch_id)
-);
-
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
@@ -196,7 +181,23 @@ CREATE TABLE IF NOT EXISTS tags (
     created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
     name TEXT NOT NULL,
     slug TEXT NOT NULL,
+    type TEXT,
     category_id INT REFERENCES categories(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS quote_tags_rel (
+    quote_id INT NOT NULL,
+    tag_id   INT NOT NULL,
+    PRIMARY KEY (quote_id, tag_id),
+    FOREIGN KEY (quote_id) REFERENCES quote(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id)   REFERENCES tags(id)   ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS likes (
+    created_at TIMESTAMP(0) with time zone NOT NULL DEFAULT NOW(),
+    user_id INT references users(id) NOT NULL,
+    sketch_id INT references sketch(id) NOT NULL,
+    PRIMARY KEY (user_id, sketch_id)
 );
 
 CREATE TABLE IF NOT EXISTS sketch_tags (

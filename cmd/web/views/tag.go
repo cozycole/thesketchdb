@@ -2,19 +2,24 @@ package views
 
 import (
 	"fmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"sketchdb.cozycole.net/internal/models"
 )
 
 type Tag struct {
-	Name string
-	Url  string
+	ID       int
+	Name     string
+	Url      string
+	Selected bool
 }
 
 func TagsView(tags []*models.Tag) []*Tag {
 	var tagViews []*Tag
 	for _, tag := range tags {
 		var tagName, url string
+
 		if tag.ID != nil && tag.Name != nil {
 			tagName = *tag.Name
 		}
@@ -27,7 +32,8 @@ func TagsView(tags []*models.Tag) []*Tag {
 			url = fmt.Sprintf("/catalog/sketches?tag=%d", *tag.ID)
 		}
 
-		tagViews = append(tagViews, &Tag{Name: tagName, Url: url})
+		tagName = TitleCaseEnglish(tagName)
+		tagViews = append(tagViews, &Tag{ID: safeDeref(tag.ID), Name: tagName, Url: url})
 	}
 
 	return tagViews
@@ -56,7 +62,9 @@ func TagTableView(tags []*models.Tag, sketchID int) TagTable {
 		}
 
 		tagName += safeDeref(tag.Name)
-		row.Name = tagName
+
+		c := cases.Title(language.English)
+		row.Name = c.String(tagName)
 		rows = append(rows, row)
 	}
 	return TagTable{

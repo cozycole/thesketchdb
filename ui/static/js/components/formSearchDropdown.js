@@ -21,12 +21,6 @@ export class FormSearchDropdown extends HTMLElement {
       }
     });
 
-    document.body.addEventListener("htmx:configRequest", function (evt) {
-      // this adds the value of the triggering element to the query parameter of the
-      // url request
-      evt.detail.parameters["query"] = evt.detail.elt.value;
-    });
-
     document.body.addEventListener("click", (e) => {
       if (
         !(

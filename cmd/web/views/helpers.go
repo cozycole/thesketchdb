@@ -4,8 +4,12 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 	"unicode"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"sketchdb.cozycole.net/internal/models"
 )
@@ -221,4 +225,26 @@ func getShowSketchCount(show *models.Show) int {
 	}
 
 	return count
+}
+
+func TitleCaseEnglish(s string) string {
+	exceptions := map[string]bool{
+		"a": true, "an": true, "and": true, "as": true,
+		"at": true, "but": true, "by": true, "for": true,
+		"in": true, "nor": true, "of": true, "on": true,
+		"or": true, "per": true, "the": true, "to": true,
+	}
+
+	words := strings.Fields(s)
+	c := cases.Title(language.English)
+
+	for i, w := range words {
+		lw := strings.ToLower(w)
+		if i != 0 && i != len(words)-1 && exceptions[lw] {
+			words[i] = lw
+		} else {
+			words[i] = c.String(w)
+		}
+	}
+	return strings.Join(words, " ")
 }

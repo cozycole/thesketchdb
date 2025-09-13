@@ -62,7 +62,6 @@ type sketchFormPage struct {
 	Moments        []UpdateMoment
 	MomentForm     momentForm
 	EmptyQuoteForm quoteForm
-	QuoteTable     views.QuoteTableForm
 }
 
 func (app *application) sketchAddPage(w http.ResponseWriter, r *http.Request) {
@@ -151,6 +150,7 @@ type castSection struct {
 	CastTable views.CastTable
 }
 
+// REMEMBER TO UPDATE THIS FORM ON ADDITIONAL FIELDS
 var emptyQuoteForm = quoteForm{
 	QuoteID:        []int{0},
 	CastMemberID:   []int{0},
@@ -159,6 +159,7 @@ var emptyQuoteForm = quoteForm{
 	LineText:       []string{""},
 	Funny:          []string{""},
 	LineType:       []string{""},
+	TagCount:       []int{0},
 }
 
 func (app *application) sketchUpdatePage(w http.ResponseWriter, r *http.Request) {

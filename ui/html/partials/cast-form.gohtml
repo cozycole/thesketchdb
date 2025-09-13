@@ -1,13 +1,13 @@
 {{ define "cast-form-modal" }}
   <div
-    id="formViewer"
+    id="formModal"
     class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto"
   >
     <div
       class="bg-white p-6 rounded-lg shadow-lg w-[32rem] max-h-screen overflow-y-auto"
     >
-      <h1 class="text-xl font-bold">Add/Edit Cast Member</h1>
-      {{ template "cast-form" . }}
+      <h1 class="text-xl font-bold">{{ .Title }}</h1>
+      {{ template "cast-form" .Form }}
     </div>
   </div>
 {{ end }}
@@ -46,9 +46,9 @@
             </div>
           </button>
         </div>
-        <div class="imagePreview">
+        <div class="imagePreview aspect-video w-80">
           {{ with .ThumbnailName }}
-            <img src="{{ . }}" class="aspect-video max-w-72" />
+            <img src="{{ . }}" class="w-full object-cover" />
           {{ end }}
         </div>
       </img-preview>
@@ -77,9 +77,9 @@
             </div>
           </button>
         </div>
-        <div class="imagePreview">
+        <div class="imagePreview aspect-square w-28">
           {{ with .ProfileImage }}
-            <img src="{{ . }}" class="aspect-square max-w-44" />
+            <img src="{{ . }}" class="w-full object-cover" />
           {{ end }}
         </div>
       </img-preview>

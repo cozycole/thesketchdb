@@ -33,9 +33,7 @@ func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 			Limit:  12,
 			Offset: 0,
 			SortBy: "popular",
-			People: []*models.Person{
-				&models.Person{ID: person.ID},
-			},
+			People: []*models.Person{{ID: person.ID}},
 		},
 	)
 

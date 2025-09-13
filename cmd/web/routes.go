@@ -86,6 +86,9 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 		r.Delete("/moment/{id}", app.momentDelete)
 		r.Post("/moment/quotes", app.quoteUpdate)
 
+		r.Get("/quote/{id}/tags", app.quoteTagUpdateForm)
+		r.Post("/quote/{id}/tags", app.quoteTagUpdate)
+
 		r.Get("/category/search", app.categorySearch)
 		r.Get("/tag/search", app.tagSearch)
 

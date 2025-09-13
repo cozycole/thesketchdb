@@ -1,12 +1,4 @@
 export function initShowFormPage() {
-  document.body.addEventListener("htmx:configRequest", function (evt) {
-    // this adds the value of the triggering element to the query parameter of the
-    // url request
-    if (evt.detail.path.includes("search")) {
-      evt.detail.parameters["query"] = evt.detail.elt.value;
-    }
-  });
-
   document.body.addEventListener("htmx:afterSwap", function (evt) {
     // Process formViewer to enable closing on off click
     let formViewer = document.body.querySelector("#formModal");

@@ -305,6 +305,7 @@ func convertFormtoTag(form *tagForm) models.Tag {
 	return models.Tag{
 		ID:       &form.ID,
 		Name:     &form.Name,
+		Type:     &form.Type,
 		Category: &models.Category{ID: categoryId},
 	}
 }
@@ -319,6 +320,7 @@ func convertTagtoForm(tag *models.Tag) tagForm {
 	return tagForm{
 		ID:            safeDeref(tag.ID),
 		Name:          safeDeref(tag.Name),
+		Type:          safeDeref(tag.Type),
 		CategoryID:    categoryId,
 		CategoryInput: categoryName,
 	}
@@ -462,7 +464,8 @@ func (app *application) convertQuotestoForm(sketchId int, momentId int, quotes [
 		f.QuoteID = append(f.QuoteID, safeDeref(q.ID))
 		f.LineText = append(f.LineText, safeDeref(q.Text))
 		f.LineType = append(f.LineType, views.UppercaseFirst(safeDeref(q.Type)))
-		f.Funny = append(f.Funny, views.UppercaseFirst(safeDeref(q.Type)))
+		f.Funny = append(f.Funny, views.UppercaseFirst(safeDeref(q.Funny)))
+		f.TagCount = append(f.TagCount, len(q.Tags))
 	}
 
 	return f

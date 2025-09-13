@@ -181,7 +181,7 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	tagIds := extractUrlParamIDs(r.URL.Query()["tag"])
 	var tagFilter []*models.Tag
 	if len(tagIds) > 0 {
-		tagFilter, err = app.tags.GetTags(&tagIds)
+		tagFilter, err = app.tags.GetTags(tagIds)
 	}
 
 	limit := app.settings.pageSize

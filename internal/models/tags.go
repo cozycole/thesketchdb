@@ -14,6 +14,7 @@ type Tag struct {
 	ID       *int
 	Name     *string
 	Slug     *string
+	Type     *string
 	Category *Category
 	Count    *int
 }
@@ -21,8 +22,8 @@ type Tag struct {
 type TagModelInterface interface {
 	Exists(id int) (bool, error)
 	Get(id int) (*Tag, error)
-	GetTags(ids *[]int) ([]*Tag, error)
-	// GetBySlug(slug string) (*Tag, error)
+	GetTags(ids []int) ([]*Tag, error)
+	GetTagsByType(string) ([]*Tag, error)
 	GetBySketch(sketchId int) ([]*Tag, error)
 	Insert(category *Tag) (int, error)
 	Search(query string) (*[]*Tag, error)
@@ -51,7 +52,7 @@ func (m *TagModel) Exists(id int) (bool, error) {
 
 func (m *TagModel) Get(id int) (*Tag, error) {
 	stmt := `
-		SELECT t.id, t.name, t.slug,
+		SELECT t.id, t.name, t.slug, t.type,
 		c.id, c.name, c.slug
 		FROM tags as t
 		LEFT JOIN categories as c
@@ -61,7 +62,7 @@ func (m *TagModel) Get(id int) (*Tag, error) {
 	var c Category
 	var t Tag
 	err := m.DB.QueryRow(context.Background(), stmt, id).
-		Scan(&t.ID, &t.Name, &t.Slug, &c.ID, &c.Name, &c.Slug)
+		Scan(&t.ID, &t.Name, &t.Slug, &t.Type, &c.ID, &c.Name, &c.Slug)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -74,8 +75,8 @@ func (m *TagModel) Get(id int) (*Tag, error) {
 	return &t, nil
 }
 
-func (m *TagModel) GetTags(ids *[]int) ([]*Tag, error) {
-	if ids != nil && len(*ids) < 1 {
+func (m *TagModel) GetTags(ids []int) ([]*Tag, error) {
+	if ids != nil && len(ids) < 1 {
 		return nil, nil
 	}
 
@@ -84,9 +85,9 @@ func (m *TagModel) GetTags(ids *[]int) ([]*Tag, error) {
 			LEFT JOIN categories as c ON t.category_id = c.id
 			WHERE t.id IN (%s)`
 
-	args := []interface{}{}
+	args := []any{}
 	queryPlaceholders := []string{}
-	for i, id := range *ids {
+	for i, id := range ids {
 		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
 		args = append(args, id)
 	}
@@ -164,22 +165,60 @@ func (m *TagModel) GetBySketch(id int) ([]*Tag, error) {
 	return tags, nil
 }
 
+func (m *TagModel) GetTagsByType(tagType string) ([]*Tag, error) {
+	stmt := `
+		SELECT t.id, t.name, t.slug,
+		c.id, c.name, c.slug
+		FROM tags as t
+		LEFT JOIN categories as c ON t.category_id = c.id
+		WHERE t.type = $1
+	`
+
+	rows, err := m.DB.Query(context.Background(), stmt, tagType)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return []*Tag{}, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	var tags []*Tag
+	for rows.Next() {
+		var c Category
+		var t Tag
+		err := rows.Scan(&t.ID, &t.Name, &t.Slug, &c.ID, &c.Name, &c.Slug)
+		if err != nil {
+			return nil, err
+		}
+
+		t.Category = &c
+
+		tags = append(tags, &t)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return tags, nil
+}
+
 func (m *TagModel) Insert(tag *Tag) (int, error) {
 	stmt := `
-	INSERT INTO tags (name, slug, category_id)
-	VALUES ($1,$2,$3)
+	INSERT INTO tags (name, slug, type, category_id)
+	VALUES ($1,$2,$3,$4)
 	RETURNING id;
 	`
 	var categoryId *int
 	if tag.Category != nil &&
-		tag.Category.ID != nil &&
-		*tag.Category.ID != 0 {
+		safeDeref(tag.Category.ID) != 0 {
 		categoryId = tag.Category.ID
 	}
 
 	var id int
 	err := m.DB.QueryRow(
-		context.Background(), stmt, tag.Name, tag.Slug, categoryId,
+		context.Background(), stmt, tag.Name, tag.Slug,
+		tag.Type, categoryId,
 	).Scan(&id)
 	if err != nil {
 		return 0, err
@@ -228,14 +267,17 @@ func (m *TagModel) Search(query string) (*[]*Tag, error) {
 
 func (m *TagModel) Update(tag *Tag) error {
 	stmt := `
-		UPDATE tags SET name = $1, slug = $2, category_id = $3
-		WHERE id = $4
+		UPDATE tags SET name = $1, slug = $2, type = $3, category_id = $4
+		WHERE id = $5
 	`
 	var categoryId *int
 	if tag.Category != nil && safeDeref(tag.Category.ID) != 0 {
 		categoryId = new(int)
 		*categoryId = safeDeref(tag.Category.ID)
 	}
-	_, err := m.DB.Exec(context.Background(), stmt, tag.Name, tag.Slug, categoryId, tag.ID)
+	_, err := m.DB.Exec(
+		context.Background(), stmt, tag.Name, tag.Slug,
+		tag.Type, categoryId, tag.ID,
+	)
 	return err
 }

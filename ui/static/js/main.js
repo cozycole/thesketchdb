@@ -20,6 +20,7 @@ import { YoutubeEmbed } from "./components/youtubeEmbed.js";
 import { FormSearchDropdown } from "./components/formSearchDropdown.js";
 import { FormDropdown } from "./components/formDropdown.js";
 import { SelectDropdown } from "./components/selectDropdown.js";
+import { TagSelector } from "./components/tagSelector.js";
 
 import "./components/flashMessage.js";
 
@@ -160,6 +161,14 @@ import "./components/flashMessage.js";
         desktopInput.value.trim() === "",
       );
     });
+  });
+
+  document.body.addEventListener("htmx:configRequest", function (evt) {
+    // this adds the value of the triggering element to the query parameter of any
+    // url request to a search endpoint
+    if (evt.detail.path.includes("search")) {
+      evt.detail.parameters["query"] = evt.detail.elt.value;
+    }
   });
 
   switch (pageType) {
