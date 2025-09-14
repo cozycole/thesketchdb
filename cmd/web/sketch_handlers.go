@@ -40,8 +40,14 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 		sketch.Liked = &hasLike
 	}
 
+	moments, err := app.moments.GetBySketch(sketchId)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		app.serverError(r, w, err)
+		return
+	}
+
 	data := app.newTemplateData(r)
-	sketchPage, err := views.SketchPageView(sketch, tags, app.baseImgUrl)
+	sketchPage, err := views.SketchPageView(sketch, moments, tags, app.baseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return

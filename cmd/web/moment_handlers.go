@@ -53,11 +53,11 @@ func (app *application) momentAdd(w http.ResponseWriter, r *http.Request) {
 
 		momentForm := app.convertMomenttoForm(m)
 		momentForm.Action = fmt.Sprintf("/moment/%d", mid)
-		quoteForm := quoteForm{MomentID: mid, SketchID: form.SketchID}
+		quoteForm := app.convertQuotestoForm(form.SketchID, mid, m.Quotes)
 		updateMoments = append(updateMoments, UpdateMoment{mid, momentForm, quoteForm})
 	}
 
-	app.render(r, w, http.StatusOK, "moment.gohtml", "moments", updateMoments)
+	app.render(r, w, http.StatusOK, "moment.gohtml", "update-moments", updateMoments)
 }
 
 func (app *application) momentDelete(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +123,7 @@ func (app *application) momentUpdate(w http.ResponseWriter, r *http.Request) {
 		updateMoments = append(updateMoments, UpdateMoment{mid, momentForm, quoteForm})
 	}
 
-	app.render(r, w, http.StatusOK, "moment.gohtml", "moments", updateMoments)
+	app.render(r, w, http.StatusOK, "moment.gohtml", "update-moments", updateMoments)
 }
 
 func (app *application) quoteUpdate(w http.ResponseWriter, r *http.Request) {

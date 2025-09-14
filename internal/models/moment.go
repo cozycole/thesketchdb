@@ -205,6 +205,8 @@ func (m *MomentModel) GetBySketch(sketchId int) ([]*Moment, error) {
 		SELECT m.id, m.timestamp, 
 		q.id, q.text, q.type, q.funny, q.position,
 		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
+		p.id, p.slug, p.first, p.last, p.profile_img,
+		ch.id, ch.name, ch.img_name,
 		s.id, s.title, s.sketch_number, s.sketch_url, 
 		s.slug, s.thumbnail_name, s.upload_date, s.youtube_id, s.popularity_score,
 		s.part_number, s.duration,
@@ -221,6 +223,8 @@ func (m *MomentModel) GetBySketch(sketchId int) ([]*Moment, error) {
 		LEFT JOIN tags as t ON qtr.tag_id = t.id
 		LEFT JOIN categories as ca ON t.category_id = ca.id
 		LEFT JOIN cast_members as cm ON q.cast_id = cm.id
+		LEFT JOIN person as p ON cm.person_id = p.id
+		LEFT JOIN character as ch ON cm.character_id = ch.id
 		LEFT JOIN sketch_creator_rel as vcr ON s.id = vcr.sketch_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
 		LEFT JOIN episode as e ON s.episode_id = e.id 
@@ -255,6 +259,8 @@ func (m *MomentModel) GetBySketch(sketchId int) ([]*Moment, error) {
 		cm := &CastMember{}
 		t := &Tag{}
 		ca := &Category{}
+		ch := &Character{}
+		p := &Person{}
 
 		hasRows = true
 		err := rows.Scan(
@@ -262,6 +268,8 @@ func (m *MomentModel) GetBySketch(sketchId int) ([]*Moment, error) {
 			&q.ID, &q.Text, &q.Type, &q.Funny, &q.Position,
 			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg,
 			&cm.ThumbnailName,
+			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
+			&ch.ID, &ch.Name, &ch.Image,
 			&s.ID, &s.Title, &s.Number, &s.URL, &s.Slug, &s.ThumbnailName,
 			&s.UploadDate, &s.YoutubeID, &s.Popularity, &s.SeriesPart, &s.Duration,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
@@ -296,6 +304,8 @@ func (m *MomentModel) GetBySketch(sketchId int) ([]*Moment, error) {
 			continue
 		}
 
+		cm.Actor = p
+		cm.Character = ch
 		q.CastMember = cm
 
 		if t.ID != nil {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mime/multipart"
 
+	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/validator"
 )
 
@@ -533,7 +534,7 @@ func (app *application) validateMomentForm(form *momentForm) {
 		form.AddNonFieldError("Sketch ID not defined in form")
 		return
 	}
-	_, err := parseTimestamp(form.Timestamp)
+	_, err := models.ParseTimestamp(form.Timestamp)
 	form.CheckField(err == nil, "timestamp", "Invalid timestamp, ensure it's of the format mm:ss")
 }
 

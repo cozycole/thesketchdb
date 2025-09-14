@@ -235,6 +235,37 @@
             </div>
           </collapse-content>
         </div>
+        <div id="quoteSection" class="w-full my-3 bg-white p-4 rounded-md">
+          <collapse-content>
+            <div class="castHeader flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="w-6 text-slate-900">
+                  {{ template "quote-icon" }}
+                </div>
+                <h2 class="ml-2 text-xl font-bold">Quotes</h2>
+              </div>
+              <button class="toggleBtn transition-all">
+                <svg
+                  class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  focusable="false"
+                >
+                  <path
+                    d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
+                    fill="currentColor"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+            <div
+              id="moments"
+              class="content overflow-hidden transition-all duration-500 ease-in-out"
+            >
+              {{ template "moments" .Moments }}
+            </div>
+          </collapse-content>
+        </div>
         <div id="tagSection" class="w-full my-3 bg-white p-4 rounded-md">
           <collapse-content>
             <div class="flex items-center justify-between">

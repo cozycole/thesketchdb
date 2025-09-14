@@ -38,7 +38,7 @@ export function initSketchFormPage() {
     }
   });
 
-  const momentsContainer = document.querySelector("#moments");
+  const momentsContainer = document.querySelector("#momentsContainer");
   momentsContainer.addEventListener("click", function (evt) {
     const trashButton = evt.target.closest(".trashButton");
     if (trashButton) {
@@ -55,22 +55,22 @@ export function initSketchFormPage() {
           tbody.appendChild(emptyRow);
         }
       }, 0);
+    }
 
-      const btn = evt.target.closest(".addQuoteButton");
-      if (btn) {
-        const form = btn.closest("form");
-        const tableBody = form.querySelector(".quoteTable tbody");
+    const btn = evt.target.closest(".addQuoteButton");
+    if (btn) {
+      const form = btn.closest("form");
+      const tableBody = form.querySelector(".quoteTable tbody");
 
-        const template = document.getElementById("quoteRowTemplate");
-        const newRow = template.content.cloneNode(true);
+      const template = document.getElementById("quoteRowTemplate");
+      const newRow = template.content.cloneNode(true);
 
-        const noQuoteRow = tableBody.querySelector("#noQuoteRow");
-        if (noQuoteRow) noQuoteRow.parentElement.remove();
+      const noQuoteRow = tableBody.querySelector("#noQuoteRow");
+      if (noQuoteRow) noQuoteRow.parentElement.remove();
 
-        // append the new row
-        tableBody.appendChild(newRow);
-        htmx.process(tableBody);
-      }
+      // append the new row
+      tableBody.appendChild(newRow);
+      htmx.process(tableBody);
     }
   });
 

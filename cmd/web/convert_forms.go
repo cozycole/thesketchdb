@@ -397,7 +397,7 @@ func (app *application) convertFormtoRecurring(form *recurringForm) models.Recur
 }
 
 func (app *application) convertFormtoMoment(form *momentForm) models.Moment {
-	intTime, _ := parseTimestamp(form.Timestamp)
+	intTime, _ := models.ParseTimestamp(form.Timestamp)
 	return models.Moment{
 		ID:        &form.ID,
 		Timestamp: &intTime,
@@ -412,7 +412,7 @@ func (app *application) convertMomenttoForm(moment *models.Moment) momentForm {
 		sketchId = safeDeref(moment.Sketch.ID)
 	}
 
-	timestampString := secondsToMMSS(safeDeref(moment.Timestamp))
+	timestampString := models.SecondsToMMSS(safeDeref(moment.Timestamp))
 	return momentForm{
 		ID:        safeDeref(moment.ID),
 		SketchID:  sketchId,

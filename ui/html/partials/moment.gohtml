@@ -1,3 +1,42 @@
+{{ define "moments" }}
+  <div class="space-y-3 divide-y divide-slate-200">
+    {{ range . }}
+      {{ if len .Quotes }}
+        <div class="pt-3">
+          <div class="flex items-center flex-0 gap-3">
+            <a
+              class="p-2 bg-slate-100 font-semibold 
+            hover:bg-slate-200 rounded-full
+            cursor-pointer"
+              >{{ .Timestamp }}</a
+            >
+            <div class="w-6 text-slate-900">
+              <!--{{ template "heart-icon" }}-->
+            </div>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <div class="flex flex-col flex-1 gap-2">
+              {{ range .Quotes }}
+                <div class="flex gap-2">
+                  <div class="aspect-square w-10 flex-0">
+                    <img src="{{ .CastImgUrl }}" class="rounded-full" />
+                  </div>
+                  <div class="flex-1">
+                    <h5 class="font-semibold">{{ .CastName }}</h5>
+                    <p>{{ .Text }}</p>
+                  </div>
+                </div>
+              {{ end }}
+
+            </div>
+          </div>
+        </div>
+        <!--<p class="italic">&mdash;</p>-->
+      {{ end }}
+    {{ end }}
+  </div>
+{{ end }}
+
 {{ define "moment-form" }}
   <form
     enctype="multipart/form-data"
@@ -31,10 +70,12 @@
 {{ end }}
 
 {{ define "update-moments" }}
-  <div id="moments">
-    {{ range . }}
-      {{ template "moment" . }}
-    {{ end }}
+  <div id="momentsContainer">
+    <div id="moments">
+      {{ range . }}
+        {{ template "moment" . }}
+      {{ end }}
+    </div>
   </div>
 {{ end }}
 

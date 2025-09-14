@@ -150,3 +150,27 @@ func CastTableView(cast []*models.CastMember, sketchID int, baseImgUrl string) C
 
 	return castTable
 }
+
+func determineCastImageUrl(cm *models.CastMember, size, baseImgUrl string) string {
+	img := fmt.Sprintf("/static/img/missing-profile.jpg")
+	if safeDeref(cm.ProfileImg) != "" {
+		img = fmt.Sprintf(
+			"%s/cast/profile/%s/%s",
+			baseImgUrl,
+			size,
+			*cm.ProfileImg)
+
+	} else if cm.Actor != nil {
+		if cm.Actor.ID != nil && cm.Actor.Slug != nil {
+			if cm.Actor.ProfileImg != nil {
+				img = fmt.Sprintf(
+					"%s/person/%s/%s",
+					baseImgUrl,
+					size,
+					*cm.Actor.ProfileImg)
+			}
+		}
+	}
+
+	return img
+}

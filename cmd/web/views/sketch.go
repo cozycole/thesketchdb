@@ -38,10 +38,12 @@ type SketchPage struct {
 	RecurringTitle string
 	RecurringUrl   string
 	Cast           CastGallery
+	Moments        []Moment
 	Tags           []*Tag
 }
 
-func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string) (*SketchPage, error) {
+func SketchPageView(sketch *models.Sketch, moments []*models.Moment,
+	tags []*models.Tag, baseImgUrl string) (*SketchPage, error) {
 	page := SketchPage{}
 	if sketch.ID == nil {
 		return nil, fmt.Errorf("Sketch ID not defined")
@@ -165,6 +167,7 @@ func SketchPageView(sketch *models.Sketch, tags []*models.Tag, baseImgUrl string
 			sketch.Recurring.ID != nil
 	}
 
+	page.Moments = SketchQuoteSection(moments, baseImgUrl)
 	return &page, nil
 }
 
