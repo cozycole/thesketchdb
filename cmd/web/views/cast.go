@@ -95,6 +95,7 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 }
 
 type CastTable struct {
+	Flash    flashMessage
 	SketchID int
 	CastRows []CastRow
 }
@@ -109,6 +110,7 @@ type CastRow struct {
 	CharacterUrl      string
 	CastRole          string
 	MinorRole         bool
+	TagCount          int
 }
 
 func CastTableView(cast []*models.CastMember, sketchID int, baseImgUrl string) CastTable {
@@ -144,6 +146,7 @@ func CastTableView(cast []*models.CastMember, sketchID int, baseImgUrl string) C
 
 		row.CastRole = UppercaseFirst(safeDeref(c.CastRole))
 		row.MinorRole = safeDeref(c.MinorRole)
+		row.TagCount = len(c.Tags)
 
 		castTable.CastRows = append(castTable.CastRows, row)
 	}

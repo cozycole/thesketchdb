@@ -12,14 +12,12 @@ export class TagSelector extends HTMLElement {
     this.addEventListener("click", (evt) => {
       const li = evt.target.closest("li[data-id]");
       if (!li) {
-        console.log("no form");
         return;
       }
 
       const id = li.dataset.id;
       const form = this.querySelector("form");
       if (!form) {
-        console.log("no form");
         return;
       }
 

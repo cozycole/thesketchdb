@@ -363,3 +363,121 @@ func (app *application) castDropdown(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 
 }
+
+type CastTagFormModal struct {
+	Title      string
+	CastImgUrl string
+	CastName   string
+	Form       any
+	Tags       []*views.Tag
+}
+
+func (app *application) castTagUpdateForm(w http.ResponseWriter, r *http.Request) {
+	idParam := r.PathValue("id")
+	castId, err := strconv.Atoi(idParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	castMember, err := app.cast.GetById(castId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	castTags, err := app.tags.GetTagsByType("cast")
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		app.serverError(r, w, err)
+		return
+	}
+
+	castTagIds := []int{}
+	for _, q := range castMember.Tags {
+		castTagIds = append(castTagIds, safeDeref(q.ID))
+	}
+
+	tags := views.TagsView(castTags)
+
+	selectedTags := map[int]bool{}
+	for _, id := range castTagIds {
+		selectedTags[id] = true
+	}
+
+	for _, t := range tags {
+		if _, ok := selectedTags[t.ID]; ok {
+			t.Selected = true
+		}
+	}
+
+	form := castTagForm{
+		ID:   castId,
+		Tags: castTagIds,
+	}
+
+	castName, castImg := getCastInfo(castMember, app.baseImgUrl)
+	modal := CastTagFormModal{
+		Title:      "Update Cast Tags",
+		CastImgUrl: castImg,
+		CastName:   castName,
+		Form:       form,
+		Tags:       tags,
+	}
+	app.render(r, w, http.StatusOK, "cast-form.gohtml", "cast-tag-form-modal", modal)
+}
+
+func (app *application) castTagUpdate(w http.ResponseWriter, r *http.Request) {
+	idParam := r.PathValue("id")
+	castId, err := strconv.Atoi(idParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	castMember, err := app.cast.GetById(castId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	var form castTagForm
+	err = app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		app.errorLog.Print(err)
+		return
+	}
+
+	tags := []*models.Tag{}
+	for _, t := range form.Tags {
+		tags = append(tags, &models.Tag{ID: &t})
+	}
+
+	err = app.cast.BatchUpdateCastTags(castId, tags)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	sketchId := safeDeref(castMember.SketchID)
+	cast, err := app.cast.GetCastMembers(sketchId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	table := views.CastTableView(cast, sketchId, app.baseImgUrl)
+
+	table.Flash.Level = "success"
+	table.Flash.Message = "Successfully updated cast tags"
+
+	app.render(r, w, http.StatusOK, "cast-table.gohtml", "cast-table", table)
+}

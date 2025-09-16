@@ -81,14 +81,6 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 		r.Get("/episode/{id}/{slug}", app.viewEpisode)
 		r.Get("/episode/search", app.episodeSearch)
 
-		r.Post("/moment/add", app.momentAdd)
-		r.Post("/moment/{id}", app.momentUpdate)
-		r.Delete("/moment/{id}", app.momentDelete)
-		r.Post("/moment/quotes", app.quoteUpdate)
-
-		r.Get("/quote/{id}/tags", app.quoteTagUpdateForm)
-		r.Post("/quote/{id}/tags", app.quoteTagUpdate)
-
 		r.Get("/category/search", app.categorySearch)
 		r.Get("/tag/search", app.tagSearch)
 
@@ -122,12 +114,22 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 		r.Get("/sketch/{id}/cast", app.requireRoles(editorAdmin, app.addCastPage))
 		r.Post("/sketch/{id}/cast", app.requireRoles(editorAdmin, app.addCast))
 
-		r.Get("/cast/{id}/update", app.updateCastPage)
+		r.Get("/cast/{id}/update", app.requireRoles(editorAdmin, app.updateCastPage))
 		r.Post("/cast/{castId}/update", app.requireRoles(editorAdmin, app.updateCast))
 		r.Delete("/cast/{castId}", app.requireRoles(editorAdmin, app.deleteCast))
 		r.Patch("/sketch/{id}/cast/order", app.requireRoles(editorAdmin, app.orderCast))
 
 		r.Get("/cast", app.requireRoles(editorAdmin, app.castDropdown))
+		r.Get("/cast/{id}/tags", app.requireRoles(editorAdmin, app.castTagUpdateForm))
+		r.Post("/cast/{id}/tags", app.requireRoles(editorAdmin, app.castTagUpdate))
+
+		r.Post("/moment/add", app.requireRoles(editorAdmin, app.momentAdd))
+		r.Post("/moment/{id}", app.requireRoles(editorAdmin, app.momentUpdate))
+		r.Delete("/moment/{id}", app.requireRoles(editorAdmin, app.momentDelete))
+		r.Post("/moment/quotes", app.requireRoles(editorAdmin, app.quoteUpdate))
+
+		r.Get("/quote/{id}/tags", app.requireRoles(editorAdmin, app.quoteTagUpdateForm))
+		r.Post("/quote/{id}/tags", app.requireRoles(editorAdmin, app.quoteTagUpdate))
 
 		r.Get("/show/add", app.requireRoles(editorAdmin, app.addShowPage))
 		r.Post("/show/add", app.requireRoles(editorAdmin, app.addShow))

@@ -121,10 +121,10 @@ func main() {
 			os.Getenv("S3_SECRET"),
 		)
 
+		err = loadAssets()
 		if err != nil {
 			log.Fatal("Error loading manifest found in production build")
 		}
-		err = loadAssets()
 		fileStorage = &img.S3Storage{
 			Client:     client,
 			BucketName: os.Getenv("S3_BUCKET"),

@@ -574,3 +574,10 @@ type quoteTagForm struct {
 	Action              string `form:"-"`
 	validator.Validator `form:"-"`
 }
+
+type castTagForm struct {
+	ID                  int    `form:"id"`
+	Tags                []int  `form:"tag_ids[]"`
+	Action              string `form:"-"`
+	validator.Validator `form:"-"`
+}

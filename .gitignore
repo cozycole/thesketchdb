@@ -3,12 +3,12 @@ certbot
 db-seed
 go.sum
 *notes.md
+devops.md
 quick*
 tmp
 node_modules
 todo.md
 backups
-htmx.min.js 
 *.py
 images
 cmd/testing

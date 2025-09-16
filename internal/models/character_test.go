@@ -12,9 +12,6 @@ func TestCharacterSearch(t *testing.T) {
 		t.Skip("models: skipping integration test")
 	}
 	db := newTestDB(t)
-	if err := restoreDbScript("../../sql/testdata/test1.sql"); err != nil {
-		t.Fatal(err)
-	}
 	m := CharacterModel{db}
 
 	tests := []struct {

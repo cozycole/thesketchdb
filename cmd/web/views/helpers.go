@@ -14,6 +14,11 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
+type flashMessage struct {
+	Message string
+	Level   string
+}
+
 func printCast(cast []*models.CastMember) string {
 	castList := ""
 	var personIds []int
