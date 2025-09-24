@@ -1,6 +1,8 @@
 import "htmx.org";
 import "htmx-ext-response-targets";
 
+import "@awesome.me/webawesome/dist/components/rating/rating.js";
+
 import { initHome } from "./pages/home.js";
 import { initViewSketch } from "./pages/viewSketch.js";
 import { initSketchFormPage } from "./pages/sketchFormPage.js";
@@ -20,6 +22,7 @@ import { YoutubeEmbed } from "./components/youtubeEmbed.js";
 import { FormSearchDropdown } from "./components/formSearchDropdown.js";
 import { FormDropdown } from "./components/formDropdown.js";
 import { SelectDropdown } from "./components/selectDropdown.js";
+import { SketchRating } from "./components/sketchRating.js";
 import { TagSelector } from "./components/tagSelector.js";
 
 import "./components/flashMessage.js";

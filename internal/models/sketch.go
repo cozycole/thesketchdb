@@ -96,7 +96,8 @@ type Sketch struct {
 	YoutubeID     *string
 	ThumbnailName *string
 	ThumbnailFile *multipart.FileHeader
-	Rating        *string
+	Rating        *float32
+	TotalRatings  *int
 	Popularity    *float32
 	UploadDate    *time.Time
 	Creator       *Creator
@@ -121,7 +122,6 @@ type SketchModelInterface interface {
 	Get(filter *Filter) ([]*Sketch, error)
 	GetById(id int) (*Sketch, error)
 	GetCount(filter *Filter) (int, error)
-	GetBySlug(slug string) (*Sketch, error)
 	GetByUserLikes(id int) ([]*Sketch, error)
 	GetFeatured() ([]*Sketch, error)
 	HasLike(sketchId, userId int) (bool, error)
@@ -221,13 +221,13 @@ func (m *SketchModel) BatchUpdateTags(sketchId int, tags *[]*Tag) error {
 
 	if len(tagsToInsert) > 0 {
 		query := "INSERT INTO sketch_tags (sketch_id, tag_id) VALUES "
-		values := []interface{}{}
+		values := []any{}
 		for i, tag := range tagsToInsert {
 			query += fmt.Sprintf("($1, $%d),", i+2)
 			values = append(values, tag)
 		}
 		query = query[:len(query)-1] // Trim last comma
-		values = append([]interface{}{sketchId}, values...)
+		values = append([]any{sketchId}, values...)
 		fmt.Printf("QUERY: %s\n", query)
 		fmt.Printf("VALUES: %+v\n", values)
 
@@ -239,7 +239,7 @@ func (m *SketchModel) BatchUpdateTags(sketchId int, tags *[]*Tag) error {
 
 	if len(tagsToDelete) > 0 {
 		query := "DELETE FROM sketch_tags WHERE sketch_id = $1 AND tag_id IN ("
-		values := []interface{}{sketchId}
+		values := []any{sketchId}
 		for i, tag := range tagsToDelete {
 			query += fmt.Sprintf("$%d,", i+2)
 			values = append(values, tag)
@@ -307,7 +307,8 @@ func determineFields(filter *Filter, args *Arguements) string {
 
 	baseFields := `
 		v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number, 
-		v.sketch_url as sketch_url, v.slug as sketch_slug, v.thumbnail_name as thumbnail_name, v.upload_date as upload_date,
+		v.sketch_url as sketch_url, v.slug as sketch_slug, v.thumbnail_name as thumbnail_name, 
+		v.upload_date as upload_date, v.rating as rating,
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
 		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
 		sh.profile_img as show_img, sh.slug as show_slug, v.popularity_score as popularity,
@@ -500,7 +501,7 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 			FROM sketch_cast
 		)
 		SELECT sketch_id, sketch_title, sketch_number, sketch_url, 
-		sketch_slug, thumbnail_name, upload_date, 
+		sketch_slug, thumbnail_name, upload_date, rating,
 		creator_id, creator_name, creator_slug, 
 		creator_img, show_id, show_name,
 		show_img, show_slug, season_number, episode_number,
@@ -545,7 +546,8 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 		se := &Season{}
 		ep := &Episode{}
 		destinations := []any{
-			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName,
+			&v.UploadDate, &v.Rating,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &se.Number, &ep.Number,
 			&v.CastThumbnail, nil,
@@ -577,6 +579,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		SELECT v.id, v.title, v.sketch_number, v.sketch_url, v.description,
 		v.slug, v.thumbnail_name, v.upload_date, v.youtube_id, v.popularity_score,
 		v.episode_start, v.part_number, v.duration, v.transcript, v.diarization,
+		v.rating, v.total_ratings,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.slug, sh.profile_img,
 		p.id, p.slug, p.first, p.last, p.profile_img,
@@ -627,7 +630,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		err := rows.Scan(
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Description, &v.Slug, &v.ThumbnailName,
 			&v.UploadDate, &v.YoutubeID, &v.Popularity, &v.EpisodeStart, &v.SeriesPart,
-			&v.Duration, &v.Transcript, &v.Diarization,
+			&v.Duration, &v.Transcript, &v.Diarization, &v.Rating, &v.TotalRatings,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
@@ -675,15 +678,6 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	return v, nil
 }
 
-func (m *SketchModel) GetBySlug(slug string) (*Sketch, error) {
-	id, err := m.GetIdBySlug(slug)
-	if err != nil {
-		return nil, err
-	}
-
-	return m.GetById(id)
-}
-
 func (m *SketchModel) GetCount(filter *Filter) (int, error) {
 	query := `
 		SELECT COUNT(*)
@@ -724,7 +718,8 @@ func (m *SketchModel) GetCount(filter *Filter) (int, error) {
 
 func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 	stmt := `
-		SELECT v.id, v.title, v.sketch_url, v.slug, v.thumbnail_name, v.upload_date, v.youtube_id,
+		SELECT v.id, v.title, v.sketch_url, v.slug, v.thumbnail_name, 
+			v.upload_date, v.youtube_id, v.rating,
 			c.id, c.name, c.profile_img, c.slug,
 			sh.id, sh.name, sh.profile_img, sh.slug,
 			p.id, p.slug, p.first, p.last, p.profile_img,
@@ -766,7 +761,8 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 		hasRows = true
 
 		err := rows.Scan(
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate, &v.YoutubeID,
+			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName,
+			&v.UploadDate, &v.YoutubeID, &v.Rating,
 			&c.ID, &c.Name, &c.ProfileImage, &c.Slug,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
@@ -809,23 +805,6 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 	sketches := slices.Collect(maps.Values(sketchMap))
 
 	return sketches, nil
-}
-
-func (m *SketchModel) GetIdBySlug(slug string) (int, error) {
-	stmt := `SELECT v.id FROM sketch as v WHERE v.slug = $1`
-	id_row := m.DB.QueryRow(context.Background(), stmt, slug)
-
-	var id int
-	err := id_row.Scan(&id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrNoRecord
-		} else {
-			return 0, err
-		}
-	}
-
-	return id, nil
 }
 
 func (m *SketchModel) GetByUserLikes(userId int) ([]*Sketch, error) {
@@ -1050,15 +1029,16 @@ func (m *SketchModel) Update(sketch *Sketch) error {
 	UPDATE sketch SET title = $1, sketch_url = $2, upload_date = $3, 
 	slug = $4, thumbnail_name = $5, sketch_number = $6, episode_id = $7, episode_start = $8,
 	series_id = $9, part_number = $10, recurring_id = $11, duration = $12, description = $13,
-	transcript = $14, diarization = $15, popularity_score = $16
-	WHERE id = $17
+	transcript = $14, diarization = $15, popularity_score = $16, youtube_id = $17
+	WHERE id = $18
 	`
 	_, err := m.DB.Exec(
-		context.Background(), stmt, sketch.Title,
-		sketch.URL, sketch.UploadDate,
-		sketch.Slug, sketch.ThumbnailName, sketch.Number, episodeId, sketch.EpisodeStart,
-		seriesId, sketch.SeriesPart, recurringId, sketch.Duration, sketch.Description,
-		sketch.Transcript, sketch.Diarization, sketch.Popularity, sketch.ID,
+		context.Background(), stmt,
+		sketch.Title, sketch.URL, sketch.UploadDate, sketch.Slug, sketch.ThumbnailName,
+		sketch.Number, episodeId, sketch.EpisodeStart, seriesId, sketch.SeriesPart,
+		recurringId, sketch.Duration, sketch.Description, sketch.Transcript,
+		sketch.Diarization, sketch.Popularity, sketch.YoutubeID,
+		sketch.ID,
 	)
 	return err
 }

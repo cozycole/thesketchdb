@@ -55,19 +55,88 @@ func (p *password) Match(plaintext string) (bool, error) {
 	return true, nil
 }
 
+type UserSketchInfo struct {
+	Rating    *int
+	Timestamp *time.Time
+}
+
 type UserModelInterface interface {
+	AddRating(userId, sketchId, rating int) error
 	AddLike(userId, sketchId int) error
 	Authenticate(username, password string) (int, error)
-	GetByUsername(username string) (*User, error)
+	DeleteRating(userId, sketchId int) error
 	GetById(id int) (*User, error)
+	GetByUsername(username string) (*User, error)
+	GetUserSketchInfo(userId, sketchId int) (*UserSketchInfo, error)
 	Insert(user *User) error
 	RemoveLike(userId, sketchId int) error
+	UpdateRating(userId, sketchId, rating int) error
 }
 
 func (m *UserModel) AddLike(userId, sketchId int) error {
 	stmt := `
 		INSERT INTO likes (user_id, sketch_id)
 		VALUES($1, $2)
+	`
+
+	_, err := m.DB.Exec(context.Background(), stmt, userId, sketchId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *UserModel) AddRating(userId, sketchId, rating int) error {
+	stmt := `
+		INSERT INTO sketch_rating (user_id, sketch_id, rating)
+		VALUES($1, $2, $3)
+	`
+
+	_, err := m.DB.Exec(context.Background(), stmt, userId, sketchId, rating)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *UserModel) GetUserSketchInfo(userId, sketchId int) (*UserSketchInfo, error) {
+	stmt := `
+		SELECT rating, created_at 
+		FROM sketch_rating 
+		WHERE user_id = $1 AND sketch_id = $2
+	`
+
+	row := m.DB.QueryRow(context.Background(), stmt, userId, sketchId)
+
+	r := UserSketchInfo{}
+
+	if err := row.Scan(&r.Rating, &r.Timestamp); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &r, ErrNoRecord
+		}
+		return &r, err
+	}
+	return &r, nil
+}
+
+func (m *UserModel) UpdateRating(userId, sketchId, rating int) error {
+	stmt := `
+		UPDATE sketch_rating SET rating = $1
+		WHERE user_id = $2 AND sketch_id = $3
+	`
+
+	_, err := m.DB.Exec(context.Background(), stmt, rating, userId, sketchId)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func (m *UserModel) DeleteRating(userId, sketchId int) error {
+	stmt := `
+		DELETE FROM sketch_rating
+		WHERE user_id = $1 AND sketch_id = $2
 	`
 
 	_, err := m.DB.Exec(context.Background(), stmt, userId, sketchId)
@@ -180,7 +249,7 @@ func (m *UserModel) Insert(user *User) error {
 		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at`
 
-	args := []interface{}{
+	args := []any{
 		user.Username,
 		user.Email,
 		user.Password.hash,

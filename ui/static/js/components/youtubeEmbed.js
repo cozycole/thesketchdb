@@ -7,7 +7,7 @@ export class YoutubeEmbed extends HTMLElement {
   }
 
   connectedCallback() {
-    console.log("youtube embed connected");
+    //console.log("youtube embed connected");
     this.embedDiv = this.querySelector("#watchNow");
     this.toggleButtons = document.getElementsByClassName("toggleSketch");
     this.watchNowIframe = this.querySelector("#watchNowIframe");
@@ -40,9 +40,9 @@ export class YoutubeEmbed extends HTMLElement {
             }
           }
         } else if (this.player) {
-          console.log("Player exists but not ready, waiting...");
+          //console.log("Player exists but not ready, waiting...");
           this.waitForPlayerReady().then(() => {
-            console.log("Player ready, seeking to:", this.startTime);
+            //console.log("Player ready, seeking to:", this.startTime);
             this.player.seekTo(this.startTime, true);
             this.player.playVideo();
           });
@@ -54,13 +54,13 @@ export class YoutubeEmbed extends HTMLElement {
 
     // Wait for API and init
     waitForYouTubeAPI().then(() => {
-      console.log("YouTube API ready, initializing player...");
+      //console.log("YouTube API ready, initializing player...");
       this.initPlayer();
     });
   }
 
   initPlayer() {
-    console.log("Initializing player with iframe:", this.watchNowIframe);
+    //console.log("Initializing player with iframe:", this.watchNowIframe);
 
     // Make sure iframe has the required parameters
     const src = this.watchNowIframe.src;
@@ -73,7 +73,7 @@ export class YoutubeEmbed extends HTMLElement {
       this.player = new YT.Player(this.watchNowIframe, {
         events: {
           onReady: (event) => {
-            console.log("YouTube player is ready!", event);
+            //console.log("YouTube player is ready!", event);
             this.playerReady = true;
           },
           onError: (e) => {
@@ -84,7 +84,7 @@ export class YoutubeEmbed extends HTMLElement {
           //},
         },
       });
-      console.log("Player initialization called");
+      //console.log("Player initialization called");
     } catch (error) {
       console.error("Error initializing player:", error);
     }
@@ -116,13 +116,13 @@ export class YoutubeEmbed extends HTMLElement {
 function waitForYouTubeAPI() {
   return new Promise((resolve) => {
     if (window.YT && window.YT.Player) {
-      console.log("YT API already loaded");
+      //console.log("YT API already loaded");
       resolve();
     } else {
-      console.log("Waiting for YT API...");
+      //console.log("Waiting for YT API...");
       const check = setInterval(() => {
         if (window.YT && window.YT.Player) {
-          console.log("YT API resolved");
+          //console.log("YT API resolved");
           clearInterval(check);
           resolve();
         }

@@ -11,9 +11,9 @@
       {{ with .Page }}
         <div class="lg:flex gap-3 items-stretch">
           <div
-            class="thumbnail toggleSketch basis-auto w-fit lg:basis-[640px] md:max-w-[640px] flex-shrink"
+            class="thumbnail toggleSketch basis-auto w-fit lg:basis-[640px] md:max-w-[640px]"
           >
-            <button class="block h-full w-full relative">
+            <button class="relative block w-full">
               <div class="aspect-video">
                 <img
                   class="rounded-lg w-auto lg:object-cover lg:h-full block"
@@ -45,7 +45,7 @@
                 {{- end -}}
               </h1>
             </div>
-            <div class="flex flex-nowrap items-start mb-6">
+            <div class="flex flex-nowrap items-start mb-2">
               <div class="w-12 mt-2 min-w-8 mr-3">
                 <a href="{{ .CreatorUrl }}">
                   <img
@@ -85,76 +85,78 @@
                 {{ end }}
               </div>
             </div>
-            <div id="buttons" class="flex items-center gap-3">
-              <favorite-button
-                data-favorited="{{ if .Liked }}
-                  true
-                {{ else }}
-                  false
-                {{ end }}"
-                data-id="{{ .SketchID }}"
-              >
-                <button
-                  id="favBtn"
-                  class="flex items-center gap-2 relative px-4 py-2 rounded-full bg-orange-600 text-white font-semibold shadow hover:bg-orange-500 transition-all duration-300"
+            <div id="ratingSection" class="mt-3 mb-3">
+              <div class="flex items-center gap-1">
+                {{ template "sketch-rating" .Rating }}
+              </div>
+            </div>
+            <div class="mt-6">
+              <div class="flex flex-wrap gap-2">
+                <favorite-button
+                  data-favorited="{{ if .Liked }}
+                    true
+                  {{ else }}
+                    false
+                  {{ end }}"
+                  data-id="{{ .SketchID }}"
                 >
-                  <svg
-                    id="favIcon"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    class="w-5 h-5 transition-all duration-300"
+                  <button
+                    id="favBtn"
+                    class="flex items-center gap-2 relative px-4 py-2 rounded-full bg-orange-600 text-white font-semibold shadow hover:bg-orange-500 transition-all duration-300"
                   >
-                    {{ if .Liked }}
-                      <path
-                        fill="currentColor"
-                        d="M3.172 5.172a4 4 0 015.656 0L12 8.343l3.172-3.171a4 4 0 115.656 5.656L12 21.343 3.172 10.828a4 4 0 010-5.656z"
-                      />
-                    {{ else }}
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M3.172 5.172a4 4 0 015.656 0L12 8.343l3.172-3.171a4 4 0 115.656 5.656L12 21.343 3.172 10.828a4 4 0 010-5.656z"
-                      />
-                    {{ end }}
-                  </svg>
-                  <span id="favText" class="transition-all duration-300"
-                    >{{ if .Liked }}Favorited{{ else }}Favorite{{ end }}</span
-                  >
-                </button>
-              </favorite-button>
-              {{ with .YoutubeId }}
-                <button
-                  class="toggleSketch px-4 py-2
+                    <svg
+                      id="favIcon"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      class="w-4 transition-all duration-300"
+                    >
+                      {{ if .Liked }}
+                        <path
+                          fill="currentColor"
+                          d="M3.172 5.172a4 4 0 015.656 0L12 8.343l3.172-3.171a4 4 0 115.656 5.656L12 21.343 3.172 10.828a4 4 0 010-5.656z"
+                        />
+                      {{ else }}
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M3.172 5.172a4 4 0 015.656 0L12 8.343l3.172-3.171a4 4 0 115.656 5.656L12 21.343 3.172 10.828a4 4 0 010-5.656z"
+                        />
+                      {{ end }}
+                    </svg>
+                    <span id="favText" class="transition-all duration-300"
+                      >{{ if .Liked }}Favorited{{ else }}Favorite{{ end }}</span
+                    >
+                  </button>
+                </favorite-button>
+                {{ with .YoutubeId }}
+                  <button
+                    class="toggleSketch px-4 py-2
                       rounded-full bg-slate-900 hover:text-orange-500 text-white font-bold
                       transition-all duration-300"
-                >
-                  Watch Now
-                </button>
-              {{ end }}
-            </div>
-            <div class="mt-3">
-              <h3
-                class="mb-3 py-1 font-medium text-slate-500 border-b border-slate-200"
-              >
-                Watch On
-              </h3>
-              <div class="flex gap-3">
+                  >
+                    Watch Now
+                  </button>
+                {{ end }}
                 {{ with .YoutubeUrl }}
-                  <a href="{{ . }}" target="_blank">
-                    <img
-                      class="w-12 rounded-full transition-all duration-300 hover:shadow-lg"
-                      src="/static/img/youtube-logo.jpg"
-                    />
-                  </a>
+                  <button
+                    class="px-4 py-2
+                      rounded-full bg-slate-900 hover:text-orange-500 text-white font-bold
+                      transition-all duration-300"
+                  >
+                    <a href="{{ . }}" target="_blank"> Watch on Youtube </a>
+                  </button>
                 {{ end }}
               </div>
             </div>
           </div>
         </div>
-        <div id="infoSection" class="w-full my-3 bg-white p-4 rounded-md">
+        <div
+          id="infoSection"
+          class="w-full h-full my-3 bg-white p-4 rounded-md"
+        >
           <collapse-content>
             <div class="castHeader flex items-center justify-between">
               <div class="flex items-center">

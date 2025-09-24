@@ -58,6 +58,9 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 		r.Post("/sketch/like/{id}", app.sketchAddLike)
 		r.Delete("/sketch/like/{id}", app.sketchRemoveLike)
 
+		r.Post("/sketch/{id}/rating", app.sketchUpdateRating)
+		r.Delete("/sketch/{id}/rating", app.sketchDeleteRating)
+
 		r.Get("/creator/{id}/{slug}", app.creatorView)
 		r.Get("/creator/search", app.creatorSearch)
 

@@ -581,3 +581,15 @@ type castTagForm struct {
 	Action              string `form:"-"`
 	validator.Validator `form:"-"`
 }
+
+type sketchRatingForm struct {
+	Rating              int `form:"rating"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateSketchRatingForm(form *sketchRatingForm) {
+	if form.Rating == 0 {
+		form.AddNonFieldError("Rating not defined")
+		return
+	}
+}

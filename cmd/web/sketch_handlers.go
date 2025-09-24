@@ -34,10 +34,16 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var userSketchInfo *models.UserSketchInfo
 	user, ok := r.Context().Value(userContextKey).(*models.User)
 	if ok && user.ID != nil {
 		hasLike, _ := app.sketches.HasLike(*sketch.ID, *user.ID)
 		sketch.Liked = &hasLike
+		userSketchInfo, err = app.users.GetUserSketchInfo(*user.ID, sketchId)
+		if err != nil && !errors.Is(err, models.ErrNoRecord) {
+			app.serverError(r, w, err)
+			return
+		}
 	}
 
 	moments, err := app.moments.GetBySketch(sketchId)
@@ -47,7 +53,7 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	sketchPage, err := views.SketchPageView(sketch, moments, tags, app.baseImgUrl)
+	sketchPage, err := views.SketchPageView(sketch, moments, tags, userSketchInfo, app.baseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -284,6 +290,11 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 	slug := createSketchSlug(&sketch)
 	sketch.Slug = &slug
 
+	youtubeID, _ := extractYouTubeVideoID(*sketch.URL)
+	if youtubeID != "" {
+		sketch.YoutubeID = &youtubeID
+	}
+
 	var thumbnailName string
 	if oldSketch.ThumbnailName != nil {
 		thumbnailName = *oldSketch.ThumbnailName
@@ -486,4 +497,125 @@ func createSketchSlug(sketch *models.Sketch) string {
 	}
 
 	return models.CreateSlugName(slugInput + " " + safeDeref(sketch.Title))
+}
+
+func (app *application) sketchUpdateRating(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	if !ok || user.ID == nil {
+		w.Header().Add("Hx-Redirect", "/login")
+		http.Redirect(w, r, "/login", http.StatusOK)
+		return
+	}
+
+	_, err = app.sketches.GetById(sketchId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	var form sketchRatingForm
+	err = app.decodePostForm(r, &form)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	app.validateSketchRatingForm(&form)
+	if !form.Valid() {
+		app.badRequest(w)
+		return
+	}
+
+	// check if they already have a rating
+	userSketchInfo, err := app.users.GetUserSketchInfo(*user.ID, sketchId)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		app.serverError(r, w, err)
+		return
+	}
+
+	if safeDeref(userSketchInfo.Rating) == 0 {
+		err = app.users.AddRating(*user.ID, sketchId, form.Rating)
+	} else {
+		err = app.users.UpdateRating(*user.ID, sketchId, form.Rating)
+	}
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	sketch, err := app.sketches.GetById(sketchId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	userSketchInfo, err = app.users.GetUserSketchInfo(*user.ID, sketchId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	ratingView := views.SketchRatingView(userSketchInfo, sketch)
+	app.render(r, w, http.StatusOK, "sketch-rating.gohtml", "sketch-rating", ratingView)
+}
+
+func (app *application) sketchDeleteRating(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	if !ok || user.ID == nil {
+		w.Header().Add("Hx-Redirect", "/login")
+		http.Redirect(w, r, "/login", http.StatusOK)
+		return
+	}
+
+	_, err = app.sketches.GetById(sketchId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	// check if they already have a rating
+	userSketchInfo, err := app.users.GetUserSketchInfo(*user.ID, sketchId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	if safeDeref(userSketchInfo.Rating) != 0 {
+		err = app.users.DeleteRating(*user.ID, sketchId)
+	}
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	sketch, err := app.sketches.GetById(sketchId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	ratingView := views.SketchRatingView(&models.UserSketchInfo{}, sketch)
+	app.render(r, w, http.StatusOK, "sketch-rating.gohtml", "sketch-rating", ratingView)
 }

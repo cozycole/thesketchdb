@@ -1,7 +1,15 @@
 {{ define "sketch-thumbnail" }}
   <div class="min-w-0">
     <a href="{{ .Url }}">
-      <div class="aspect-video">
+      <div class="aspect-video relative">
+        {{ with .Rating }}
+          <div
+            class="flex items-center gap-1 absolute left-1 top-1 bg-black/50 p-1 rounded-lg"
+          >
+            <span class="w-4 fill-orange-500">{{ template "star-icon" }}</span>
+            <span class="text-white font-semibold text-sm">{{ . }}</span>
+          </div>
+        {{ end }}
         <img
           src="{{ .Image }}"
           {{ if .InCarousel }}

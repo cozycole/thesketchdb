@@ -1,0 +1,84 @@
+{{ define "sketch-rating" }}
+  <rating-widget id="ratingWidget">
+    <div class="flex items-center gap-1">
+      <div class="w-8 fill-orange-500">
+        {{ template "star-icon" }}
+      </div>
+      <span class="font-semibold text-lg"
+        >{{ with .AverageRating }}{{ . }}{{ end }}</span
+      >
+      <span class="inline-block ml-1 mr-3 text-slate-600"
+        >{{ .TotalRatings }}</span
+      >
+      <button class="toggleRatingWidget rounded-full font-bold">
+        <div class="flex items-center gap-1 fill-slate-900 text-lg">
+          {{ with .UserRating }}
+            <div class="w-7">{{ template "star-icon" }}</div>
+            <span>{{ . }} / 10</span>
+          {{ else }}
+            <div class="w-7">{{ template "star-outline" }}</div>
+            <span class="text-lg">Rate</span>
+          {{ end }}
+        </div>
+      </button>
+    </div>
+    <div
+      id="ratingModal"
+      class="hidden fixed inset-0 bg-black/50 items-end md:items-center justify-center z-50 overflow-y-auto"
+    >
+      <div
+        class="bg-white p-6 rounded-t-lg md:rounded-b-lg w-full md:max-w-[442px] max-h-screen overflow-y-auto"
+      >
+        <div class="mb-3">
+          <h3
+            id="ratingTitle"
+            class="text-center text-xl font-semibold mx-auto"
+          >
+            {{ .SketchTitle }}
+          </h3>
+          <p id="ratingSubtitle" class="text-center"></p>
+        </div>
+        <div class="flex flex-col justify-center">
+          <wa-rating
+            id="sketchRating"
+            label="Sketch Rating"
+            max="10"
+            value="{{ .UserRating }}"
+            class="text-xl sm:text-2xl mx-auto"
+            style="--symbol-color-active: #f97316"
+          ></wa-rating>
+          <form
+            hx-post="/sketch/{{ .SketchID }}/rating"
+            hx-target="#ratingWidget"
+          >
+            <input type="hidden" name="rating" value="{{ .UserRating }}" />
+            <button
+              class="block px-4 py-2 mt-6 mx-auto
+                      rounded-full bg-slate-900 hover:text-orange-500 text-white font-bold
+                      transition-all duration-300"
+            >
+              Rate
+            </button>
+          </form>
+          {{ if .UserRating }}
+            <form
+              class="mt-6"
+              hx-delete="/sketch/{{ .SketchID }}/rating"
+              hx-target="#ratingWidget"
+            >
+              <button
+                class="block px-4 py-2 mx-auto text-sm
+                      rounded-full hover:bg-slate-50 font-bold
+                      transition-all duration-300"
+              >
+                Remove Rating
+              </button>
+            </form>
+          {{ else }}
+            <div class="h-9 md:h-0"></div>
+          {{ end }}
+        </div>
+      </div>
+    </div>
+  </rating-widget>
+{{ end }}

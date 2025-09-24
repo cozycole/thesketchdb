@@ -147,7 +147,7 @@ func main() {
 
 	sessionManager := scs.New()
 	sessionManager.Store = pgxstore.New(dbpool)
-	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Lifetime = 90 * 24 * time.Hour
 	sessionManager.Cookie.Secure = true
 
 	templateCache, err := newTemplateCache()

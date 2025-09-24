@@ -37,13 +37,18 @@ type SketchPage struct {
 	InRecurring    bool
 	RecurringTitle string
 	RecurringUrl   string
+	Rating         SketchRating
 	Cast           CastGallery
 	Moments        []Moment
 	Tags           []*Tag
 }
 
-func SketchPageView(sketch *models.Sketch, moments []*models.Moment,
-	tags []*models.Tag, baseImgUrl string) (*SketchPage, error) {
+func SketchPageView(
+	sketch *models.Sketch,
+	moments []*models.Moment,
+	tags []*models.Tag,
+	userSketchInfo *models.UserSketchInfo,
+	baseImgUrl string) (*SketchPage, error) {
 	page := SketchPage{}
 	if sketch.ID == nil {
 		return nil, fmt.Errorf("Sketch ID not defined")
@@ -168,6 +173,7 @@ func SketchPageView(sketch *models.Sketch, moments []*models.Moment,
 	}
 
 	page.Moments = SketchQuoteSection(moments, baseImgUrl)
+	page.Rating = SketchRatingView(userSketchInfo, sketch)
 	return &page, nil
 }
 
@@ -193,6 +199,7 @@ type SketchThumbnail struct {
 	CreatorImage string
 	CreatorUrl   string
 	CreatorInfo  string
+	Rating       string
 	InCarousel   bool
 }
 
@@ -306,6 +313,10 @@ func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType
 
 	if sketch.UploadDate != nil {
 		sketchView.Date = sketch.UploadDate.UTC().Format("Jan 2, 2006")
+	}
+
+	if safeDeref(sketch.Rating) != 0.0 {
+		sketchView.Rating = RatingString(*sketch.Rating)
 	}
 
 	if sketch.Show != nil && sketch.Show.ID != nil {
@@ -607,4 +618,44 @@ func buildSelectedJSON(items []SelectedItem) (string, error) {
 		return "", err
 	}
 	return string(data), nil
+}
+
+type SketchRating struct {
+	SketchID      int
+	SketchTitle   string
+	AverageRating string
+	TotalRatings  string
+	UserRating    int
+}
+
+func SketchRatingView(userSketchInfo *models.UserSketchInfo, sketch *models.Sketch) SketchRating {
+	var rating int
+	if userSketchInfo != nil {
+		rating = safeDeref(userSketchInfo.Rating)
+	}
+
+	totalRatings := safeDeref(sketch.TotalRatings)
+	var totalRatingsLabel string
+	if totalRatings == 0 {
+		totalRatingsLabel = "No ratings"
+	} else if totalRatings == 1 {
+		totalRatingsLabel += fmt.Sprintf("%d rating", totalRatings)
+	} else {
+		totalRatingsLabel += fmt.Sprintf("%d ratings", totalRatings)
+	}
+	return SketchRating{
+		SketchID:      safeDeref(sketch.ID),
+		SketchTitle:   safeDeref(sketch.Title),
+		AverageRating: RatingString(safeDeref(sketch.Rating)),
+		TotalRatings:  totalRatingsLabel,
+		UserRating:    rating,
+	}
+}
+
+func RatingString(rating float32) string {
+	if rating == 0.0 {
+		return ""
+	}
+
+	return strings.Replace(fmt.Sprintf("%.1f", rating), ".0", "", 1)
 }
