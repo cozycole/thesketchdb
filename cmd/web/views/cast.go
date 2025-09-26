@@ -154,7 +154,7 @@ func CastTableView(cast []*models.CastMember, sketchID int, baseImgUrl string) C
 	return castTable
 }
 
-func determineCastImageUrl(cm *models.CastMember, size, baseImgUrl string) string {
+func DetermineCastImageUrl(cm *models.CastMember, size, baseImgUrl string) string {
 	img := fmt.Sprintf("/static/img/missing-profile.jpg")
 	if safeDeref(cm.ProfileImg) != "" {
 		img = fmt.Sprintf(
