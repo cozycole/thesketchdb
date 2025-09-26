@@ -154,7 +154,7 @@ export class CatalogFilter extends HTMLElement {
       }, 100);
     });
 
-    console.log(this.filtersDiv.children);
+    //console.log(this.filtersDiv.children);
 
     filter.applied = true;
   }

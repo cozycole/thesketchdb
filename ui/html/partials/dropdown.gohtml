@@ -4,17 +4,15 @@
       class="result hover:bg-slate-200 border flex items-center h-12 overflow-hidden"
       data-id="{{ .ID }}"
     >
-      {{ if eq .Image "missing-profile.jpg" }}
+      {{ if .ImageUrl }}
         <img
-          id="result-img"
-          class="flex-shrink-0 w-12"
-          src="/static/img/missing-profile.jpg"
+          class="result-img flex-shrink-0 w-12"
+          src="{{ .ImageUrl }}"
+          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg';this.srcset='';"
         />
-      {{ else if ne .Image "" }}
-        <img id="result-img" class="flex-shrink-0 w-12" src="{{ .ImageUrl }}" />
       {{ end }}
       <p
-        class="w-full px-1 py-3 line-clamp-2 break-words whitespace-normal overflow-hidden"
+        class="w-full text-left px-1 py-3 line-clamp-2 break-words whitespace-normal overflow-hidden"
       >
         {{ .Text }}
       </p>

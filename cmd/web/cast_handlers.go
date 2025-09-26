@@ -339,17 +339,9 @@ func (app *application) castDropdown(w http.ResponseWriter, r *http.Request) {
 	res := []result{}
 	for _, cm := range castMembers {
 		r := result{}
-		r.ImageUrl = fmt.Sprintf("%s/cast/profile/small/%s", app.baseImgUrl, *cm.ProfileImg)
+		r.ImageUrl = views.DetermineCastImageUrl(cm, "small", app.baseImgUrl)
 		r.ID = *cm.ID
-		r.Text = PrintPersonName(cm.Actor)
-		if safeDeref(cm.CharacterName) != "" {
-			r.Text += fmt.Sprintf(" as %s", *cm.CharacterName)
-		}
-		if cm.ProfileImg != nil {
-			r.Image = *cm.ProfileImg
-		} else {
-			r.Image = "missing-profile.jpg"
-		}
+		r.Text = views.QuoteHeader(cm)
 		res = append(res, r)
 	}
 

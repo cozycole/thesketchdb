@@ -20,7 +20,7 @@ export class FilterContent extends HTMLElement {
   }
 
   connectedCallback() {
-    console.log("FilterContent connected");
+    //console.log("FilterContent connected");
     this.desktopContainer.innerHTML = "";
     this.mobileContainer.innerHTML = "";
     this.currentState = "";
@@ -33,7 +33,7 @@ export class FilterContent extends HTMLElement {
   }
 
   disconnectedCallback() {
-    console.log("FilterContent disconnected");
+    //console.log("FilterContent disconnected");
     this.applyButton.removeEventListener("click", this._applyOnClick);
     this.mobileFilterButton.removeEventListener(
       "click",
@@ -58,6 +58,8 @@ export class FilterContent extends HTMLElement {
   setDesktopLayout() {
     if (this.desktopContainer && this.filterContent) {
       this.desktopContainer.appendChild(this.filterContent);
+      this.filterContent.classList.remove("hidden");
+      this.filterContent.classList.add("flex");
     }
     this.currentState = "desktop";
   }
@@ -65,6 +67,8 @@ export class FilterContent extends HTMLElement {
   setMobileLayout() {
     if (this.mobileContainer && this.filterContent) {
       this.mobileContainer.appendChild(this.filterContent);
+      this.filterContent.classList.remove("hidden");
+      this.filterContent.classList.add("flex");
     }
     this.currentState = "mobile";
   }

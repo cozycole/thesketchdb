@@ -225,7 +225,7 @@ func (m *CastModel) GetCastMembers(sketchId int) ([]*CastMember, error) {
 		members = append(members, cm)
 	}
 	sort.Slice(members, func(i, j int) bool {
-		return *members[i].Position < *members[j].Position
+		return safeDeref(members[i].Position) < safeDeref(members[j].Position)
 	})
 
 	return members, nil
@@ -237,7 +237,12 @@ func (m *CastModel) Update(member *CastMember) error {
 	role = $4, thumbnail_name = $5, profile_img = $6, minor = $7
 	WHERE id = $8
 	`
-	_, err := m.DB.Exec(context.Background(), stmt, member.Actor.ID, member.CharacterName,
+	var personId *int
+	if member.Actor != nil && safeDeref(member.Actor.ID) != 0 {
+		personId = member.Actor.ID
+
+	}
+	_, err := m.DB.Exec(context.Background(), stmt, personId, member.CharacterName,
 		member.Character.ID, member.CastRole, member.ThumbnailName, member.ProfileImg,
 		member.MinorRole, member.ID,
 	)
