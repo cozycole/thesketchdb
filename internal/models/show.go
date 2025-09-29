@@ -110,7 +110,7 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 		SELECT e.id, e.slug, e.episode_number, e.title, e.air_date, 
 		e.thumbnail_name, e.url, e.youtube_id,
 		v.id, v.title, v.slug, v.sketch_url, v.sketch_number, 
-		v.thumbnail_name, v.upload_date, 
+		v.thumbnail_name, v.upload_date, v.rating,
 		se.id, se.slug, se.season_number,
 		sh.id, sh.name, sh.profile_img, sh.slug
 		FROM episode as e
@@ -135,7 +135,7 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&e.URL, &e.YoutubeID,
 			&v.ID, &v.Title, &v.Slug, &v.URL, &v.Number,
-			&v.ThumbnailName, &v.UploadDate,
+			&v.ThumbnailName, &v.UploadDate, &v.Rating,
 			&se.ID, &se.Slug, &se.Number,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
 		)

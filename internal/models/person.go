@@ -21,13 +21,19 @@ type Person struct {
 	ProfileImg  *string
 	BirthDate   *time.Time
 	Description *string
+	WikiPage    *string
+	IMDbID      *string
+	TMDbID      *string
 }
 
 type PersonStats struct {
-	SketchCount    int
-	CharacterCount int
-	CreatorCount   int
-	PortrayalCount int
+	SketchCount     int
+	CharacterCount  int
+	OriginalCount   int
+	ImpressionCount int
+	PortrayalCount  int
+	CreatorCount    int
+	ShowCount       int
 }
 
 type PersonModelInterface interface {
@@ -76,14 +82,39 @@ func (m *PersonModel) GetPersonStats(id int) (*PersonStats, error) {
 		   WHERE cm.person_id = $1) AS creator_count,
 		  (SELECT COUNT(DISTINCT cm.character_id)
 		   FROM cast_members cm
-		   WHERE cm.person_id = $1 AND cm.character_id IS NOT NULL) AS character_count;
+		   WHERE cm.person_id = $1 AND cm.character_id IS NOT NULL) AS character_count,
+		  (SELECT COUNT(DISTINCT cm.character_id)
+		   FROM cast_members cm
+			JOIN character as ch ON cm.character_id = ch.id
+		   WHERE cm.person_id = $1 AND character_type IN ('impression', 'fictional_impression')) AS impression_count,
+		  (SELECT COUNT(DISTINCT cm.character_id)
+		   FROM cast_members cm
+			JOIN character as ch ON cm.character_id = ch.id
+		   WHERE cm.person_id = $1 AND character_type = 'original') AS original_count,
+		  (SELECT COUNT(DISTINCT sh.id)
+		   FROM cast_members cm
+			JOIN sketch as sk ON cm.sketch_id = sk.id
+			JOIN episode as ep ON sk.episode_id = ep.id
+			JOIN season as se ON ep.season_id = se.id
+			JOIN show as sh ON se.show_id = sh.id
+		   WHERE cm.person_id = $1) AS show_count;
 	`
 
 	stats := &PersonStats{}
 	row := m.DB.QueryRow(context.Background(), stmt, id)
-	err := row.Scan(&stats.SketchCount, &stats.PortrayalCount, &stats.CreatorCount, &stats.CharacterCount)
+	err := row.Scan(
+		&stats.SketchCount, &stats.PortrayalCount,
+		&stats.CreatorCount, &stats.CharacterCount,
+		&stats.ImpressionCount, &stats.OriginalCount,
+		&stats.ShowCount,
+	)
+
 	if err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
 	}
 
 	return stats, nil
@@ -91,14 +122,17 @@ func (m *PersonModel) GetPersonStats(id int) (*PersonStats, error) {
 
 func (m *PersonModel) Insert(person *Person) (int, error) {
 	stmt := `
-	INSERT INTO person (first, last, aliases, birthdate, professions, slug, profile_img)
-	VALUES ($1,$2,$3,$4,$5,$6,$7)
+	INSERT INTO person (
+		first, last, aliases, birthdate, professions, slug, profile_img, 
+		description, wiki_page, imdb_id, tmdb_id)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
 	RETURNING id;
 	`
 	var id int
 	row := m.DB.QueryRow(
 		context.Background(), stmt, person.First, person.Last, person.Alias,
 		person.BirthDate, person.Professions, person.Slug, person.ProfileImg,
+		person.Description, person.WikiPage, person.IMDbID, person.TMDbID,
 	)
 	err := row.Scan(&id)
 	if err != nil {
@@ -205,7 +239,8 @@ func (m *PersonModel) GetIdBySlug(slug string) (int, error) {
 }
 
 func (m *PersonModel) GetById(id int) (*Person, error) {
-	stmt := `SELECT id, first, last, aliases, profile_img, birthdate, slug, professions
+	stmt := `SELECT id, first, last, aliases, profile_img, birthdate, slug, professions,
+			description, wiki_page, imdb_id, tmdb_id
 			FROM person
 			WHERE id = $1`
 
@@ -215,7 +250,8 @@ func (m *PersonModel) GetById(id int) (*Person, error) {
 
 	err := row.Scan(
 		&p.ID, &p.First, &p.Last, &p.Alias, &p.ProfileImg,
-		&p.BirthDate, &p.Slug, &p.Professions,
+		&p.BirthDate, &p.Slug, &p.Professions, &p.Description,
+		&p.WikiPage, &p.IMDbID, &p.TMDbID,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -237,7 +273,7 @@ func (m *PersonModel) GetPeople(ids []int) ([]*Person, error) {
 			FROM person
 			WHERE id IN (%s)`
 
-	args := []interface{}{}
+	args := []any{}
 	queryPlaceholders := []string{}
 	for i, id := range ids {
 		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
@@ -448,12 +484,14 @@ func (m *PersonModel) SearchCount(query string) (int, error) {
 func (m *PersonModel) Update(person *Person) error {
 	stmt := `
 	UPDATE person SET first = $1, last = $2, professions = $3, 
-	profile_img = $4, birthdate = $5, slug = $6, aliases = $7
-	WHERE id = $8`
+	profile_img = $4, birthdate = $5, slug = $6, aliases = $7, description = $8,
+	wiki_page = $9, imdb_id = $10, tmdb_id = $11
+	WHERE id = $12`
 	_, err := m.DB.Exec(
 		context.Background(), stmt, person.First,
 		person.Last, person.Professions, person.ProfileImg,
-		person.BirthDate, person.Slug, person.Alias, person.ID,
+		person.BirthDate, person.Slug, person.Alias, person.Description,
+		person.WikiPage, person.IMDbID, person.TMDbID, person.ID,
 	)
 	return err
 }

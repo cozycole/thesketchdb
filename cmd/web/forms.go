@@ -3,9 +3,12 @@ package main
 import (
 	"fmt"
 	"mime/multipart"
+	"strings"
 
 	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/validator"
+
+	"sketchdb.cozycole.net/internal/services/wikipedia"
 )
 
 type Forms struct {
@@ -68,6 +71,9 @@ type personForm struct {
 	Alias               string                `form:"alias"`
 	BirthDate           string                `form:"birthDate"`
 	Professions         string                `form:"professions"`
+	WikiUrl             string                `form:"wikiurl"`
+	IMDbUrl             string                `form:"imdbUrl"`
+	TMDbUrl             string                `form:"tmdbUrl"`
 	ProfileImage        *multipart.FileHeader `img:"profileImg"`
 	Action              string                `form:"-"`
 	ImageUrl            string                `form:"-"`
@@ -79,6 +85,10 @@ func (app *application) validatePersonForm(form *personForm) {
 	form.CheckField(validator.NotBlank(form.Last), "last", "This field cannot be blank")
 	if form.BirthDate != "" {
 		form.CheckField(validator.ValidDate(form.BirthDate), "birthDate", "Date not of correct format YYYY-MM-DD")
+	}
+	if strings.Trim(form.WikiUrl, " ") != "" {
+		wikiId, err := wikipedia.ExtractPageName(form.WikiUrl)
+		form.CheckField(wikiId != "" && err == nil, "wikiurl", "Please enter a valid Wikpedia url")
 	}
 
 	// if it's an add instead of update
@@ -125,10 +135,7 @@ func (app *application) validateCharacterForm(form *characterForm) {
 		validator.PermittedValue(
 			form.Type, "original", "impression", "fictional_impression", "generic",
 		),
-		"type", "Character must be either Original, Impression or Generic")
-	form.CheckField(
-		form.Type != "impression" || form.PersonID > 0,
-		"personId", "Person must be selected")
+		"type", "Character must be either Original, Impression, Fictional Impression or Generic")
 
 	if form.ProfileImage == nil {
 		return
@@ -151,7 +158,7 @@ type sketchForm struct {
 	Slug                string                `form:"slug"`
 	Rating              string                `form:"rating"`
 	UploadDate          string                `form:"uploadDate"`
-	Duration            int                   `form:"duration"`
+	Duration            string                `form:"duration"`
 	Number              int                   `form:"number"`
 	Popularity          float32               `form:"popularity"`
 	Description         string                `form:"description"`
@@ -162,7 +169,7 @@ type sketchForm struct {
 	CreatorInput        string                `form:"creatorInput"`
 	EpisodeID           int                   `form:"episodeId"`
 	EpisodeInput        string                `form:"episodeInput"`
-	EpisodeStart        int                   `form:"episodeStart"`
+	EpisodeStart        string                `form:"episodeStart"`
 	SeriesID            int                   `form:"seriesId"`
 	SeriesInput         string                `form:"seriesInput"`
 	SeriesPart          int                   `form:"seriesPart"`
@@ -227,7 +234,6 @@ type castForm struct {
 
 func (app *application) validateCastForm(form *castForm) {
 	pid := form.PersonID
-	form.CheckField(pid != 0, "personId", "This field cannot be blank. Select a person from dropdown.")
 	if pid != 0 {
 		form.CheckField(
 			validator.BoolWithError(app.people.Exists(pid)),
@@ -235,8 +241,6 @@ func (app *application) validateCastForm(form *castForm) {
 			"Person does not exist. Please add it, then resubmit sketch!",
 		)
 	}
-
-	form.CheckField(validator.NotBlank(form.CharacterName), "characterName", "This field cannot be blank.")
 
 	cid := form.CharacterID
 	if cid != 0 {

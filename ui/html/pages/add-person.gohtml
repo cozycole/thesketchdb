@@ -24,6 +24,7 @@
             <input
               type="text"
               name="first"
+              autocomplete="off"
               value="{{ .First }}"
               class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
             />
@@ -36,6 +37,7 @@
             <input
               type="text"
               name="last"
+              autocomplete="off"
               value="{{ .Last }}"
               class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
             />
@@ -48,6 +50,7 @@
             <input
               type="text"
               name="alias"
+              autocomplete="off"
               value="{{ .Alias }}"
               class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
             />
@@ -60,8 +63,48 @@
             <input
               type="text"
               placeholder="Comma separated list of their professions"
+              autocomplete="off"
               name="professions"
               value="{{ .Professions }}"
+              class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            />
+          </div>
+          <div>
+            <label class="block">Wikipedia Page Url</label>
+            {{ with .FieldErrors.wikiurl }}
+              <label class="block text-red-700">{{ . }}</label>
+            {{ end }}
+            <input
+              type="text"
+              name="wikiurl"
+              autocomplete="off"
+              value="{{ .WikiUrl }}"
+              class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            />
+          </div>
+          <div>
+            <label class="block">IMDb URL</label>
+            {{ with .FieldErrors.imdbUrl }}
+              <label class="block text-red-700">{{ . }}</label>
+            {{ end }}
+            <input
+              type="text"
+              name="imdbUrl"
+              autocomplete="off"
+              value="{{ .IMDbUrl }}"
+              class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            />
+          </div>
+          <div>
+            <label class="block">TMDb URL</label>
+            {{ with .FieldErrors.tmdbUrl }}
+              <label class="block text-red-700">{{ . }}</label>
+            {{ end }}
+            <input
+              type="text"
+              name="tmdbUrl"
+              autocomplete="off"
+              value="{{ .TMDbUrl }}"
               class="w-full p-1 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
             />
           </div>

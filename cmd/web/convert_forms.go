@@ -6,6 +6,8 @@ import (
 
 	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
+	"sketchdb.cozycole.net/internal/services/moviedb"
+	"sketchdb.cozycole.net/internal/services/wikipedia"
 )
 
 func convertFormToSketch(form *sketchForm) models.Sketch {
@@ -36,12 +38,14 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		}
 	}
 
+	intDuration, _ := models.ParseTimestamp(form.Duration)
+	intEpStart, _ := models.ParseTimestamp(form.EpisodeStart)
 	return models.Sketch{
 		ID:            &form.ID,
 		Title:         &form.Title,
 		URL:           &form.URL,
 		Slug:          &form.Slug,
-		Duration:      &form.Duration,
+		Duration:      &intDuration,
 		Description:   &form.Description,
 		Transcript:    &form.Transcript,
 		Diarization:   &form.Diarization,
@@ -51,7 +55,7 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		Popularity:    &form.Popularity,
 		Creator:       creator,
 		Episode:       episode,
-		EpisodeStart:  &form.EpisodeStart,
+		EpisodeStart:  &intEpStart,
 		Series:        series,
 		SeriesPart:    &form.SeriesPart,
 		Recurring:     recurring,
@@ -88,12 +92,15 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		recurringID = safeDeref(sketch.Recurring.ID)
 		recurringName = safeDeref(sketch.Recurring.Title)
 	}
+	// intTime, _ := models.ParseTimestamp(form.Timestamp)
+	duration := models.SecondsToMMSS(safeDeref(sketch.Duration))
+	episodeStart := models.SecondsToMMSS(safeDeref(sketch.EpisodeStart))
 	return sketchForm{
 		ID:             safeDeref(sketch.ID),
 		Slug:           safeDeref(sketch.Slug),
 		Title:          safeDeref(sketch.Title),
 		URL:            safeDeref(sketch.URL),
-		Duration:       safeDeref(sketch.Duration),
+		Duration:       duration,
 		Description:    safeDeref(sketch.Description),
 		Transcript:     safeDeref(sketch.Transcript),
 		Diarization:    safeDeref(sketch.Diarization),
@@ -104,7 +111,7 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		CreatorInput:   creatorName,
 		EpisodeID:      episodeID,
 		EpisodeInput:   episodeName,
-		EpisodeStart:   safeDeref(sketch.EpisodeStart),
+		EpisodeStart:   episodeStart,
 		SeriesID:       seriesID,
 		SeriesInput:    seriesName,
 		SeriesPart:     safeDeref(sketch.SeriesPart),
@@ -212,6 +219,24 @@ func convertFormtoPerson(form *personForm) models.Person {
 	if form.ID != 0 {
 		id = &form.ID
 	}
+	var wikiUrl *string
+	if form.WikiUrl != "" {
+		url, _ := wikipedia.ExtractPageName(form.WikiUrl)
+		if url != "" {
+			wikiUrl = &url
+		}
+	}
+
+	var imdbId *string
+	if id, _ := moviedb.ParseIMDbID(form.IMDbUrl); id != "" {
+		imdbId = &id
+	}
+
+	var tmdbId *string
+	if id, _ := moviedb.ParseTMDbID(form.TMDbUrl); id != "" {
+		tmdbId = &id
+	}
+
 	bdate, _ := time.Parse(time.DateOnly, form.BirthDate)
 	return models.Person{
 		ID:          id,
@@ -220,10 +245,32 @@ func convertFormtoPerson(form *personForm) models.Person {
 		Alias:       &form.Alias,
 		BirthDate:   &bdate,
 		Professions: &form.Professions,
+		WikiPage:    wikiUrl,
+		IMDbID:      imdbId,
+		TMDbID:      tmdbId,
 	}
 }
 
 func convertPersontoForm(person *models.Person) personForm {
+	if person == nil {
+		return personForm{}
+	}
+
+	var wikiUrl string
+	if pageId := safeDeref(person.WikiPage); pageId != "" {
+		wikiUrl = fmt.Sprintf(wikipedia.URL_TEMPLATE, pageId)
+	}
+
+	var imdbUrl string
+	if imdbId := safeDeref(person.IMDbID); imdbId != "" {
+		imdbUrl = moviedb.BuildIMDbURL(imdbId)
+	}
+
+	var tmdbUrl string
+	if tmdbId := safeDeref(person.TMDbID); tmdbId != "" {
+		tmdbUrl = moviedb.BuildTMDbURL(tmdbId)
+	}
+
 	return personForm{
 		ID:          safeDeref(person.ID),
 		First:       safeDeref(person.First),
@@ -232,6 +279,9 @@ func convertPersontoForm(person *models.Person) personForm {
 		Professions: safeDeref(person.Professions),
 		BirthDate:   formDate(person.BirthDate),
 		ImageUrl:    safeDeref(person.ProfileImg),
+		WikiUrl:     wikiUrl,
+		IMDbUrl:     imdbUrl,
+		TMDbUrl:     tmdbUrl,
 	}
 }
 

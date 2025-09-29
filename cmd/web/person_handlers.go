@@ -8,6 +8,7 @@ import (
 
 	"sketchdb.cozycole.net/cmd/web/views"
 	"sketchdb.cozycole.net/internal/models"
+	"sketchdb.cozycole.net/internal/services/wikipedia"
 )
 
 func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +45,14 @@ func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stats, err := app.people.GetPersonStats(personId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
 
 	data := app.newTemplateData(r)
 	page, err := views.PersonPageView(
@@ -109,6 +118,13 @@ func (app *application) addPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	person.ProfileImg = &thumbName
+
+	if person.WikiPage != nil {
+		description, err := wikipedia.GetExtract(*person.WikiPage)
+		if nil == err {
+			person.Description = &description
+		}
+	}
 
 	id, err := app.people.Insert(&person)
 	if err != nil {
@@ -219,6 +235,14 @@ func (app *application) updatePerson(w http.ResponseWriter, r *http.Request) {
 	newPerson.ProfileImg = &profileImgName
 	slug := models.CreateSlugName(views.PrintPersonName(&newPerson))
 	newPerson.Slug = &slug
+
+	if newPerson.WikiPage != nil {
+		description, err := wikipedia.GetExtract(*newPerson.WikiPage)
+		if nil == err {
+			newPerson.Description = &description
+		}
+	}
+
 	err = app.people.Update(&newPerson)
 	if err != nil {
 		app.serverError(r, w, err)

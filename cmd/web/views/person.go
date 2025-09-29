@@ -2,23 +2,33 @@ package views
 
 import (
 	"fmt"
+	"html/template"
 
 	"sketchdb.cozycole.net/internal/models"
+	"sketchdb.cozycole.net/internal/services/moviedb"
+	"sketchdb.cozycole.net/internal/services/wikipedia"
 )
 
 type PersonPage struct {
-	ID             int
-	Name           string
-	Image          string
-	BirthDate      string
-	Age            int
-	Professions    string
-	SketchCount    int
-	PortrayalCount int
-	CharacterCount int
-	CreatorCount   int
-	Popular        *SketchGallery
-	ShowCreators   ProfileGallery
+	ID                    int
+	Name                  string
+	Image                 string
+	BirthDate             string
+	Description           template.HTML
+	Age                   int
+	WikiLink              string
+	IMDbUrl               string
+	Professions           string
+	SketchCount           string
+	PortrayalCount        string
+	ImpressionCount       string
+	DisplayCharacterStats bool
+	OriginalCount         string
+	CharacterCount        string
+	CreatorCount          string
+	ShowCount             string
+	Popular               *SketchGallery
+	ShowCreators          ProfileGallery
 }
 
 func PersonPageView(
@@ -45,14 +55,42 @@ func PersonPageView(
 		page.Age = getAge(person.BirthDate)
 	}
 
-	if person.Professions != nil {
-		page.Professions = *person.Professions
+	if wikiPage := safeDeref(person.WikiPage); wikiPage != "" {
+		page.WikiLink = fmt.Sprintf(wikipedia.URL_TEMPLATE, wikiPage)
 	}
 
-	page.SketchCount = stats.SketchCount
-	page.PortrayalCount = stats.PortrayalCount
-	page.CharacterCount = stats.CharacterCount
-	page.CreatorCount = stats.CreatorCount
+	page.Professions = safeDeref(person.Professions)
+	page.Description = template.HTML(safeDeref(person.Description))
+
+	page.SketchCount = sketchCountLabel(stats.SketchCount)
+
+	if stats.CreatorCount != 0 {
+		page.CreatorCount = countLabel("Creator", stats.CreatorCount)
+	}
+
+	if stats.ShowCount != 0 {
+		page.ShowCount = countLabel("Show", stats.ShowCount)
+	}
+
+	if safeDeref(person.IMDbID) != "" {
+		page.IMDbUrl = moviedb.BuildIMDbURL(*person.IMDbID)
+	}
+
+	if stats.PortrayalCount != 0 || stats.ImpressionCount != 0 || stats.OriginalCount != 0 {
+		page.DisplayCharacterStats = true
+	}
+
+	if stats.ImpressionCount != 0 {
+		page.ImpressionCount = countLabel("Impression", stats.ImpressionCount)
+	}
+
+	if stats.OriginalCount != 0 {
+		page.OriginalCount = countLabel("Original", stats.OriginalCount)
+	}
+
+	if stats.PortrayalCount != 0 {
+		page.PortrayalCount = countLabel("Potrayal", stats.PortrayalCount)
+	}
 
 	var err error
 	page.Popular, err = SketchGalleryView(

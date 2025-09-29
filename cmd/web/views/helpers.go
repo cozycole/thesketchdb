@@ -193,6 +193,13 @@ func sketchCountLabel(count int) string {
 	return fmt.Sprintf(labelString, count)
 }
 
+func countLabel(name string, count int) string {
+	if count == 1 {
+		return fmt.Sprintf("%d %s", count, name)
+	}
+	return fmt.Sprintf("%d %ss", count, name)
+}
+
 func episodeCountLabel(count int) string {
 	labelString := "%d Episode"
 	if count != 1 {

@@ -810,7 +810,8 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 func (m *SketchModel) GetByUserLikes(userId int) ([]*Sketch, error) {
 	stmt := `
 		SELECT v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number,
-		v.sketch_url as sketch_url, v.slug as sketch_slug, v.thumbnail_name as thumbnail_name, v.upload_date as upload_date, 
+		v.sketch_url as sketch_url, v.slug as sketch_slug, v.thumbnail_name as thumbnail_name, 
+		v.upload_date as upload_date, v.rating,
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
 		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
 		sh.profile_img as show_img, sh.slug as show_slug, 
@@ -846,7 +847,7 @@ func (m *SketchModel) GetByUserLikes(userId int) ([]*Sketch, error) {
 		se := &Season{}
 		ep := &Episode{}
 		destinations := []any{
-			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate,
+			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate, &v.Rating,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &se.Number, &ep.Number,
 		}

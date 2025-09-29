@@ -5,61 +5,121 @@
     <div class="max-w-screen-xl mx-auto space-y-3">
       {{ with .Page }}
         <div class="w-full flex flex-col md:flex-row gap-3">
-          <section
-            class="md:w-64 shrink-0 h-fit p-6 flex flex-col items-center md:items-left
-            gap-6 bg-white rounded-lg"
-          >
-            <div class="aspect-square">
-              <img
-                src="{{ .Image }}"
-                class="w-52 rounded-full"
-                alt="profile-img"
-              />
-            </div>
-            <div class="text-center">
-              <h1 class="text-2xl font-medium">{{ .Name }}</h1>
-              {{ if $.IsEditor }}
-                <a href="/person/{{ .ID }}/update" class="text-sm font-bold"
-                  >(Edit)</a
-                >
-              {{ end }}
-              <div class="metadata rounded-md">
-                <p class="text-lg">{{ .Professions }}</p>
-                {{ if .BirthDate }}
-                  <div>
-                    <time>{{ .BirthDate }}</time> <span>(age {{ .Age }})</span>
+          <section class="md:w-64 shrink-0 h-fit p-6 bg-white rounded-lg">
+            <div class="flex flex-col items-center gap-6 max-w-64 mx-auto">
+              <div class="aspect-square w-52">
+                <img
+                  src="{{ .Image }}"
+                  class="w-full rounded-full"
+                  alt="profile-img"
+                />
+              </div>
+              <div class="text-center">
+                <h1 class="text-2xl font-medium">{{ .Name }}</h1>
+                {{ if $.IsEditor }}
+                  <a href="/person/{{ .ID }}/update" class="text-sm font-bold"
+                    >(Edit)</a
+                  >
+                {{ end }}
+                {{ with .IMDbUrl }}
+                  <div class="flex justify-center items-center gap-2 mt-2">
+                    <img
+                      class="w-7 rounded-full"
+                      src="/static/img/imdb-logo.jpg"
+                    />
+                    <a class="hover:underline" href="{{ . }}">IMDb</a>
                   </div>
                 {{ end }}
               </div>
-            </div>
-            <div class="grid grid-cols-2 w-full max-w-56 gap-3 text-white">
-              <div
-                class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square"
-              >
-                <div class="text-xl font-bold">{{ .SketchCount }}</div>
-                <div>Sketches</div>
-              </div>
-              <div
-                class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square"
-              >
-                <div class="text-xl font-bold">{{ .PortrayalCount }}</div>
-                <div>Portrayals</div>
-              </div>
-              <div
-                class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square"
-              >
-                <div class="text-xl font-bold">{{ .CharacterCount }}</div>
-                <div>Characters</div>
-              </div>
-              <div
-                class="bg-orange-500 rounded-lg p-4 text-center flex flex-col justify-center items-center aspect-square"
-              >
-                <div class="text-xl font-bold">{{ .CreatorCount }}</div>
-                <div>Creators</div>
+              <div>
+                <div class="space-y-2 text-lg">
+                  <div class="flex gap-2 items-center">
+                    <div class="w-6 text-orange-500">
+                      {{ template "sketch-icon" }}
+                    </div>
+                    <span>{{ .SketchCount }}</span>
+                  </div>
+                  {{ with .CreatorCount }}
+                    <div class="flex gap-2 items-center">
+                      <div class="w-6 text-orange-500">
+                        {{ template "creator-icon" }}
+                      </div>
+                      <span>{{ . }}</span>
+                    </div>
+                  {{ end }}
+                  {{ with .ShowCount }}
+                    <div class="flex gap-2 items-center">
+                      <div class="w-6 text-orange-500">
+                        {{ template "show-icon" }}
+                      </div>
+                      <span>{{ . }}</span>
+                    </div>
+                  {{ end }}
+                  {{ if .DisplayCharacterStats }}
+                    <div class="flex gap-2">
+                      <div class="w-6 text-orange-500 mt-1">
+                        {{ template "character-icon" }}
+                      </div>
+                      <div>
+                        {{ with .ImpressionCount }}
+                          <div>{{ . }}</div>
+                        {{ end }}
+                        {{ with .OriginalCount }}
+                          <div>{{ . }}</div>
+                        {{ end }}
+                        {{ with .PortrayalCount }}
+                          <div>{{ . }}</div>
+                        {{ end }}
+                      </div>
+                    </div>
+                  {{ end }}
+                </div>
               </div>
             </div>
           </section>
           <div id="contentSections" class="flex flex-col gap-4 flex-1 min-w-0">
+            {{ if .Description }}
+              <section class="w-full bg-white rounded-lg py-4 p-3 sm:px-4">
+                <collapse-content>
+                  <header class="w-full flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <div class="w-8">
+                        {{ template "person-icon" }}
+                      </div>
+                      <h2 class="text-xl font-bold hover:underline">Bio</h2>
+                    </div>
+                    <button class="toggleBtn transition-all">
+                      <svg
+                        class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        focusable="false"
+                      >
+                        <path
+                          d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
+                          fill="currentColor"
+                        ></path>
+                      </svg>
+                    </button>
+                  </header>
+                  <div
+                    class="content w-full overflow-hidden transition-all duration-500 ease-in-out"
+                  >
+                    <div class="mt-4 space-y-3">
+                      {{ .Description }}
+                      {{ with .WikiLink }}
+                        <a
+                          href="{{ . }}"
+                          class="font-semibold block mt-3 hover:underline"
+                          target="_blank"
+                          >Read More on Wikipedia</a
+                        >
+                      {{ end }}
+                    </div>
+                  </div>
+                </collapse-content>
+              </section>
+            {{ end }}
             <section class="w-full bg-white rounded-lg py-4 p-3 sm:px-4">
               <collapse-content>
                 <header class="w-full flex items-center justify-between">
