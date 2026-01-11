@@ -44,6 +44,11 @@ export const createAppRouter = (queryClient: QueryClient) =>
           lazy: () => import("./routes/addSketch").then(convert(queryClient)),
         },
         {
+          path: paths.updateSketch.path,
+          lazy: () =>
+            import("./routes/updateSketch").then(convert(queryClient)),
+        },
+        {
           path: paths.addPerson.path,
           lazy: () => import("./routes/addPerson").then(convert(queryClient)),
         },

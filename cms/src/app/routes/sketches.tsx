@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { useSketches } from "@/features/sketches/api/get-sketches";
+import { useSketches } from "@/features/sketches/api/getSketches";
 
 import { PaginationState } from "@tanstack/react-table";
 

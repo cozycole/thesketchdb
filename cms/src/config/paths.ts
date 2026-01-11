@@ -1,26 +1,30 @@
 export const paths = {
   home: {
-    path: "/",
-    getHref: () => "/",
+    path: "/admin/",
+    getHref: () => "/admin/",
   },
   dashboard: {
-    path: "/dashboard",
-    getHref: () => "/dashboard",
+    path: "/admin/dashboard",
+    getHref: () => "/admin/dashboard",
   },
   addSketch: {
-    path: "/sketch/add",
-    getHref: () => "/sketch/add",
+    path: "/admin/sketch/add",
+    getHref: () => "/admin/sketch/add",
+  },
+  updateSketch: {
+    path: "/admin/sketch/:id",
+    getHref: (id: string | number) => `/admin/sketch/${id}`,
   },
   addPerson: {
-    path: "/person/add",
-    getHref: () => "/person/add",
+    path: "/admin/person/add",
+    getHref: () => "/admin/person/add",
   },
   addCharacter: {
-    path: "/character/add",
-    getHref: () => "/character/add",
+    path: "/admin/character/add",
+    getHref: () => "/admin/character/add",
   },
   sketches: {
-    path: "/sketches",
-    getHref: () => "/sketches",
+    path: "/admin/sketches",
+    getHref: () => "/admin/sketches",
   },
 } as const;

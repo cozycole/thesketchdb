@@ -30,8 +30,9 @@ export const hash = (str: string) => {
 };
 
 export const networkDelay = () => {
-  const delayTime = import.meta.env.TEST ? 200 : 100;
-  //: Math.floor(Math.random() * 700) + 300;
+  const delayTime = import.meta.env.TEST
+    ? 200
+    : Math.floor(Math.random() * 700) + 300;
   return delay(delayTime);
 };
 

@@ -1,9 +1,10 @@
 import { ContentLayout } from "@/components/layouts/content";
+import { SketchForm } from "@/features/sketches/forms/sketchForm";
 
 const AddSketchRoute = () => {
   return (
-    <ContentLayout title="Add Sketch Form">
-      <h1 className="font-medium">Create form here</h1>
+    <ContentLayout title="Add Sketch">
+      <SketchForm mode="create" />
     </ContentLayout>
   );
 };

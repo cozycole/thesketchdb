@@ -1,6 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
+import { paths } from "@/config/paths";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,8 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sketch } from "@/types/api";
 
-import { Sketch } from "../types/sketch";
+import { Link } from "react-router";
 
 import { MoreHorizontal } from "lucide-react";
 
@@ -24,6 +26,32 @@ export const columns: ColumnDef<Sketch>[] = [
   {
     accessorKey: "title",
     header: "Title",
+    cell: ({ row }) => (
+      <Link
+        to={paths.updateSketch.getHref(row.original.id)}
+        className="hover:underline text-blue-600 hover:text-blue-800"
+      >
+        {row.original.title}
+      </Link>
+    ),
+  },
+  {
+    accessorKey: "creators",
+    header: "Creator / Show",
+    cell: ({ row }) => {
+      if (row.original.creators.length) {
+        const creator = row.original.creators[0];
+        return (
+          <Link
+            to={`/api/v1/creator/${creator.id}`}
+            className="flex gap-2 items-center hover:underline text-black hover:text-slate-800"
+          >
+            <img src={creator.profileImage} className="rounded-full w-8" />
+            {row.original.creators[0].name}
+          </Link>
+        );
+      }
+    },
   },
   {
     accessorKey: "rating",

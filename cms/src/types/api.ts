@@ -2,32 +2,85 @@
 // ideally, we want to keep these api related types in sync
 // with the backend instead of manually writing them out
 
-export type BaseEntity = {
-  id: string;
-  createdAt: number;
-};
-
-export type Entity<T> = {
-  [K in keyof T]: T[K];
-} & BaseEntity;
-
 export type Meta = {
   page: number;
   total: number;
   totalPages: number;
 };
 
+export type Category = {
+  id: number;
+  name: string;
+  slug: string;
+
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Tag = {
+  id?: number;
+  name?: string;
+  slug?: string;
+  type?: string;
+  category?: Category;
+  count?: number;
+
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type RecurringRef = {
+  id: number;
+  name: string;
+  thumbnail: string;
+};
+
+export type SeriesRef = {
+  id: number;
+  name: string;
+  thumbnail: string;
+};
+
 export type Sketch = {
-  id: string;
+  id: number;
   title: string;
   slug: string;
+  url: string;
   uploadDate: string;
+  thumbnailUrl: string;
+  duration: number;
+  description: string;
+  creators: CreatorRef[];
+  showEpisode: ShowEpisodeRef;
+  episodeSketchOrder: number;
+  recurring: RecurringRef;
+  series: SeriesRef;
+  partNumber: number;
+
   popularity: number;
   rating: number;
+
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Creator = {
-  id: string;
+  id: number;
+  slug: string;
+  name: string;
+  alias: string;
+  url: string;
+  profileImage: string;
+  establishedDate: string;
+
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreatorRef = Pick<Creator, "id" | "name" | "slug" | "profileImage">;
+
+export type Show = {
+  id: number;
   name: string;
   slug: string;
   profileImage: string;
@@ -37,4 +90,90 @@ export type Creator = {
   updatedAt: string;
 };
 
-export type CreatorRef = Pick<Creator, "id" | "name" | "slug" | "profileImage">;
+export type ShowEpisodeRef = Pick<
+  Show,
+  "id" | "name" | "slug" | "profileImage"
+>;
+
+export type Season = {
+  id: number;
+  slug: string;
+  show: Show;
+  seasonNumber: number;
+  airDate: string;
+
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Episode = {
+  id: number;
+  slug: string;
+  season: Season;
+  episodeNumber: number;
+  airDate: string;
+  url: string;
+  youtubeId: string;
+
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Person = {
+  id: number;
+  slug: string;
+  first: string;
+  last: string;
+  alias: string;
+  professions: string;
+  profileImg: string;
+  birthDate: string;
+  description: string;
+  wikiPage: string;
+  iMDbID: string;
+  tMDbID: string;
+
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type PersonRef = Pick<
+  Person,
+  "id" | "slug" | "first" | "last" | "profileImg"
+>;
+
+export type Character = {
+  id: number;
+  slug: string;
+  name: string;
+  aliases: string;
+  type: string;
+  profileImg: string;
+  description: string;
+  portrayal: PersonRef;
+
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type CharacterRef = Pick<
+  Character,
+  "id" | "name" | "slug" | "profileImg"
+>;
+
+export type CastMember = {
+  id?: number;
+  sketchID?: number;
+  position?: number;
+  actor?: Person;
+  character?: Character;
+  characterName?: string;
+  castRole?: string;
+  minorRole?: boolean;
+  thumbnailName?: string;
+  profileImg?: string;
+  tags: Tag[];
+
+  createdAt: Date;
+  updatedAt: Date;
+};

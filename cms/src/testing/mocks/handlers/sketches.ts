@@ -25,7 +25,6 @@ export const sketchHandlers = [
         }),
       ).length;
 
-      console.log(`TOTAL: ${total}`);
       const totalPages = Math.ceil(total / pageSize);
 
       const sketches = db.sketches.findMany(
@@ -39,7 +38,6 @@ export const sketchHandlers = [
         },
       );
 
-      console.log(`IN PAGE: ${sketches.length}`);
       return HttpResponse.json({
         sketches: sketches,
         meta: {
@@ -55,4 +53,58 @@ export const sketchHandlers = [
       );
     }
   }),
+  http.get<{ sketchId: string }>(
+    `${env.API_URL}/admin/sketch/:sketchId`,
+    async ({ params }) => {
+      await networkDelay();
+
+      try {
+        //const { error } = requireAuth(cookies);
+        //if (error) {
+        //  return HttpResponse.json({ message: error }, { status: 401 });
+        //}
+        const { sketchId } = params;
+
+        const sketch = db.sketches.findFirst((q) =>
+          q.where({
+            id: (id) => id === Number(sketchId),
+          }),
+        );
+
+        return HttpResponse.json({
+          sketch: sketch,
+        });
+      } catch (error) {
+        return HttpResponse.json(
+          { message: error?.message || "Server Error" },
+          { status: 500 },
+        );
+      }
+    },
+  ),
+  http.patch<{ sketchId: string }>(
+    `${env.API_URL}/admin/sketch/:sketchId`,
+    async ({ request, params }) => {
+      await networkDelay();
+
+      try {
+        //const { error } = requireAuth(cookies);
+        //if (error) {
+        //  return HttpResponse.json({ message: error }, { status: 401 });
+        //}
+
+        const data = await request.json();
+        console.log(data);
+        return HttpResponse.json({
+          status: 200,
+          message: "Sketch successfully added",
+        });
+      } catch (error) {
+        return HttpResponse.json(
+          { message: error?.message || "Server Error" },
+          { status: 500 },
+        );
+      }
+    },
+  ),
 ];

@@ -1,9 +1,9 @@
 import { db } from "../db";
 
-export const seedSketches = () => {
+export const seedSketches = async () => {
   if (db.sketches.count() > 0) return;
 
-  const sketchTitles = [
+  const creatorSketches = [
     "Office Icebreaker Goes Off the Rails",
     "Zoom Meeting Nobody Can Leave",
     "HR Training Video From Hell",
@@ -47,7 +47,28 @@ export const seedSketches = () => {
     "Award Show Acceptance Speech Apocalypse",
     "Late Night Monologue Writer Strike",
     "Celebrity Apology Tour",
+  ];
 
+  let idCount = 1;
+
+  creatorSketches.forEach((title, i) => {
+    const creator = db.creators.findFirst((q) => q.where({ id: (i % 3) + 1 }));
+    db.sketches.create({
+      id: idCount++,
+      slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      title: title,
+      thumbnailUrl:
+        "https://thesketchdb.sfo2.cdn.digitaloceanspaces.com/sketch/medium/02719283-277e-4d99-ab58-40f78f235481.jpg",
+      description: `This the description for "${title}"`,
+      url: `https://example.com/sketch-${i + 1}`,
+      uploadDate: new Date(2018 + (i % 6), i % 12, (i % 28) + 1),
+      popularity: Math.floor(Math.random() * 1000),
+      rating: Number((Math.random() * 5).toFixed(1)),
+      creators: [creator],
+    });
+  });
+
+  const showSketches = [
     "Political Ad Nobody Understands",
     "Town Hall Meeting Goes Sideways",
     "Campaign Staffer Who Can’t Stop Tweeting",
@@ -82,16 +103,20 @@ export const seedSketches = () => {
     "Self-Care Routine Takes All Day",
   ];
 
-  let idCount = 1;
-  sketchTitles.forEach((title, i) => {
+  showSketches.forEach((title, i) => {
+    const episode = db.episodes.findFirst((q) => q.where({ id: (i % 30) + 1 }));
     db.sketches.create({
       id: idCount++,
-      title: title,
       slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      title: title,
+      thumbnailUrl:
+        "https://thesketchdb.sfo2.cdn.digitaloceanspaces.com/sketch/medium/02719283-277e-4d99-ab58-40f78f235481.jpg",
+      description: `This the description for "${title}"`,
       url: `https://example.com/sketch-${i + 1}`,
       uploadDate: new Date(2018 + (i % 6), i % 12, (i % 28) + 1),
       popularity: Math.floor(Math.random() * 1000),
       rating: Number((Math.random() * 5).toFixed(1)),
+      episode: episode,
     });
   });
 };

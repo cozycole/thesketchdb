@@ -74,7 +74,7 @@ export function AppSidebar() {
               {/* Dashboard */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/dashboard">
+                  <Link to={paths.home.getHref()}>
                     <LayoutDashboard />
                     <span>Dashboard</span>
                   </Link>
@@ -103,7 +103,7 @@ export function AppSidebar() {
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
-                          <Link to="/sketches">
+                          <Link to={paths.sketches.getHref()}>
                             <span>Sketches</span>
                           </Link>
                         </SidebarMenuSubButton>

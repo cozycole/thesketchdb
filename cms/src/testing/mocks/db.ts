@@ -17,16 +17,81 @@ const SketchSchema = z.object({
   slug: z.string(),
   url: z.string(),
   thumbnailUrl: z.string().optional(),
+  description: z.string().optional(),
   role: z.string().optional(),
   uploadDate: z.date(),
   popularity: z.number(),
   rating: z.number(),
   createdAt: z.date().optional(),
+  get creators() {
+    return z.array(CreatorSchema).optional();
+  },
+  get episode() {
+    return EpisodeSchema.optional();
+  },
+});
+
+const CreatorSchema = z.object({
+  id: z.number(),
+  slug: z.string(),
+  name: z.string(),
+  alias: z.string(),
+  url: z.string(),
+  profileImage: z.string(),
+  establishedDate: z.date(),
+
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+const ShowSchema = z.object({
+  id: z.number(),
+  slug: z.string(),
+  name: z.string(),
+  alias: z.string(),
+  url: z.string(),
+  profileImage: z.string(),
+  establishedDate: z.date(),
+
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+const SeasonSchema = z.object({
+  id: z.number(),
+  slug: z.string(),
+  get show() {
+    return ShowSchema;
+  },
+  seasonNumber: z.number(),
+  airDate: z.date().optional(),
+
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+const EpisodeSchema = z.object({
+  id: z.number(),
+  slug: z.string(),
+  get season() {
+    return SeasonSchema;
+  },
+  episodeNumber: z.number(),
+  airDate: z.date().optional(),
+  url: z.string().optional(),
+  youtubId: z.string().optional(),
+
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
 export const db = {
   users: new Collection({ schema: UserSchema }),
   sketches: new Collection({ schema: SketchSchema }),
+  creators: new Collection({ schema: CreatorSchema }),
+  shows: new Collection({ schema: ShowSchema }),
+  seasons: new Collection({ schema: SeasonSchema }),
+  episodes: new Collection({ schema: EpisodeSchema }),
 };
 
 const dbFilePath = "mocked-db.json";
