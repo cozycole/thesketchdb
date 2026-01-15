@@ -43,6 +43,23 @@ func printCast(cast []*models.CastMember) string {
 	return castList
 }
 
+// work around for time being
+func PrintPersonRefName(a *models.PersonRef) string {
+	if a == nil {
+		return ""
+	}
+	var name string
+	if a.First != nil {
+		name = *a.First
+	}
+
+	if a.Last == nil {
+		return name
+	}
+
+	return name + " " + *a.Last
+}
+
 func PrintPersonName(a *models.Person) string {
 	if a == nil {
 		return ""

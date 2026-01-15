@@ -16,6 +16,12 @@ type Category struct {
 	Tags []*Tag
 }
 
+type CategoryRef struct {
+	ID   *int
+	Slug *string
+	Name *string
+}
+
 type CategoryInterface interface {
 	Exists(id int) (bool, error)
 	Get(id int) (*Category, error)

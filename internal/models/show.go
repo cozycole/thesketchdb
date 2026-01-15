@@ -24,12 +24,26 @@ type Show struct {
 	Seasons    []*Season
 }
 
+type ShowRef struct {
+	ID         *int
+	Slug       *string
+	Name       *string
+	ProfileImg *string
+}
+
 type Season struct {
 	ID       *int
 	Slug     *string
 	Number   *int
 	Show     *Show
 	Episodes []*Episode
+}
+
+type SeasonRef struct {
+	ID     *int
+	Slug   *string
+	Number *int
+	Show   *ShowRef
 }
 
 type Episode struct {
@@ -42,8 +56,16 @@ type Episode struct {
 	Thumbnail *string
 	Season    *Season
 	Show      *Show
-	Sketches  []*Sketch
+	Sketches  []*SketchRef
 	YoutubeID *string
+}
+
+type EpisodeRef struct {
+	ID      *int
+	Slug    *string
+	Number  *int
+	AirDate *time.Time
+	Season  *SeasonRef
 }
 
 func (s *Season) AirYear() string {
@@ -78,7 +100,7 @@ type ShowModelInterface interface {
 	GetEpisode(episodeId int) (*Episode, error)
 	GetSeason(seasonId int) (*Season, error)
 	GetShowCast(id int) ([]*Person, error)
-	GetShows(ids *[]int) ([]*Show, error)
+	GetShowRefs(ids []int) ([]*ShowRef, error)
 	Insert(show *Show) (int, error)
 	InsertEpisode(episode *Episode) (int, error)
 	Search(query string) ([]*Show, error)
@@ -109,7 +131,7 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	stmt := `
 		SELECT e.id, e.slug, e.episode_number, e.title, e.air_date, 
 		e.thumbnail_name, e.url, e.youtube_id,
-		v.id, v.title, v.slug, v.sketch_url, v.sketch_number, 
+		v.id, v.title, v.slug, v.sketch_number, 
 		v.thumbnail_name, v.upload_date, v.rating,
 		se.id, se.slug, se.season_number,
 		sh.id, sh.name, sh.profile_img, sh.slug
@@ -130,12 +152,12 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	se := &Season{}
 	sh := &Show{}
 	for rows.Next() {
-		v := &Sketch{}
+		v := &SketchRef{}
 		rows.Scan(
 			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&e.URL, &e.YoutubeID,
-			&v.ID, &v.Title, &v.Slug, &v.URL, &v.Number,
-			&v.ThumbnailName, &v.UploadDate, &v.Rating,
+			&v.ID, &v.Title, &v.Slug, &v.Number,
+			&v.Thumbnail, &v.UploadDate, &v.Rating,
 			&se.ID, &se.Slug, &se.Number,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
 		)
@@ -143,9 +165,7 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 		if v.ID == nil {
 			continue
 		}
-		v.Show = sh
-		v.Season = se
-		v.Episode = e
+		v.Episode = &EpisodeRef{}
 
 		e.Sketches = append(e.Sketches, v)
 	}
@@ -186,7 +206,7 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 	sh := &Show{}
 	for rows.Next() {
 		e := &Episode{}
-		v := &Sketch{}
+		v := &SketchRef{}
 		err := rows.Scan(
 			&s.ID, &s.Slug, &s.Number,
 			&sh.ID, &sh.Slug, &sh.Name, &sh.ProfileImg,
@@ -419,7 +439,7 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 	for rows.Next() {
 		s := &Season{}
 		e := &Episode{}
-		v := &Sketch{}
+		v := &SketchRef{}
 		err := rows.Scan(
 			&show.ID, &show.Name, &show.Aliases, &show.ProfileImg, &show.Slug,
 			&s.ID, &s.Slug, &s.Number,
@@ -590,8 +610,8 @@ func (m *ShowModel) Update(show *Show) error {
 	return err
 }
 
-func (m *ShowModel) GetShows(ids *[]int) ([]*Show, error) {
-	if ids != nil && len(*ids) < 1 {
+func (m *ShowModel) GetShowRefs(ids []int) ([]*ShowRef, error) {
+	if len(ids) < 1 {
 		return nil, nil
 	}
 
@@ -599,9 +619,9 @@ func (m *ShowModel) GetShows(ids *[]int) ([]*Show, error) {
 			FROM show
 			WHERE id IN (%s)`
 
-	args := []interface{}{}
+	args := []any{}
 	queryPlaceholders := []string{}
-	for i, id := range *ids {
+	for i, id := range ids {
 		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
 		args = append(args, id)
 	}
@@ -617,9 +637,9 @@ func (m *ShowModel) GetShows(ids *[]int) ([]*Show, error) {
 	}
 	defer rows.Close()
 
-	var shows []*Show
+	var shows []*ShowRef
 	for rows.Next() {
-		s := Show{}
+		s := ShowRef{}
 		err := rows.Scan(&s.ID, &s.Name, &s.Slug, &s.ProfileImg)
 		if err != nil {
 			return nil, err

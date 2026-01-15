@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"math"
 	"net/http"
 	"net/url"
 	"sort"
@@ -155,75 +154,37 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	filterQuery := strings.Join(strings.Fields(query), " | ")
 
 	personIds := extractUrlParamIDs(r.URL.Query()["person"])
-	var peopleFilter []*models.Person
-	if len(personIds) > 0 {
-		peopleFilter, err = app.people.GetPeople(personIds)
-	}
-
 	characterIds := extractUrlParamIDs(r.URL.Query()["character"])
-	var characterFilter []*models.Character
-	if len(characterIds) > 0 {
-		characterFilter, err = app.characters.GetCharacters(characterIds)
-	}
-
 	creatorIds := extractUrlParamIDs(r.URL.Query()["creator"])
-	var creatorFilter []*models.Creator
-	if len(creatorIds) > 0 {
-		creatorFilter, err = app.creators.GetCreators(&creatorIds)
-	}
-
 	showIds := extractUrlParamIDs(r.URL.Query()["show"])
-	var showFilter []*models.Show
-	if len(showIds) > 0 {
-		showFilter, err = app.shows.GetShows(&showIds)
-	}
-
 	tagIds := extractUrlParamIDs(r.URL.Query()["tag"])
-	var tagFilter []*models.Tag
-	if len(tagIds) > 0 {
-		tagFilter, err = app.tags.GetTags(tagIds)
-	}
 
 	limit := app.settings.pageSize
 	offset := (currentPage - 1) * limit
 	filter := &models.Filter{
-		Query:      filterQuery,
-		Characters: characterFilter,
-		Creators:   creatorFilter,
-		People:     peopleFilter,
-		Shows:      showFilter,
-		Tags:       tagFilter,
-		SortBy:     sort,
-		Limit:      limit,
-		Offset:     offset,
+		Query:        filterQuery,
+		CharacterIDs: characterIds,
+		CreatorIDs:   creatorIds,
+		PersonIDs:    personIds,
+		ShowIDs:      showIds,
+		TagIDs:       tagIds,
+		SortBy:       sort,
+		Limit:        limit,
+		Offset:       offset,
 	}
 
-	results, err := app.getSketchCatalogResults(currentPage, "sketch", filter)
+	results, err := app.services.Sketches.ListSketches(filter, true)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
-
-	sketchCount, err := app.sketches.GetCount(filter)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
-
-	results.Filter = filter
-	results.TotalSketchCount = sketchCount
-	results.Query = url.QueryEscape(query)
 
 	data := app.newTemplateData(r)
-
-	totalPages := int(math.Ceil(float64(sketchCount) / float64(limit)))
 
 	isHxRequest := r.Header.Get("HX-Request") == "true"
 	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
 	sketchCatalog, err := views.SketchCatalogView(
-		results,
-		currentPage,
-		totalPages,
+		&results,
 		isHxRequest && !isHistoryRestore,
 		app.baseImgUrl,
 	)

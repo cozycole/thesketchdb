@@ -11,7 +11,7 @@ import ()
 type SearchResult struct {
 	Type                string
 	Query               string
-	SketchResults       []*Sketch
+	SketchResults       []*SketchRef
 	TotalSketchCount    int
 	PersonResults       []*Person
 	TotalPersonCount    int

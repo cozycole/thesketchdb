@@ -30,12 +30,10 @@ func (app *application) characterView(w http.ResponseWriter, r *http.Request) {
 
 	popularSketches, err := app.sketches.Get(
 		&models.Filter{
-			Limit:  12,
-			Offset: 0,
-			SortBy: "popular",
-			Characters: []*models.Character{
-				&models.Character{ID: character.ID},
-			},
+			Limit:        12,
+			Offset:       0,
+			SortBy:       "popular",
+			CharacterIDs: []int{*character.ID},
 		},
 	)
 

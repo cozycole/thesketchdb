@@ -6,7 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta name="htmx-config" content='{"historyCacheSize": 0}' />
       <meta name="theme-color" content="#0f172a" />
-      <title>{{ template "title" . }} - theSketchDB</title>
+      <title>{{ template "title" . }} - theSketchDb</title>
       <link rel="stylesheet" href="/static/css/{{ index .Assets "css" }}" />
       <link
         rel="shortcut icon"
@@ -16,7 +16,7 @@
     </head>
     <body
       hx-ext="response-targets"
-      class="min-h-screen flex flex-col bg-slate-50 text-slate-950 min-w-80 font-sans"
+      class="min-h-screen flex flex-col bg-slate-900 text-slate-950 min-w-80 font-sans"
     >
       <div id="flash"></div>
       {{ template "nav" . }}

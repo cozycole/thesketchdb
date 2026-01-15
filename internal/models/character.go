@@ -21,12 +21,19 @@ type Character struct {
 	Portrayal   *Person
 }
 
+type CharacterRef struct {
+	ID    *int
+	Slug  *string
+	Name  *string
+	Image *string
+}
+
 type CharacterModelInterface interface {
 	Delete(id int) error
 	Exists(id int) (bool, error)
 	Get(filter *Filter) ([]*Character, error)
 	GetById(id int) (*Character, error)
-	GetCharacters(ids []int) ([]*Character, error)
+	GetCharactersRefs(ids []int) ([]*CharacterRef, error)
 	GetCount(filter *Filter) (int, error)
 	Insert(character *Character) (int, error)
 	Search(search string) ([]*Character, error)
@@ -109,7 +116,7 @@ func (m *CharacterModel) Get(filter *Filter) ([]*Character, error) {
 	return characters, nil
 }
 
-func (m *CharacterModel) GetCharacters(ids []int) ([]*Character, error) {
+func (m *CharacterModel) GetCharactersRefs(ids []int) ([]*CharacterRef, error) {
 	if len(ids) < 1 {
 		return nil, nil
 	}
@@ -118,7 +125,7 @@ func (m *CharacterModel) GetCharacters(ids []int) ([]*Character, error) {
 			FROM character
 			WHERE id IN (%s)`
 
-	args := []interface{}{}
+	args := []any{}
 	queryPlaceholders := []string{}
 	for i, id := range ids {
 		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
@@ -136,9 +143,9 @@ func (m *CharacterModel) GetCharacters(ids []int) ([]*Character, error) {
 	}
 	defer rows.Close()
 
-	var characters []*Character
+	var characters []*CharacterRef
 	for rows.Next() {
-		c := Character{}
+		c := CharacterRef{}
 		err := rows.Scan(&c.ID, &c.Slug, &c.Name, &c.Image)
 		if err != nil {
 			return nil, err

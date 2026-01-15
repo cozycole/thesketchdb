@@ -7,7 +7,7 @@ import (
 type BrowseSectionDefinition struct {
 	Title    string
 	Filter   models.Filter
-	Sketches []*models.Sketch
+	Sketches []*models.SketchRef
 }
 
 var FEATURED_ID = 1
@@ -18,7 +18,7 @@ var BrowseSectionDefinitions = []BrowseSectionDefinition{
 			Limit:  10,
 			Offset: 0,
 			SortBy: "popular",
-			Tags:   []*models.Tag{{ID: &FEATURED_ID}},
+			TagIDs: []int{FEATURED_ID},
 		},
 	},
 	{

@@ -17,7 +17,7 @@ type CreatorPage struct {
 
 func CreatorPageView(
 	creator *models.Creator,
-	popular []*models.Sketch,
+	popular []*models.SketchRef,
 	cast []*models.Person,
 	baseImgUrl string) (*CreatorPage, error) {
 	if creator.ID == nil {

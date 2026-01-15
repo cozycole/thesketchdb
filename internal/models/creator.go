@@ -22,6 +22,13 @@ type Creator struct {
 	EstablishedDate *time.Time
 }
 
+type CreatorRef struct {
+	ID           *int
+	Slug         *string
+	Name         *string
+	ProfileImage *string
+}
+
 func (c *Creator) HasId() bool {
 	return c.ID != nil
 }
@@ -33,7 +40,7 @@ type CreatorModelInterface interface {
 	GetCount(filter *Filter) (int, error)
 	GetById(id int) (*Creator, error)
 	GetCast(id int) ([]*Person, error)
-	GetCreators(*[]int) ([]*Creator, error)
+	GetCreatorRefs([]int) ([]*CreatorRef, error)
 	Insert(creator *Creator) (int, error)
 	Search(query string) ([]*Creator, error)
 	SearchCount(query string) (int, error)
@@ -161,18 +168,18 @@ func (m *CreatorModel) GetCount(filter *Filter) (int, error) {
 	return count, nil
 }
 
-func (m *CreatorModel) GetCreators(ids *[]int) ([]*Creator, error) {
-	if ids != nil && len(*ids) < 1 {
+func (m *CreatorModel) GetCreatorRefs(ids []int) ([]*CreatorRef, error) {
+	if len(ids) < 1 {
 		return nil, nil
 	}
 
-	stmt := `SELECT id, name, slug, profile_img, date_established
+	stmt := `SELECT id, name, slug, profile_img
 			FROM creator
 			WHERE id IN (%s)`
 
-	args := []interface{}{}
+	args := []any{}
 	queryPlaceholders := []string{}
-	for i, id := range *ids {
+	for i, id := range ids {
 		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
 		args = append(args, id)
 	}
@@ -188,10 +195,10 @@ func (m *CreatorModel) GetCreators(ids *[]int) ([]*Creator, error) {
 	}
 	defer rows.Close()
 
-	var creators []*Creator
+	var creators []*CreatorRef
 	for rows.Next() {
-		c := Creator{}
-		err := rows.Scan(&c.ID, &c.Name, &c.Slug, &c.ProfileImage, &c.EstablishedDate)
+		c := CreatorRef{}
+		err := rows.Scan(&c.ID, &c.Name, &c.Slug, &c.ProfileImage)
 		if err != nil {
 			return nil, err
 		}

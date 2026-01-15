@@ -14,7 +14,7 @@ type Series struct {
 	Title         *string
 	Description   *string
 	ThumbnailName *string
-	Sketches      []*Sketch
+	Sketches      []*SketchRef
 }
 
 type SeriesModelInterface interface {
@@ -41,10 +41,10 @@ func (m *SeriesModel) Delete(id int) error {
 func (m *SeriesModel) GetById(id int) (*Series, error) {
 	stmt := `
 		SELECT s.id, s.slug, s.title, s.description, s.thumbnail_name,
-		sk.id, sk.slug, sk.title, sk.sketch_url, sk.thumbnail_name, 
-		sk.upload_date, sk.episode_start, sk.sketch_number, sk.part_number,
-		e.id, e.slug, e.episode_number, e.title, e.air_date, 
-		e.thumbnail_name, e.url, e.youtube_id,
+		sk.id, sk.slug, sk.title, sk.thumbnail_name, 
+		sk.upload_date, sk.sketch_number, sk.part_number,
+		e.id, e.slug, e.episode_number, e.air_date, 
+		e.thumbnail_name,
 		se.id, se.slug, se.season_number,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.profile_img, sh.slug
@@ -70,18 +70,17 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 	s := &Series{}
 	hasRows := false
 	for rows.Next() {
-		sk := &Sketch{}
-		c := &Creator{}
-		sh := &Show{}
-		ep := &Episode{}
-		se := &Season{}
+		sk := &SketchRef{}
+		c := &CreatorRef{}
+		sh := &ShowRef{}
+		ep := &EpisodeRef{}
+		se := &SeasonRef{}
 		hasRows = true
 		err := rows.Scan(
 			&s.ID, &s.Slug, &s.Title, &s.Description, &s.ThumbnailName,
-			&sk.ID, &sk.Slug, &sk.Title, &sk.URL, &sk.ThumbnailName,
-			&sk.UploadDate, &sk.EpisodeStart, &sk.Number, &sk.SeriesPart,
-			&ep.ID, &ep.Slug, &ep.Number, &ep.Title, &ep.AirDate, &ep.Thumbnail,
-			&ep.URL, &ep.YoutubeID,
+			&sk.ID, &sk.Slug, &sk.Title, &sk.Thumbnail,
+			&sk.UploadDate, &sk.Number,
+			&ep.ID, &ep.Slug, &ep.Number, &ep.AirDate,
 			&se.ID, &se.Slug, &se.Number,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
@@ -90,14 +89,16 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 		if err != nil {
 			return nil, err
 		}
+		ep.Season = se
+		se.Show = sh
 
 		sk.Creator = c
-		sk.Show = sh
 		sk.Episode = ep
-		sk.Season = se
+
 		if sk.ID != nil {
 			s.Sketches = append(s.Sketches, sk)
 		}
+
 	}
 
 	if !hasRows {

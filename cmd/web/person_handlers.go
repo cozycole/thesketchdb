@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"sketchdb.cozycole.net/cmd/web/views"
+	"sketchdb.cozycole.net/internal/external/wikipedia"
 	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/services/wikipedia"
 )
 
 func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
@@ -31,10 +31,10 @@ func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 
 	popular, err := app.sketches.Get(
 		&models.Filter{
-			Limit:  12,
-			Offset: 0,
-			SortBy: "popular",
-			People: []*models.Person{{ID: person.ID}},
+			Limit:     12,
+			Offset:    0,
+			SortBy:    "popular",
+			PersonIDs: []int{*person.ID},
 		},
 	)
 

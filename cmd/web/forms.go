@@ -8,7 +8,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/validator"
 
-	"sketchdb.cozycole.net/internal/services/wikipedia"
+	"sketchdb.cozycole.net/internal/external/wikipedia"
 )
 
 type Forms struct {

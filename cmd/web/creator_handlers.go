@@ -30,12 +30,10 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 
 	popularSketches, err := app.sketches.Get(
 		&models.Filter{
-			Limit:  12,
-			Offset: 0,
-			SortBy: "popular",
-			Creators: []*models.Creator{
-				&models.Creator{ID: creator.ID},
-			},
+			Limit:      12,
+			Offset:     0,
+			SortBy:     "popular",
+			CreatorIDs: []int{*creator.ID},
 		},
 	)
 

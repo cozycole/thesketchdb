@@ -19,8 +19,10 @@ import (
 	"github.com/go-playground/form/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+
 	"sketchdb.cozycole.net/internal/img"
 	"sketchdb.cozycole.net/internal/models"
+	"sketchdb.cozycole.net/internal/services"
 )
 
 type application struct {
@@ -42,6 +44,7 @@ type application struct {
 	tags           models.TagModelInterface
 	users          models.UserModelInterface
 	sketches       models.SketchModelInterface
+	services       services.Services
 	sessionManager *scs.SessionManager
 	debugMode      bool
 	formDecoder    *form.Decoder
@@ -175,6 +178,7 @@ func main() {
 		users:          &models.UserModel{DB: dbpool},
 		sketches:       &models.SketchModel{DB: dbpool},
 		series:         &models.SeriesModel{DB: dbpool},
+		services:       services.NewServices(newRepositories(dbpool)),
 		sessionManager: sessionManager,
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,
@@ -244,4 +248,23 @@ func loadAssets() error {
 		StaticAssets[k] = v
 	}
 	return nil
+}
+
+func newRepositories(dbpool *pgxpool.Pool) models.Repositories {
+	return models.Repositories{
+		Cast:       &models.CastModel{DB: dbpool},
+		Categories: &models.CategoryModel{DB: dbpool},
+		Characters: &models.CharacterModel{DB: dbpool},
+		Creators:   &models.CreatorModel{DB: dbpool},
+		Moments:    &models.MomentModel{DB: dbpool},
+		People:     &models.PersonModel{DB: dbpool},
+		Profile:    &models.ProfileModel{DB: dbpool},
+		Recurring:  &models.RecurringModel{DB: dbpool},
+		Shows:      &models.ShowModel{DB: dbpool},
+		Tags:       &models.TagModel{DB: dbpool},
+		Users:      &models.UserModel{DB: dbpool},
+		Sketches:   &models.SketchModel{DB: dbpool},
+		Series:     &models.SeriesModel{DB: dbpool},
+	}
+
 }

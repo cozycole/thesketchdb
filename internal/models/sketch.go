@@ -6,83 +6,13 @@ import (
 	"fmt"
 	"maps"
 	"mime/multipart"
-	"net/url"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type Filter struct {
-	Characters []*Character
-	Creators   []*Creator
-	Limit      int
-	Offset     int
-	People     []*Person
-	Query      string
-	Shows      []*Show
-	SortBy     string
-	Tags       []*Tag
-}
-
-var sortMap = map[string]string{
-	"popular": "popularity DESC, upload_date DESC",
-	"latest":  "upload_date DESC, sketch_title ASC",
-	"oldest":  "upload_date ASC, sketch_title ASC",
-	"az":      "sketch_title ASC",
-	"za":      "sketch_title DESC",
-}
-
-func (f *Filter) Params() url.Values {
-	params := url.Values{}
-
-	if f.SortBy != "" {
-		params.Add("sort", f.SortBy)
-	}
-
-	if f.Query != "" {
-		params.Add("query", url.QueryEscape(f.Query))
-	}
-
-	for _, p := range f.People {
-		if p.ID != nil {
-			params.Add("person", strconv.Itoa(*p.ID))
-		}
-	}
-
-	for _, p := range f.Creators {
-		if p.ID != nil {
-			params.Add("creator", strconv.Itoa(*p.ID))
-		}
-	}
-
-	for _, s := range f.Shows {
-		if s.ID != nil {
-			params.Add("show", strconv.Itoa(*s.ID))
-		}
-	}
-
-	for _, p := range f.Characters {
-		if p.ID != nil {
-			params.Add("character", strconv.Itoa(*p.ID))
-		}
-	}
-
-	for _, p := range f.Tags {
-		if p.ID != nil {
-			params.Add("tag", strconv.Itoa(*p.ID))
-		}
-	}
-
-	return params
-}
-
-func (f *Filter) ParamsString() string {
-	return f.Params().Encode()
-}
 
 type Sketch struct {
 	ID            *int
@@ -115,14 +45,27 @@ type Sketch struct {
 	Liked         *bool
 }
 
+type SketchRef struct {
+	ID            *int
+	Slug          *string
+	Title         *string
+	Thumbnail     *string
+	CastThumbnail *string
+	UploadDate    *time.Time
+	Creator       *CreatorRef
+	Episode       *EpisodeRef
+	Number        *int
+	Rating        *float32
+}
+
 type SketchModelInterface interface {
 	BatchUpdateTags(sketchId int, tags *[]*Tag) error
 	Delete(id int) error
 	Exists(id int) (bool, error)
-	Get(filter *Filter) ([]*Sketch, error)
+	Get(filter *Filter) ([]*SketchRef, error)
 	GetById(id int) (*Sketch, error)
 	GetCount(filter *Filter) (int, error)
-	GetByUserLikes(id int) ([]*Sketch, error)
+	GetByUserLikes(id int) ([]*SketchRef, error)
 	GetFeatured() ([]*Sketch, error)
 	HasLike(sketchId, userId int) (bool, error)
 	Insert(sketch *Sketch) (int, error)
@@ -307,28 +250,29 @@ func determineFields(filter *Filter, args *Arguements) string {
 
 	baseFields := `
 		v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number, 
-		v.sketch_url as sketch_url, v.slug as sketch_slug, v.thumbnail_name as thumbnail_name, 
+		v.slug as sketch_slug, v.thumbnail_name as thumbnail_name,
 		v.upload_date as upload_date, v.rating as rating,
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
 		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
 		sh.profile_img as show_img, sh.slug as show_slug, v.popularity_score as popularity,
-		se.season_number as season_number, e.episode_number as episode_number,
+		se.id as season_id, se.slug as season_slug, se.season_number as season_number, 
+		e.id as episode_id, e.slug as episode_slug, e.episode_number as episode_number, e.air_date as episode_airdate,
 		(select thumbnail_name from cast_members where %s and sketch_id = v.id order by position limit 1) as cast_thumbnail_name
 		%s
 	`
 
 	castThumbnailClause := ""
-	if len(filter.People) == 0 && len(filter.Characters) == 0 {
+	if len(filter.PersonIDs) == 0 && len(filter.CharacterIDs) == 0 {
 		castThumbnailClause = "1=1"
 	}
-	if len(filter.People) != 0 && filter.People[0].ID != nil {
-		personId := *filter.People[0].ID
+	if len(filter.PersonIDs) != 0 {
+		personId := filter.PersonIDs[0]
 		args.ArgIndex++
 		args.Args = append(args.Args, personId)
 		castThumbnailClause = fmt.Sprintf("person_id = $%d", args.ArgIndex)
 	}
-	if len(filter.Characters) != 0 && filter.Characters[0].ID != nil {
-		characterId := *filter.Characters[0].ID
+	if len(filter.CharacterIDs) != 0 {
+		characterId := filter.CharacterIDs[0]
 		args.ArgIndex++
 		args.Args = append(args.Args, characterId)
 		if castThumbnailClause == "" {
@@ -389,74 +333,76 @@ func determineConditions(filter *Filter, args *Arguements) string {
 	}
 
 	// NOTE: Creators, shows and tags use OR operator
-	if len(filter.Creators) > 0 {
+	if len(filter.CreatorIDs) > 0 {
 		creatorPlaceholders := []string{}
-		for _, creator := range filter.Creators {
+		for _, creatorId := range filter.CreatorIDs {
 			args.ArgIndex++
 			creatorPlaceholders = append(creatorPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
-			args.Args = append(args.Args, creator.ID)
+			args.Args = append(args.Args, creatorId)
 		}
 
 		clause += fmt.Sprintf(" AND c.id IN (%s)", strings.Join(creatorPlaceholders, ","))
 	}
 
-	if len(filter.Characters) > 0 {
+	if len(filter.CharacterIDs) > 0 {
 		characterPlaceholders := []string{}
-		for _, character := range filter.Characters {
+		for _, characterId := range filter.CharacterIDs {
 			args.ArgIndex++
 			characterPlaceholders = append(characterPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
-			args.Args = append(args.Args, character.ID)
+			args.Args = append(args.Args, characterId)
 		}
 
 		clause += fmt.Sprintf(" AND cm.character_id IN (%s)", strings.Join(characterPlaceholders, ","))
 	}
 
-	if len(filter.Shows) > 0 {
+	if len(filter.ShowIDs) > 0 {
 		showPlaceholders := []string{}
-		for _, show := range filter.Shows {
+		for _, showId := range filter.ShowIDs {
 			args.ArgIndex++
 			showPlaceholders = append(showPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
-			args.Args = append(args.Args, show.ID)
+			args.Args = append(args.Args, showId)
 		}
 
 		clause += fmt.Sprintf(" AND sh.id IN (%s)", strings.Join(showPlaceholders, ","))
 	}
 
-	if len(filter.Tags) > 0 {
+	if len(filter.TagIDs) > 0 {
 		tagPlaceholders := []string{}
-		for _, tag := range filter.Tags {
+		for _, tagId := range filter.TagIDs {
 			args.ArgIndex++
 			tagPlaceholders = append(tagPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
-			args.Args = append(args.Args, tag.ID)
+			args.Args = append(args.Args, tagId)
 		}
 
 		clause += fmt.Sprintf(" AND vt.tag_id IN (%s)", strings.Join(tagPlaceholders, ","))
 	}
 
 	// NOTE: People filter use AND operation
-	if len(filter.People) > 0 {
+	if len(filter.PersonIDs) > 0 {
 		peoplePlaceholders := []string{}
-		for _, person := range filter.People {
+		for _, personId := range filter.PersonIDs {
 			args.ArgIndex++
 			peoplePlaceholders = append(peoplePlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
-			args.Args = append(args.Args, person.ID)
+			args.Args = append(args.Args, personId)
 		}
 
 		clause += fmt.Sprintf(" AND cm.person_id IN (%s)", strings.Join(peoplePlaceholders, ","))
 		clause += `
-		GROUP BY v.id, v.title, v.sketch_url, v.slug,
+		GROUP BY v.id, v.title, v.slug,
 		         v.thumbnail_name, v.upload_date, v.sketch_number,
 		         c.id, c.name, c.page_url, c.slug, c.profile_img,
-				sh.id, sh.name, sh.profile_img, sh.slug, se.season_number, e.episode_number`
+				sh.id, sh.name, sh.profile_img, sh.slug, 
+				se.id, se.slug, se.season_number, 
+				e.id, e.slug, e.episode_number, e.air_date`
 
 		if filter.Query != "" {
 			clause += ", rank"
 		}
 
-		if len(filter.People) > 1 {
+		if len(filter.PersonIDs) > 1 {
 			args.ArgIndex++
 			clause += fmt.Sprintf(" HAVING COUNT(DISTINCT cm.person_id) = $%d ", args.ArgIndex)
-			args.Args = append(args.Args, len(filter.People))
+			args.Args = append(args.Args, len(filter.PersonIDs))
 		}
 	}
 
@@ -477,7 +423,7 @@ func determineSort(filter *Filter, args *Arguements) string {
 	return sort
 }
 
-func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
+func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, error) {
 	// The CTE is used due to possiblility of a single cast member playing
 	// multiple rows in a sketch, this can cause duplicate sketch results (one for
 	// each character/person pairing) so we want to limit it to one (rn = 1)
@@ -500,11 +446,12 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 			ROW_NUMBER() OVER (PARTITION BY sketch_id ORDER BY sketch_id) AS rn	
 			FROM sketch_cast
 		)
-		SELECT sketch_id, sketch_title, sketch_number, sketch_url, 
+		SELECT sketch_id, sketch_title, sketch_number,
 		sketch_slug, thumbnail_name, upload_date, rating,
-		creator_id, creator_name, creator_slug, 
-		creator_img, show_id, show_name,
-		show_img, show_slug, season_number, episode_number,
+		creator_id, creator_name, creator_slug, creator_img, 
+		show_id, show_name, show_img, show_slug, 
+		season_id, season_slug, season_number, 
+		episode_id, episode_slug, episode_number, episode_airdate,
 		cast_thumbnail_name, popularity %s
 		FROM ranked_sketches
 		WHERE rn = 1
@@ -537,19 +484,21 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 	}
 	defer rows.Close()
 
-	sketches := []*Sketch{}
+	sketches := []*SketchRef{}
 
 	for rows.Next() {
-		v := &Sketch{}
-		c := &Creator{}
-		sh := &Show{}
-		se := &Season{}
-		ep := &Episode{}
+		v := &SketchRef{}
+		c := &CreatorRef{}
+		sh := &ShowRef{}
+		se := &SeasonRef{}
+		ep := &EpisodeRef{}
 		destinations := []any{
-			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName,
+			&v.ID, &v.Title, &v.Number, &v.Slug, &v.Thumbnail,
 			&v.UploadDate, &v.Rating,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
-			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &se.Number, &ep.Number,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
+			&se.ID, &se.Slug, &se.Number,
+			&ep.ID, &ep.Slug, &ep.Number, &ep.AirDate,
 			&v.CastThumbnail, nil,
 		}
 		var rank *float32
@@ -560,9 +509,12 @@ func (m *SketchModel) Get(filter *Filter) ([]*Sketch, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		se.Show = sh
+		ep.Season = se
+
 		v.Creator = c
-		v.Show = sh
-		v.Season = se
+
 		v.Episode = ep
 		sketches = append(sketches, v)
 	}
@@ -700,7 +652,7 @@ func (m *SketchModel) GetCount(filter *Filter) (int, error) {
 	fields := determineFields(filter, args)
 	conditionClause := determineConditions(filter, args)
 	query = fmt.Sprintf(query, fields, conditionClause)
-	// fmt.Println(query)
+	// fmt.Println("COUNT QUERY", query)
 
 	var count int
 	err := m.DB.QueryRow(context.Background(), query, args.Args...).Scan(&count)
@@ -807,10 +759,10 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 	return sketches, nil
 }
 
-func (m *SketchModel) GetByUserLikes(userId int) ([]*Sketch, error) {
+func (m *SketchModel) GetByUserLikes(userId int) ([]*SketchRef, error) {
 	stmt := `
 		SELECT v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number,
-		v.sketch_url as sketch_url, v.slug as sketch_slug, v.thumbnail_name as thumbnail_name, 
+		v.slug as sketch_slug, v.thumbnail_name as thumbnail_name, 
 		v.upload_date as upload_date, v.rating,
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
 		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
@@ -839,15 +791,15 @@ func (m *SketchModel) GetByUserLikes(userId int) ([]*Sketch, error) {
 	}
 	defer rows.Close()
 
-	sketches := []*Sketch{}
+	sketches := []*SketchRef{}
 	for rows.Next() {
-		v := &Sketch{}
-		c := &Creator{}
-		sh := &Show{}
-		se := &Season{}
-		ep := &Episode{}
+		v := &SketchRef{}
+		c := &CreatorRef{}
+		sh := &ShowRef{}
+		se := &SeasonRef{}
+		ep := &EpisodeRef{}
 		destinations := []any{
-			&v.ID, &v.Title, &v.Number, &v.URL, &v.Slug, &v.ThumbnailName, &v.UploadDate, &v.Rating,
+			&v.ID, &v.Title, &v.Number, &v.Slug, &v.Thumbnail, &v.UploadDate, &v.Rating,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &se.Number, &ep.Number,
 		}
@@ -856,8 +808,9 @@ func (m *SketchModel) GetByUserLikes(userId int) ([]*Sketch, error) {
 			return nil, err
 		}
 		v.Creator = c
-		v.Show = sh
-		v.Season = se
+
+		se.Show = sh
+		ep.Season = se
 		v.Episode = ep
 		sketches = append(sketches, v)
 	}

@@ -55,6 +55,8 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 
 		r.Get("/sketch/{id}/{slug}", app.sketchView)
 
+		r.Get("/api/sketches", app.viewSketchesAPI)
+
 		r.Post("/sketch/like/{id}", app.sketchAddLike)
 		r.Delete("/sketch/like/{id}", app.sketchRemoveLike)
 

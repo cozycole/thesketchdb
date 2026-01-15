@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"html/template"
 
+	"sketchdb.cozycole.net/internal/external/moviedb"
+	"sketchdb.cozycole.net/internal/external/wikipedia"
 	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/services/moviedb"
-	"sketchdb.cozycole.net/internal/services/wikipedia"
 )
 
 type PersonPage struct {
@@ -34,7 +34,7 @@ type PersonPage struct {
 func PersonPageView(
 	person *models.Person,
 	stats *models.PersonStats,
-	popular []*models.Sketch,
+	popular []*models.SketchRef,
 	creatorShowCounts []*models.CreatorShowCounts,
 	baseImgUrl string) (*PersonPage, error) {
 	page := PersonPage{}

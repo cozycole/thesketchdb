@@ -13,7 +13,7 @@ type UserPage struct {
 	FavoritedSketches *SketchGallery
 }
 
-func UserPageView(user *models.User, favorited []*models.Sketch, baseImgUrl string) (*UserPage, error) {
+func UserPageView(user *models.User, favorited []*models.SketchRef, baseImgUrl string) (*UserPage, error) {
 	if user.ID == nil {
 		return nil, fmt.Errorf("User ID not defined")
 	}

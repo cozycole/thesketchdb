@@ -3,10 +3,12 @@ package views
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
 	"sketchdb.cozycole.net/internal/models"
+	"sketchdb.cozycole.net/internal/services"
 )
 
 const YOUTUBE_URL = "https://www.youtube.com/watch?v=%s&t=%ds"
@@ -204,7 +206,7 @@ type SketchThumbnail struct {
 }
 
 func SketchGalleryView(
-	sketches []*models.Sketch,
+	sketches []*models.SketchRef,
 	baseImgUrl,
 	thumbnailType,
 	sectionType string,
@@ -223,7 +225,7 @@ func SketchGalleryView(
 
 // for sketch displays where either it's a carousel or a grid to carousel (carousel on mobile)
 func SketchCarouselView(
-	sketches []*models.Sketch,
+	sketches []*models.SketchRef,
 	baseImgUrl,
 	thumbnailType,
 	sectionType string,
@@ -243,7 +245,9 @@ func SketchCarouselView(
 func FeaturedSketchesView(sketches []*models.Sketch, baseImgUrl string) ([]*SketchThumbnail, error) {
 	var sketchViews []*SketchThumbnail
 	for _, sketch := range sketches {
-		sketchView, err := SketchThumbnailView(sketch, baseImgUrl, "", false)
+		sketchRef := convertSketchToSketchRef(sketch)
+
+		sketchView, err := SketchThumbnailView(&sketchRef, baseImgUrl, "", false)
 		if err != nil {
 			return nil, err
 		}
@@ -256,7 +260,55 @@ func FeaturedSketchesView(sketches []*models.Sketch, baseImgUrl string) ([]*Sket
 	return sketchViews, nil
 }
 
-func SketchThumbnailsView(sketches []*models.Sketch, baseImgUrl string, thumbnailType string, inCarousel bool) ([]*SketchThumbnail, error) {
+func convertSketchToSketchRef(s *models.Sketch) models.SketchRef {
+	creator := models.CreatorRef{}
+	if s.Creator != nil && s.Creator.ID != nil {
+		creator.ID = s.Creator.ID
+		creator.Slug = s.Creator.Slug
+		creator.Name = s.Creator.Name
+		creator.ProfileImage = s.Creator.ProfileImage
+	}
+
+	show := models.ShowRef{}
+	if s.Show != nil && s.Show.ID != nil {
+		show.ID = s.Show.ID
+		show.Slug = s.Show.Slug
+		show.Name = s.Show.Name
+		show.ProfileImg = s.Show.ProfileImg
+	}
+
+	se := models.SeasonRef{}
+	if s.Season != nil && s.Season.ID != nil {
+		se.ID = s.Season.ID
+		se.Slug = s.Season.Slug
+		se.Number = s.Season.Number
+	}
+
+	ep := models.EpisodeRef{}
+	if s.Episode != nil && s.Episode.ID != nil {
+		ep.ID = s.Episode.ID
+		ep.Slug = s.Episode.Slug
+		ep.Number = s.Episode.Number
+		ep.AirDate = s.Episode.AirDate
+	}
+
+	se.Show = &show
+	ep.Season = &se
+	return models.SketchRef{
+		ID:            s.ID,
+		Slug:          s.Slug,
+		Title:         s.Title,
+		Thumbnail:     s.ThumbnailName,
+		CastThumbnail: s.CastThumbnail,
+		UploadDate:    s.UploadDate,
+		Number:        s.Number,
+		Rating:        s.Rating,
+		Episode:       &ep,
+		Creator:       &creator,
+	}
+}
+
+func SketchThumbnailsView(sketches []*models.SketchRef, baseImgUrl string, thumbnailType string, inCarousel bool) ([]*SketchThumbnail, error) {
 	var sketchViews []*SketchThumbnail
 	for _, sketch := range sketches {
 		sketchView, err := SketchThumbnailView(sketch, baseImgUrl, thumbnailType, inCarousel)
@@ -269,13 +321,9 @@ func SketchThumbnailsView(sketches []*models.Sketch, baseImgUrl string, thumbnai
 	return sketchViews, nil
 }
 
-func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType string, inCarousel bool) (*SketchThumbnail, error) {
-	if sketch.ID == nil {
-		return nil, fmt.Errorf("Sketch ID not defined")
-	}
-
-	if sketch.Slug == nil {
-		return nil, fmt.Errorf("Sketch slug not defined")
+func SketchThumbnailView(sketch *models.SketchRef, baseImgUrl string, thumbnailType string, inCarousel bool) (*SketchThumbnail, error) {
+	if sketch == nil || sketch.ID == nil || sketch.Slug == nil {
+		return nil, fmt.Errorf("Sketch ID and slug are not defined")
 	}
 
 	sketchView := &SketchThumbnail{}
@@ -287,16 +335,12 @@ func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType
 
 	sketchView.Url = fmt.Sprintf("/sketch/%d/%s", *sketch.ID, *sketch.Slug)
 
-	if sketch.YoutubeID != nil && len(*sketch.YoutubeID) == 11 {
-		sketchView.YoutubeUrl = fmt.Sprintf("www.youtube.com/watch?v=%s", *sketch.YoutubeID)
-	}
-
 	sketchView.InCarousel = inCarousel
 
-	if safeDeref(sketch.ThumbnailName) != "" && safeDeref(sketch.ThumbnailName) != "missing-thumbnail.jpg" {
-		sketchView.SmallImage = fmt.Sprintf("%s/sketch/small/%s", baseImgUrl, safeDeref(sketch.ThumbnailName))
-		sketchView.MediumImage = fmt.Sprintf("%s/sketch/medium/%s", baseImgUrl, safeDeref(sketch.ThumbnailName))
-		sketchView.LargeImage = fmt.Sprintf("%s/sketch/large/%s", baseImgUrl, safeDeref(sketch.ThumbnailName))
+	if safeDeref(sketch.Thumbnail) != "" && safeDeref(sketch.Thumbnail) != "missing-thumbnail.jpg" {
+		sketchView.SmallImage = fmt.Sprintf("%s/sketch/small/%s", baseImgUrl, safeDeref(sketch.Thumbnail))
+		sketchView.MediumImage = fmt.Sprintf("%s/sketch/medium/%s", baseImgUrl, safeDeref(sketch.Thumbnail))
+		sketchView.LargeImage = fmt.Sprintf("%s/sketch/large/%s", baseImgUrl, safeDeref(sketch.Thumbnail))
 		sketchView.Image = sketchView.SmallImage
 	} else {
 		sketchView.Image = "/static/img/missing-thumbnail.jpg"
@@ -319,53 +363,56 @@ func SketchThumbnailView(sketch *models.Sketch, baseImgUrl string, thumbnailType
 		sketchView.Rating = RatingString(*sketch.Rating)
 	}
 
-	if sketch.Show != nil && sketch.Show.ID != nil {
-		if sketch.Show.Name != nil {
-			sketchView.CreatorName = *sketch.Show.Name
-		}
+	if sketch.Episode != nil && sketch.Episode.ID != nil {
+		info := getShowInfo(sketch.Episode)
 
-		if sketch.Show.ID != nil && sketch.Show.Slug != nil {
-			sketchView.CreatorUrl = fmt.Sprintf("/show/%d/%s", *sketch.Show.ID, *sketch.Show.Slug)
-		}
+		sketchView.CreatorName = info.showName
+		sketchView.CreatorUrl = fmt.Sprintf("/show/%d/%s", info.showId, info.showSlug)
 
-		if sketch.Show.ProfileImg != nil {
-			sketchView.CreatorImage = fmt.Sprintf("%s/show/small/%s", baseImgUrl, *sketch.Show.ProfileImg)
-		} else {
-			sketchView.CreatorImage = fmt.Sprintf("%s/missing-profile.jpg", baseImgUrl)
-		}
+		sketchView.CreatorImage = fmt.Sprintf("%s/show/small/%s", baseImgUrl, info.showImage)
 
-		var season, episode, number int
-		if sketch.Season != nil && sketch.Season.Number != nil {
-			season = *sketch.Season.Number
-		}
+		sketchView.CreatorInfo = fmt.Sprintf("S%dE%d · #%d", info.seNum, info.epNum, safeDeref(sketch.Number))
 
-		if sketch.Episode != nil && sketch.Episode.Number != nil {
-			episode = *sketch.Episode.Number
-		}
-
-		if sketch.Number != nil {
-			number = *sketch.Number
-		}
-
-		sketchView.CreatorInfo = fmt.Sprintf("S%d · E%d · #%d", season, episode, number)
 	} else if sketch.Creator != nil && sketch.Creator.ID != nil {
-		if sketch.Creator.Name != nil {
-			sketchView.CreatorName = *sketch.Creator.Name
-		}
-
-		if sketch.Creator.ID != nil && sketch.Creator.Slug != nil {
-			sketchView.CreatorUrl = fmt.Sprintf("/creator/%d/%s", *sketch.Creator.ID, *sketch.Creator.Slug)
-		}
-
-		if sketch.Creator.ProfileImage != nil {
-			sketchView.CreatorImage = fmt.Sprintf("%s/creator/small/%s", baseImgUrl, *sketch.Creator.ProfileImage)
-		}
+		sketchView.CreatorName = safeDeref(sketch.Creator.Name)
+		sketchView.CreatorUrl = fmt.Sprintf("/creator/%d/%s", *sketch.Creator.ID, safeDeref(sketch.Creator.Slug))
+		sketchView.CreatorImage = fmt.Sprintf("%s/creator/small/%s", baseImgUrl, safeDeref(sketch.Creator.ProfileImage))
 	} else {
 		sketchView.CreatorName = "Missing Creator"
 		sketchView.CreatorImage = fmt.Sprintf("%s/missing-profile.jpg", baseImgUrl)
 	}
 
 	return sketchView, nil
+}
+
+type showInfo struct {
+	epNum     int
+	seNum     int
+	showId    int
+	showSlug  string
+	showName  string
+	showImage string
+}
+
+func getShowInfo(e *models.EpisodeRef) showInfo {
+	info := showInfo{}
+	if e == nil || e.ID == nil {
+		return info
+	}
+
+	info.epNum = safeDeref(e.Number)
+	if e.Season != nil {
+		info.seNum = safeDeref(e.Season.Number)
+
+		if e.Season.Show != nil {
+			info.showId = safeDeref(e.Season.Show.ID)
+			info.showSlug = safeDeref(e.Season.Show.Slug)
+			info.showName = safeDeref(e.Season.Show.Name)
+			info.showImage = safeDeref(e.Season.Show.ProfileImg)
+		}
+	}
+
+	return info
 }
 
 type SketchCatalog struct {
@@ -375,16 +422,12 @@ type SketchCatalog struct {
 }
 
 func SketchCatalogView(
-	results *models.SearchResult,
-	currentPage int,
-	totalPages int,
+	results *services.SketchListResult,
 	htmxRequest bool,
 	baseImgUrl string,
 ) (*SketchCatalog, error) {
 	sketchCatalogResult, err := SketchCatalogResultView(
 		results,
-		currentPage,
-		totalPages,
 		htmxRequest,
 		baseImgUrl,
 	)
@@ -393,7 +436,7 @@ func SketchCatalogView(
 	}
 
 	sketchCatalogFilter, err := SketchCatalogFilterView(
-		results.Filter,
+		results,
 		baseImgUrl,
 	)
 	if err != nil {
@@ -401,7 +444,7 @@ func SketchCatalogView(
 	}
 
 	return &SketchCatalog{
-		ResultCountLabel: sketchCountLabel(results.TotalSketchCount),
+		ResultCountLabel: sketchCountLabel(results.TotalCount),
 		CatalogFilter:    *sketchCatalogFilter,
 		CatalogResult:    *sketchCatalogResult,
 	}, nil
@@ -416,19 +459,17 @@ type SketchCatalogResult struct {
 }
 
 func SketchCatalogResultView(
-	results *models.SearchResult,
-	currentPage int,
-	totalPages int,
+	results *services.SketchListResult,
 	htmxRequest bool,
 	baseImgUrl string,
 ) (*SketchCatalogResult, error) {
 	thumbnailType := "Base"
-	if len(results.Filter.People) == 1 || len(results.Filter.Characters) == 1 {
+	if len(results.Filter.PersonIDs) == 1 || len(results.Filter.CharacterIDs) == 1 {
 		thumbnailType = "Cast"
 	}
 
 	sketches, err := SketchThumbnailsView(
-		results.SketchResults,
+		results.Sketches,
 		baseImgUrl,
 		thumbnailType,
 		false,
@@ -437,6 +478,8 @@ func SketchCatalogResultView(
 		return nil, err
 	}
 
+	currentPage := results.Filter.Offset + 1
+	totalPages := int(math.Ceil(float64(results.TotalCount) / float64(results.Filter.Limit)))
 	pages, err := buildPagination(
 		currentPage,
 		totalPages,
@@ -453,14 +496,14 @@ func SketchCatalogResultView(
 	}
 
 	labelString := "%d Sketch"
-	if results.TotalSketchCount != 1 {
+	if results.TotalCount != 1 {
 		labelString += "es"
 	}
 
-	labelString = fmt.Sprintf(labelString, results.TotalSketchCount)
+	labelString = fmt.Sprintf(labelString, results.TotalCount)
 
 	return &SketchCatalogResult{
-		HasResults:           len(results.SketchResults) != 0,
+		HasResults:           len(results.Sketches) != 0,
 		IsHtmxRequest:        htmxRequest,
 		ResultCountLabel:     labelString,
 		SketchResultsGallery: SketchGallery{Sketches: sketches, SectionType: "full"},
@@ -483,9 +526,21 @@ type SortOption struct {
 	Selected bool
 }
 
-func SketchCatalogFilterView(filter *models.Filter, baseUrl string) (*SketchCatalogFilter, error) {
+type SketchViewFilter struct {
+	Characters []*models.Character
+	Creators   []*models.Creator
+	Limit      int
+	Offset     int
+	People     []*models.Person
+	Query      string
+	Shows      []*models.Show
+	SortBy     string
+	Tags       []*Tag
+}
+
+func SketchCatalogFilterView(result *services.SketchListResult, baseUrl string) (*SketchCatalogFilter, error) {
 	var view SketchCatalogFilter
-	sortBy := filter.SortBy
+	sortBy := result.Filter.SortBy
 	view.SortOptions = []SortOption{
 		{Value: "popular", Label: "Popular", Selected: sortBy == "popular"},
 		{Value: "latest", Label: "Latest", Selected: sortBy == "latest"},
@@ -494,21 +549,21 @@ func SketchCatalogFilterView(filter *models.Filter, baseUrl string) (*SketchCata
 		{Value: "za", Label: "Z-A", Selected: sortBy == "za"},
 	}
 	var err error
-	if view.SelectedPeopleJSON, err = PeopleSelectedJSON(filter.People, baseUrl); err != nil {
+	if view.SelectedPeopleJSON, err = PeopleSelectedJSON(result.PersonRefs, baseUrl); err != nil {
 		return nil, err
 	}
 
-	if view.SelectedCreatorsJSON, err = CreatorsSelectedJSON(filter.Creators, baseUrl); err != nil {
+	if view.SelectedCreatorsJSON, err = CreatorsSelectedJSON(result.CreatorRefs, baseUrl); err != nil {
 		return nil, err
 	}
 
-	if view.SelectedCharactersJSON, err = CharactersSelectedJSON(filter.Characters, baseUrl); err != nil {
+	if view.SelectedCharactersJSON, err = CharactersSelectedJSON(result.CharacterRefs, baseUrl); err != nil {
 		return nil, err
 	}
-	if view.SelectedShowsJSON, err = ShowsSelectedJSON(filter.Shows, baseUrl); err != nil {
+	if view.SelectedShowsJSON, err = ShowsSelectedJSON(result.ShowRefs, baseUrl); err != nil {
 		return nil, err
 	}
-	if view.SelectedTagsJSON, err = TagsSelectedJSON(filter.Tags); err != nil {
+	if view.SelectedTagsJSON, err = TagsSelectedJSON(result.TagRefs); err != nil {
 		return nil, err
 	}
 
@@ -521,7 +576,7 @@ type SelectedItem struct {
 	Image string `json:"image,omitempty"`
 }
 
-func PeopleSelectedJSON(people []*models.Person, baseURL string) (string, error) {
+func PeopleSelectedJSON(people []*models.PersonRef, baseURL string) (string, error) {
 	items := make([]SelectedItem, 0, len(people))
 	for _, p := range people {
 
@@ -532,7 +587,7 @@ func PeopleSelectedJSON(people []*models.Person, baseURL string) (string, error)
 
 		items = append(items, SelectedItem{
 			ID:    strconv.Itoa(*p.ID),
-			Name:  PrintPersonName(p),
+			Name:  PrintPersonRefName(p),
 			Image: image,
 		})
 	}
@@ -540,7 +595,7 @@ func PeopleSelectedJSON(people []*models.Person, baseURL string) (string, error)
 	return buildSelectedJSON(items)
 }
 
-func CreatorsSelectedJSON(creators []*models.Creator, baseURL string) (string, error) {
+func CreatorsSelectedJSON(creators []*models.CreatorRef, baseURL string) (string, error) {
 	items := make([]SelectedItem, 0, len(creators))
 	for _, c := range creators {
 
@@ -558,7 +613,7 @@ func CreatorsSelectedJSON(creators []*models.Creator, baseURL string) (string, e
 	return buildSelectedJSON(items)
 }
 
-func ShowsSelectedJSON(shows []*models.Show, baseURL string) (string, error) {
+func ShowsSelectedJSON(shows []*models.ShowRef, baseURL string) (string, error) {
 	items := make([]SelectedItem, 0, len(shows))
 	for _, s := range shows {
 
@@ -576,7 +631,7 @@ func ShowsSelectedJSON(shows []*models.Show, baseURL string) (string, error) {
 	return buildSelectedJSON(items)
 }
 
-func CharactersSelectedJSON(characters []*models.Character, baseURL string) (string, error) {
+func CharactersSelectedJSON(characters []*models.CharacterRef, baseURL string) (string, error) {
 	items := make([]SelectedItem, 0, len(characters))
 	for _, c := range characters {
 
@@ -594,7 +649,7 @@ func CharactersSelectedJSON(characters []*models.Character, baseURL string) (str
 	return buildSelectedJSON(items)
 }
 
-func TagsSelectedJSON(tags []*models.Tag) (string, error) {
+func TagsSelectedJSON(tags []*models.TagRef) (string, error) {
 	items := make([]SelectedItem, 0, len(tags))
 	for _, t := range tags {
 

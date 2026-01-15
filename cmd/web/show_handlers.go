@@ -32,9 +32,9 @@ func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filter := &models.Filter{
-		Limit:  12,
-		SortBy: "popular",
-		Shows:  []*models.Show{show},
+		Limit:   12,
+		SortBy:  "popular",
+		ShowIDs: []int{*show.ID},
 	}
 
 	popular, err := app.sketches.Get(filter)

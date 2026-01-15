@@ -26,6 +26,14 @@ type Person struct {
 	TMDbID      *string
 }
 
+type PersonRef struct {
+	ID         *int
+	Slug       *string
+	First      *string
+	Last       *string
+	ProfileImg *string
+}
+
 type PersonStats struct {
 	SketchCount     int
 	CharacterCount  int
@@ -43,6 +51,7 @@ type PersonModelInterface interface {
 	GetCount(filter *Filter) (int, error)
 	GetCreatorShowCounts(id int) ([]*CreatorShowCounts, error)
 	GetPeople(ids []int) ([]*Person, error)
+	GetPersonRefs(ids []int) ([]*PersonRef, error)
 	GetPersonStats(id int) (*PersonStats, error)
 	Exists(id int) (bool, error)
 	Insert(person *Person) (int, error)
@@ -295,6 +304,50 @@ func (m *PersonModel) GetPeople(ids []int) ([]*Person, error) {
 	for rows.Next() {
 		p := Person{}
 		err := rows.Scan(&p.ID, &p.First, &p.Last, &p.ProfileImg, &p.BirthDate, &p.Slug)
+		if err != nil {
+			return nil, err
+		}
+		people = append(people, &p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return people, nil
+}
+
+func (m *PersonModel) GetPersonRefs(ids []int) ([]*PersonRef, error) {
+	if len(ids) < 1 {
+		return nil, nil
+	}
+
+	stmt := `SELECT id, slug, first, last, profile_img 
+			FROM person
+			WHERE id IN (%s)`
+
+	args := []any{}
+	queryPlaceholders := []string{}
+	for i, id := range ids {
+		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
+		args = append(args, id)
+	}
+
+	stmt = fmt.Sprintf(stmt, strings.Join(queryPlaceholders, ","))
+	rows, err := m.DB.Query(context.Background(), stmt, args...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	var people []*PersonRef
+	for rows.Next() {
+		p := PersonRef{}
+		err := rows.Scan(&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg)
 		if err != nil {
 			return nil, err
 		}

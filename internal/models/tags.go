@@ -19,10 +19,18 @@ type Tag struct {
 	Count    *int
 }
 
+type TagRef struct {
+	ID       *int
+	Name     *string
+	Slug     *string
+	Category *CategoryRef
+}
+
 type TagModelInterface interface {
 	Exists(id int) (bool, error)
 	Get(id int) (*Tag, error)
 	GetTags(ids []int) ([]*Tag, error)
+	GetTagRefs(ids []int) ([]*TagRef, error)
 	GetTagsByType(string) ([]*Tag, error)
 	GetBySketch(sketchId int) ([]*Tag, error)
 	Insert(category *Tag) (int, error)
@@ -109,6 +117,55 @@ func (m *TagModel) GetTags(ids []int) ([]*Tag, error) {
 		c := Category{}
 
 		err := rows.Scan(&t.ID, &t.Name, &c.ID, &c.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		t.Category = &c
+		tags = append(tags, &t)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tags, nil
+}
+
+func (m *TagModel) GetTagRefs(ids []int) ([]*TagRef, error) {
+	if len(ids) < 1 {
+		return nil, nil
+	}
+
+	stmt := `SELECT t.id, t.slug, t.name, c.id, c.slug, c.name
+			FROM tags as t
+			LEFT JOIN categories as c ON t.category_id = c.id
+			WHERE t.id IN (%s)`
+
+	args := []any{}
+	queryPlaceholders := []string{}
+	for i, id := range ids {
+		queryPlaceholders = append(queryPlaceholders, fmt.Sprintf("$%d", i+1))
+		args = append(args, id)
+	}
+
+	stmt = fmt.Sprintf(stmt, strings.Join(queryPlaceholders, ","))
+	rows, err := m.DB.Query(context.Background(), stmt, args...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	var tags []*TagRef
+	for rows.Next() {
+		t := TagRef{}
+		c := CategoryRef{}
+
+		err := rows.Scan(&t.ID, &t.Slug, &t.Name, &c.ID, &c.Slug, &c.Name)
 		if err != nil {
 			return nil, err
 		}
