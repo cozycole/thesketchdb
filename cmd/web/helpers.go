@@ -9,7 +9,6 @@ import (
 	"maps"
 	"net/http"
 	"net/url"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -20,52 +19,6 @@ import (
 var mimeToExt = map[string]string{
 	"image/jpeg": ".jpg",
 	"image/png":  ".png",
-}
-
-// The serverError helper writes an error message and stack trace to the errorLog,
-// then sends a generic 500 Internal Server Error response to the user.
-func (app *application) serverError(r *http.Request, w http.ResponseWriter, err error) {
-	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-	// 2 is inputed to look at the second frame for determining the Llongfile/Lshortfile and line number
-	// for the logged output (since we don't want to log the line number here, but wherever it is called)
-	app.errorLog.Output(2, trace)
-
-	isHxRequest := r.Header.Get("HX-Request") == "true"
-	if isHxRequest {
-		data := app.newTemplateData(r)
-		data.Flash = flashMessage{
-			Level:   "error",
-			Message: "500 Internal Server Error",
-		}
-		app.render(r, w,
-			http.StatusInternalServerError,
-			"flash-message.gohtml",
-			"flash-message",
-			data)
-	} else if app.debugMode {
-		http.Error(w, trace, http.StatusInternalServerError)
-	} else {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-}
-
-// The clientError helper sends a specific status code and corresponding description
-// to the user. We'll use this later in the book to send responses like 400 "Bad
-// Request" when there's a problem with the request that the user sent.
-func (app *application) clientError(w http.ResponseWriter, status int) {
-	http.Error(w, http.StatusText(status), status)
-}
-
-func (app *application) badRequest(w http.ResponseWriter) {
-	app.clientError(w, http.StatusBadRequest)
-}
-
-func (app *application) notFound(w http.ResponseWriter) {
-	app.clientError(w, http.StatusNotFound)
-}
-
-func (app *application) unauthorized(w http.ResponseWriter) {
-	app.clientError(w, http.StatusUnauthorized)
 }
 
 func extractUrlParamIDs(idParams []string) []int {
@@ -175,24 +128,6 @@ func (app *application) render(r *http.Request, w http.ResponseWriter, status in
 	buf.WriteTo(w)
 }
 
-// func (app *application) readIDParam(r *http.Request) (int64, error) {
-// 	// When httprouter is parsing a request, any interpolated URL parameters will be
-// 	// stored in the request context. We can use the ParamsFromContext() function to
-// 	// retrieve a slice containing these parameter names and values.
-// 	params := httprouter.ParamsFromContext(r.Context())
-// 	// We can then use the ByName() method to get the value of the "id" parameter from
-// 	// the slice. In our project all movies will have a unique positive integer ID, but
-// 	// the value returned by ByName() is always a string. So we try to convert it to a
-// 	// base 10 integer (with a bit size of 64). If the parameter couldn't be converted,
-// 	// or is less than 1, we know the ID is invalid so we use the http.NotFound()
-// 	// function to return a 404 Not Found response.
-// 	id, err := strconv.ParseInt(params.ByName("id"), 10, 64)
-// 	if err != nil || id < 1 {
-// 		return 0, errors.New("invalid id parameter")
-// 	}
-// 	return id, nil
-// }
-
 // *** API HELPERS ***
 
 func (app *application) readIDParam(r *http.Request) (int, error) {
@@ -300,6 +235,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 			return err
 		}
 	}
+
 	// Call Decode() again, using a pointer to an empty anonymous struct as the
 	// destination. If the request body only contained a single JSON value this will
 	// return an io.EOF error. So if we get anything else, we know that there is

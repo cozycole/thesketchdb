@@ -167,36 +167,6 @@
       >
     </div>
     <div>
-      <label class="inline-block">Transcript</label>
-      {{ with .FieldErrors.transcript }}
-        <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
-      <textarea
-        class="block"
-        name="transcript"
-        rows="5"
-        cols="50"
-        autocomplete="off"
-      >
-      {{- .Transcript -}}
-    </textarea>
-    </div>
-    <div>
-      <label class="inline-block">Diarization</label>
-      {{ with .FieldErrors.diarization }}
-        <label class="block text-red-700">{{ . }}</label>
-      {{ end }}
-      <textarea
-        class="block"
-        name="diarization"
-        rows="5"
-        cols="50"
-        autocomplete="off"
-      >
-      {{- .Diarization -}}
-    </textarea>
-    </div>
-    <div>
       {{- with .FieldErrors.thumbnail -}}
         <label class="block text-red-700">{{ . }}</label>
       {{- end -}}

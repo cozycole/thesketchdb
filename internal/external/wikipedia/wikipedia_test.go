@@ -3,7 +3,7 @@ package wikipedia_test
 import (
 	"testing"
 
-	"sketchdb.cozycole.net/internal/services/wikipedia"
+	"sketchdb.cozycole.net/internal/external/wikipedia"
 )
 
 func TestGetExtract(t *testing.T) {

@@ -20,30 +20,29 @@ type Show struct {
 	Aliases    *string
 	Slug       *string
 	ProfileImg *string
-	Creator    *Creator
 	Seasons    []*Season
 }
 
 type ShowRef struct {
-	ID         *int
-	Slug       *string
-	Name       *string
-	ProfileImg *string
+	ID         *int    `json:"id"`
+	Slug       *string `json:"slug"`
+	Name       *string `json:"name"`
+	ProfileImg *string `json:"profileImg"`
 }
 
 type Season struct {
 	ID       *int
 	Slug     *string
 	Number   *int
-	Show     *Show
-	Episodes []*Episode
+	Show     *ShowRef
+	Episodes []*EpisodeRef
 }
 
 type SeasonRef struct {
-	ID     *int
-	Slug   *string
-	Number *int
-	Show   *ShowRef
+	ID     *int     `json:"id"`
+	Slug   *string  `json:"slug"`
+	Number *int     `json:"number"`
+	Show   *ShowRef `json:"show"`
 }
 
 type Episode struct {
@@ -54,18 +53,49 @@ type Episode struct {
 	URL       *string
 	AirDate   *time.Time
 	Thumbnail *string
-	Season    *Season
-	Show      *Show
+	Season    *SeasonRef
 	Sketches  []*SketchRef
 	YoutubeID *string
 }
 
+func (e *Episode) GetTitle() *string     { return e.Title }
+func (e *Episode) GetNumber() *int       { return e.Number }
+func (e *Episode) GetSeason() *SeasonRef { return e.Season }
+func (e *Episode) GetSketchCount() int   { return len(e.Sketches) }
+
+func (e *Episode) GetShow() *ShowRef {
+	if e.Season == nil ||
+		e.Season.ID == nil ||
+		e.Season.Show == nil ||
+		e.Season.Show.ID == nil {
+		return nil
+	}
+	return e.Season.Show
+}
+
 type EpisodeRef struct {
-	ID      *int
-	Slug    *string
-	Number  *int
-	AirDate *time.Time
-	Season  *SeasonRef
+	ID          *int       `json:"id"`
+	Slug        *string    `json:"slug"`
+	Title       *string    `json:"title"`
+	Number      *int       `json:"number"`
+	AirDate     *time.Time `json:"airDate"`
+	Thumbnail   *string    `json:"thumbnail"`
+	Season      *SeasonRef `json:"season"`
+	SketchCount *int       `json:"-"`
+}
+
+func (e *EpisodeRef) GetTitle() *string     { return e.Title }
+func (e *EpisodeRef) GetNumber() *int       { return e.Number }
+func (e *EpisodeRef) GetSeason() *SeasonRef { return e.Season }
+func (e *EpisodeRef) GetSketchCount() int   { return safeDeref(e.SketchCount) }
+
+func (e *EpisodeRef) GetShow() *ShowRef {
+	if e.Season == nil ||
+		e.Season.ID == nil ||
+		e.Season.Show.ID == nil {
+		return nil
+	}
+	return e.Season.Show
 }
 
 func (s *Season) AirYear() string {
@@ -93,6 +123,7 @@ type ShowModelInterface interface {
 	Delete(show *Show) error
 	DeleteEpisode(episodeId int) error
 	DeleteSeason(seasonid int) error
+	EpisodeExists(id int) (bool, error)
 	Get(filter *Filter) ([]*Show, error)
 	GetById(id int) (*Show, error)
 	GetBySlug(slug string) (*Show, error)
@@ -104,7 +135,7 @@ type ShowModelInterface interface {
 	Insert(show *Show) (int, error)
 	InsertEpisode(episode *Episode) (int, error)
 	Search(query string) ([]*Show, error)
-	SearchEpisodes(query string) ([]*Episode, error)
+	SearchEpisodes(query string) ([]*EpisodeRef, error)
 	Update(show *Show) error
 	UpdateEpisode(episode *Episode) error
 }
@@ -149,8 +180,8 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	}
 
 	e := &Episode{}
-	se := &Season{}
-	sh := &Show{}
+	se := &SeasonRef{}
+	sh := &ShowRef{}
 	for rows.Next() {
 		v := &SketchRef{}
 		rows.Scan(
@@ -165,12 +196,20 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 		if v.ID == nil {
 			continue
 		}
-		v.Episode = &EpisodeRef{}
+		v.Episode = &EpisodeRef{
+			ID:        e.ID,
+			Slug:      e.Slug,
+			Title:     e.Title,
+			Number:    e.Number,
+			AirDate:   e.AirDate,
+			Thumbnail: e.Thumbnail,
+			Season:    se,
+		}
 
 		e.Sketches = append(e.Sketches, v)
 	}
 
-	e.Show = sh
+	se.Show = sh
 	e.Season = se
 
 	if err := rows.Err(); err != nil {
@@ -178,6 +217,19 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 	}
 
 	return e, nil
+}
+
+func (m *ShowModel) EpisodeExists(id int) (bool, error) {
+	stmt := `SELECT EXISTS(
+		SELECT 1 FROM episodes WHERE id = $1
+	)`
+	var exists bool
+	err := m.DB.QueryRow(context.Background(), stmt, id).Scan(&exists)
+	if err == pgx.ErrNoRows {
+		err = nil
+	}
+
+	return exists, err
 }
 
 func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
@@ -201,11 +253,11 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 		}
 	}
 
-	episodes := map[int]*Episode{}
+	episodes := map[int]*EpisodeRef{}
 	s := &Season{}
-	sh := &Show{}
+	sh := &ShowRef{}
 	for rows.Next() {
-		e := &Episode{}
+		e := &EpisodeRef{}
 		v := &SketchRef{}
 		err := rows.Scan(
 			&s.ID, &s.Slug, &s.Number,
@@ -221,7 +273,12 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 			continue
 		}
 
-		e.Season = s
+		e.Season = &SeasonRef{
+			ID:     s.ID,
+			Slug:   s.Slug,
+			Number: s.Number,
+			Show:   sh,
+		}
 
 		// If episode already exists, want to append its sketches
 		if currEpisode, ok := episodes[*e.ID]; ok {
@@ -229,7 +286,8 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 		}
 
 		if v.ID != nil {
-			e.Sketches = append(e.Sketches, v)
+			newTotal := safeDeref(e.SketchCount) + 1
+			e.SketchCount = &newTotal
 		}
 
 		episodes[*e.ID] = e
@@ -434,11 +492,11 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 
 	show := &Show{}
 	seasonMap := map[int]*Season{}
-	seasonEpisodes := map[int]map[int]*Episode{}
-	episodes := map[int]*Episode{}
+	seasonEpisodes := map[int]map[int]*EpisodeRef{}
+	episodes := map[int]*EpisodeRef{}
 	for rows.Next() {
 		s := &Season{}
-		e := &Episode{}
+		e := &EpisodeRef{}
 		v := &SketchRef{}
 		err := rows.Scan(
 			&show.ID, &show.Name, &show.Aliases, &show.ProfileImg, &show.Slug,
@@ -456,7 +514,14 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 			continue
 		}
 
-		s.Show = show
+		showRef := &ShowRef{
+			ID:         show.ID,
+			Slug:       show.Slug,
+			Name:       show.Name,
+			ProfileImg: show.ProfileImg,
+		}
+
+		s.Show = showRef
 		// add season to map if not already added
 		if _, ok := seasonMap[*s.ID]; !ok {
 			seasonMap[*s.ID] = s
@@ -468,8 +533,12 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 			continue
 		}
 
-		e.Show = show
-		e.Season = s
+		e.Season = &SeasonRef{
+			ID:     s.ID,
+			Slug:   s.Slug,
+			Number: s.Number,
+			Show:   showRef,
+		}
 		if _, ok := episodes[*e.ID]; !ok {
 			episodes[*e.ID] = e
 		}
@@ -477,11 +546,12 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 		e = episodes[*e.ID]
 
 		if v.ID != nil {
-			e.Sketches = append(e.Sketches, v)
+			newCount := safeDeref(e.SketchCount) + 1
+			e.SketchCount = &newCount
 		}
 
 		if _, ok := seasonEpisodes[*s.ID]; !ok {
-			seasonEpisodes[*s.ID] = map[int]*Episode{}
+			seasonEpisodes[*s.ID] = map[int]*EpisodeRef{}
 		}
 
 		seasonEpisodes[*s.ID][*e.ID] = e
@@ -492,7 +562,7 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 	}
 
 	for seasonId, episodeMap := range seasonEpisodes {
-		var episodes []*Episode
+		var episodes []*EpisodeRef
 		for _, ep := range episodeMap {
 			episodes = append(episodes, ep)
 		}
@@ -691,10 +761,9 @@ type EpisodeQuery struct {
 	EpisodeNumber *int
 }
 
-func (m *ShowModel) SearchEpisodes(query string) ([]*Episode, error) {
+func (m *ShowModel) SearchEpisodes(query string) ([]*EpisodeRef, error) {
 	stmt := `
-		SELECT e.id, e.slug, e.episode_number, e.title, e.url, e.air_date, e.thumbnail_name,
-		e.youtube_id,
+		SELECT e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name,
 		s.id, s.slug, s.season_number,
 		sh.id, sh.slug, sh.name, sh.profile_img
 		FROM episode as e
@@ -709,7 +778,7 @@ func (m *ShowModel) SearchEpisodes(query string) ([]*Episode, error) {
 	`
 	fmt.Println("QUERY:", query)
 	if query == "" {
-		return []*Episode{}, nil
+		return []*EpisodeRef{}, nil
 	}
 	epQuery, err := ExtractEpisodeQuery(query)
 	if err != nil {
@@ -723,20 +792,21 @@ func (m *ShowModel) SearchEpisodes(query string) ([]*Episode, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var episodes []*Episode
+	var episodes []*EpisodeRef
 	for rows.Next() {
-		e := &Episode{}
-		sh := &Show{}
-		se := &Season{}
+		e := &EpisodeRef{}
+		sh := &ShowRef{}
+		se := &SeasonRef{}
 		err := rows.Scan(
-			&e.ID, &e.Slug, &e.Number, &e.Title, &e.URL, &e.AirDate, &e.Thumbnail,
-			&e.YoutubeID, &se.ID, &se.Slug, &se.Number, &sh.ID, &sh.Slug, &sh.Name,
+			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
+			&se.ID, &se.Slug, &se.Number, &sh.ID, &sh.Slug, &sh.Name,
 			&sh.ProfileImg,
 		)
 		if err != nil {
 			return nil, err
 		}
-		e.Show = sh
+
+		se.Show = sh
 		e.Season = se
 		episodes = append(episodes, e)
 	}

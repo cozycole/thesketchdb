@@ -20,16 +20,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
-	"sketchdb.cozycole.net/internal/img"
+	"sketchdb.cozycole.net/internal/domain/sketches"
+	"sketchdb.cozycole.net/internal/fileStore"
 	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/services"
 )
 
 type application struct {
 	errorLog       *log.Logger
 	infoLog        *log.Logger
 	templateCache  map[string]*template.Template
-	fileStorage    img.FileStorageInterface
+	fileStorage    fileStore.FileStorageInterface
 	baseImgUrl     string
 	cast           models.CastModelInterface
 	categories     models.CategoryInterface
@@ -44,7 +44,7 @@ type application struct {
 	tags           models.TagModelInterface
 	users          models.UserModelInterface
 	sketches       models.SketchModelInterface
-	services       services.Services
+	services       Services
 	sessionManager *scs.SessionManager
 	debugMode      bool
 	formDecoder    *form.Decoder
@@ -84,7 +84,7 @@ func main() {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	var dbUrl, imgStoragePath, imgBaseUrl, origin string
-	var fileStorage img.FileStorageInterface
+	var fileStorage fileStore.FileStorageInterface
 	if *dev {
 		*debug = true
 		*serveStatic = true
@@ -101,14 +101,14 @@ func main() {
 
 		if *localImgServer {
 			imgStoragePath = os.Getenv("DEV_IMG_DISK_STORAGE")
-			fileStorage = &img.FileStorage{RootPath: imgStoragePath}
+			fileStorage = &fileStore.FileStorage{RootPath: imgStoragePath}
 		} else {
 			client := S3Client(
 				os.Getenv("DEV_S3_ENDPOINT"),
 				os.Getenv("DEV_S3_KEY"),
 				os.Getenv("DEV_S3_SECRET"),
 			)
-			fileStorage = &img.S3Storage{
+			fileStorage = &fileStore.S3Storage{
 				Client:     client,
 				BucketName: os.Getenv("DEV_S3_BUCKET"),
 			}
@@ -128,7 +128,7 @@ func main() {
 		if err != nil {
 			log.Fatal("Error loading manifest found in production build")
 		}
-		fileStorage = &img.S3Storage{
+		fileStorage = &fileStore.S3Storage{
 			Client:     client,
 			BucketName: os.Getenv("S3_BUCKET"),
 		}
@@ -178,7 +178,7 @@ func main() {
 		users:          &models.UserModel{DB: dbpool},
 		sketches:       &models.SketchModel{DB: dbpool},
 		series:         &models.SeriesModel{DB: dbpool},
-		services:       services.NewServices(newRepositories(dbpool)),
+		services:       NewServices(newRepositories(dbpool), fileStorage),
 		sessionManager: sessionManager,
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,
@@ -226,7 +226,6 @@ func S3Client(endpoint, key, secret string) *s3.S3 {
 
 	newSession := session.Must(session.NewSession(s3Config))
 	return s3.New(newSession)
-
 }
 
 func loadAssets() error {
@@ -266,5 +265,17 @@ func newRepositories(dbpool *pgxpool.Pool) models.Repositories {
 		Sketches:   &models.SketchModel{DB: dbpool},
 		Series:     &models.SeriesModel{DB: dbpool},
 	}
+}
 
+type Services struct {
+	Sketches sketches.SketchService
+}
+
+func NewServices(repos models.Repositories, fileStore fileStore.FileStorageInterface) Services {
+	return Services{
+		Sketches: sketches.SketchService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+	}
 }

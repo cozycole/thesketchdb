@@ -13,7 +13,7 @@ import (
 type Moment struct {
 	ID        *int
 	Timestamp *int
-	Sketch    *Sketch
+	Sketch    *SketchRef
 	Quotes    []*Quote
 }
 
@@ -73,13 +73,11 @@ func (m *MomentModel) GetById(momentId int) (*Moment, error) {
 		SELECT m.id, m.timestamp, 
 		q.id, q.text, q.type, q.funny, q.position,
 		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
-		s.id, s.title, s.sketch_number, s.sketch_url, 
-		s.slug, s.thumbnail_name, s.upload_date, s.youtube_id, s.popularity_score,
-		s.part_number, s.duration,
+		s.id, s.title, s.sketch_number, s.slug, s.thumbnail_name, s.upload_date,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.slug, sh.profile_img,
 		se.id, se.slug, se.season_number,
-		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.youtube_id,
+		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name, 
 		t.id, t.name, t.slug, t.type,
 		ca.id, ca.name, ca.slug
 		FROM moment as m
@@ -108,11 +106,11 @@ func (m *MomentModel) GetById(momentId int) (*Moment, error) {
 	}
 	defer rows.Close()
 
-	s := &Sketch{}
-	c := &Creator{}
-	sh := &Show{}
-	se := &Season{}
-	e := &Episode{}
+	s := &SketchRef{}
+	c := &CreatorRef{}
+	sh := &ShowRef{}
+	se := &SeasonRef{}
+	e := &EpisodeRef{}
 	hasRows := false
 	moment := &Moment{}
 	quoteMap := map[int]*Quote{}
@@ -129,12 +127,11 @@ func (m *MomentModel) GetById(momentId int) (*Moment, error) {
 			&q.ID, &q.Text, &q.Type, &q.Funny, &q.Position,
 			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg,
 			&cm.ThumbnailName,
-			&s.ID, &s.Title, &s.Number, &s.URL, &s.Slug, &s.ThumbnailName,
-			&s.UploadDate, &s.YoutubeID, &s.Popularity, &s.SeriesPart, &s.Duration,
+			&s.ID, &s.Title, &s.Number, &s.Slug, &s.Thumbnail, &s.UploadDate,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 			&se.ID, &se.Slug, &se.Number,
-			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.YoutubeID,
+			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&t.ID, &t.Name, &t.Slug, &t.Type,
 			&ca.ID, &ca.Name, &ca.Slug,
 		)
@@ -143,12 +140,10 @@ func (m *MomentModel) GetById(momentId int) (*Moment, error) {
 			return nil, err
 		}
 
-		e.Show = sh
+		se.Show = sh
 		e.Season = se
 
 		s.Episode = e
-		s.Season = se
-		s.Show = sh
 		s.Creator = c
 
 		moment.Sketch = s
@@ -207,13 +202,12 @@ func (m *MomentModel) GetBySketch(sketchId int) ([]*Moment, error) {
 		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
 		p.id, p.slug, p.first, p.last, p.profile_img,
 		ch.id, ch.name, ch.img_name,
-		s.id, s.title, s.sketch_number, s.sketch_url, 
-		s.slug, s.thumbnail_name, s.upload_date, s.youtube_id, s.popularity_score,
-		s.part_number, s.duration,
+		s.id, s.title, s.sketch_number,
+		s.slug, s.thumbnail_name, s.upload_date,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.slug, sh.profile_img,
 		se.id, se.slug, se.season_number,
-		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.youtube_id,
+		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name,
 		t.id, t.name, t.slug, t.type,
 		ca.id, ca.name, ca.slug
 		FROM moment as m
@@ -244,11 +238,11 @@ func (m *MomentModel) GetBySketch(sketchId int) ([]*Moment, error) {
 	}
 	defer rows.Close()
 
-	s := &Sketch{}
-	c := &Creator{}
-	sh := &Show{}
-	se := &Season{}
-	e := &Episode{}
+	s := &SketchRef{}
+	c := &CreatorRef{}
+	sh := &ShowRef{}
+	se := &SeasonRef{}
+	e := &EpisodeRef{}
 	hasRows := false
 	momentMap := map[int]*Moment{}
 	momentQuoteMap := map[int]map[int]*Quote{}
@@ -270,12 +264,11 @@ func (m *MomentModel) GetBySketch(sketchId int) ([]*Moment, error) {
 			&cm.ThumbnailName,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 			&ch.ID, &ch.Name, &ch.Image,
-			&s.ID, &s.Title, &s.Number, &s.URL, &s.Slug, &s.ThumbnailName,
-			&s.UploadDate, &s.YoutubeID, &s.Popularity, &s.SeriesPart, &s.Duration,
+			&s.ID, &s.Title, &s.Number, &s.Slug, &s.Thumbnail, &s.UploadDate,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 			&se.ID, &se.Slug, &se.Number,
-			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.YoutubeID,
+			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&t.ID, &t.Slug, &t.Name, &t.Type,
 			&ca.ID, &ca.Name, &ca.Slug,
 		)
@@ -284,12 +277,10 @@ func (m *MomentModel) GetBySketch(sketchId int) ([]*Moment, error) {
 			return nil, err
 		}
 
-		e.Show = sh
+		se.Show = sh
 		e.Season = se
-
 		s.Episode = e
-		s.Season = se
-		s.Show = sh
+
 		s.Creator = c
 
 		m.Sketch = s

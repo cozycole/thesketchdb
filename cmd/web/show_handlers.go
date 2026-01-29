@@ -359,7 +359,7 @@ func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
 	newSeason := &models.Season{
 		Number: &form.Number,
 		Slug:   &slug,
-		Show: &models.Show{
+		Show: &models.ShowRef{
 			ID: show.ID,
 		},
 	}

@@ -13,7 +13,7 @@ package models
 // 	if testing.Short() {
 // 		t.Skip("models: skipping integration test")
 // 	}
-// 	db := newTestDB(t)
+// 	db := NewTestDb(t)
 // 	// We need to have existing characters for Insert to work
 // 	if err := restoreDbScript("../../sql/testdata/test1.sql"); err != nil {
 // 		t.Fatal(err)
@@ -63,7 +63,7 @@ package models
 // 	if testing.Short() {
 // 		t.Skip("models: skipping integration test")
 // 	}
-// 	db := newTestDB(t)
+// 	db := NewTestDb(t)
 // 	if err := restoreDbScript("../../sql/testdata/test1.sql"); err != nil {
 // 		t.Fatal(err)
 // 	}
@@ -121,7 +121,7 @@ package models
 // 	if testing.Short() {
 // 		t.Skip("models: skipping integration test")
 // 	}
-// 	db := newTestDB(t)
+// 	db := NewTestDb(t)
 //
 // 	if err := restoreDbScript("../../sql/testdata/test1.sql"); err != nil {
 // 		t.Fatal(err)

@@ -108,53 +108,14 @@ func (app *application) sketchAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sketch := convertFormToSketch(&form)
-	// need to get these to create slug
-	if sketch.Episode != nil {
-		sketch.Episode, _ = app.shows.GetEpisode(safeDeref(sketch.Episode.ID))
-	}
-	if sketch.Creator != nil {
-		sketch.Creator, _ = app.creators.GetById(safeDeref(sketch.Creator.ID))
-	}
-
-	slug := createSketchSlug(&sketch)
-	sketch.Slug = &slug
-
-	thumbName, err := generateThumbnailName(form.Thumbnail)
-	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
-	sketch.ThumbnailName = &thumbName
-
-	youtubeID, _ := extractYouTubeVideoID(*sketch.URL)
-	if youtubeID != "" {
-		sketch.YoutubeID = &youtubeID
-	}
-
-	id, err := app.sketches.Insert(&sketch)
+	formSketch := convertFormToSketch(&form)
+	sketch, err := app.services.Sketches.CreateSketch(&formSketch, form.Thumbnail)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	if sketch.Creator != nil {
-		err = app.sketches.InsertSketchCreatorRelation(id, *sketch.Creator.ID)
-		if err != nil {
-			app.serverError(r, w, err)
-			app.sketches.Delete(id)
-			return
-		}
-	}
-
-	err = app.saveLargeThumbnail(thumbName, "sketch", form.Thumbnail)
-	if err != nil {
-		app.serverError(r, w, err)
-		app.sketches.Delete(id)
-		return
-	}
-
-	w.Header().Add("Hx-Redirect", fmt.Sprintf("/sketch/%d/update", id))
+	w.Header().Add("Hx-Redirect", fmt.Sprintf("/sketch/%d/update", *sketch.ID))
 }
 
 type castSection struct {
@@ -304,7 +265,7 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 
 	if form.Thumbnail != nil {
 		var err error
-		thumbnailName, err = generateThumbnailName(sketch.ThumbnailFile)
+		thumbnailName, err = generateThumbnailName(form.Thumbnail)
 		if err != nil {
 			app.serverError(r, w, err)
 			return
@@ -480,9 +441,9 @@ func (app *application) sketchUpdateTags(w http.ResponseWriter, r *http.Request)
 
 func createSketchSlug(sketch *models.Sketch) string {
 	var slugInput string
-	if sketch.Episode != nil {
+	if sketch.Episode != nil && sketch.Episode.GetShow() != nil {
 		episode := sketch.Episode
-		showString := safeDeref(episode.Show.Name)
+		showString := safeDeref(episode.GetShow().Name)
 		seasonNumber := safeDeref(episode.Season.Number)
 		episodeNumber := safeDeref(episode.Number)
 		slugInput += fmt.Sprintf("%s s%d e%d", showString, seasonNumber, episodeNumber)

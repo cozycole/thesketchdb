@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"sketchdb.cozycole.net/internal/domain/sketches"
 	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/services"
 )
 
 const YOUTUBE_URL = "https://www.youtube.com/watch?v=%s&t=%ds"
@@ -95,30 +95,7 @@ func SketchPageView(
 	page.Cast, _ = CastGalleryView(sketch.Cast, baseImgUrl)
 	page.Tags = TagsView(tags)
 
-	if sketch.Show != nil && sketch.Show.ID != nil {
-		if sketch.Show.Name != nil {
-			page.CreatorName = *sketch.Show.Name
-		}
-
-		if sketch.Show.ID != nil && sketch.Show.Slug != nil {
-			page.CreatorUrl = fmt.Sprintf("/show/%d/%s", *sketch.Show.ID, *sketch.Show.Slug)
-		}
-
-		if sketch.Show.ProfileImg != nil {
-			page.CreatorImage = fmt.Sprintf("%s/show/small/%s", baseImgUrl, *sketch.Show.ProfileImg)
-		} else {
-			page.CreatorImage = fmt.Sprintf("%s/missing-profile.jpg", baseImgUrl)
-		}
-
-		if sketch.Season != nil {
-			page.SeasonNumber = safeDeref(sketch.Season.Number)
-			page.SeasonUrl = fmt.Sprintf(
-				"/season/%d/%s",
-				safeDeref(sketch.Season.ID),
-				safeDeref(sketch.Season.Slug),
-			)
-		}
-
+	if sketch.Episode != nil && sketch.Episode.ID != nil {
 		if sketch.Episode != nil && safeDeref(sketch.Episode.ID) != 0 {
 			ep := sketch.Episode
 			page.EpisodeNumber = safeDeref(ep.Number)
@@ -127,6 +104,28 @@ func SketchPageView(
 				safeDeref(ep.ID),
 				safeDeref(ep.Slug),
 			)
+			season := safeDeref(ep.Season)
+			if season.ID != nil {
+				page.SeasonNumber = safeDeref(season.Number)
+				page.SeasonUrl = fmt.Sprintf(
+					"/season/%d/%s",
+					safeDeref(season.ID),
+					safeDeref(season.Slug),
+				)
+
+				show := safeDeref(season.Show)
+				if show.ID != nil {
+					page.CreatorName = safeDeref(show.Name)
+					if show.ID != nil && show.Slug != nil {
+						page.CreatorUrl = fmt.Sprintf("/show/%d/%s", *show.ID, *show.Slug)
+					}
+					if show.ProfileImg != nil {
+						page.CreatorImage = fmt.Sprintf("%s/show/small/%s", baseImgUrl, *show.ProfileImg)
+					} else {
+						page.CreatorImage = fmt.Sprintf("%s/missing-profile.jpg", baseImgUrl)
+					}
+				}
+			}
 		}
 
 		page.SketchNumber = safeDeref(sketch.Number)
@@ -260,6 +259,7 @@ func FeaturedSketchesView(sketches []*models.Sketch, baseImgUrl string) ([]*Sket
 	return sketchViews, nil
 }
 
+// this function is only for the Featured Sketches section
 func convertSketchToSketchRef(s *models.Sketch) models.SketchRef {
 	creator := models.CreatorRef{}
 	if s.Creator != nil && s.Creator.ID != nil {
@@ -269,31 +269,32 @@ func convertSketchToSketchRef(s *models.Sketch) models.SketchRef {
 		creator.ProfileImage = s.Creator.ProfileImage
 	}
 
-	show := models.ShowRef{}
-	if s.Show != nil && s.Show.ID != nil {
-		show.ID = s.Show.ID
-		show.Slug = s.Show.Slug
-		show.Name = s.Show.Name
-		show.ProfileImg = s.Show.ProfileImg
-	}
-
-	se := models.SeasonRef{}
-	if s.Season != nil && s.Season.ID != nil {
-		se.ID = s.Season.ID
-		se.Slug = s.Season.Slug
-		se.Number = s.Season.Number
-	}
-
 	ep := models.EpisodeRef{}
+	se := models.SeasonRef{}
+	sh := models.ShowRef{}
 	if s.Episode != nil && s.Episode.ID != nil {
 		ep.ID = s.Episode.ID
 		ep.Slug = s.Episode.Slug
 		ep.Number = s.Episode.Number
 		ep.AirDate = s.Episode.AirDate
-	}
+		ep.Season = &se
 
-	se.Show = &show
-	ep.Season = &se
+		ogSeason := s.Episode.Season
+		if ogSeason != nil && ogSeason.ID != nil {
+			se.ID = ogSeason.ID
+			se.Slug = ogSeason.Slug
+			se.Number = ogSeason.Number
+			se.Show = &sh
+
+			ogShow := ogSeason.Show
+			if ogShow != nil && ogShow.ID != nil {
+				sh.ID = ogShow.ID
+				sh.Slug = ogShow.Slug
+				sh.Name = ogShow.Name
+				sh.ProfileImg = ogShow.ProfileImg
+			}
+		}
+	}
 	return models.SketchRef{
 		ID:            s.ID,
 		Slug:          s.Slug,
@@ -422,7 +423,7 @@ type SketchCatalog struct {
 }
 
 func SketchCatalogView(
-	results *services.SketchListResult,
+	results *sketches.SketchListResult,
 	htmxRequest bool,
 	baseImgUrl string,
 ) (*SketchCatalog, error) {
@@ -431,6 +432,8 @@ func SketchCatalogView(
 		htmxRequest,
 		baseImgUrl,
 	)
+
+	fmt.Printf("%+v\n", sketchCatalogResult)
 	if err != nil {
 		return nil, err
 	}
@@ -459,7 +462,7 @@ type SketchCatalogResult struct {
 }
 
 func SketchCatalogResultView(
-	results *services.SketchListResult,
+	results *sketches.SketchListResult,
 	htmxRequest bool,
 	baseImgUrl string,
 ) (*SketchCatalogResult, error) {
@@ -478,7 +481,7 @@ func SketchCatalogResultView(
 		return nil, err
 	}
 
-	currentPage := results.Filter.Offset + 1
+	currentPage := int(math.Ceil(float64(results.Filter.Offset)/float64(results.Filter.Limit))) + 1
 	totalPages := int(math.Ceil(float64(results.TotalCount) / float64(results.Filter.Limit)))
 	pages, err := buildPagination(
 		currentPage,
@@ -538,7 +541,7 @@ type SketchViewFilter struct {
 	Tags       []*Tag
 }
 
-func SketchCatalogFilterView(result *services.SketchListResult, baseUrl string) (*SketchCatalogFilter, error) {
+func SketchCatalogFilterView(result *sketches.SketchListResult, baseUrl string) (*SketchCatalogFilter, error) {
 	var view SketchCatalogFilter
 	sortBy := result.Filter.SortBy
 	view.SortOptions = []SortOption{

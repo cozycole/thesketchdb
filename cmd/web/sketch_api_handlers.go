@@ -77,3 +77,33 @@ func (app *application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) 
 		app.serverError(r, w, err)
 	}
 }
+
+func (app *application) createSketchAPI(w http.ResponseWriter, r *http.Request) {
+	var form sketchForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		app.errorLog.Print(err)
+		return
+	}
+
+	app.validateSketchForm(&form)
+	if !form.Valid() {
+		form.Action = "/sketch/add"
+		app.render(r, w, http.StatusUnprocessableEntity, "sketch-form-page.gohtml", "sketch-form", form)
+		return
+	}
+
+	formSketch := convertFormToSketch(&form)
+	sketch, err := app.services.Sketches.CreateSketch(&formSketch, form.Thumbnail)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"sketch": sketch}, nil)
+	if err != nil {
+		app.serverError(r, w, err)
+	}
+}

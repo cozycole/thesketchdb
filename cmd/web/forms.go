@@ -162,8 +162,6 @@ type sketchForm struct {
 	Number              int                   `form:"number"`
 	Popularity          float32               `form:"popularity"`
 	Description         string                `form:"description"`
-	Transcript          string                `form:"transcript"`
-	Diarization         string                `form:"diarization"`
 	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
 	CreatorID           int                   `form:"creatorId"`
 	CreatorInput        string                `form:"creatorInput"`
@@ -187,14 +185,6 @@ func (app *application) validateSketchForm(form *sketchForm) {
 	form.CheckField(form.CreatorID != 0 || form.EpisodeID != 0, "creatorId", "A creator or episode must be defined")
 	form.CheckField(validator.NotBlank(form.UploadDate), "uploadDate", "This field cannot be blank")
 	form.CheckField(validator.ValidDate(form.UploadDate), "uploadDate", "Date must be of the format YYYY-MM-DD")
-
-	if form.CreatorID != 0 {
-		form.CheckField(
-			validator.BoolWithError(app.creators.Exists(form.CreatorID)),
-			"creator",
-			"Unable to find creator, please add them",
-		)
-	}
 
 	if form.ID == 0 {
 		form.CheckField(form.Thumbnail != nil, "thumbnail", "Please upload an image")

@@ -317,7 +317,6 @@ func generateThumbnailName(fileHeader *multipart.FileHeader) (string, error) {
 }
 
 func processThumbnailImage(img image.Image, width, height int) (image.Image, error) {
-
 	img = utils.CenterCropToAspectRatio(img, ThumbnailAspectRatio)
 	img = utils.ResizeImage(img, width, height)
 	return img, nil

@@ -2,8 +2,6 @@ ALTER TABLE person ADD COLUMN IF NOT EXISTS wiki_page TEXT;
 ALTER TABLE person ADD COLUMN IF NOT EXISTS imdb_id TEXT;
 ALTER TABLE person ADD COLUMN IF NOT EXISTS tmdb_id TEXT;
 
-ALTER TABLE creator ADD COLUMN IF NOT EXISTS aliases TEXT;
-
 ALTER TABLE cast_members alter person_id DROP NOT NULL;
 ALTER TABLE cast_members DROP CONSTRAINT IF EXISTS unique_cast_character;
 
@@ -28,7 +26,7 @@ BEFORE INSERT OR UPDATE ON creator
 FOR EACH ROW EXECUTE FUNCTION tsvector_update_trigger(
   search_vector, 
   'pg_catalog.english', 
-  name, description, aliases
+  name, description, alias
 );
 
 CREATE OR REPLACE TRIGGER show_search_update 

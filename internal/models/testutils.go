@@ -9,9 +9,11 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
-func newTestDB(t *testing.T) *pgxpool.Pool {
+func NewTestDb(t *testing.T) *pgxpool.Pool {
+	godotenv.Load("../../.env")
 	dbURL := os.Getenv("TEST_DB_URL")
 	if dbURL == "" {
 		t.Fatal("TEST_DB_URL not supplied in os environment")

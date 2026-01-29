@@ -11,7 +11,7 @@ package models
 // 	if testing.Short() {
 // 		t.Skip("models: skipping integration test")
 // 	}
-// 	db := newTestDB(t)
+// 	db := NewTestDb(t)
 // 	m := CreatorModel{db}
 //
 // 	tests := []struct {

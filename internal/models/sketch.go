@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"mime/multipart"
 	"slices"
 	"strings"
 	"time"
@@ -15,47 +14,42 @@ import (
 )
 
 type Sketch struct {
-	ID            *int
-	Slug          *string
-	Title         *string
-	URL           *string
-	Duration      *int
-	Description   *string
-	Transcript    *string
-	Diarization   *string
-	YoutubeID     *string
-	ThumbnailName *string
-	ThumbnailFile *multipart.FileHeader
-	Rating        *float32
-	TotalRatings  *int
-	Popularity    *float32
-	UploadDate    *time.Time
-	Creator       *Creator
-	Cast          []*CastMember
-	CastThumbnail *string
-	Tags          *[]*Tag
-	Show          *Show
-	Season        *Season
-	Episode       *Episode
-	EpisodeStart  *int
-	Number        *int // order number in episode
-	Series        *Series
-	SeriesPart    *int
-	Recurring     *Recurring
-	Liked         *bool
+	ID            *int          `json:"id"`
+	Slug          *string       `json:"slug"`
+	Title         *string       `json:"title"`
+	URL           *string       `json:"url"`
+	Duration      *int          `json:"duration"`
+	Description   *string       `json:"description"`
+	YoutubeID     *string       `json:"youtubeId"`
+	ThumbnailName *string       `json:"thumbnailName"`
+	Popularity    *float32      `json:"popularity"`
+	UploadDate    *time.Time    `json:"uploadDate"`
+	Creator       *Creator      `json:"creator"`
+	Cast          []*CastMember `json:"cast"`
+	CastThumbnail *string       `json:"castThumbnail"`
+	Tags          *[]*Tag       `json:"tags"`
+	Episode       *Episode      `json:"episode"`
+	EpisodeStart  *int          `json:"episodeStart"`
+	Number        *int          `json:"episodeSketchOrder"`
+	Series        *Series       `json:"series"`
+	SeriesPart    *int          `json:"seriesPart"`
+	Recurring     *Recurring    `json:"recurring"`
+	Rating        *float32      `json:"rating"`
+	TotalRatings  *int          `json:"totalRatings"`
+	Liked         *bool         `json:"liked,omitempty"`
 }
 
 type SketchRef struct {
-	ID            *int
-	Slug          *string
-	Title         *string
-	Thumbnail     *string
-	CastThumbnail *string
-	UploadDate    *time.Time
-	Creator       *CreatorRef
-	Episode       *EpisodeRef
-	Number        *int
-	Rating        *float32
+	ID            *int        `json:"id"`
+	Slug          *string     `json:"slug"`
+	Title         *string     `json:"title"`
+	Thumbnail     *string     `json:"thumbnail"`
+	CastThumbnail *string     `json:"castThumbnail"`
+	UploadDate    *time.Time  `json:"uploadDate"`
+	Creator       *CreatorRef `json:"creator"`
+	Episode       *EpisodeRef `json:"episode"`
+	Number        *int        `json:"episodeSketchOrder"`
+	Rating        *float32    `json:"rating"`
 }
 
 type SketchModelInterface interface {
@@ -469,10 +463,10 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, error) {
 	conditionClause := determineConditions(filter, args)
 	sortClause := determineSort(filter, args)
 
-	fmt.Println("SORT: ", sortClause)
+	// fmt.Println("SORT: ", sortClause)
 	query = fmt.Sprintf(query, fields, conditionClause, rank, sortClause)
-	fmt.Println(query)
-	fmt.Printf("ARGS: %+v\n", args.Args)
+	// fmt.Println(query)
+	// fmt.Printf("ARGS: %+v\n", args.Args)
 
 	rows, err := m.DB.Query(context.Background(), query, args.Args...)
 	if err != nil {
@@ -530,14 +524,13 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	stmt := `
 		SELECT v.id, v.title, v.sketch_number, v.sketch_url, v.description,
 		v.slug, v.thumbnail_name, v.upload_date, v.youtube_id, v.popularity_score,
-		v.episode_start, v.part_number, v.duration, v.transcript, v.diarization,
-		v.rating, v.total_ratings,
+		v.episode_start, v.part_number, v.duration, v.rating, v.total_ratings,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.slug, sh.profile_img,
 		p.id, p.slug, p.first, p.last, p.profile_img,
 		ch.id, ch.name, ch.slug, ch.img_name, ch.character_type,
 		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
-		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.youtube_id,
+		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name,
 		se.id, se.slug, se.season_number,
 		ser.id, ser.slug, ser.title,
 		rec.id, rec.slug, rec.title
@@ -567,10 +560,10 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 
 	v := &Sketch{}
 	c := &Creator{}
-	sh := &Show{}
 	se := &Series{}
+	sh := &ShowRef{}
+	s := &SeasonRef{}
 	e := &Episode{}
-	s := &Season{}
 	rec := &Recurring{}
 	members := []*CastMember{}
 	hasRows := false
@@ -582,13 +575,13 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		err := rows.Scan(
 			&v.ID, &v.Title, &v.Number, &v.URL, &v.Description, &v.Slug, &v.ThumbnailName,
 			&v.UploadDate, &v.YoutubeID, &v.Popularity, &v.EpisodeStart, &v.SeriesPart,
-			&v.Duration, &v.Transcript, &v.Diarization, &v.Rating, &v.TotalRatings,
+			&v.Duration, &v.Rating, &v.TotalRatings,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 			&ch.ID, &ch.Name, &ch.Slug, &ch.Image, &ch.Type,
 			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg, &cm.ThumbnailName,
-			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.YoutubeID,
+			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&s.ID, &s.Slug, &s.Number,
 			&se.ID, &se.Slug, &se.Title,
 			&rec.ID, &rec.Slug, &rec.Title,
@@ -617,16 +610,20 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		return nil, err
 	}
 
-	e.Show = sh
+	s.Show = sh
 	e.Season = s
+	if e.ID != nil {
+		v.Episode = e
+	}
 
 	v.Creator = c
 	v.Cast = members
-	v.Show = sh
-	v.Season = s
-	v.Episode = e
-	v.Series = se
-	v.Recurring = rec
+	if se.ID != nil {
+		v.Series = se
+	}
+	if rec.ID != nil {
+		v.Recurring = rec
+	}
 	return v, nil
 }
 
@@ -670,10 +667,12 @@ func (m *SketchModel) GetCount(filter *Filter) (int, error) {
 
 func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 	stmt := `
-		SELECT v.id, v.title, v.sketch_url, v.slug, v.thumbnail_name, 
-			v.upload_date, v.youtube_id, v.rating,
+		SELECT v.id, v.title, v.slug, v.thumbnail_name, 
+			v.upload_date, v.rating,
 			c.id, c.name, c.profile_img, c.slug,
 			sh.id, sh.name, sh.profile_img, sh.slug,
+			se.id, se.slug, se.season_number,
+			e.id, e.slug, e.title, e.episode_number, e.air_date, e.thumbnail_name,	
 			p.id, p.slug, p.first, p.last, p.profile_img,
 			cm.id, cm.position, cm.thumbnail_name, cm.character_name,
 			ch.id, ch.slug, ch.name, ch.img_name
@@ -706,17 +705,21 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 	for rows.Next() {
 		v := &Sketch{}
 		c := &Creator{}
-		sh := &Show{}
+		sh := &ShowRef{}
+		se := &SeasonRef{}
+		ep := &Episode{}
 		p := &Person{}
 		ch := &Character{}
 		cm := &CastMember{}
 		hasRows = true
 
 		err := rows.Scan(
-			&v.ID, &v.Title, &v.URL, &v.Slug, &v.ThumbnailName,
-			&v.UploadDate, &v.YoutubeID, &v.Rating,
+			&v.ID, &v.Title, &v.Slug, &v.ThumbnailName,
+			&v.UploadDate, &v.Rating,
 			&c.ID, &c.Name, &c.ProfileImage, &c.Slug,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
+			&se.ID, &se.Slug, &se.Number,
+			&ep.ID, &ep.Slug, &ep.Title, &ep.Number, &ep.AirDate, &ep.Thumbnail,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 			&cm.ID, &cm.Position, &cm.ThumbnailName, &cm.CharacterName,
 			&ch.ID, &ch.Slug, &ch.Name, &ch.Image,
@@ -725,9 +728,13 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 			return nil, err
 		}
 
-		v.Show = sh
-		v.Creator = c
+		se.Show = sh
+		ep.Season = se
+		if ep.ID != nil {
+			v.Episode = ep
+		}
 
+		v.Creator = c
 		if cm.ID != nil {
 			if p.ID != nil {
 				cm.Actor = p
@@ -849,16 +856,15 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 	INSERT INTO sketch (
 		title, sketch_url, thumbnail_name, upload_date, slug, youtube_id, sketch_number,
 		episode_id, episode_start, series_id, part_number, recurring_id, duration, description,
-		transcript, diarization, popularity_score)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+		popularity_score)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
 	RETURNING id;`
 	result := m.DB.QueryRow(
 		context.Background(), stmt, sketch.Title,
 		sketch.URL, sketch.ThumbnailName, sketch.UploadDate,
 		sketch.Slug, sketch.YoutubeID, sketch.Number, episodeId,
 		sketch.EpisodeStart, seriesId, sketch.SeriesPart, recurringId,
-		sketch.Duration, sketch.Description, sketch.Transcript, sketch.Diarization,
-		sketch.Popularity,
+		sketch.Duration, sketch.Description, sketch.Popularity,
 	)
 
 	var id int
@@ -983,15 +989,14 @@ func (m *SketchModel) Update(sketch *Sketch) error {
 	UPDATE sketch SET title = $1, sketch_url = $2, upload_date = $3, 
 	slug = $4, thumbnail_name = $5, sketch_number = $6, episode_id = $7, episode_start = $8,
 	series_id = $9, part_number = $10, recurring_id = $11, duration = $12, description = $13,
-	transcript = $14, diarization = $15, popularity_score = $16, youtube_id = $17
-	WHERE id = $18
+	popularity_score = $14, youtube_id = $15
+	WHERE id = $16
 	`
 	_, err := m.DB.Exec(
 		context.Background(), stmt,
 		sketch.Title, sketch.URL, sketch.UploadDate, sketch.Slug, sketch.ThumbnailName,
 		sketch.Number, episodeId, sketch.EpisodeStart, seriesId, sketch.SeriesPart,
-		recurringId, sketch.Duration, sketch.Description, sketch.Transcript,
-		sketch.Diarization, sketch.Popularity, sketch.YoutubeID,
+		recurringId, sketch.Duration, sketch.Description, sketch.Popularity, sketch.YoutubeID,
 		sketch.ID,
 	)
 	return err

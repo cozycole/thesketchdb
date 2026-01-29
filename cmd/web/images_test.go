@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"sketchdb.cozycole.net/internal/assert"
-	"sketchdb.cozycole.net/internal/img"
+	"sketchdb.cozycole.net/internal/fileStore"
 	"sketchdb.cozycole.net/internal/utils"
 )
 
@@ -18,7 +18,7 @@ type Size struct {
 
 func TestSaveLargeThumbnail(t *testing.T) {
 	app := application{
-		fileStorage: &img.FileStorage{RootPath: "/tmp"},
+		fileStorage: &fileStore.FileStorage{RootPath: "/tmp"},
 	}
 
 	directoryName := "test-save-large-thumb"
@@ -102,7 +102,7 @@ func TestSaveLargeThumbnail(t *testing.T) {
 
 func TestSaveMediumThumbnail(t *testing.T) {
 	app := application{
-		fileStorage: &img.FileStorage{RootPath: "/tmp"},
+		fileStorage: &fileStore.FileStorage{RootPath: "/tmp"},
 	}
 
 	directoryName := "test-save-medium-thumb"
@@ -197,7 +197,7 @@ func TestSaveMediumThumbnail(t *testing.T) {
 
 func TestSaveLargeProfile(t *testing.T) {
 	app := application{
-		fileStorage: &img.FileStorage{RootPath: "/tmp"},
+		fileStorage: &fileStore.FileStorage{RootPath: "/tmp"},
 	}
 
 	directoryName := "test-save-large-profile"
@@ -280,7 +280,7 @@ func TestSaveLargeProfile(t *testing.T) {
 
 func TestSaveMediumProfile(t *testing.T) {
 	app := application{
-		fileStorage: &img.FileStorage{RootPath: "/tmp"},
+		fileStorage: &fileStore.FileStorage{RootPath: "/tmp"},
 	}
 
 	directoryName := "test-save-medium-profile"

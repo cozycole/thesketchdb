@@ -7,7 +7,7 @@ import (
 	_ "image/jpeg"
 	"math"
 
-	"sketchdb.cozycole.net/internal/img"
+	"sketchdb.cozycole.net/internal/fileStore"
 )
 
 const (
@@ -37,7 +37,7 @@ func RunImagePipeline(
 	maxSize Size,
 	imgType ImageType,
 	imgName, prefix string,
-	imgStore img.FileStorageInterface,
+	imgStore fileStore.FileStorageInterface,
 ) error {
 	variants, err := CreateImageVariants(src, maxSize, imgType)
 	if err != nil {
@@ -75,7 +75,7 @@ func CreateImageVariants(src []byte, maxSize Size, imgType ImageType) ([]Variant
 func createImageVariantSpec(img image.Image, maxSize Size, imgType ImageType) ([]VariantSpec, error) {
 	var smallOutputWidth, mediumOutputWidth, largeOutputWidth int
 	var smallOutputHeight, mediumOutputHeight, largeOutputHeight int
-	if imgType == imgType {
+	if imgType == Profile {
 		smallOutputWidth = SmallProfileWidth
 		smallOutputHeight = SmallProfileWidth
 		mediumOutputWidth = MediumProfileWidth
@@ -168,7 +168,7 @@ func GetLargest16x9Dimensions(width, height int) (int, int) {
 	}
 }
 
-func SaveImageVariants(imgStore img.FileStorageInterface, prefix, fileName string, variants []Variant) error {
+func SaveImageVariants(imgStore fileStore.FileStorageInterface, prefix, fileName string, variants []Variant) error {
 	for _, v := range variants {
 		fileName := fmt.Sprintf("%s/%s/%s", prefix, v.Name, fileName)
 		err := imgStore.SaveFile(fileName, bytes.NewBuffer(v.Bytes))

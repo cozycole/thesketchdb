@@ -9,7 +9,8 @@ import (
 	"testing"
 
 	"github.com/go-playground/form/v4"
-	imgmock "sketchdb.cozycole.net/internal/img/mocks"
+	imgmock "sketchdb.cozycole.net/internal/fileStore/mocks"
+	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/utils"
 )
 
@@ -67,4 +68,23 @@ func (ts *testServer) postMultipartForm(t *testing.T, urlPath string, fields map
 	bytes.TrimSpace(body)
 
 	return rs.StatusCode, rs.Header, string(body)
+}
+
+func insertTestCreator(t *testing.T, model models.CreatorModelInterface, overrides ...func(*models.Creator)) *models.Creator {
+	creator := &models.Creator{
+		Name:         ptr("Test Creator"),
+		Slug:         ptr("test-creator"),
+		ProfileImage: ptr("test-img.jpg"),
+	}
+
+	for _, override := range overrides {
+		override(creator)
+	}
+
+	_, err := model.Insert(creator)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return creator
 }

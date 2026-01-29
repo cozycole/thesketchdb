@@ -1,4 +1,4 @@
-package services
+package sketches
 
 import (
 	"fmt"

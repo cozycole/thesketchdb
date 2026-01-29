@@ -41,24 +41,21 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 	intDuration, _ := models.ParseTimestamp(form.Duration)
 	intEpStart, _ := models.ParseTimestamp(form.EpisodeStart)
 	return models.Sketch{
-		ID:            &form.ID,
-		Title:         &form.Title,
-		URL:           &form.URL,
-		Slug:          &form.Slug,
-		Duration:      &intDuration,
-		Description:   &form.Description,
-		Transcript:    &form.Transcript,
-		Diarization:   &form.Diarization,
-		ThumbnailFile: form.Thumbnail,
-		UploadDate:    &uploadDate,
-		Number:        &form.Number,
-		Popularity:    &form.Popularity,
-		Creator:       creator,
-		Episode:       episode,
-		EpisodeStart:  &intEpStart,
-		Series:        series,
-		SeriesPart:    &form.SeriesPart,
-		Recurring:     recurring,
+		ID:           &form.ID,
+		Title:        &form.Title,
+		URL:          &form.URL,
+		Slug:         &form.Slug,
+		Duration:     &intDuration,
+		Description:  &form.Description,
+		UploadDate:   &uploadDate,
+		Number:       &form.Number,
+		Popularity:   &form.Popularity,
+		Creator:      creator,
+		Episode:      episode,
+		EpisodeStart: &intEpStart,
+		Series:       series,
+		SeriesPart:   &form.SeriesPart,
+		Recurring:    recurring,
 	}
 }
 
@@ -102,8 +99,6 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		URL:            safeDeref(sketch.URL),
 		Duration:       duration,
 		Description:    safeDeref(sketch.Description),
-		Transcript:     safeDeref(sketch.Transcript),
-		Diarization:    safeDeref(sketch.Diarization),
 		UploadDate:     formDate(sketch.UploadDate),
 		Number:         safeDeref(sketch.Number),
 		Popularity:     safeDeref(sketch.Popularity),
@@ -149,7 +144,7 @@ func (app *application) convertFormtoEpisode(form *episodeForm) models.Episode {
 		Number:  &form.Number,
 		URL:     &form.URL,
 		AirDate: episodeAirDate,
-		Season: &models.Season{
+		Season: &models.SeasonRef{
 			ID: &form.SeasonId,
 		},
 	}
@@ -451,7 +446,7 @@ func (app *application) convertFormtoMoment(form *momentForm) models.Moment {
 	return models.Moment{
 		ID:        &form.ID,
 		Timestamp: &intTime,
-		Sketch:    &models.Sketch{ID: &form.SketchID},
+		Sketch:    &models.SketchRef{ID: &form.SketchID},
 	}
 
 }

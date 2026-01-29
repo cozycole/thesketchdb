@@ -1,4 +1,4 @@
-DROP TRIGGER IF EXISTS sketch_rating_trigger;
+DROP TRIGGER IF EXISTS sketch_rating_trigger on sketch_rating;
 DROP FUNCTION IF EXISTS update_sketch_rating;
 
 ALTER TABLE sketch DROP COLUMN IF EXISTS rating;

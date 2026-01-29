@@ -1,4 +1,5 @@
 package models
+
 //
 // import (
 // 	"testing"
@@ -11,7 +12,7 @@ package models
 // 	if testing.Short() {
 // 		t.Skip("models: skipping integration test")
 // 	}
-// 	db := newTestDB(t)
+// 	db := NewTestDb(t)
 // 	m := PersonModel{db}
 //
 // 	tests := []struct {
@@ -52,7 +53,7 @@ package models
 // 		t.Skip("models: skipping integration test")
 // 	}
 //
-// 	db := newTestDB(t)
+// 	db := NewTestDb(t)
 // 	if err := restoreDbScript("../../sql/testdata/test1.sql"); err != nil {
 // 		t.Fatal(err)
 // 	}

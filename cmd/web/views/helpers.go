@@ -93,20 +93,20 @@ func PrintCastBlurb(c *models.CastMember) string {
 	return pName
 }
 
-func PrintEpisodeName(e *models.Episode) string {
+func PrintEpisodeName(e EpisodeGeneric) string {
 	if e == nil {
 		return ""
 	}
 
 	out := ""
-	if e.Show != nil {
-		out += safeDeref(e.Show.Name)
+	if e.GetShow() != nil {
+		out += safeDeref(e.GetShow().Name)
 	}
-	if e.Season != nil && safeDeref(e.Season.ID) != 0 {
-		out += fmt.Sprintf(" S%d", safeDeref(e.Season.Number))
+	if e.GetSeason() != nil && e.GetSeason().ID != nil {
+		out += fmt.Sprintf(" S%d", safeDeref(e.GetSeason().Number))
 	}
-	if safeDeref(e.Number) != 0 {
-		out += fmt.Sprintf("E%d", safeDeref(e.Number))
+	if safeDeref(e.GetNumber()) != 0 {
+		out += fmt.Sprintf("E%d", safeDeref(e.GetNumber()))
 	}
 
 	return out
@@ -128,13 +128,21 @@ func humanDate(t *time.Time) string {
 	return t.UTC().Format("Jan 2, 2006")
 }
 
-func createEpisodeTitle(episode *models.Episode) string {
-	title := safeDeref(episode.Title)
+type EpisodeGeneric interface {
+	GetTitle() *string
+	GetNumber() *int
+	GetSeason() *models.SeasonRef
+	GetShow() *models.ShowRef
+	GetSketchCount() int
+}
+
+func createEpisodeTitle(episode EpisodeGeneric) string {
+	title := safeDeref(episode.GetTitle())
 	if title == "" {
-		if episode.Number == nil {
+		if episode.GetNumber() == nil {
 			title = "Episode ?"
 		} else {
-			title = fmt.Sprintf("Episode %d", *episode.Number)
+			title = fmt.Sprintf("Episode %d", *episode.GetNumber())
 		}
 	}
 	return title
@@ -148,17 +156,17 @@ func determineEpisodeWatchURL(episode *models.Episode) (string, string) {
 	return "", ""
 }
 
-func seasonEpisodeInfo(episode *models.Episode) string {
+func seasonEpisodeInfo(episode EpisodeGeneric) string {
 	var info string
 
-	if episode.Season != nil &&
-		episode.Number != nil {
+	if episode.GetSeason() != nil &&
+		episode.GetNumber() != nil {
 
 		info = fmt.Sprintf(
-			"S%d · E%d · %s",
-			safeDeref(episode.Season.Number),
-			*episode.Number,
-			sketchCountLabel(len(episode.Sketches)),
+			"S%dE%d · %s",
+			safeDeref(episode.GetSeason().Number),
+			*episode.GetNumber(),
+			sketchCountLabel(episode.GetSketchCount()),
 		)
 	}
 
@@ -249,7 +257,7 @@ func getShowSketchCount(show *models.Show) int {
 	var count int
 	for _, season := range show.Seasons {
 		for _, ep := range season.Episodes {
-			count += len(ep.Sketches)
+			count += safeDeref(ep.SketchCount)
 		}
 	}
 

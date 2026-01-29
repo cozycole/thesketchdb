@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"sketchdb.cozycole.net/internal/assert"
-	"sketchdb.cozycole.net/internal/img"
+	"sketchdb.cozycole.net/internal/fileStore"
 )
 
 func TestCreateImageVariantSpec(t *testing.T) {
@@ -147,7 +147,7 @@ func TestCreateImageVariantSpec(t *testing.T) {
 
 func TestSaveImageVariants(t *testing.T) {
 	directory := path.Join(os.TempDir(), "test-save-image-variants")
-	imgStorage := img.FileStorage{RootPath: directory}
+	imgStorage := fileStore.FileStorage{RootPath: directory}
 
 	err := os.MkdirAll(directory, 0o755)
 	if err != nil {
@@ -155,7 +155,7 @@ func TestSaveImageVariants(t *testing.T) {
 		return
 	}
 
-	inspectImage := true
+	inspectImage := false
 	if !inspectImage {
 		defer os.RemoveAll(directory)
 	}

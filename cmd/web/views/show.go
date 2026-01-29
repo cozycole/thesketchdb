@@ -161,7 +161,6 @@ type EpisodePage struct {
 func EpisodePageView(episode *models.Episode, baseImgUrl string) (*EpisodePage, error) {
 	if episode.ID == nil {
 		return nil, fmt.Errorf("Episode ID not defined")
-
 	}
 
 	page := EpisodePage{}
@@ -182,28 +181,28 @@ func EpisodePageView(episode *models.Episode, baseImgUrl string) (*EpisodePage, 
 
 	page.AirDate = humanDate(episode.AirDate)
 
-	if episode.Show != nil && episode.Show.ID != nil {
-		page.ShowName = safeDeref(episode.Show.Name)
+	if episode.GetShow() != nil && episode.GetShow().ID != nil {
+		page.ShowName = safeDeref(episode.GetShow().Name)
 		if page.ShowName == "" {
 			page.ShowName = "Missing Show"
 		}
 
 		page.UpdateEpisodeUrl = fmt.Sprintf(
 			"/show/%d/update",
-			safeDeref(episode.Show.ID),
+			safeDeref(episode.GetShow().ID),
 		)
 
 		page.ShowUrl = fmt.Sprintf(
 			"/show/%d/%s",
-			safeDeref(episode.Show.ID),
-			safeDeref(episode.Show.Slug),
+			safeDeref(episode.GetShow().ID),
+			safeDeref(episode.GetShow().Slug),
 		)
 
 		page.ShowImage = "/static/img/missing-profile.jpg"
 		page.ShowImage = fmt.Sprintf(
 			"%s/show/small/%s",
 			baseImgUrl,
-			safeDeref(episode.Show.ProfileImg),
+			safeDeref(episode.GetShow().ProfileImg),
 		)
 	}
 
@@ -229,7 +228,7 @@ type EpisodeGallery struct {
 	SectionType       string
 }
 
-func EpisodeGalleryView(episodes []*models.Episode, baseImgUrl, sectionType string, countLabel bool) EpisodeGallery {
+func EpisodeGalleryView(episodes []*models.EpisodeRef, baseImgUrl, sectionType string, countLabel bool) EpisodeGallery {
 	var episodeThumbnails []*EpisodeThumbnail
 	for _, e := range episodes {
 		thumbnail := EpisodeThumbnailView(e, baseImgUrl)
@@ -259,7 +258,7 @@ type EpisodeThumbnail struct {
 	Info        string
 }
 
-func EpisodeThumbnailView(episode *models.Episode, baseImgUrl string) *EpisodeThumbnail {
+func EpisodeThumbnailView(episode *models.EpisodeRef, baseImgUrl string) *EpisodeThumbnail {
 	ep := EpisodeThumbnail{}
 
 	ep.Title = createEpisodeTitle(episode)
@@ -396,7 +395,7 @@ func EpisodeTableView(season *models.Season, baseImgUrl, showUrl string) Episode
 		er.AirDate = humanDate(episode.AirDate)
 
 		er.ThumbnailUrl = fmt.Sprintf("%s/episode/small/%s", baseImgUrl, safeDeref(episode.Thumbnail))
-		er.SketchCount = len(episode.Sketches)
+		er.SketchCount = safeDeref(episode.SketchCount)
 		er.EpisodeUrl = fmt.Sprintf(
 			"/episode/%d/%s",
 			safeDeref(episode.ID),

@@ -42,11 +42,11 @@ func (m *RecurringModel) GetById(id int) (*Recurring, error) {
 	stmt := `
 		SELECT r.id, r.slug, r.title, r.description, r.thumbnail_name,
 		sk.id, sk.slug, sk.title, sk.thumbnail_name, 
-		sk.upload_date, sk.sketch_number, sk.part_number,
-		e.id, e.slug, e.episode_number, e.air_date, e.thumbnail_name,
+		sk.upload_date, sk.sketch_number,
+		e.id, e.slug, e.episode_number, e.air_date,
 		se.id, se.slug, se.season_number,
 		c.id, c.name, c.slug, c.profile_img,
-		sh.id, sh.name, sh.profile_img, sh.slug
+		sh.id, sh.name, sh.slug, sh.profile_img
 		FROM recurring as r
 		LEFT JOIN sketch AS sk ON r.id = sk.recurring_id
 		LEFT JOIN episode as e ON sk.episode_id = e.id

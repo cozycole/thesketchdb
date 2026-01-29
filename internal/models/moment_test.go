@@ -14,7 +14,7 @@ func TestBatchQuoteUpdate(t *testing.T) {
 		t.Skip("models: skipping integration test")
 	}
 
-	db := newTestDB(t)
+	db := NewTestDb(t)
 	sm := SketchModel{db}
 	cm := CastModel{db}
 	mm := MomentModel{db}
@@ -129,7 +129,7 @@ func TestQuoteTagUpdate(t *testing.T) {
 		t.Skip("models: skipping integration test")
 	}
 
-	db := newTestDB(t)
+	db := NewTestDb(t)
 	sm := SketchModel{db}
 	cm := CastModel{db}
 	mm := MomentModel{db}

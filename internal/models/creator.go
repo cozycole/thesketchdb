@@ -13,20 +13,20 @@ import (
 )
 
 type Creator struct {
-	ID              *int
-	Name            *string
-	Alias           *string
-	URL             *string
-	ProfileImage    *string
-	Slug            *string
-	EstablishedDate *time.Time
+	ID              *int       `json:"id"`
+	Slug            *string    `json:"slug"`
+	Name            *string    `json:"name"`
+	ProfileImage    *string    `json:"profileImage"`
+	Alias           *string    `json:"alias"`
+	URL             *string    `json:"url"`
+	EstablishedDate *time.Time `json:"establishedDate"`
 }
 
 type CreatorRef struct {
-	ID           *int
-	Slug         *string
-	Name         *string
-	ProfileImage *string
+	ID           *int    `json:"id"`
+	Slug         *string `json:"slug"`
+	Name         *string `json:"name"`
+	ProfileImage *string `json:"profileImage"`
 }
 
 func (c *Creator) HasId() bool {
@@ -228,6 +228,8 @@ func (m *CreatorModel) Insert(creator *Creator) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
+	creator.ID = &id
 
 	return id, err
 }
