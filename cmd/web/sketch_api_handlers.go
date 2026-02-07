@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -10,10 +12,18 @@ import (
 )
 
 func (app *application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
 	page := r.Form.Get("page")
-	currentPage, err := strconv.Atoi(page)
-	if err != nil || currentPage < 1 {
-		currentPage = 1
+	selectedPage, err := strconv.Atoi(page)
+	if err != nil || selectedPage < 1 {
+		selectedPage = 1
+	}
+
+	pageSize := r.Form.Get("pageSize")
+	selectedPageSize, err := strconv.Atoi(pageSize)
+	if err != nil || selectedPageSize < 1 {
+		selectedPageSize = 10
 	}
 
 	sort := r.Form.Get("sort")
@@ -21,7 +31,11 @@ func (app *application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) 
 		sort = "popular"
 	}
 
-	query, _ := url.QueryUnescape(r.Form.Get("query"))
+	query := r.Form.Get("query")
+	if query == "" {
+		query = r.Form.Get("q")
+	}
+	query, _ = url.QueryUnescape(query)
 	filterQuery := strings.Join(strings.Fields(query), " | ")
 
 	personIds := extractUrlParamIDs(r.URL.Query()["person"])
@@ -29,9 +43,6 @@ func (app *application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) 
 	creatorIds := extractUrlParamIDs(r.URL.Query()["creator"])
 	showIds := extractUrlParamIDs(r.URL.Query()["show"])
 	tagIds := extractUrlParamIDs(r.URL.Query()["tag"])
-
-	limit := app.settings.pageSize
-	offset := (currentPage - 1) * limit
 
 	sketchList, err := app.services.Sketches.ListSketches(
 		&models.Filter{
@@ -42,8 +53,8 @@ func (app *application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) 
 			ShowIDs:      showIds,
 			TagIDs:       tagIds,
 			SortBy:       sort,
-			Limit:        limit,
-			Offset:       offset,
+			PageSize:     selectedPageSize,
+			Page:         selectedPage,
 		}, true)
 
 	if err != nil {
@@ -72,9 +83,39 @@ func (app *application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) 
 		filterRefs["tags"] = sketchList.TagRefs
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"total": sketchList.TotalCount, "filter_refs": filterRefs, "sketches": sketchList.Sketches}, nil)
+	response := envelope{
+		"filter_refs": filterRefs,
+		"sketches":    sketchList.Sketches,
+		"meta":        sketchList.Metadata,
+	}
+
+	err = app.writeJSON(w, http.StatusOK, response, nil)
 	if err != nil {
 		app.serverError(r, w, err)
+	}
+}
+
+func (app *application) adminGetSketchAPI(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("id param not defined"))
+		return
+	}
+
+	sketch, err := app.services.Sketches.GetSketch(sketchId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoSketch) {
+			app.notFoundResponse(w, r)
+		} else {
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"sketch": sketch}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 	}
 }
 
@@ -84,26 +125,62 @@ func (app *application) createSketchAPI(w http.ResponseWriter, r *http.Request) 
 	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
-		app.errorLog.Print(err)
 		return
 	}
 
 	app.validateSketchForm(&form)
 	if !form.Valid() {
-		form.Action = "/sketch/add"
-		app.render(r, w, http.StatusUnprocessableEntity, "sketch-form-page.gohtml", "sketch-form", form)
+		app.failedValidationResponse(w, r, form.Validator.FieldErrors)
 		return
 	}
 
 	formSketch := convertFormToSketch(&form)
 	sketch, err := app.services.Sketches.CreateSketch(&formSketch, form.Thumbnail)
 	if err != nil {
-		app.serverError(r, w, err)
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"sketch": sketch}, nil)
 	if err != nil {
-		app.serverError(r, w, err)
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) updateSketchAPI(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("id param not defined"))
+		return
+	}
+
+	var form sketchForm
+	err = app.decodePostForm(r, &form)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	app.validateSketchForm(&form)
+	if !form.Valid() {
+		app.failedValidationResponse(w, r, form.Validator.FieldErrors)
+		return
+	}
+
+	sketch := convertFormToSketch(&form)
+
+	sketch.ID = &sketchId
+	file, _ := fileHeaderToBytes(form.Thumbnail)
+
+	updatedSketch, err := app.services.Sketches.UpdateSketch(&sketch, file)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"sketch": updatedSketch}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 	}
 }

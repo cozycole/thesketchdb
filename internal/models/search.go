@@ -15,7 +15,7 @@ type SearchResult struct {
 	TotalSketchCount    int
 	PersonResults       []*Person
 	TotalPersonCount    int
-	CreatorResults      []*Creator
+	CreatorResults      []*CreatorRef
 	TotalCreatorCount   int
 	CharacterResults    []*Character
 	TotalCharacterCount int

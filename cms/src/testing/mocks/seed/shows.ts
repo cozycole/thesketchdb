@@ -15,8 +15,8 @@ export const seedShows = async () => {
       name: "Whitest Kids U' Know",
       profileImage:
         "https://thesketchdb-testing.nyc3.cdn.digitaloceanspaces.com/show/small/wkuk.jpg",
-      url: "https://www.youtube.com/c/gillyandkeeves",
-      alias: "gilly",
+      url: "https://www.youtube.com/@OfficialWKUK",
+      alias: "wkuk",
     },
   ];
 
@@ -24,7 +24,7 @@ export const seedShows = async () => {
   let seasonIdCount = 1;
   let episodeIdCount = 1;
 
-  shows.forEach(async (show, i) => {
+  for (const [i, show] of shows.entries()) {
     const showRecord = await db.shows.create({
       id: showIdCount++,
       slug: show.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -41,19 +41,19 @@ export const seedShows = async () => {
     for (let j = 0; j < seasonCount; j++) {
       const seasonRecord = await db.seasons.create({
         id: seasonIdCount++,
-        slug: String(showRecord.slug) + `-s${j}`,
+        slug: String(showRecord.slug) + `-s${j + 1}`,
         seasonNumber: j + 1,
         show: showRecord,
       });
 
       for (let k = 0; k < epCount; k++) {
-        db.episodes.create({
+        await db.episodes.create({
           id: episodeIdCount++,
-          slug: String(showRecord.slug) + `-s${j}-e${k}`,
+          slug: String(showRecord.slug) + `-s${j + 1}-e${k + 1}`,
           season: seasonRecord,
           episodeNumber: k + 1,
         });
       }
     }
-  });
+  }
 };

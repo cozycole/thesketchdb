@@ -44,8 +44,7 @@
             label="Sketch Rating"
             max="10"
             value="{{ .UserRating }}"
-            class="text-xl sm:text-2xl mx-auto"
-            style="--symbol-color-active: #f97316"
+            class="wa-orange text-xl sm:text-2xl mx-auto"
           ></wa-rating>
           <form
             hx-post="/sketch/{{ .SketchID }}/rating"

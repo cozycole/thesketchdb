@@ -15,18 +15,18 @@ var BrowseSectionDefinitions = []BrowseSectionDefinition{
 	{
 		Title: "Featured Sketches",
 		Filter: models.Filter{
-			Limit:  10,
-			Offset: 0,
-			SortBy: "popular",
-			TagIDs: []int{FEATURED_ID},
+			Page:     1,
+			PageSize: 10,
+			SortBy:   "popular",
+			TagIDs:   []int{FEATURED_ID},
 		},
 	},
 	{
 		Title: "Popular",
 		Filter: models.Filter{
-			Limit:  10,
-			Offset: 0,
-			SortBy: "popular",
+			Page:     1,
+			PageSize: 10,
+			SortBy:   "popular",
 		},
 	},
 }
@@ -51,7 +51,7 @@ func BrowsePageView(sections []BrowseSectionDefinition, baseImgUrl string) (Brow
 			baseImgUrl,
 			"base",
 			"full",
-			section.Filter.Limit,
+			section.Filter.Limit(),
 		)
 		if err != nil {
 			return page, err

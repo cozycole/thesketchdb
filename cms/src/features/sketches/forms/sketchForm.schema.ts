@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { Sketch } from "@/types/api";
+import { buildImageUrl, formatHMS } from "@/lib/utils";
 
 export const sketchFormSchema = z
   .object({
@@ -9,27 +10,26 @@ export const sketchFormSchema = z
     url: z.string().optional(),
     description: z.string().optional(),
     uploadDate: z.coerce.date().optional(),
-
+    duration: z.string().optional(),
+    popularity: z.string().optional(),
     // optional in schema; required only when mode==create (below)
     thumbnail: z
       .instanceof(File)
       .refine((file) => !file || file.size <= 5_000_000, "Max file size is 5MB")
       .refine(
-        (file) => ["image/jpeg", "image/png"].includes(file.type),
-        "Only .jpg and .png formats are supported",
+        (file) => ["image/jpeg"].includes(file.type),
+        "Only .jpg are supported",
       )
       .optional(),
-
-    creators: z
-      .array(
-        z.object({
-          id: z.number(),
-          label: z.string(),
-          image: z.string(),
-        }),
-      )
+    // will need to accomadate multiple creators as an array at some point
+    creator: z
+      .object({
+        id: z.number(),
+        label: z.string(),
+        image: z.string(),
+      })
       .optional(),
-    showEpisode: z
+    episode: z
       .object({
         id: z.number(),
         label: z.string(),
@@ -37,21 +37,24 @@ export const sketchFormSchema = z
       })
       .optional(),
     episodeSketchOrder: z.string().optional(),
+    episodeStartTime: z.string().optional(),
     recurring: z
       .object({
         id: z.number(),
         label: z.string(),
         image: z.string(),
       })
-      .optional(),
+      .optional()
+      .nullable(),
     series: z
       .object({
         id: z.number(),
         label: z.string(),
         image: z.string(),
       })
-      .optional(),
-    partNumber: z.string().optional(),
+      .optional()
+      .nullable(),
+    seriesPart: z.string().optional(),
   })
   .superRefine((val, ctx) => {
     if (val.mode === "create" && !val.thumbnail) {
@@ -70,27 +73,33 @@ export function sketchToFormDefaults(
   mode: SketchFormData["mode"],
   sketch?: Sketch,
 ): SketchFormData {
+  const e = sketch?.episode;
+  const c = sketch?.creator;
   return {
     mode,
-    id: sketch?.id,
+    id: sketch?.id ?? 0,
     title: sketch?.title ?? "",
     url: sketch?.url ?? "",
     description: sketch?.description ?? "",
+    duration: formatHMS(sketch?.duration),
+    popularity: sketch?.popularity ? String(sketch?.popularity) : "",
     uploadDate: sketch?.uploadDate ? new Date(sketch.uploadDate) : undefined,
     thumbnail: undefined,
-    creators:
-      sketch?.creators?.map((c) => ({
-        id: c.id,
-        label: c.name,
-        image: c.profileImage,
-      })) ?? undefined,
-    showEpisode: sketch?.showEpisode
+    creator: c
       ? {
-          id: sketch.showEpisode.id,
-          label: sketch.showEpisode.name,
-          image: sketch.showEpisode.profileImage,
+          id: c.id,
+          label: c.name,
+          image: buildImageUrl("creator", "small", c.profileImage),
         }
       : undefined,
+    episode: e
+      ? {
+          id: e.id,
+          label: `${e.season.show.name} S${e.season.number} E${e.number}`,
+          image: buildImageUrl("show", "small", e.season?.show?.profileImage),
+        }
+      : undefined,
+    episodeStartTime: formatHMS(sketch?.episodeStart),
     episodeSketchOrder:
       sketch?.episodeSketchOrder != null
         ? String(sketch.episodeSketchOrder)
@@ -98,17 +107,21 @@ export function sketchToFormDefaults(
     recurring: sketch?.recurring
       ? {
           id: sketch.recurring.id,
-          label: sketch.recurring.name,
-          image: sketch.recurring.thumbnail,
+          label: sketch.recurring.title,
+          image: buildImageUrl(
+            "recurring",
+            "small",
+            sketch.recurring.thumbnailName,
+          ),
         }
       : undefined,
     series: sketch?.series
       ? {
           id: sketch.series.id,
-          label: sketch.series.name,
-          image: sketch.series.thumbnail,
+          label: sketch.series.title,
+          image: buildImageUrl("series", "small", sketch.series.thumbnailName),
         }
       : undefined,
-    partNumber: sketch?.partNumber != null ? String(sketch.partNumber) : "",
+    seriesPart: sketch?.seriesPart ? String(sketch.seriesPart) : "",
   };
 }

@@ -241,68 +241,14 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sketch := convertFormToSketch(&form)
-	if sketch.Episode != nil {
-		sketch.Episode, _ = app.shows.GetEpisode(safeDeref(sketch.Episode.ID))
-	}
-	if sketch.Creator != nil {
-		sketch.Creator, _ = app.creators.GetById(safeDeref(sketch.Creator.ID))
-	}
+	sketch.ID = &sketchId
+	file, _ := fileHeaderToBytes(form.Thumbnail)
 
-	slug := createSketchSlug(&sketch)
-	sketch.Slug = &slug
-
-	youtubeID, _ := extractYouTubeVideoID(*sketch.URL)
-	if youtubeID != "" {
-		sketch.YoutubeID = &youtubeID
-	}
-
-	var thumbnailName string
-	if oldSketch.ThumbnailName != nil {
-		thumbnailName = *oldSketch.ThumbnailName
-	} else {
-		thumbnailName = ""
-	}
-
-	if form.Thumbnail != nil {
-		var err error
-		thumbnailName, err = generateThumbnailName(form.Thumbnail)
-		if err != nil {
-			app.serverError(r, w, err)
-			return
-		}
-
-		err = app.saveLargeThumbnail(thumbnailName, "sketch", form.Thumbnail)
-		if err != nil {
-			app.serverError(r, w, err)
-			return
-		}
-	}
-
-	*sketch.ID = sketchId
-	sketch.ThumbnailName = &thumbnailName
-	err = app.sketches.Update(&sketch)
+	updatedSketch, err := app.services.Sketches.UpdateSketch(&sketch, file)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
-
-	if sketch.Creator != nil && sketch.Creator.ID != nil {
-		err = app.sketches.UpdateCreatorRelation(*sketch.ID, *sketch.Creator.ID)
-		if err != nil {
-			app.serverError(r, w, err)
-			return
-		}
-	}
-
-	if form.Thumbnail != nil && oldSketch.ThumbnailName != nil {
-		err = app.deleteImage("sketch", *oldSketch.ThumbnailName)
-		if err != nil {
-			app.serverError(r, w, err)
-			return
-		}
-	}
-
-	updatedSketch, _ := app.sketches.GetById(sketchId)
 	newForm := convertSketchToForm(updatedSketch)
 	newForm.ImageUrl = fmt.Sprintf("%s/sketch/small/%s", app.baseImgUrl, safeDeref(updatedSketch.ThumbnailName))
 	isHxRequest := r.Header.Get("HX-Request") == "true"
@@ -312,7 +258,7 @@ func (app *application) sketchUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cast, err := app.cast.GetCastMembers(*sketch.ID)
-	if err != nil && errors.Is(err, models.ErrNoRecord) {
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
 	}

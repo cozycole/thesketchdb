@@ -8,7 +8,7 @@
         <img
           class="result-img flex-shrink-0 w-12"
           src="{{ .ImageUrl }}"
-          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg';this.srcset='';"
+          data-fallback="/static/img/missing-thumbnail.jpg"
         />
       {{ end }}
       <p

@@ -75,7 +75,7 @@ type CreatorGallery struct {
 	Cards []*Card
 }
 
-func CreatorGalleryView(creators []*models.Creator, baseImgUrl string) (*CreatorGallery, error) {
+func CreatorGalleryView(creators []*models.CreatorRef, baseImgUrl string) (*CreatorGallery, error) {
 	creatorGallery := CreatorGallery{}
 
 	for _, creator := range creators {
@@ -90,7 +90,7 @@ func CreatorGalleryView(creators []*models.Creator, baseImgUrl string) (*Creator
 	return &creatorGallery, nil
 }
 
-func CreatorCardView(creator *models.Creator, baseImgUrl string) (*Card, error) {
+func CreatorCardView(creator *models.CreatorRef, baseImgUrl string) (*Card, error) {
 	card := &Card{}
 
 	if creator.ID == nil {

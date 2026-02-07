@@ -14,7 +14,7 @@
                   <img
                     class="rounded-lg w-auto lg:object-cover lg:h-full block"
                     src="{{ .Image }}"
-                    onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+                    data-fallback="/static/img/missing-thumbnail.jpg"
                   />
                 </div>
               </div>

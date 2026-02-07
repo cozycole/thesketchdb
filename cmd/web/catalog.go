@@ -11,19 +11,19 @@ func (app *application) getSketchCatalogResults(
 	searchType string,
 	filter *models.Filter,
 ) (*models.SearchResult, error) {
-	sketches, err := app.sketches.Get(filter)
+	sketches, metadata, err := app.sketches.Get(filter)
 	if err != nil {
 		return nil, fmt.Errorf("%s get error: %w", searchType, err)
 	}
 
-	totalCount, err := app.sketches.GetCount(filter)
-	if err != nil {
-		return nil, fmt.Errorf("%s search count error: %w", searchType, err)
-	}
+	// totalCount, err := app.sketches.GetCount(filter)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("%s search count error: %w", searchType, err)
+	// }
 
 	return &models.SearchResult{
 		Type:             "sketch",
 		SketchResults:    sketches,
-		TotalSketchCount: totalCount,
+		TotalSketchCount: metadata.TotalRecords,
 	}, nil
 }

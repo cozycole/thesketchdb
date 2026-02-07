@@ -12,7 +12,7 @@
             <img
               src="{{ .Image }}"
               class="w-52 rounded-full"
-              onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+              data-fallback="/static/img/missing-profile.jpg"
             />
             <div class="text-center space-y-1">
               <h1 class="text-2xl font-medium">{{ .CreatorName }}</h1>

@@ -3,12 +3,15 @@ package media
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"image"
 	"image/draw"
 	"image/jpeg"
 	"image/png"
 	"math"
+	"net/http"
 
+	"github.com/google/uuid"
 	xdraw "golang.org/x/image/draw"
 )
 
@@ -102,4 +105,20 @@ func clampInt(v, lo, hi int) int {
 		return hi
 	}
 	return v
+}
+
+// files
+
+var mimeToExt = map[string]string{
+	"image/jpeg": ".jpg",
+	"image/png":  ".png",
+}
+
+func GenerateFileName(file []byte) (string, error) {
+	thumbnailId := uuid.New().String()
+	thumbnailExtension, ok := mimeToExt[http.DetectContentType(file)]
+	if !ok {
+		return "", fmt.Errorf("Mime does not exist in extension table, bad file")
+	}
+	return thumbnailId + thumbnailExtension, nil
 }

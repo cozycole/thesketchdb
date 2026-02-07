@@ -28,10 +28,10 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	popularSketches, err := app.sketches.Get(
+	popularSketches, _, err := app.sketches.Get(
 		&models.Filter{
-			Limit:      12,
-			Offset:     0,
+			Page:       1,
+			PageSize:   12,
 			SortBy:     "popular",
 			CreatorIDs: []int{*creator.ID},
 		},

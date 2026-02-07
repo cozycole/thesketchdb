@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,10 +18,18 @@ type Series struct {
 	Sketches      []*SketchRef
 }
 
+type SeriesRef struct {
+	ID            *int    `json:"id"`
+	Slug          *string `json:"slug"`
+	Title         *string `json:"title"`
+	ThumbnailName *string `json:"thumbnailName"`
+}
+
 type SeriesModelInterface interface {
 	Delete(id int) error
 	GetById(id int) (*Series, error)
 	Insert(*Series) (int, error)
+	List(f *Filter) ([]*SeriesRef, Metadata, error)
 	Search(string) ([]*Series, error)
 	Update(*Series) error
 }
@@ -110,6 +119,70 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 	}
 
 	return s, nil
+}
+
+func (m *SeriesModel) List(f *Filter) ([]*SeriesRef, Metadata, error) {
+	query := `SELECT count(*) OVER(), s.id, s.slug, s.title, s.thumbnail_name%s
+			FROM series as s
+			WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+	if f.Query != "" {
+		rankParam := fmt.Sprintf(`
+		, ts_rank(
+			setweight(to_tsvector('english', s.title) , 'A'),
+			websearch_to_tsquery('english', $%d)
+		) AS rank
+		`, argIndex)
+
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`AND
+			(
+				to_tsvector('english', s.title) @@ websearch_to_tsquery('english', $%d)
+				OR
+				s.title ILIKE '%%' || $%d || '%%'
+			)
+		`, argIndex, argIndex)
+
+		args = append(args, f.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	series := []*SeriesRef{}
+	var totalCount int
+	for rows.Next() {
+		var r SeriesRef
+		destinations := []any{
+			&totalCount, &r.ID, &r.Slug, &r.Title, &r.ThumbnailName,
+		}
+
+		var rank *float32
+		if f.Query != "" {
+			destinations = append(destinations, &rank)
+		}
+		err := rows.Scan(destinations...)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		series = append(series, &r)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	return series, calculateMetadata(totalCount, f.Page, f.PageSize), nil
 }
 
 func (m *SeriesModel) Insert(series *Series) (int, error) {

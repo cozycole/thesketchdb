@@ -3,6 +3,8 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { paths } from "@/config/paths";
 
+import { buildImageUrl } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -39,23 +41,44 @@ export const columns: ColumnDef<Sketch>[] = [
     accessorKey: "creators",
     header: "Creator / Show",
     cell: ({ row }) => {
-      if (row.original.creators.length) {
-        const creator = row.original.creators[0];
-        return (
-          <Link
-            to={`/api/v1/creator/${creator.id}`}
-            className="flex gap-2 items-center hover:underline text-black hover:text-slate-800"
-          >
-            <img src={creator.profileImage} className="rounded-full w-8" />
-            {row.original.creators[0].name}
-          </Link>
-        );
+      let id = 0;
+      let label = "";
+      let type = "";
+      let img = null;
+      const sketch = row.original;
+      if (sketch.creator) {
+        type = "creator";
+        const creator = sketch.creator;
+        id = creator.id;
+        label = creator.name;
+        img = buildImageUrl("creator", "small", creator.profileImage);
       }
+      if (sketch.episode) {
+        type = "show";
+        const show = sketch.episode.season.show;
+        id = show.id;
+        label = show.name;
+        img = buildImageUrl("show", "small", show.profileImage);
+      }
+      return (
+        <Link
+          to={`/api/v1/${type}/${id}`}
+          className="flex gap-2 items-center hover:underline text-black hover:text-slate-800"
+        >
+          <img src={img} className="rounded-full w-8" />
+          {label}
+        </Link>
+      );
     },
   },
   {
     accessorKey: "rating",
     header: "Rating",
+    cell: ({ row }) => {
+      return (
+        <span>{row.original.rating !== 0 ? row.original.rating : "N/A"}</span>
+      );
+    },
   },
   {
     id: "actions",

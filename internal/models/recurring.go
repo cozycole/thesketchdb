@@ -3,24 +3,33 @@ package models
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Recurring struct {
-	ID            *int
-	Slug          *string
-	Title         *string
-	Description   *string
-	ThumbnailName *string
-	Sketches      []*SketchRef
+	ID            *int         `json:"id"`
+	Slug          *string      `json:"slug"`
+	Title         *string      `json:"title"`
+	ThumbnailName *string      `json:"thumbnailName"`
+	Description   *string      `json:"description"`
+	Sketches      []*SketchRef `json:"sketches"`
+}
+
+type RecurringRef struct {
+	ID            *int    `json:"id"`
+	Slug          *string `json:"slug"`
+	Title         *string `json:"title"`
+	ThumbnailName *string `json:"thumbnailName"`
 }
 
 type RecurringModelInterface interface {
 	Delete(id int) error
 	GetById(id int) (*Recurring, error)
 	Insert(*Recurring) (int, error)
+	List(f *Filter) ([]*RecurringRef, Metadata, error)
 	Search(string) ([]*Recurring, error)
 	Update(*Recurring) error
 }
@@ -129,6 +138,71 @@ func (m *RecurringModel) Insert(recurring *Recurring) (int, error) {
 		return 0, err
 	}
 	return id, nil
+}
+
+func (m *RecurringModel) List(f *Filter) ([]*RecurringRef, Metadata, error) {
+	query := `SELECT count(*) OVER(), r.id, r.slug, r.title, r.thumbnail_name%s
+			FROM recurring as r
+			WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+	if f.Query != "" {
+		rankParam := fmt.Sprintf(`
+		, ts_rank(
+			setweight(to_tsvector('english', r.title) , 'A'),
+			websearch_to_tsquery('english', $%d)
+		) AS rank
+		`, argIndex)
+
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`AND
+			(
+				to_tsvector('english', r.title) @@ websearch_to_tsquery('english', $%d)
+				OR
+				r.title ILIKE '%%' || $%d || '%%'
+			)
+		`, argIndex, argIndex)
+
+		args = append(args, f.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	recurring := []*RecurringRef{}
+	var totalCount int
+	for rows.Next() {
+		var r RecurringRef
+		destinations := []any{
+			&totalCount, &r.ID, &r.Slug, &r.Title, &r.ThumbnailName,
+		}
+
+		var rank *float32
+		if f.Query != "" {
+			destinations = append(destinations, &rank)
+		}
+		err := rows.Scan(destinations...)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		recurring = append(recurring, &r)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	return recurring, calculateMetadata(totalCount, f.Page, f.PageSize), nil
+
 }
 
 func (m *RecurringModel) Search(query string) ([]*Recurring, error) {

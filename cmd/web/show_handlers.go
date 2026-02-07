@@ -32,12 +32,13 @@ func (app *application) viewShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filter := &models.Filter{
-		Limit:   12,
-		SortBy:  "popular",
-		ShowIDs: []int{*show.ID},
+		PageSize: 12,
+		Page:     1,
+		SortBy:   "popular",
+		ShowIDs:  []int{*show.ID},
 	}
 
-	popular, err := app.sketches.Get(filter)
+	popular, _, err := app.sketches.Get(filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -676,19 +677,6 @@ func (app *application) deleteEpisode(w http.ResponseWriter, r *http.Request) {
 	)
 
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-table", table)
-}
-
-func getLatestSeasonNumber(show *models.Show) int {
-	if show == nil {
-		return 0
-	}
-	var max int
-	for _, s := range show.Seasons {
-		if safeDeref(s.Number) > max {
-			max = safeDeref(s.Number)
-		}
-	}
-	return max
 }
 
 func createEpisodeSlug(season *models.Season, epNumber int) string {

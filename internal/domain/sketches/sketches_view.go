@@ -1,6 +1,7 @@
 package sketches
 
 import (
+	"errors"
 	"fmt"
 
 	"sketchdb.cozycole.net/internal/models"
@@ -14,20 +15,19 @@ type SketchListResult struct {
 	PersonRefs    []*models.PersonRef
 	ShowRefs      []*models.ShowRef
 	TagRefs       []*models.TagRef
+	Metadata      models.Metadata
 	Filter        *models.Filter
 }
 
 func (s *SketchService) ListSketches(f *models.Filter, includeRefs bool) (SketchListResult, error) {
 	result := SketchListResult{}
-	sketches, err := s.Repos.Sketches.Get(f)
+	sketches, metadata, err := s.Repos.Sketches.Get(f)
 	if err != nil {
-		println("GET ERROR")
 		return result, fmt.Errorf("list sketches error: %w", err)
 	}
 
 	totalCount, err := s.Repos.Sketches.GetCount(f)
 	if err != nil {
-		println("COUNT ERROR")
 		return result, fmt.Errorf("list sketches total count error: %w", err)
 	}
 
@@ -54,8 +54,23 @@ func (s *SketchService) ListSketches(f *models.Filter, includeRefs bool) (Sketch
 		}
 	}
 
+	result.Metadata = metadata
 	result.Filter = f
 	result.Sketches = sketches
 	result.TotalCount = totalCount
 	return result, nil
+}
+
+func (s *SketchService) GetSketch(id int) (*models.Sketch, error) {
+	sketch, err := s.Repos.Sketches.GetById(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			return nil, models.ErrNoSketch
+		} else {
+			return nil, err
+		}
+
+	}
+
+	return sketch, nil
 }

@@ -6,7 +6,7 @@ import { paths } from "@/config/paths";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/ui/appSidebar";
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -26,7 +26,7 @@ import {
 const addMenuItems = [
   {
     title: "Sketch",
-    path: paths.addSketch.getHref(),
+    path: paths.createSketch.getHref(),
   },
   {
     title: "Person",
@@ -38,15 +38,15 @@ const addMenuItems = [
   },
   {
     title: "Creator",
-    path: paths.addSketch.getHref(),
+    path: paths.createSketch.getHref(),
   },
   {
     title: "Show",
-    path: paths.addSketch.getHref(),
+    path: paths.createSketch.getHref(),
   },
   {
     title: "Category / Tag",
-    path: paths.addSketch.getHref(),
+    path: paths.createSketch.getHref(),
   },
 ];
 
@@ -54,7 +54,7 @@ function AddItemDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button>Add +</Button>
+        <Button>Create +</Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-44" align="end">
         {addMenuItems.map((item) => (

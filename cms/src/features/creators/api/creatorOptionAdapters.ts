@@ -1,4 +1,5 @@
 import { getCreators } from "./getCreators";
+import { buildImageUrl } from "@/lib/utils";
 import type { SelectEntity } from "@/components/ui/asyncSearchSelect";
 import type { QueryClient } from "@tanstack/react-query";
 
@@ -15,7 +16,7 @@ export const makeCreatorLoadOptions = (opts?: { pageSize?: number }) => {
     return creators.map((s) => ({
       id: s.id,
       label: s.name,
-      image: s.profileImage,
+      image: buildImageUrl("creator", "small", s.profileImage),
     }));
   };
 };

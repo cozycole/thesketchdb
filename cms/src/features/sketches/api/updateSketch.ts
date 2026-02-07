@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
 
 import { api } from "@/lib/api-client";
 import { MutationConfig } from "@/lib/react-query";
@@ -7,35 +6,40 @@ import { Sketch } from "@/types/api";
 
 import { sketchQueryOptions } from "./getSketch";
 import { SketchFormData } from "../forms/sketchForm.schema";
+import { parseHMS, toYYYYMMDD } from "@/lib/utils";
 
-export const updateSketchInputSchema = z.object({
-  title: z.string().min(1, "Required"),
-  body: z.string().min(1, "Required"),
-});
+type SketchResponse = { sketch: Sketch };
 
-export type UpdateSketchInput = z.infer<typeof updateSketchInputSchema>;
-
-export const updateSketch = ({
+export const updateSketch = async ({
   data,
   sketchId,
 }: {
   data: SketchFormData;
   sketchId: number;
 }): Promise<Sketch> => {
-  const hasFile = data.thumbnail instanceof File;
-
-  if (!hasFile) {
-    const { thumbnail, ...json } = data;
-    void thumbnail;
-    return api.patch(`/admin/sketch/${sketchId}`, json);
-  }
-
   const fd = new FormData();
-  if (data.title != null) fd.append("title", data.title);
-  if (data.description != null) fd.append("description", data.description);
-  if (data.creators) fd.append("creators", JSON.stringify(data.creators));
+  fd.append("id", String(data.id));
+  fd.append("title", data.title);
+  fd.append("url", data.url);
+  fd.append("description", data.description);
+  fd.append("duration", String(parseHMS(data.duration)));
+  fd.append("uploadDate", toYYYYMMDD(data.uploadDate));
+  fd.append("popularity", String(data.popularity));
+
+  fd.append("creatorId", data.creator?.id ? String(data.creator.id) : "");
+
+  fd.append("episodeId", data.episode?.id ? String(data.episode.id) : "");
+  fd.append("episodeStart", String(parseHMS(data.episodeStartTime)));
+  fd.append("number", String(data.episodeSketchOrder));
+
+  fd.append("seriesId", data.series?.id ? String(data.series.id) : "");
+  fd.append("seriesPart", data.seriesPart);
+
+  fd.append("recurringId", data.recurring?.id ? String(data.recurring.id) : "");
+
   if (data.thumbnail) fd.append("thumbnail", data.thumbnail);
-  return api.patch(`/sketch/${sketchId}`, data);
+  const res = await api.put<SketchResponse>(`/admin/sketch/${sketchId}`, fd);
+  return res.sketch;
 };
 
 type UseUpdateSketchOptions = {

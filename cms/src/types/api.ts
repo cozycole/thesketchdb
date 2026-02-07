@@ -4,8 +4,33 @@
 
 export type Meta = {
   page: number;
+  pageSize: number;
   total: number;
   totalPages: number;
+};
+
+export type Sketch = {
+  id: number;
+  slug: string;
+  title: string;
+  url: string;
+  uploadDate: string;
+  thumbnailName: string;
+  duration: number;
+  description: string;
+  creator: CreatorRef;
+  episode: EpisodeRef;
+  episodeStart: number;
+  episodeSketchOrder: number;
+  recurring: RecurringRef;
+  series: SeriesRef;
+  seriesPart: number;
+
+  popularity: number;
+  rating: number;
+
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Category = {
@@ -31,37 +56,16 @@ export type Tag = {
 
 export type RecurringRef = {
   id: number;
-  name: string;
-  thumbnail: string;
+  slug: string;
+  title: string;
+  thumbnailName: string;
 };
 
 export type SeriesRef = {
   id: number;
-  name: string;
-  thumbnail: string;
-};
-
-export type Sketch = {
-  id: number;
-  title: string;
   slug: string;
-  url: string;
-  uploadDate: string;
-  thumbnailUrl: string;
-  duration: number;
-  description: string;
-  creators: CreatorRef[];
-  showEpisode: ShowEpisodeRef;
-  episodeSketchOrder: number;
-  recurring: RecurringRef;
-  series: SeriesRef;
-  partNumber: number;
-
-  popularity: number;
-  rating: number;
-
-  createdAt: string;
-  updatedAt: string;
+  title: string;
+  thumbnailName: string;
 };
 
 export type Creator = {
@@ -77,7 +81,12 @@ export type Creator = {
   updatedAt: string;
 };
 
-export type CreatorRef = Pick<Creator, "id" | "name" | "slug" | "profileImage">;
+export type CreatorRef = {
+  id: number;
+  slug: string;
+  name: string;
+  profileImage: string;
+};
 
 export type Show = {
   id: number;
@@ -90,33 +99,52 @@ export type Show = {
   updatedAt: string;
 };
 
-export type ShowEpisodeRef = Pick<
-  Show,
-  "id" | "name" | "slug" | "profileImage"
->;
+export type ShowRef = {
+  id: number;
+  slug: string;
+  name: string;
+  profileImg: string;
+};
 
 export type Season = {
   id: number;
   slug: string;
   show: Show;
-  seasonNumber: number;
+  number: number;
   airDate: string;
 
   createdAt: string;
   updatedAt: string;
 };
 
+export type SeasonRef = {
+  id: number;
+  slug: string;
+  number: number;
+  show: Show;
+};
+
 export type Episode = {
   id: number;
   slug: string;
   season: Season;
-  episodeNumber: number;
+  number: number;
   airDate: string;
   url: string;
   youtubeId: string;
 
   createdAt: string;
   updatedAt: string;
+};
+
+export type EpisodeRef = {
+  id: number;
+  slug: string;
+  title: string;
+  number: number;
+  airDate: string;
+  thumbnail: string;
+  season: SeasonRef;
 };
 
 export type Person = {

@@ -12,9 +12,9 @@ import (
 
 func convertFormToSketch(form *sketchForm) models.Sketch {
 	uploadDate, _ := time.Parse(time.DateOnly, form.UploadDate)
-	var creator *models.Creator
+	var creator *models.CreatorRef
 	if form.CreatorID != 0 {
-		creator = &models.Creator{
+		creator = &models.CreatorRef{
 			ID: &form.CreatorID,
 		}
 	}
@@ -24,35 +24,33 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		episode = &models.Episode{ID: &form.EpisodeID}
 	}
 
-	var series *models.Series
+	var series *models.SeriesRef
 	if form.SeriesID != 0 {
-		series = &models.Series{
+		series = &models.SeriesRef{
 			ID: &form.SeriesID,
 		}
 	}
 
-	var recurring *models.Recurring
+	var recurring *models.RecurringRef
 	if form.RecurringID != 0 {
-		recurring = &models.Recurring{
+		recurring = &models.RecurringRef{
 			ID: &form.RecurringID,
 		}
 	}
 
-	intDuration, _ := models.ParseTimestamp(form.Duration)
-	intEpStart, _ := models.ParseTimestamp(form.EpisodeStart)
 	return models.Sketch{
 		ID:           &form.ID,
 		Title:        &form.Title,
 		URL:          &form.URL,
 		Slug:         &form.Slug,
-		Duration:     &intDuration,
+		Duration:     &form.Duration,
 		Description:  &form.Description,
 		UploadDate:   &uploadDate,
 		Number:       &form.Number,
 		Popularity:   &form.Popularity,
 		Creator:      creator,
 		Episode:      episode,
-		EpisodeStart: &intEpStart,
+		EpisodeStart: &form.EpisodeStart,
 		Series:       series,
 		SeriesPart:   &form.SeriesPart,
 		Recurring:    recurring,
@@ -90,14 +88,12 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		recurringName = safeDeref(sketch.Recurring.Title)
 	}
 	// intTime, _ := models.ParseTimestamp(form.Timestamp)
-	duration := models.SecondsToMMSS(safeDeref(sketch.Duration))
-	episodeStart := models.SecondsToMMSS(safeDeref(sketch.EpisodeStart))
 	return sketchForm{
 		ID:             safeDeref(sketch.ID),
 		Slug:           safeDeref(sketch.Slug),
 		Title:          safeDeref(sketch.Title),
 		URL:            safeDeref(sketch.URL),
-		Duration:       duration,
+		Duration:       safeDeref(sketch.Duration),
 		Description:    safeDeref(sketch.Description),
 		UploadDate:     formDate(sketch.UploadDate),
 		Number:         safeDeref(sketch.Number),
@@ -106,7 +102,7 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		CreatorInput:   creatorName,
 		EpisodeID:      episodeID,
 		EpisodeInput:   episodeName,
-		EpisodeStart:   episodeStart,
+		EpisodeStart:   safeDeref(sketch.EpisodeStart),
 		SeriesID:       seriesID,
 		SeriesInput:    seriesName,
 		SeriesPart:     safeDeref(sketch.SeriesPart),

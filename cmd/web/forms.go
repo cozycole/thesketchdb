@@ -153,12 +153,12 @@ func (app *application) validateCharacterForm(form *characterForm) {
 
 type sketchForm struct {
 	ID                  int                   `form:"id"`
+	Slug                string                `form:"slug"`
 	Title               string                `form:"title"`
 	URL                 string                `form:"url"`
-	Slug                string                `form:"slug"`
 	Rating              string                `form:"rating"`
 	UploadDate          string                `form:"uploadDate"`
-	Duration            string                `form:"duration"`
+	Duration            int                   `form:"duration"`
 	Number              int                   `form:"number"`
 	Popularity          float32               `form:"popularity"`
 	Description         string                `form:"description"`
@@ -167,7 +167,7 @@ type sketchForm struct {
 	CreatorInput        string                `form:"creatorInput"`
 	EpisodeID           int                   `form:"episodeId"`
 	EpisodeInput        string                `form:"episodeInput"`
-	EpisodeStart        string                `form:"episodeStart"`
+	EpisodeStart        int                   `form:"episodeStart"`
 	SeriesID            int                   `form:"seriesId"`
 	SeriesInput         string                `form:"seriesInput"`
 	SeriesPart          int                   `form:"seriesPart"`
@@ -183,11 +183,13 @@ type sketchForm struct {
 func (app *application) validateSketchForm(form *sketchForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(form.CreatorID != 0 || form.EpisodeID != 0, "creatorId", "A creator or episode must be defined")
-	form.CheckField(validator.NotBlank(form.UploadDate), "uploadDate", "This field cannot be blank")
-	form.CheckField(validator.ValidDate(form.UploadDate), "uploadDate", "Date must be of the format YYYY-MM-DD")
 
 	if form.ID == 0 {
 		form.CheckField(form.Thumbnail != nil, "thumbnail", "Please upload an image")
+	}
+
+	if form.UploadDate != "" {
+		form.CheckField(validator.ValidDate(form.UploadDate), "uploadDate", "Date must be of the format YYYY-MM-DD")
 	}
 
 	if form.Thumbnail == nil {
@@ -201,7 +203,7 @@ func (app *application) validateSketchForm(form *sketchForm) {
 	}
 	defer thumbnail.Close()
 
-	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg or png")
+	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg")
 }
 
 type castForm struct {

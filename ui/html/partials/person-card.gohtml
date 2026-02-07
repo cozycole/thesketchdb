@@ -7,7 +7,7 @@
             <img
               src="{{ $.ImageBaseUrl }}/person/medium/{{ .ProfileImg }}"
               class="w-36 h-36 flex-0 rounded-full border-4 border-slate-300 shadow-lg"
-              onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+              data-fallback="/static/img/missing-profile.jpg"
             />
           </div>
           <h3

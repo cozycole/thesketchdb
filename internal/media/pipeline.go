@@ -6,6 +6,7 @@ import (
 	"image"
 	_ "image/jpeg"
 	"math"
+	"path"
 
 	"sketchdb.cozycole.net/internal/fileStore"
 )
@@ -177,5 +178,16 @@ func SaveImageVariants(imgStore fileStore.FileStorageInterface, prefix, fileName
 		}
 	}
 
+	return nil
+}
+
+func DeleteImageVariants(imgStore fileStore.FileStorageInterface, prefix, fileName string) error {
+	for _, size := range []string{"small", "medium", "large"} {
+		imgSubPath := path.Join(prefix, size, fileName)
+		err := imgStore.DeleteFile(imgSubPath)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

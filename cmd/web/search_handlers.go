@@ -22,10 +22,10 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 		filterQuery := strings.Join(strings.Fields(query), " | ")
 
 		filter := &models.Filter{
-			Query:  filterQuery,
-			Limit:  app.settings.maxSearchResults,
-			Offset: 0,
-			SortBy: "popular",
+			Query:    filterQuery,
+			Page:     1,
+			PageSize: app.settings.maxSearchResults,
+			SortBy:   "popular",
 		}
 
 		results, err = app.getSearchResults(filter)
@@ -108,9 +108,14 @@ func (app *application) episodeSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
 	results := dropdownSearchResults{}
+	f := &models.Filter{
+		Page:     1,
+		PageSize: 10,
+		Query:    q,
+	}
 
 	if q != "" {
-		episodes, err := app.shows.SearchEpisodes(q)
+		episodes, _, err := app.shows.ListEpisodes(f)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)

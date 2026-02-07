@@ -481,8 +481,8 @@ func SketchCatalogResultView(
 		return nil, err
 	}
 
-	currentPage := int(math.Ceil(float64(results.Filter.Offset)/float64(results.Filter.Limit))) + 1
-	totalPages := int(math.Ceil(float64(results.TotalCount) / float64(results.Filter.Limit)))
+	currentPage := int(math.Ceil(float64(results.Filter.Offset())/float64(results.Filter.Limit()))) + 1
+	totalPages := int(math.Ceil(float64(results.TotalCount) / float64(results.Filter.Limit())))
 	pages, err := buildPagination(
 		currentPage,
 		totalPages,

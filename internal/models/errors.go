@@ -12,4 +12,6 @@ var (
 	ErrDuplicateVidCreatorRel = errors.New("models: duplicate sketch creator relation")
 	ErrDuplicateVidPersonRel  = errors.New("models: duplicate sketch person relation")
 	ErrNoEpisode              = errors.New("models: episode does not exist")
+	ErrNoCreator              = errors.New("models: creator does not exist")
+	ErrNoSketch               = errors.New("models: sketch does not exist")
 )

@@ -35,6 +35,7 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 	r.Group(func(r chi.Router) {
 		r.Use(
 			app.recoverPanic,
+			app.secureHeaders,
 			app.sessionManager.LoadAndSave,
 			app.logRequest,
 			app.authenticate,
@@ -55,7 +56,11 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 
 		r.Get("/sketch/{id}/{slug}", app.sketchView)
 
-		r.Get("/api/sketches", app.viewSketchesAPI)
+		r.Get("/api/v1/sketches", app.viewSketchesAPI)
+
+		r.Get("/api/v1/admin/sketch/{id}", app.adminGetSketchAPI)
+		r.Post("/api/v1/admin/sketch", app.createSketchAPI)
+		r.Put("/api/v1/admin/sketch/{id}", app.updateSketchAPI)
 
 		r.Post("/sketch/like/{id}", app.sketchAddLike)
 		r.Delete("/sketch/like/{id}", app.sketchRemoveLike)
@@ -63,6 +68,7 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 		r.Post("/sketch/{id}/rating", app.sketchUpdateRating)
 		r.Delete("/sketch/{id}/rating", app.sketchDeleteRating)
 
+		r.Get("/api/v1/creators", app.listCreatorsAPI)
 		r.Get("/creator/{id}/{slug}", app.creatorView)
 		r.Get("/creator/search", app.creatorSearch)
 
@@ -72,9 +78,11 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 		r.Get("/character/{id}/{slug}", app.characterView)
 		r.Get("/character/search", app.characterSearch)
 
+		r.Get("/api/v1/sketch-series", app.listSeriesAPI)
 		r.Get("/series/{id}/{slug}", app.seriesView)
 		r.Get("/series/search", app.seriesSearch)
 
+		r.Get("/api/v1/recurring-sketches", app.listRecurringAPI)
 		r.Get("/recurring/{id}/{slug}", app.recurringView)
 		r.Get("/recurring/search", app.recurringSearch)
 
@@ -83,6 +91,7 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 		r.Get("/show/{id}/{slug}/season", app.viewSeason)
 		r.Get("/season/{id}/{slug}", app.viewSeason)
 
+		r.Get("/api/v1/episodes", app.listEpisodesAPI)
 		r.Get("/episode/{id}/{slug}", app.viewEpisode)
 		r.Get("/episode/search", app.episodeSearch)
 
@@ -102,6 +111,7 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 	r.Group(func(r chi.Router) {
 		r.Use(
 			app.recoverPanic,
+			app.secureHeaders,
 			app.sessionManager.LoadAndSave,
 			app.logRequest,
 			app.authenticate,

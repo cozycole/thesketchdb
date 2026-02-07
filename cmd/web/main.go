@@ -20,7 +20,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
+	"sketchdb.cozycole.net/internal/domain/creators"
+	"sketchdb.cozycole.net/internal/domain/recurring"
+	"sketchdb.cozycole.net/internal/domain/series"
+	"sketchdb.cozycole.net/internal/domain/shows"
 	"sketchdb.cozycole.net/internal/domain/sketches"
+
 	"sketchdb.cozycole.net/internal/fileStore"
 	"sketchdb.cozycole.net/internal/models"
 )
@@ -66,7 +71,7 @@ var StaticAssets = map[string]string{
 }
 
 func main() {
-	addr := flag.String("addr", "0.0.0.0:8080", "HTTP network address")
+	addr := flag.String("addr", "localhost:8080", "HTTP network address")
 	debug := flag.Bool("debug", false, "debug mode")
 	dev := flag.Bool("dev", false, "use dev config and set debug true")
 	localImgServer := flag.Bool("localimg", false, "serve images from local directory")
@@ -268,12 +273,32 @@ func newRepositories(dbpool *pgxpool.Pool) models.Repositories {
 }
 
 type Services struct {
-	Sketches sketches.SketchService
+	Sketches  sketches.SketchService
+	Creators  creators.CreatorService
+	Shows     shows.ShowService
+	Recurring recurring.RecurringService
+	Series    series.SeriesService
 }
 
 func NewServices(repos models.Repositories, fileStore fileStore.FileStorageInterface) Services {
 	return Services{
 		Sketches: sketches.SketchService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+		Creators: creators.CreatorService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+		Shows: shows.ShowService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+		Recurring: recurring.RecurringService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+		Series: series.SeriesService{
 			Repos:    repos,
 			ImgStore: fileStore,
 		},

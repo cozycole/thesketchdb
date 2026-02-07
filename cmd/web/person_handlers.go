@@ -29,10 +29,10 @@ func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	popular, err := app.sketches.Get(
+	popular, _, err := app.sketches.Get(
 		&models.Filter{
-			Limit:     12,
-			Offset:    0,
+			Page:      1,
+			PageSize:  12,
 			SortBy:    "popular",
 			PersonIDs: []int{*person.ID},
 		},

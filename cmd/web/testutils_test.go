@@ -88,3 +88,22 @@ func insertTestCreator(t *testing.T, model models.CreatorModelInterface, overrid
 
 	return creator
 }
+
+func insertTestSketch(t *testing.T, model models.SketchModelInterface, overrides ...func(*models.Sketch)) *models.Sketch {
+	sketch := &models.Sketch{
+		Title:         ptr("Test Sketch"),
+		Slug:          ptr("test-sketch"),
+		ThumbnailName: ptr("test-img.jpg"),
+	}
+
+	for _, override := range overrides {
+		override(sketch)
+	}
+
+	_, err := model.Insert(sketch)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return sketch
+}

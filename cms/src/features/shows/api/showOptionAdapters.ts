@@ -1,4 +1,5 @@
 import { getEpisodes } from "./getEpisodes";
+import { buildImageUrl } from "@/lib/utils";
 import type { SelectEntity } from "@/components/ui/asyncSearchSelect";
 import type { QueryClient } from "@tanstack/react-query";
 
@@ -14,8 +15,8 @@ export const makeEpisodeLoadOptions = (opts?: { pageSize?: number }) => {
 
     return episodes.map((e) => ({
       id: e.id,
-      label: `${e.season.show.name} S${e.season.seasonNumber} E${e.episodeNumber}`,
-      image: e.season.show.profileImage,
+      label: `${e.season.show.name} S${e.season.number} E${e.number}`,
+      image: buildImageUrl("show", "small", e.season.show.profileImage),
     }));
   };
 };
@@ -40,7 +41,7 @@ export const makeEpisodeLoadOptionsRQ = (
 
     return data.episodes.map((e) => ({
       id: e.id,
-      label: `${e.season.show.name} S${e.season.seasonNumber} E${e.episodeNumber}`,
+      label: `${e.season.show.name} S${e.season.number} E${e.number}`,
       image: e.season.show.profileImage,
     }));
   };

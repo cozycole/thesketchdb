@@ -1,4 +1,4 @@
-import Axios, { InternalAxiosRequestConfig } from "axios";
+import Axios, { InternalAxiosRequestConfig, AxiosRequestConfig } from "axios";
 
 import { useNotifications } from "@/components/ui/notifications";
 import { env } from "@/config/env";
@@ -13,12 +13,12 @@ function authRequestInterceptor(config: InternalAxiosRequestConfig) {
   return config;
 }
 
-export const api = Axios.create({
+export const axiosInstance = Axios.create({
   baseURL: env.API_URL,
 });
 
-api.interceptors.request.use(authRequestInterceptor);
-api.interceptors.response.use(
+axiosInstance.interceptors.request.use(authRequestInterceptor);
+axiosInstance.interceptors.response.use(
   (response) => {
     return response.data;
   },
@@ -40,3 +40,25 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+type DataAxiosInstance = {
+  get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  post<T = unknown>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig,
+  ): Promise<T>;
+  put<T = unknown>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig,
+  ): Promise<T>;
+  patch<T = unknown>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig,
+  ): Promise<T>;
+  delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
+};
+
+export const api = axiosInstance as unknown as DataAxiosInstance;

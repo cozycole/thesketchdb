@@ -36,12 +36,12 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filter := models.Filter{
-		Limit:  8,
-		Offset: 0,
-		SortBy: "latest",
+		Page:     1,
+		PageSize: 8,
+		SortBy:   "latest",
 	}
 
-	latest, err := app.sketches.Get(&filter)
+	latest, _, err := app.sketches.Get(&filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -50,12 +50,12 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	latestViews, err := views.SketchThumbnailsView(latest, app.baseImgUrl, "", true)
 
 	popularFilter := models.Filter{
-		SortBy: "popular",
-		Limit:  20,
-		Offset: 0,
+		SortBy:   "popular",
+		Page:     1,
+		PageSize: 20,
 	}
 
-	popularSketches, err := app.sketches.Get(&popularFilter)
+	popularSketches, _, err := app.sketches.Get(&popularFilter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -106,7 +106,7 @@ func (app *application) browse(w http.ResponseWriter, r *http.Request) {
 			Filter: def.Filter,
 		}
 
-		sketches, err := app.sketches.Get(&section.Filter)
+		sketches, _, err := app.sketches.Get(&section.Filter)
 		if err != nil {
 			app.serverError(r, w, err)
 			return
@@ -159,8 +159,6 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	showIds := extractUrlParamIDs(r.URL.Query()["show"])
 	tagIds := extractUrlParamIDs(r.URL.Query()["tag"])
 
-	limit := app.settings.pageSize
-	offset := (currentPage - 1) * limit
 	filter := &models.Filter{
 		Query:        filterQuery,
 		CharacterIDs: characterIds,
@@ -169,8 +167,8 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		ShowIDs:      showIds,
 		TagIDs:       tagIds,
 		SortBy:       sort,
-		Limit:        limit,
-		Offset:       offset,
+		Page:         currentPage,
+		PageSize:     app.settings.pageSize,
 	}
 
 	results, err := app.services.Sketches.ListSketches(filter, true)

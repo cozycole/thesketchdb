@@ -27,7 +27,7 @@ type ShowRef struct {
 	ID         *int    `json:"id"`
 	Slug       *string `json:"slug"`
 	Name       *string `json:"name"`
-	ProfileImg *string `json:"profileImg"`
+	ProfileImg *string `json:"profileImage"`
 }
 
 type Season struct {
@@ -46,16 +46,16 @@ type SeasonRef struct {
 }
 
 type Episode struct {
-	ID        *int
-	Slug      *string
-	Number    *int
-	Title     *string
-	URL       *string
-	AirDate   *time.Time
-	Thumbnail *string
-	Season    *SeasonRef
-	Sketches  []*SketchRef
-	YoutubeID *string
+	ID        *int         `json:"id"`
+	Slug      *string      `json:"slug"`
+	Title     *string      `json:"title"`
+	Number    *int         `json:"number"`
+	AirDate   *time.Time   `json:"airDate"`
+	Thumbnail *string      `json:"thumbnail"`
+	Season    *SeasonRef   `json:"season"`
+	URL       *string      `json:"url"`
+	Sketches  []*SketchRef `json:"sketches"`
+	YoutubeID *string      `json:"youtubeId"`
 }
 
 func (e *Episode) GetTitle() *string     { return e.Title }
@@ -134,8 +134,8 @@ type ShowModelInterface interface {
 	GetShowRefs(ids []int) ([]*ShowRef, error)
 	Insert(show *Show) (int, error)
 	InsertEpisode(episode *Episode) (int, error)
+	ListEpisodes(f *Filter) ([]*EpisodeRef, Metadata, error)
 	Search(query string) ([]*Show, error)
-	SearchEpisodes(query string) ([]*EpisodeRef, error)
 	Update(show *Show) error
 	UpdateEpisode(episode *Episode) error
 }
@@ -221,7 +221,7 @@ func (m *ShowModel) GetEpisode(episodeId int) (*Episode, error) {
 
 func (m *ShowModel) EpisodeExists(id int) (bool, error) {
 	stmt := `SELECT EXISTS(
-		SELECT 1 FROM episodes WHERE id = $1
+		SELECT 1 FROM episode WHERE id = $1
 	)`
 	var exists bool
 	err := m.DB.QueryRow(context.Background(), stmt, id).Scan(&exists)
@@ -761,9 +761,9 @@ type EpisodeQuery struct {
 	EpisodeNumber *int
 }
 
-func (m *ShowModel) SearchEpisodes(query string) ([]*EpisodeRef, error) {
+func (m *ShowModel) ListEpisodes(f *Filter) ([]*EpisodeRef, Metadata, error) {
 	stmt := `
-		SELECT e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name,
+		SELECT count(*) OVER(), e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name,
 		s.id, s.slug, s.season_number,
 		sh.id, sh.slug, sh.name, sh.profile_img
 		FROM episode as e
@@ -774,36 +774,34 @@ func (m *ShowModel) SearchEpisodes(query string) ([]*EpisodeRef, error) {
 		AND (COALESCE($2, s.season_number) = s.season_number)
 		AND (COALESCE($3, e.episode_number) = e.episode_number)
 		ORDER BY sh.name, s.season_number, e.episode_number
-		LIMIT 10;
+		LIMIT $4
+		OFFSET $5;
 	`
-	fmt.Println("QUERY:", query)
-	if query == "" {
-		return []*EpisodeRef{}, nil
-	}
-	epQuery, err := ExtractEpisodeQuery(query)
+	epQuery, err := ExtractEpisodeQuery(f.Query)
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	// fmt.Printf("%+v\n", epQuery)
+	fmt.Printf("%+v\n", epQuery)
 	rows, err := m.DB.Query(context.Background(), stmt, epQuery.ShowName,
-		epQuery.SeasonNumber, epQuery.EpisodeNumber)
+		epQuery.SeasonNumber, epQuery.EpisodeNumber, f.Limit(), f.Offset())
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 	defer rows.Close()
-	var episodes []*EpisodeRef
+	episodes := []*EpisodeRef{}
+	var totalCount int
 	for rows.Next() {
 		e := &EpisodeRef{}
 		sh := &ShowRef{}
 		se := &SeasonRef{}
 		err := rows.Scan(
-			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
+			&totalCount, &e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&se.ID, &se.Slug, &se.Number, &sh.ID, &sh.Slug, &sh.Name,
 			&sh.ProfileImg,
 		)
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 
 		se.Show = sh
@@ -812,10 +810,10 @@ func (m *ShowModel) SearchEpisodes(query string) ([]*EpisodeRef, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return episodes, nil
+	return episodes, calculateMetadata(totalCount, f.Page, f.PageSize), nil
 }
 
 func ExtractEpisodeQuery(input string) (EpisodeQuery, error) {

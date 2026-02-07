@@ -7,7 +7,7 @@ export const paths = {
     path: "/admin/dashboard",
     getHref: () => "/admin/dashboard",
   },
-  addSketch: {
+  createSketch: {
     path: "/admin/sketch/add",
     getHref: () => "/admin/sketch/add",
   },

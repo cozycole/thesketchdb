@@ -9,7 +9,7 @@
           <img
             src="{{ .ImageUrl }}"
             class="w-28 h-28 object-cover mx-auto rounded-full border border-slate-300"
-            onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+            data-fallback="/static/img/missing-thumbnail.jpg"
           />
         </a>
         <h3

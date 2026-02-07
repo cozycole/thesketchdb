@@ -10,7 +10,7 @@
             <img
               src="{{ .CreatorImage }}"
               class="w-full rounded-full"
-              onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+              data-fallback="/static/img/missing-profile.jpg"
             />
           </a>
         </div>
@@ -35,7 +35,7 @@
           src="{{ .LargeImage }}"
           class="w-full rounded-lg"
           fetchpriority="high"
-          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg'"
+          data-fallback="/static/img/missing-thumbnail.jpg"
         />
       </div>
     </a>

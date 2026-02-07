@@ -19,7 +19,7 @@
             sizes="(max-width: 480px) 640px, 320px"
           {{ end }}
           class="w-full rounded-lg"
-          onerror="this.onerror=null;this.src='/static/img/missing-thumbnail.jpg';this.srcset='';"
+          data-fallback="/static/img/missing-thumbnail.jpg"
         />
       </div>
     </a>
@@ -29,7 +29,7 @@
           <img
             src="{{ .CreatorImage }}"
             class="w-full rounded-full"
-            onerror="this.onerror=null;this.src='/static/img/missing-profile.jpg'"
+            data-fallback="/static/img/missing-profile.jpg"
           />
         </a>
       </div>

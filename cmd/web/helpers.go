@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -246,4 +247,18 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 	}
 
 	return nil
+}
+
+func fileHeaderToBytes(h *multipart.FileHeader) ([]byte, error) {
+	if h == nil {
+		return nil, nil
+	}
+
+	f, err := h.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	return io.ReadAll(f)
 }

@@ -1,14 +1,14 @@
 @font-face {
-  font-family: 'Rubik';
-  src: url('/static/fonts/Rubik-VariableFont_wght.woff2') format('woff2');
+  font-family: "Rubik";
+  src: url("/static/fonts/Rubik-VariableFont_wght.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Rubik';
-  src: url('/static/fonts/Rubik-Italic-VariableFont_wght.woff2') format('woff2');
+  font-family: "Rubik";
+  src: url("/static/fonts/Rubik-Italic-VariableFont_wght.woff2") format("woff2");
   font-weight: 100 900;
   font-style: italic;
   font-display: swap;
@@ -19,7 +19,6 @@
 @tailwind utilities;
 
 @layer components {
-
   .glide {
     position: relative;
     width: 100%;
@@ -74,7 +73,11 @@
   }
   .glide--rtl {
     direction: rtl;
-  } 
+  }
+
+  .wa-orange {
+    --symbol-color-active: #f97316;
+  }
 }
 
 @layer utilities {

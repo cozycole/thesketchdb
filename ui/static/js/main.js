@@ -1,7 +1,5 @@
-import "htmx.org";
+import htmx from "htmx.org";
 import "htmx-ext-response-targets";
-
-import "@awesome.me/webawesome/dist/components/rating/rating.js";
 
 import { initHome } from "./pages/home.js";
 import { initViewSketch } from "./pages/viewSketch.js";
@@ -34,6 +32,8 @@ import "./components/flashMessage.js";
     : "No page attribute found!";
   const dropdownMenuButtons = document.querySelectorAll(".dropdownBtn");
   const dropdownMenus = document.querySelectorAll(".dropdownMenu");
+
+  htmx.config.includeIndicatorStyles = false;
 
   document.addEventListener("DOMContentLoaded", () => {
     dropdownMenuButtons.forEach((button) => {
@@ -173,6 +173,19 @@ import "./components/flashMessage.js";
       evt.detail.parameters["query"] = evt.detail.elt.value;
     }
   });
+
+  // failsafe for if image fails to load
+  document.addEventListener(
+    "error",
+    (e) => {
+      const img = e.target;
+      if (img.tagName === "IMG" && img.dataset.fallback) {
+        img.src = img.dataset.fallback;
+        img.srcset = "";
+      }
+    },
+    true,
+  );
 
   switch (pageType) {
     case "home":

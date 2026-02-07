@@ -51,9 +51,9 @@ export const seedSketches = async () => {
 
   let idCount = 1;
 
-  creatorSketches.forEach((title, i) => {
+  for (const [i, title] of creatorSketches.entries()) {
     const creator = db.creators.findFirst((q) => q.where({ id: (i % 3) + 1 }));
-    db.sketches.create({
+    await db.sketches.create({
       id: idCount++,
       slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       title: title,
@@ -66,7 +66,7 @@ export const seedSketches = async () => {
       rating: Number((Math.random() * 5).toFixed(1)),
       creators: [creator],
     });
-  });
+  }
 
   const showSketches = [
     "Political Ad Nobody Understands",
@@ -103,9 +103,9 @@ export const seedSketches = async () => {
     "Self-Care Routine Takes All Day",
   ];
 
-  showSketches.forEach((title, i) => {
+  for (const [i, title] of showSketches.entries()) {
     const episode = db.episodes.findFirst((q) => q.where({ id: (i % 30) + 1 }));
-    db.sketches.create({
+    await db.sketches.create({
       id: idCount++,
       slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       title: title,
@@ -116,7 +116,7 @@ export const seedSketches = async () => {
       uploadDate: new Date(2018 + (i % 6), i % 12, (i % 28) + 1),
       popularity: Math.floor(Math.random() * 1000),
       rating: Number((Math.random() * 5).toFixed(1)),
-      episode: episode,
+      showEpisode: episode,
     });
-  });
+  }
 };

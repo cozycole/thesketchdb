@@ -11,7 +11,7 @@ type ShowPage struct {
 	ShowName       string
 	Image          string
 	UpdateUrl      string
-	SeasonUrl      string
+	SeasonsUrl     string
 	SeasonCount    int
 	EpisodeCount   int
 	SketchCount    int
@@ -38,8 +38,14 @@ func ShowPageView(show *models.Show, popular []*models.SketchRef, cast []*models
 		page.Image = fmt.Sprintf("%s/show/medium/%s", baseImgUrl, *show.ProfileImg)
 	}
 
+	var firstSeason *models.Season
+	if len(show.Seasons) != 0 {
+		firstSeason = show.Seasons[0]
+	}
 	page.UpdateUrl = fmt.Sprintf("/show/%d/update", *show.ID)
-	page.SeasonUrl = fmt.Sprintf("/show/%d/%s/season", *show.ID, *show.Slug)
+	if firstSeason != nil {
+		page.SeasonsUrl = fmt.Sprintf("/season/%d/%s", safeDeref(firstSeason.ID), safeDeref(firstSeason.Slug))
+	}
 
 	page.SeasonCount = len(show.Seasons)
 	page.EpisodeCount = getShowEpisodeCount(show)

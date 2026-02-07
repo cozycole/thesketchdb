@@ -19,14 +19,14 @@ const SketchSchema = z.object({
   thumbnailUrl: z.string().optional(),
   description: z.string().optional(),
   role: z.string().optional(),
-  uploadDate: z.date(),
-  popularity: z.number(),
-  rating: z.number(),
+  uploadDate: z.date().optional(),
+  popularity: z.number().optional(),
+  rating: z.number().optional(),
   createdAt: z.date().optional(),
   get creators() {
     return z.array(CreatorSchema).optional();
   },
-  get episode() {
+  get showEpisode() {
     return EpisodeSchema.optional();
   },
 });

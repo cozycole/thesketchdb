@@ -36,12 +36,12 @@ func (c *Creator) HasId() bool {
 type CreatorModelInterface interface {
 	Delete(id int) error
 	Exists(id int) (bool, error)
-	Get(filter *Filter) ([]*Creator, error)
-	GetCount(filter *Filter) (int, error)
 	GetById(id int) (*Creator, error)
 	GetCast(id int) ([]*Person, error)
+	GetCount(filter *Filter) (int, error)
 	GetCreatorRefs([]int) ([]*CreatorRef, error)
 	Insert(creator *Creator) (int, error)
+	List(filter *Filter) ([]*CreatorRef, Metadata, error)
 	Search(query string) ([]*Creator, error)
 	SearchCount(query string) (int, error)
 	Update(creator *Creator) error
@@ -65,8 +65,8 @@ func (m *CreatorModel) Delete(id int) error {
 	return nil
 }
 
-func (m *CreatorModel) Get(filter *Filter) ([]*Creator, error) {
-	query := `SELECT c.id, c.name, c.slug, c.page_url, c.profile_img, c.date_established%s
+func (m *CreatorModel) List(filter *Filter) ([]*CreatorRef, Metadata, error) {
+	query := `SELECT count(*) OVER(), c.id, c.name, c.slug, c.profile_img%s
 			FROM creator as c
 			WHERE 1=1
 	`
@@ -84,27 +84,32 @@ func (m *CreatorModel) Get(filter *Filter) ([]*Creator, error) {
 
 		query = fmt.Sprintf(query, rankParam)
 
-		query += fmt.Sprintf(`AND
+		query += fmt.Sprintf(`AND (
             to_tsvector('english', c.name || ' ' || COALESCE(c.alias, '')) @@ websearch_to_tsquery('english', $%d)
-		`, argIndex)
+			OR 
+			(c.name || ' ' || coalesce(c.alias,'')) ILIKE '%%' || $%d || '%%'
+			)
+		`, argIndex, argIndex)
 
 		args = append(args, filter.Query)
 		argIndex++
 	} else {
 		query = fmt.Sprintf(query, "")
 	}
-	println("QUERY: ", query)
+
+	// fmt.Print(query)
 	rows, err := m.DB.Query(context.Background(), query, args...)
 	if err != nil {
 		_, file, line, _ := runtime.Caller(0)
-		return nil, fmt.Errorf("%s:%d: %w", file, line, err)
+		return nil, Metadata{}, fmt.Errorf("%s:%d: %w", file, line, err)
 	}
 
-	var creators []*Creator
+	creators := []*CreatorRef{}
+	var totalCount int
 	for rows.Next() {
-		var c Creator
+		var c CreatorRef
 		destinations := []any{
-			&c.ID, &c.Name, &c.Slug, &c.URL, &c.ProfileImage, &c.EstablishedDate,
+			&totalCount, &c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 		}
 
 		var rank *float32
@@ -114,7 +119,7 @@ func (m *CreatorModel) Get(filter *Filter) ([]*Creator, error) {
 		err := rows.Scan(destinations...)
 		if err != nil {
 			_, file, line, _ := runtime.Caller(0)
-			return nil, fmt.Errorf("%s:%d: %w", file, line, err)
+			return nil, Metadata{}, fmt.Errorf("%s:%d: %w", file, line, err)
 		}
 
 		creators = append(creators, &c)
@@ -122,10 +127,10 @@ func (m *CreatorModel) Get(filter *Filter) ([]*Creator, error) {
 
 	if err = rows.Err(); err != nil {
 		_, file, line, _ := runtime.Caller(0)
-		return nil, fmt.Errorf("%s:%d: %w", file, line, err)
+		return nil, Metadata{}, fmt.Errorf("%s:%d: %w", file, line, err)
 	}
 
-	return creators, nil
+	return creators, calculateMetadata(totalCount, filter.Page, filter.PageSize), nil
 }
 
 func (m *CreatorModel) GetCount(filter *Filter) (int, error) {
@@ -331,18 +336,16 @@ func (m *CreatorModel) GetCast(id int) ([]*Person, error) {
 }
 
 func (m *CreatorModel) Exists(id int) (bool, error) {
-	stmt := `SELECT id FROM creator WHERE id = $1`
-	row := m.DB.QueryRow(context.Background(), stmt, id)
-
-	err := row.Scan(&id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return false, nil
-		} else {
-			return false, err
-		}
+	stmt := `SELECT EXISTS(
+		SELECT 1 FROM creator WHERE id = $1
+	)`
+	var exists bool
+	err := m.DB.QueryRow(context.Background(), stmt, id).Scan(&exists)
+	if err == pgx.ErrNoRows {
+		err = nil
 	}
-	return true, nil
+
+	return exists, err
 }
 
 func (m *CreatorModel) VectorSearch(query string) ([]*ProfileResult, error) {

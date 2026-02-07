@@ -7,4 +7,9 @@ import { defineConfig } from "vite";
 export default defineConfig({
   base: "./",
   plugins: [react(), tailwindcss(), viteTsconfigPaths()],
+  server: {
+    proxy: {
+      "/api/v1": "http://localhost:8080",
+    },
+  },
 });

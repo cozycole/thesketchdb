@@ -161,11 +161,6 @@ export function ImageUploadField<T extends FieldValues>({
 
               {displayUrl ? (
                 <div className="mt-2 w-fit rounded-md p-2">
-                  {loadingState === "loading" && (
-                    <div className="text-sm text-muted-foreground mb-2">
-                      Loading preview...
-                    </div>
-                  )}
                   <img
                     src={displayUrl}
                     alt={file ? "New image preview" : "Current image"}

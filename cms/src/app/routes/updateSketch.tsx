@@ -24,7 +24,7 @@ const UpdateSketchRoute = () => {
   const sketch = data.sketch;
 
   return (
-    <ContentLayout title={`Update Sketch ID ${sketch.id}`}>
+    <ContentLayout title={`Sketch ID ${sketch.id}`}>
       <SketchForm mode="update" existingData={data.sketch} />
     </ContentLayout>
   );

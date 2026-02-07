@@ -24,16 +24,16 @@ type Sketch struct {
 	ThumbnailName *string       `json:"thumbnailName"`
 	Popularity    *float32      `json:"popularity"`
 	UploadDate    *time.Time    `json:"uploadDate"`
-	Creator       *Creator      `json:"creator"`
+	Creator       *CreatorRef   `json:"creator"`
 	Cast          []*CastMember `json:"cast"`
 	CastThumbnail *string       `json:"castThumbnail"`
 	Tags          *[]*Tag       `json:"tags"`
 	Episode       *Episode      `json:"episode"`
 	EpisodeStart  *int          `json:"episodeStart"`
 	Number        *int          `json:"episodeSketchOrder"`
-	Series        *Series       `json:"series"`
+	Series        *SeriesRef    `json:"series"`
 	SeriesPart    *int          `json:"seriesPart"`
-	Recurring     *Recurring    `json:"recurring"`
+	Recurring     *RecurringRef `json:"recurring"`
 	Rating        *float32      `json:"rating"`
 	TotalRatings  *int          `json:"totalRatings"`
 	Liked         *bool         `json:"liked,omitempty"`
@@ -56,18 +56,17 @@ type SketchModelInterface interface {
 	BatchUpdateTags(sketchId int, tags *[]*Tag) error
 	Delete(id int) error
 	Exists(id int) (bool, error)
-	Get(filter *Filter) ([]*SketchRef, error)
+	Get(filter *Filter) ([]*SketchRef, Metadata, error)
 	GetById(id int) (*Sketch, error)
-	GetCount(filter *Filter) (int, error)
 	GetByUserLikes(id int) ([]*SketchRef, error)
+	GetCount(filter *Filter) (int, error)
 	GetFeatured() ([]*Sketch, error)
 	HasLike(sketchId, userId int) (bool, error)
 	Insert(sketch *Sketch) (int, error)
-	InsertThumbnailName(sketchId int, name string) error
 	InsertSketchCreatorRelation(sketchId, creatorId int) error
-	Search(search string, limit, offset int) ([]*Sketch, error)
+	InsertThumbnailName(sketchId int, name string) error
 	SearchCount(query string) (int, error)
-	IsSlugDuplicate(sketchId int, slug string) bool
+	SyncSketchCreators(sketchID int, creatorIDs []int) error
 	Update(sketch *Sketch) error
 	UpdateCreatorRelation(sketchId, creatorId int) error
 }
@@ -243,7 +242,7 @@ func determineFields(filter *Filter, args *Arguements) string {
 	}
 
 	baseFields := `
-		v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number, 
+		 v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number, 
 		v.slug as sketch_slug, v.thumbnail_name as thumbnail_name,
 		v.upload_date as upload_date, v.rating as rating,
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
@@ -412,12 +411,12 @@ func determineSort(filter *Filter, args *Arguements) string {
 	sort = fmt.Sprintf(" ORDER BY %s", sort)
 	sort += fmt.Sprintf(" LIMIT $%d OFFSET $%d", args.ArgIndex+1, args.ArgIndex+2)
 	args.ArgIndex += 2
-	args.Args = append(args.Args, filter.Limit, filter.Offset)
+	args.Args = append(args.Args, filter.Limit(), filter.Offset())
 
 	return sort
 }
 
-func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, error) {
+func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
 	// The CTE is used due to possiblility of a single cast member playing
 	// multiple rows in a sketch, this can cause duplicate sketch results (one for
 	// each character/person pairing) so we want to limit it to one (rn = 1)
@@ -440,7 +439,7 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, error) {
 			ROW_NUMBER() OVER (PARTITION BY sketch_id ORDER BY sketch_id) AS rn	
 			FROM sketch_cast
 		)
-		SELECT sketch_id, sketch_title, sketch_number,
+		SELECT count(*) OVER() as total_count, sketch_id, sketch_title, sketch_number,
 		sketch_slug, thumbnail_name, upload_date, rating,
 		creator_id, creator_name, creator_slug, creator_img, 
 		show_id, show_name, show_img, show_slug, 
@@ -465,20 +464,21 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, error) {
 
 	// fmt.Println("SORT: ", sortClause)
 	query = fmt.Sprintf(query, fields, conditionClause, rank, sortClause)
-	// fmt.Println(query)
-	// fmt.Printf("ARGS: %+v\n", args.Args)
+	fmt.Println(query)
+	fmt.Printf("ARGS: %+v\n", args.Args)
 
 	rows, err := m.DB.Query(context.Background(), query, args.Args...)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNoRecord
+			return nil, Metadata{}, ErrNoRecord
 		} else {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 	}
 	defer rows.Close()
 
 	sketches := []*SketchRef{}
+	var totalCount int
 
 	for rows.Next() {
 		v := &SketchRef{}
@@ -487,7 +487,7 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, error) {
 		se := &SeasonRef{}
 		ep := &EpisodeRef{}
 		destinations := []any{
-			&v.ID, &v.Title, &v.Number, &v.Slug, &v.Thumbnail,
+			&totalCount, &v.ID, &v.Title, &v.Number, &v.Slug, &v.Thumbnail,
 			&v.UploadDate, &v.Rating,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
@@ -501,23 +501,27 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, error) {
 		}
 		err := rows.Scan(destinations...)
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 
 		se.Show = sh
 		ep.Season = se
 
-		v.Creator = c
+		if c.ID != nil {
+			v.Creator = c
+		}
 
-		v.Episode = ep
+		if ep.ID != nil {
+			v.Episode = ep
+		}
 		sketches = append(sketches, v)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return sketches, nil
+	return sketches, calculateMetadata(totalCount, filter.Page, filter.PageSize), nil
 }
 
 func (m *SketchModel) GetById(id int) (*Sketch, error) {
@@ -532,8 +536,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
 		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name,
 		se.id, se.slug, se.season_number,
-		ser.id, ser.slug, ser.title,
-		rec.id, rec.slug, rec.title
+		ser.id, ser.slug, ser.title, ser.thumbnail_name,
+		rec.id, rec.slug, rec.title, rec.thumbnail_name
 		FROM sketch AS v
 		LEFT JOIN sketch_creator_rel as vcr ON v.id = vcr.sketch_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
@@ -559,12 +563,12 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	}
 
 	v := &Sketch{}
-	c := &Creator{}
-	se := &Series{}
+	c := &CreatorRef{}
 	sh := &ShowRef{}
 	s := &SeasonRef{}
 	e := &Episode{}
-	rec := &Recurring{}
+	rec := &RecurringRef{}
+	se := &SeriesRef{}
 	members := []*CastMember{}
 	hasRows := false
 	for rows.Next() {
@@ -583,8 +587,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg, &cm.ThumbnailName,
 			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&s.ID, &s.Slug, &s.Number,
-			&se.ID, &se.Slug, &se.Title,
-			&rec.ID, &rec.Slug, &rec.Title,
+			&se.ID, &se.Slug, &se.Title, &se.ThumbnailName,
+			&rec.ID, &rec.Slug, &rec.Title, &rec.ThumbnailName,
 		)
 		if err != nil {
 			return nil, err
@@ -616,7 +620,10 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		v.Episode = e
 	}
 
-	v.Creator = c
+	if c.ID != nil {
+		v.Creator = c
+	}
+
 	v.Cast = members
 	if se.ID != nil {
 		v.Series = se
@@ -704,7 +711,7 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 	hasRows := false
 	for rows.Next() {
 		v := &Sketch{}
-		c := &Creator{}
+		c := &CreatorRef{}
 		sh := &ShowRef{}
 		se := &SeasonRef{}
 		ep := &Episode{}
@@ -734,7 +741,9 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 			v.Episode = ep
 		}
 
-		v.Creator = c
+		if c.ID != nil {
+			v.Creator = c
+		}
 		if cm.ID != nil {
 			if p.ID != nil {
 				cm.Actor = p
@@ -872,6 +881,7 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	sketch.ID = &id
 	return id, nil
 }
 
@@ -893,58 +903,6 @@ func (m *SketchModel) UpdateCreatorRelation(sketchId, creatorId int) error {
 	return err
 }
 
-func (m *SketchModel) Search(query string, limit, offset int) ([]*Sketch, error) {
-	stmt := `
-		SELECT v.id, 
-			v.title AS name, 
-			v.slug, 
-			v.thumbnail_name AS img, 
-			v.upload_date, 
-			c.name AS creator, 
-			c.slug AS creator_slug, 
-			c.profile_img AS creator_img,
-			ts_rank(v.search_vector, websearch_to_tsquery('english', $1)) AS rank
-		FROM sketch as v
-		LEFT JOIN sketch_creator_rel as vcr
-		ON v.id = vcr.sketch_id
-		LEFT JOIN creator as c
-		ON vcr.creator_id = c.id
-		WHERE v.search_vector @@ websearch_to_tsquery('english', $1)
-		ORDER BY rank DESC, v.popularity_score ASC
-		LIMIT $2
-		OFFSET $3;
-	`
-	rows, err := m.DB.Query(context.Background(), stmt, query, limit, offset)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
-	defer rows.Close()
-
-	sketches := []*Sketch{}
-	for rows.Next() {
-		v := &Sketch{}
-		c := &Creator{}
-		err := rows.Scan(
-			&v.ID, &v.Title, &v.Slug, &v.ThumbnailName, &v.UploadDate,
-			&c.Name, &c.Slug, &c.ProfileImage, nil,
-		)
-		if err != nil {
-			return nil, err
-		}
-		v.Creator = c
-		sketches = append(sketches, v)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return sketches, nil
-}
-
 func (m *SketchModel) SearchCount(query string) (int, error) {
 	stmt := `
 		SELECT count(*)
@@ -962,13 +920,6 @@ func (m *SketchModel) SearchCount(query string) (int, error) {
 		}
 	}
 	return count, nil
-}
-
-func (m *SketchModel) IsSlugDuplicate(sketchId int, slug string) bool {
-	var exists bool
-	stmt := "SELECT EXISTS(SELECT true FROM sketch WHERE slug = $1 AND id != $2)"
-	m.DB.QueryRow(context.Background(), stmt, slug, sketchId).Scan(&exists)
-	return exists
 }
 
 func (m *SketchModel) Update(sketch *Sketch) error {
@@ -1000,4 +951,49 @@ func (m *SketchModel) Update(sketch *Sketch) error {
 		sketch.ID,
 	)
 	return err
+}
+
+func (m *SketchModel) SyncSketchCreators(sketchID int, creatorIDs []int) error {
+	ctx := context.Background()
+	tx, err := m.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if len(creatorIDs) == 0 {
+		_, err = tx.Exec(ctx, `DELETE FROM sketch_creator_rel WHERE sketch_id = $1`, sketchID)
+		if err != nil {
+			return err
+		}
+		return tx.Commit(ctx)
+	}
+
+	// delete removed
+	_, err = tx.Exec(ctx, `
+		DELETE FROM sketch_creator_rel
+		WHERE sketch_id = $1
+		  AND creator_id <> ALL($2::int[])
+	`, sketchID, creatorIDs)
+	if err != nil {
+		return err
+	}
+
+	// upsert present with order from list position
+	_, err = tx.Exec(ctx, `
+		WITH items AS (
+		  SELECT x.creator_id, x.ord
+		  FROM UNNEST($2::int[]) WITH ORDINALITY AS x(creator_id, ord)
+		)
+		INSERT INTO sketch_creator_rel (sketch_id, creator_id, position)
+		SELECT $1, items.creator_id, items.ord
+		FROM items
+		ON CONFLICT (sketch_id, creator_id)
+		DO UPDATE SET position = EXCLUDED.position
+	`, sketchID, creatorIDs)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }

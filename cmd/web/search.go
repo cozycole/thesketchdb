@@ -15,7 +15,7 @@ import (
 
 func (app *application) getSearchResults(filter *models.Filter) (*models.SearchResult, error) {
 
-	sketches, err := app.sketches.Get(filter)
+	sketches, _, err := app.sketches.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		return nil, fmt.Errorf("search sketch error: %s", err)
 	}
@@ -35,14 +35,9 @@ func (app *application) getSearchResults(filter *models.Filter) (*models.SearchR
 		return nil, fmt.Errorf("search person count error: %s", err)
 	}
 
-	creators, err := app.creators.Get(filter)
+	creators, creatorMetadata, err := app.creators.List(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		return nil, fmt.Errorf("search creator error: %s", err)
-	}
-
-	creatorCount, err := app.creators.GetCount(filter)
-	if err != nil {
-		return nil, fmt.Errorf("search creator count error: %s", err)
 	}
 
 	characters, err := app.characters.Get(filter)
@@ -71,7 +66,7 @@ func (app *application) getSearchResults(filter *models.Filter) (*models.SearchR
 		PersonResults:       people,
 		TotalPersonCount:    peopleCount,
 		CreatorResults:      creators,
-		TotalCreatorCount:   creatorCount,
+		TotalCreatorCount:   creatorMetadata.TotalRecords,
 		CharacterResults:    characters,
 		TotalCharacterCount: characterCount,
 		ShowResults:         shows,

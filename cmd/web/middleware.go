@@ -13,10 +13,23 @@ type contextKey string
 
 const userContextKey = contextKey("user")
 
-func secureHeaders(next http.Handler) http.Handler {
+func (app *application) secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		scriptSrc := "script-src 'self' https://www.youtube.com"
+		if app.debugMode {
+			// browser sync injected script
+			scriptSrc += " 'unsafe-inline'"
+		}
+
 		w.Header().Set("Content-Security-Policy",
-			"default-src 'self'; style-src 'self' fonts.googleapis.com; font-src fonts.gstatic.com")
+			"default-src 'self'; "+
+				scriptSrc+";"+
+				"connect-src 'self' https://www.youtube.com data:;"+
+				"frame-src 'self' https://www.youtube.com;"+
+				"style-src 'self' fonts.googleapis.com;"+
+				"img-src 'self' https://*.digitaloceanspaces.com data: https://i.ytimg.com https://*.ytimg.com https://www.gstatic.com;"+
+				"font-src 'self' fonts.gstatic.com;",
+		)
 
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
