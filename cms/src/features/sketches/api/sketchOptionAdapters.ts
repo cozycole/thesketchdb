@@ -15,7 +15,7 @@ export const makeSketchLoadOptions = (opts?: { pageSize?: number }) => {
     return sketches.map((s) => ({
       id: s.id,
       label: s.title,
-      image: s.thumbnailUrl,
+      image: s.thumbnailName,
     }));
   };
 };
@@ -41,7 +41,7 @@ export const makeSketchLoadOptionsRQ = (
     return data.sketches.map((s) => ({
       id: s.id,
       label: s.title,
-      image: s.thumbnailUrl,
+      image: s.thumbnailName,
     }));
   };
 };

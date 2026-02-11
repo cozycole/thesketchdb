@@ -6,6 +6,11 @@ export class FilterContent extends HTMLElement {
     this.mobileBreakpoint = 1080;
     this._onResize = () => this.updateLayout();
     this._applyOnClick = () => this.applyFilters();
+    this._onMobileMenuClick = () => this.mobileFilterToggle();
+    this._mobileMenuExit = (e) => this.mobileFitlerExit(e);
+  }
+
+  connectedCallback() {
     this.desktopContainer = document.getElementById("desktopFilters");
     this.mobileContainer = document.getElementById("mobileFilters");
     this.filterContent = document.getElementById("filters");
@@ -14,26 +19,18 @@ export class FilterContent extends HTMLElement {
     this.mobileFilters = document.querySelector("#mobileFilters");
     this.applyButton = this.querySelector("#filterApply");
 
-    this._onMobileMenuClick = () => this.mobileFilterToggle();
-    this._mobileMenuExit = (e) => this.mobileFitlerExit(e);
-    htmx.process(this.filterContent);
-  }
-
-  connectedCallback() {
-    //console.log("FilterContent connected");
-    this.desktopContainer.innerHTML = "";
-    this.mobileContainer.innerHTML = "";
-    this.currentState = "";
-
     this.applyButton.addEventListener("click", this._applyOnClick);
     this.mobileFilterButton.addEventListener("click", this._onMobileMenuClick);
     document.addEventListener("click", this._mobileMenuExit);
     window.addEventListener("resize", this._onResize);
+
+    if (this.filterContent) {
+      htmx.process(this.filterContent);
+    }
     this.updateLayout();
   }
 
   disconnectedCallback() {
-    //console.log("FilterContent disconnected");
     this.applyButton.removeEventListener("click", this._applyOnClick);
     this.mobileFilterButton.removeEventListener(
       "click",
@@ -45,13 +42,9 @@ export class FilterContent extends HTMLElement {
 
   updateLayout() {
     if (window.innerWidth > this.mobileBreakpoint) {
-      if (this.currentState !== "desktop") {
-        this.setDesktopLayout();
-      }
+      this.setDesktopLayout();
     } else {
-      if (this.currentState !== "mobile") {
-        this.setMobileLayout();
-      }
+      this.setMobileLayout();
     }
   }
 
@@ -71,6 +64,7 @@ export class FilterContent extends HTMLElement {
       this.filterContent.classList.add("flex");
     }
     this.currentState = "mobile";
+    console.log("Mobile layout set");
   }
 
   applyFilters() {

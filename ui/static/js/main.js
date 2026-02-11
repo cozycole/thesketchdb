@@ -1,5 +1,4 @@
 import htmx from "htmx.org";
-import "htmx-ext-response-targets";
 
 import { initHome } from "./pages/home.js";
 import { initViewSketch } from "./pages/viewSketch.js";
@@ -34,6 +33,8 @@ import "./components/flashMessage.js";
   const dropdownMenus = document.querySelectorAll(".dropdownMenu");
 
   htmx.config.includeIndicatorStyles = false;
+  // necessary for the catalog page navigation
+  htmx.config.refreshOnHistoryMiss = true;
 
   document.addEventListener("DOMContentLoaded", () => {
     dropdownMenuButtons.forEach((button) => {
@@ -67,6 +68,7 @@ import "./components/flashMessage.js";
       });
     });
 
+    // this is necessary because js event listeners get messed up on historRestore
     // Close dropdown when clicking outside
     document.addEventListener("click", function (event) {
       let clickInside = false;

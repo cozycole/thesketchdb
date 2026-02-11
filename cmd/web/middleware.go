@@ -27,7 +27,7 @@ func (app *application) secureHeaders(next http.Handler) http.Handler {
 				"connect-src 'self' https://www.youtube.com data:;"+
 				"frame-src 'self' https://www.youtube.com;"+
 				"style-src 'self' fonts.googleapis.com;"+
-				"img-src 'self' https://*.digitaloceanspaces.com data: https://i.ytimg.com https://*.ytimg.com https://www.gstatic.com;"+
+				"img-src 'self' data: blob: https://*.digitaloceanspaces.com https://i.ytimg.com https://*.ytimg.com https://www.gstatic.com;"+
 				"font-src 'self' fonts.gstatic.com;",
 		)
 

@@ -120,6 +120,9 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 
 		editorAdmin := []string{"editor", "admin"}
 		admin := []string{"admin"}
+
+		r.Get("/admin*", app.requireRoles(editorAdmin, app.serveCMS))
+
 		r.Get("/sketch/add", app.requireRoles(editorAdmin, app.sketchAddPage))
 		r.Post("/sketch/add", app.requireRoles(editorAdmin, app.sketchAdd))
 		r.Get("/sketch/{id}/update", app.requireRoles(editorAdmin, app.sketchUpdatePage))

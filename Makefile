@@ -26,7 +26,7 @@ confirm:
 # DB MIGRATIONS
 # ==================================================================================== #
 
-## db/migrations/new name=$1: create a new database migration
+## migrations/new name=$1: create a new database migration
 .PHONY: migrations/new
 migrations/new:
 	@echo 'Creating migration files for ${name}...'

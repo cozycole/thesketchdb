@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -199,7 +201,6 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("HX-Push-Url", url)
-	app.infoLog.Println(url)
 
 	if isHxRequest && !isHistoryRestore {
 		app.infoLog.Println("TARGET: ", r.Header.Get("HX-Target"))
@@ -217,6 +218,23 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.render(r, w, http.StatusOK, "view-catalog.gohtml", "base", data)
+}
+
+func (app *application) serveCMS(w http.ResponseWriter, r *http.Request) {
+	cmsDistPath := "./cmsdist"
+	if app.settings.devEnv {
+		cmsDistPath = "./ui/static/js/dist/cms"
+	}
+
+	p := filepath.Join(cmsDistPath, strings.TrimPrefix(r.URL.Path, "/admin"))
+
+	if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+		http.ServeFile(w, r, p)
+		return
+	}
+
+	// SPA router fallback
+	http.ServeFile(w, r, filepath.Join(cmsDistPath, "index.html"))
 }
 
 func ping(w http.ResponseWriter, _ *http.Request) {

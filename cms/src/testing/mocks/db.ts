@@ -143,7 +143,7 @@ export const initializeDb = async () => {
   Object.entries(db).forEach(([key, model]) => {
     const dataEntres = database[key];
     if (dataEntres) {
-      dataEntres?.forEach((entry: Record<string, any>) => {
+      dataEntres?.forEach((entry: any) => {
         model.create(entry);
       });
     }

@@ -62,6 +62,7 @@ type settings struct {
 	maxSearchResults  int
 	localImageServer  bool
 	localImageStorage bool
+	devEnv            bool
 	origin            string
 }
 
@@ -94,7 +95,7 @@ func main() {
 		*debug = true
 		*serveStatic = true
 
-		infoLog.Println("Testing env selected, debug mode set")
+		infoLog.Println("Dev env selected, debug mode set")
 
 		dbUrl = os.Getenv("DEV_DB_URL")
 		imgBaseUrl = os.Getenv("DEV_IMG_URL")
@@ -194,6 +195,7 @@ func main() {
 			localImageServer:  *localImgServer,
 			localImageStorage: *localImgStorage,
 			origin:            origin,
+			devEnv:            *dev,
 		},
 	}
 	app.infoLog.Println("ORIGIN: ", origin)

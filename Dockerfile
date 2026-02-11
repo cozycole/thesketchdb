@@ -1,3 +1,4 @@
+# --- main site assets ---
 FROM node:18-alpine AS assets
 WORKDIR /app
 
@@ -19,17 +20,36 @@ RUN JS_FILE=$(basename $(ls ./dist/js/main.*.js)) && \
     CSS_FILE=$(basename $(ls ./dist/css/styles.*.css)) && \
     echo "{ \"css\": \"$CSS_FILE\", \"js\": \"$JS_FILE\" }" > ./dist/manifest.json
 
+# --- CMS build ---
+FROM node:20-alpine AS cms_build
+WORKDIR /cms
+
+COPY ./cms/package*.json ./
+RUN npm install
+
+COPY ./cms ./
+
+RUN npm run build
+
+
+# --- Go build ---
 FROM golang:1.24 AS build
 WORKDIR /app
 COPY . .
 COPY --from=assets /app/dist ./dist
+COPY --from=cms_build /cms/dist ./cmsdist
 RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o ./bin/web-app ./cmd/web
 
+
+# --- runtime ---
 FROM alpine:3.17
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
+
 COPY --from=build /app/bin/web-app ./web-app
 COPY --from=build /app/dist /tmp/dist
+COPY --from=build /app/cmsdist ./cmsdist
+
 EXPOSE 8080
 ENTRYPOINT sh -c 'cp -r /tmp/dist/* /app/dist/ && exec /app/web-app --addr 0.0.0.0:8080'

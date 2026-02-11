@@ -2,6 +2,7 @@ package sketches
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
 
@@ -12,25 +13,21 @@ import (
 
 func (s *SketchService) CreateSketch(sketch *models.Sketch, thumbnail *multipart.FileHeader) (*models.Sketch, error) {
 	if sketch.Episode != nil && sketch.Episode.ID != nil {
-		exists, err := s.Repos.Shows.EpisodeExists(safeDeref(sketch.Episode.ID))
+		ep, err := s.Repos.Shows.GetEpisode(*sketch.Episode.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		if !exists {
-			return nil, models.ErrNoEpisode
-		}
+		sketch.Episode = ep
 	}
 
-	if sketch.Creator != nil {
-		exists, err := s.Repos.Creators.Exists(*sketch.Creator.ID)
+	if sketch.Creator != nil && sketch.Creator.ID != nil {
+		c, err := s.Repos.Creators.GetById(*sketch.Creator.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		if !exists {
-			return nil, models.ErrNoCreator
-		}
+		sketch.Creator = c.ToRef()
 	}
 
 	slug := createSketchSlug(sketch)
@@ -105,30 +102,26 @@ func (s *SketchService) UpdateSketch(sketch *models.Sketch, thumbnail []byte) (*
 	}
 
 	if sketch.Episode != nil && sketch.Episode.ID != nil {
-		exists, err := s.Repos.Shows.EpisodeExists(*sketch.Episode.ID)
+		ep, err := s.Repos.Shows.GetEpisode(*sketch.Episode.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		if !exists {
-			return nil, models.ErrNoEpisode
-		}
-
+		sketch.Episode = ep
 	}
 
 	if sketch.Creator != nil && sketch.Creator.ID != nil {
-		exists, err := s.Repos.Creators.Exists(*sketch.Creator.ID)
+		c, err := s.Repos.Creators.GetById(*sketch.Creator.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		if !exists {
-			return nil, models.ErrNoCreator
-		}
+		sketch.Creator = c.ToRef()
 	}
 
 	slug := createSketchSlug(sketch)
 	sketch.Slug = &slug
+	fmt.Printf("SKETCH SLUG: %s", slug)
 
 	youtubeID, _ := extractYouTubeVideoID(*sketch.URL)
 	if youtubeID != "" {

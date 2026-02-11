@@ -464,8 +464,8 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
 
 	// fmt.Println("SORT: ", sortClause)
 	query = fmt.Sprintf(query, fields, conditionClause, rank, sortClause)
-	fmt.Println(query)
-	fmt.Printf("ARGS: %+v\n", args.Args)
+	// fmt.Println(query)
+	// fmt.Printf("ARGS: %+v\n", args.Args)
 
 	rows, err := m.DB.Query(context.Background(), query, args.Args...)
 	if err != nil {

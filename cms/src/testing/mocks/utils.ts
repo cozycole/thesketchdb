@@ -50,61 +50,61 @@ const omit = <T extends object>(obj: T, keys: string[]): T => {
 export const sanitizeUser = <O extends object>(user: O) =>
   omit<O>(user, ["password", "iat"]);
 
-export function authenticate({
-  email,
-  password,
-}: {
-  email: string;
-  password: string;
-}) {
-  const user = db.user.findFirst({
-    where: {
-      email: {
-        equals: email,
-      },
-    },
-  });
-
-  if (user?.password === hash(password)) {
-    const sanitizedUser = sanitizeUser(user);
-    const encodedToken = encode(sanitizedUser);
-    return { user: sanitizedUser, jwt: encodedToken };
-  }
-
-  const error = new Error("Invalid username or password");
-  throw error;
-}
-
-export const AUTH_COOKIE = `thesketchdb_user_token`;
-
-export function requireAuth(cookies: Record<string, string>) {
-  try {
-    const encodedToken = cookies[AUTH_COOKIE] || Cookies.get(AUTH_COOKIE);
-    if (!encodedToken) {
-      return { error: "Unauthorized", user: null };
-    }
-    const decodedToken = decode(encodedToken) as { id: string };
-
-    const user = db.user.findFirst({
-      where: {
-        id: {
-          equals: decodedToken.id,
-        },
-      },
-    });
-
-    if (!user) {
-      return { error: "Unauthorized", user: null };
-    }
-
-    return { user: sanitizeUser(user) };
-  } catch (err: any) {
-    return { error: "Unauthorized", user: null };
-  }
-}
-
-export function requireAdmin(user: any) {
-  if (user.role !== "ADMIN") {
-    throw Error("Unauthorized");
-  }
-}
+//export function authenticate({
+//  email,
+//  password,
+//}: {
+//  email: string;
+//  password: string;
+//}) {
+//  const user = db.user.findFirst({
+//    where: {
+//      email: {
+//        equals: email,
+//      },
+//    },
+//  });
+//
+//  if (user?.password === hash(password)) {
+//    const sanitizedUser = sanitizeUser(user);
+//    const encodedToken = encode(sanitizedUser);
+//    return { user: sanitizedUser, jwt: encodedToken };
+//  }
+//
+//  const error = new Error("Invalid username or password");
+//  throw error;
+//}
+//
+//export const AUTH_COOKIE = `thesketchdb_user_token`;
+//
+//export function requireAuth(cookies: Record<string, string>) {
+//  try {
+//    const encodedToken = cookies[AUTH_COOKIE] || Cookies.get(AUTH_COOKIE);
+//    if (!encodedToken) {
+//      return { error: "Unauthorized", user: null };
+//    }
+//    const decodedToken = decode(encodedToken) as { id: string };
+//
+//    const user = db.user.findFirst({
+//      where: {
+//        id: {
+//          equals: decodedToken.id,
+//        },
+//      },
+//    });
+//
+//    if (!user) {
+//      return { error: "Unauthorized", user: null };
+//    }
+//
+//    return { user: sanitizeUser(user) };
+//  } catch (err: any) {
+//    return { error: "Unauthorized", user: null };
+//  }
+//}
+//
+//export function requireAdmin(user: any) {
+//  if (user.role !== "ADMIN") {
+//    throw Error("Unauthorized");
+//  }
+//}

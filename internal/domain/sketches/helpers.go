@@ -22,7 +22,7 @@ func createSketchSlug(sketch *models.Sketch) string {
 			seasonNumber := safeDeref(ep.Season.Number)
 			showString := safeDeref(show.Name)
 			episodeNumber := safeDeref(ep.Number)
-			slugInput += fmt.Sprintf("%s s%d e%d", showString, seasonNumber, episodeNumber)
+			slugInput += fmt.Sprintf("%s s%d e%d ", showString, seasonNumber, episodeNumber)
 		}
 	}
 
@@ -31,7 +31,7 @@ func createSketchSlug(sketch *models.Sketch) string {
 	}
 
 	if slugInput == "" {
-		return safeDeref(sketch.Title)
+		return models.CreateSlugName(safeDeref(sketch.Title))
 	}
 
 	return models.CreateSlugName(slugInput + " " + safeDeref(sketch.Title))

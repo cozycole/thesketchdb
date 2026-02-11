@@ -73,6 +73,24 @@ func (e *Episode) GetShow() *ShowRef {
 	return e.Season.Show
 }
 
+func (e *Episode) ToRef() *EpisodeRef {
+	if e.ID == nil {
+		return nil
+	}
+
+	sketchCount := len(e.Sketches)
+	return &EpisodeRef{
+		ID:          e.ID,
+		Slug:        e.Slug,
+		Title:       e.Title,
+		Number:      e.Number,
+		AirDate:     e.AirDate,
+		Thumbnail:   e.Thumbnail,
+		Season:      e.Season,
+		SketchCount: &sketchCount,
+	}
+}
+
 type EpisodeRef struct {
 	ID          *int       `json:"id"`
 	Slug        *string    `json:"slug"`

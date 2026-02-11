@@ -60,15 +60,17 @@ export const columns: ColumnDef<Sketch>[] = [
         label = show.name;
         img = buildImageUrl("show", "small", show.profileImage);
       }
-      return (
-        <Link
-          to={`/api/v1/${type}/${id}`}
-          className="flex gap-2 items-center hover:underline text-black hover:text-slate-800"
-        >
-          <img src={img} className="rounded-full w-8" />
-          {label}
-        </Link>
-      );
+      if (type && id) {
+        return (
+          <Link
+            to={`/api/v1/${type}/${id}`}
+            className="flex gap-2 items-center hover:underline text-black hover:text-slate-800"
+          >
+            <img src={img} className="rounded-full w-8" />
+            {label}
+          </Link>
+        );
+      }
     },
   },
   {

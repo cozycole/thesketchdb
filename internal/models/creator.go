@@ -22,15 +22,24 @@ type Creator struct {
 	EstablishedDate *time.Time `json:"establishedDate"`
 }
 
+func (c *Creator) ToRef() *CreatorRef {
+	if c.ID == nil {
+		return nil
+	}
+
+	return &CreatorRef{
+		ID:           c.ID,
+		Slug:         c.Slug,
+		Name:         c.Name,
+		ProfileImage: c.ProfileImage,
+	}
+}
+
 type CreatorRef struct {
 	ID           *int    `json:"id"`
 	Slug         *string `json:"slug"`
 	Name         *string `json:"name"`
 	ProfileImage *string `json:"profileImage"`
-}
-
-func (c *Creator) HasId() bool {
-	return c.ID != nil
 }
 
 type CreatorModelInterface interface {
