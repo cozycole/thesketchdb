@@ -147,8 +147,8 @@ func (app *application) convertFormtoEpisode(form *episodeForm) models.Episode {
 }
 
 func convertFormtoCastMember(form *castForm) models.CastMember {
-	actor := models.Person{ID: &form.PersonID}
-	character := models.Character{}
+	actor := models.PersonRef{ID: &form.PersonID}
+	character := models.CharacterRef{}
 	if form.CharacterID != 0 {
 		character.ID = &form.CharacterID
 	}
@@ -169,7 +169,7 @@ func convertCastMembertoForm(member *models.CastMember) castForm {
 	var personName, characterName string
 	if member.Actor != nil {
 		personID = safeDeref(member.Actor.ID)
-		personName = views.PrintPersonName(member.Actor)
+		personName = views.PrintPersonRefName(member.Actor)
 	}
 
 	if member.Character != nil {

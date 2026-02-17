@@ -64,7 +64,6 @@ type SketchModelInterface interface {
 	HasLike(sketchId, userId int) (bool, error)
 	Insert(sketch *Sketch) (int, error)
 	InsertSketchCreatorRelation(sketchId, creatorId int) error
-	InsertThumbnailName(sketchId int, name string) error
 	SearchCount(query string) (int, error)
 	SyncSketchCreators(sketchID int, creatorIDs []int) error
 	Update(sketch *Sketch) error
@@ -572,8 +571,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	members := []*CastMember{}
 	hasRows := false
 	for rows.Next() {
-		p := &Person{}
-		ch := &Character{}
+		p := &PersonRef{}
+		ch := &CharacterRef{}
 		cm := &CastMember{}
 		hasRows = true
 		err := rows.Scan(
@@ -715,8 +714,8 @@ func (m *SketchModel) GetFeatured() ([]*Sketch, error) {
 		sh := &ShowRef{}
 		se := &SeasonRef{}
 		ep := &Episode{}
-		p := &Person{}
-		ch := &Character{}
+		p := &PersonRef{}
+		ch := &CharacterRef{}
 		cm := &CastMember{}
 		hasRows = true
 
@@ -883,12 +882,6 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 	}
 	sketch.ID = &id
 	return id, nil
-}
-
-func (m *SketchModel) InsertThumbnailName(sketchId int, name string) error {
-	stmt := `UPDATE sketch SET thumbnail_name = $1 WHERE id = $2`
-	_, err := m.DB.Exec(context.Background(), stmt, name, sketchId)
-	return err
 }
 
 func (m *SketchModel) InsertSketchCreatorRelation(sketchId, creatorId int) error {

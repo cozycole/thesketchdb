@@ -266,7 +266,7 @@ export function AsyncSearchSelect<
               size="sm"
               onClick={() => remove(selectedSingle.id)}
             >
-              Remove
+              <X className="h-3 w-3" />
             </Button>
           </div>
         ) : null}

@@ -40,3 +40,11 @@ func GetFileExtension(header *multipart.FileHeader) (string, error) {
 	}
 	return mime, nil
 }
+
+func SafeDeref[T any](ptr *T) T {
+	if ptr != nil {
+		return *ptr
+	}
+	var zero T
+	return zero
+}

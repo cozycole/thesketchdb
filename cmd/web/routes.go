@@ -58,10 +58,6 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 
 		r.Get("/api/v1/sketches", app.viewSketchesAPI)
 
-		r.Get("/api/v1/admin/sketch/{id}", app.adminGetSketchAPI)
-		r.Post("/api/v1/admin/sketch", app.createSketchAPI)
-		r.Put("/api/v1/admin/sketch/{id}", app.updateSketchAPI)
-
 		r.Post("/sketch/like/{id}", app.sketchAddLike)
 		r.Delete("/sketch/like/{id}", app.sketchRemoveLike)
 
@@ -74,9 +70,11 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 
 		r.Get("/person/{id}/{slug}", app.viewPerson)
 		r.Get("/person/search", app.personSearch)
+		r.Get("/api/v1/people", app.listPeopleAPI)
 
 		r.Get("/character/{id}/{slug}", app.characterView)
 		r.Get("/character/search", app.characterSearch)
+		r.Get("/api/v1/characters", app.listCharactersAPI)
 
 		r.Get("/api/v1/sketch-series", app.listSeriesAPI)
 		r.Get("/series/{id}/{slug}", app.seriesView)
@@ -128,6 +126,17 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 		r.Get("/sketch/{id}/update", app.requireRoles(editorAdmin, app.sketchUpdatePage))
 		r.Post("/sketch/{id}/update", app.requireRoles(editorAdmin, app.sketchUpdate))
 		r.Post("/sketch/{id}/tag", app.requireRoles(editorAdmin, app.sketchUpdateTags))
+
+		r.Get("/api/v1/admin/sketch/{id}", app.adminGetSketchAPI)
+		r.Post("/api/v1/admin/sketch", app.createSketchAPI)
+		r.Put("/api/v1/admin/sketch/{id}", app.updateSketchAPI)
+
+		r.Get("/api/v1/admin/sketch/{id}/cast", app.getCastAPI)
+		r.Post("/api/v1/admin/sketch/{id}/cast", app.createCastAPI)
+		r.Put("/api/v1/admin/sketch/{id}/cast/{castId}", app.updateCastAPI)
+		r.Delete("/api/v1/admin/sketch/{id}/cast/{castId}", app.deleteCastAPI)
+
+		r.Put("/api/v1/admin/sketch/{id}/cast/order", app.updateCastOrderAPI)
 
 		r.Get("/sketch/{id}/cast", app.requireRoles(editorAdmin, app.addCastPage))
 		r.Post("/sketch/{id}/cast", app.requireRoles(editorAdmin, app.addCast))

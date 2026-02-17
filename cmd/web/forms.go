@@ -224,7 +224,10 @@ type castForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateCastForm(form *castForm) {
+func (app *application) validateCastForm(form *castForm, isUpdate bool) {
+	if isUpdate {
+		form.CheckField(form.ID != 0, "id", "invalid cast id")
+	}
 	pid := form.PersonID
 	if pid != 0 {
 		form.CheckField(

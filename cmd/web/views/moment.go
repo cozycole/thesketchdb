@@ -47,10 +47,10 @@ func QuoteHeader(cm *models.CastMember) string {
 
 	charName := safeDeref(cm.CharacterName)
 
-	actorName := PrintPersonName(cm.Actor)
+	actorName := PrintPersonRefName(cm.Actor)
 	if actorName != "" {
 		if charName != "" {
-			return charName + fmt.Sprintf(" (%s)", PrintPersonName(cm.Actor))
+			return charName + fmt.Sprintf(" (%s)", PrintPersonRefName(cm.Actor))
 		}
 		return actorName
 	}

@@ -22,10 +22,11 @@ type Character struct {
 }
 
 type CharacterRef struct {
-	ID    *int
-	Slug  *string
-	Name  *string
-	Image *string
+	ID    *int    `json:"id"`
+	Slug  *string `json:"slug"`
+	Name  *string `json:"name"`
+	Type  *string `json:"type"`
+	Image *string `json:"profileImage"`
 }
 
 type CharacterModelInterface interface {
@@ -36,6 +37,7 @@ type CharacterModelInterface interface {
 	GetCharactersRefs(ids []int) ([]*CharacterRef, error)
 	GetCount(filter *Filter) (int, error)
 	Insert(character *Character) (int, error)
+	List(f *Filter) ([]*CharacterRef, Metadata, error)
 	Search(search string) ([]*Character, error)
 	SearchCount(query string) (int, error)
 	Update(character *Character) error
@@ -263,6 +265,80 @@ func (m *CharacterModel) Insert(character *Character) (int, error) {
 	}
 
 	return id, err
+}
+
+func (m *CharacterModel) List(f *Filter) ([]*CharacterRef, Metadata, error) {
+	query := `SELECT count(*) OVER(), c.id, c.slug, c.name, c.character_type, c.img_name%s
+			FROM character as c
+			WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+	if f.Query != "" {
+		rankParam := fmt.Sprintf(`
+		, ts_rank(
+			setweight(to_tsvector('simple', c.name) , 'A'),	
+			websearch_to_tsquery('english', $%d)
+		) AS rank
+		`, argIndex)
+
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`AND
+			(
+			to_tsvector(
+			  'simple',
+			  COALESCE(c.name, '')
+			) @@ websearch_to_tsquery('english', $%d)
+			OR
+			COALESCE(c.name, '') ILIKE '%%' || $%d || '%%'
+			)
+
+		`, argIndex, argIndex)
+
+		args = append(args, f.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	query += fmt.Sprintf(`
+		LIMIT $%d OFFSET $%d
+		`, argIndex, argIndex+1)
+	args = append(args, f.Limit(), f.Offset())
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	characters := []*CharacterRef{}
+	var totalCount int
+	for rows.Next() {
+		var c CharacterRef
+		destinations := []any{
+			&totalCount, &c.ID, &c.Slug, &c.Name, &c.Type, &c.Image,
+		}
+
+		var rank *float32
+		if f.Query != "" {
+			destinations = append(destinations, &rank)
+		}
+		err := rows.Scan(destinations...)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		characters = append(characters, &c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	return characters, calculateMetadata(totalCount, f.Page, f.PageSize), nil
+
 }
 
 func (m *CharacterModel) Search(query string) ([]*Character, error) {

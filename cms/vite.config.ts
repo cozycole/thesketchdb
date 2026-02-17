@@ -11,6 +11,7 @@ export default defineConfig(({ command }) => ({
     globals: true,
     environment: "jsdom",
   },
+  exclude: ["**/testing/**", "**/*.test.*", "**/*.spec.*", "**/mocks/**"],
   server: {
     proxy: {
       "/api/v1": "http://localhost:8080",

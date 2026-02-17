@@ -11,19 +11,19 @@ import (
 )
 
 type Tag struct {
-	ID       *int
-	Name     *string
-	Slug     *string
-	Type     *string
-	Category *Category
-	Count    *int
+	ID       *int      `json:"id"`
+	Slug     *string   `json:"slug"`
+	Name     *string   `json:"name"`
+	Type     *string   `json:"type"`
+	Category *Category `json:"category"`
+	Count    *int      `json:"count"`
 }
 
 type TagRef struct {
-	ID       *int
-	Name     *string
-	Slug     *string
-	Category *CategoryRef
+	ID       *int         `json:"id"`
+	Slug     *string      `json:"slug"`
+	Name     *string      `json:"name"`
+	Category *CategoryRef `json:"category"`
 }
 
 type TagModelInterface interface {

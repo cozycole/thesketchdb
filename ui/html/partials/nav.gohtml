@@ -141,6 +141,13 @@
                   class="block px-4 py-2 hover:bg-slate-200 rounded-md"
                   >View Account</a
                 >
+                {{ if or $.IsAdmin $.IsEditor }}
+                  <a
+                    href="/admin"
+                    class="block px-4 py-2 hover:bg-slate-200 rounded-md"
+                    >CMS</a
+                  >
+                {{ end }}
                 <form class="block" action="/logout" method="POST">
                   <button
                     class="w-full px-4 py-2 text-left hover:bg-slate-200 rounded-md"

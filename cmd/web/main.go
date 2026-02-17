@@ -20,7 +20,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
+	"sketchdb.cozycole.net/internal/domain/casts"
+	"sketchdb.cozycole.net/internal/domain/characters"
 	"sketchdb.cozycole.net/internal/domain/creators"
+	"sketchdb.cozycole.net/internal/domain/people"
 	"sketchdb.cozycole.net/internal/domain/recurring"
 	"sketchdb.cozycole.net/internal/domain/series"
 	"sketchdb.cozycole.net/internal/domain/shows"
@@ -275,11 +278,14 @@ func newRepositories(dbpool *pgxpool.Pool) models.Repositories {
 }
 
 type Services struct {
-	Sketches  sketches.SketchService
-	Creators  creators.CreatorService
-	Shows     shows.ShowService
-	Recurring recurring.RecurringService
-	Series    series.SeriesService
+	Casts      casts.CastService
+	Characters characters.CharacterService
+	Creators   creators.CreatorService
+	People     people.PersonService
+	Recurring  recurring.RecurringService
+	Series     series.SeriesService
+	Shows      shows.ShowService
+	Sketches   sketches.SketchService
 }
 
 func NewServices(repos models.Repositories, fileStore fileStore.FileStorageInterface) Services {
@@ -301,6 +307,18 @@ func NewServices(repos models.Repositories, fileStore fileStore.FileStorageInter
 			ImgStore: fileStore,
 		},
 		Series: series.SeriesService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+		Casts: casts.CastService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+		People: people.PersonService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+		Characters: characters.CharacterService{
 			Repos:    repos,
 			ImgStore: fileStore,
 		},

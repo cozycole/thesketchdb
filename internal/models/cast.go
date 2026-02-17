@@ -12,27 +12,35 @@ import (
 )
 
 type CastMember struct {
-	ID            *int
-	SketchID      *int
-	Position      *int
-	Actor         *Person
-	Character     *Character // if not nil, means character connected to a character's page
-	CharacterName *string
-	CastRole      *string
-	MinorRole     *bool
-	ThumbnailName *string
-	ProfileImg    *string
-	ThumbnailFile *multipart.FileHeader
-	ProfileFile   *multipart.FileHeader
-	Tags          []*Tag
+	ID            *int                  `json:"id"`
+	SketchID      *int                  `json:"-"`
+	Position      *int                  `json:"position"`
+	Actor         *PersonRef            `json:"actor"`
+	Character     *CharacterRef         `json:"character"`
+	CharacterName *string               `json:"characterName"`
+	CastRole      *string               `json:"castRole"`
+	MinorRole     *bool                 `json:"minorRole"`
+	ThumbnailName *string               `json:"thumbnailName"`
+	ProfileImg    *string               `json:"profileImage"`
+	ThumbnailFile *multipart.FileHeader `json:"-"`
+	ProfileFile   *multipart.FileHeader `json:"-"`
+	Tags          []*Tag                `json:"tags"`
+}
+
+type CastScreenshot struct {
+	ID            *int    `json:"id"`
+	ClusterNumber *int    `json:"clusterNumber"`
+	ImageNumber   *int    `json:"imageNumber"`
+	ThumbnailName *string `json:"thumbnailName"`
+	ProfileImage  *string `json:"profileImage"`
 }
 
 type CastModelInterface interface {
 	Delete(id int) error
 	GetById(id int) (*CastMember, error)
-	Insert(sketchId int, member *CastMember) (int, error)
-	InsertThumbnailName(sketchId int, name string) error
+	Insert(sketchId int, member *CastMember) error
 	GetCastMembers(sketchId int) ([]*CastMember, error)
+	GetCastScreenshots(sketchId int) ([]*CastScreenshot, error)
 	BatchUpdateCastTags(castID int, tags []*Tag) error
 	Update(member *CastMember) error
 	UpdatePositions([]int) error
@@ -49,6 +57,7 @@ func (m *CastModel) Delete(id int) error {
 	_, err := m.DB.Exec(context.Background(), stmt, id)
 	return err
 }
+
 func (m *CastModel) GetById(id int) (*CastMember, error) {
 	stmt := `
 	SELECT cm.id, cm.sketch_id, cm.position, cm.character_name, cm.role, cm.minor,
@@ -67,8 +76,8 @@ func (m *CastModel) GetById(id int) (*CastMember, error) {
 	`
 
 	c := CastMember{}
-	p := Person{}
-	ch := Character{}
+	p := PersonRef{}
+	ch := CharacterRef{}
 	tags := []*Tag{}
 	rows, err := m.DB.Query(context.Background(), stmt, id)
 	for rows.Next() {
@@ -109,7 +118,7 @@ func (m *CastModel) GetById(id int) (*CastMember, error) {
 	return &c, nil
 }
 
-func (m *CastModel) Insert(sketchId int, member *CastMember) (int, error) {
+func (m *CastModel) Insert(sketchId int, member *CastMember) error {
 	var actorId, characterId *int
 	if member.Actor != nil && safeDeref(member.Actor.ID) != 0 {
 		actorId = member.Actor.ID
@@ -133,21 +142,16 @@ func (m *CastModel) Insert(sketchId int, member *CastMember) (int, error) {
 	var id int
 	err := result.Scan(&id)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return id, nil
-}
 
-func (m *CastModel) InsertThumbnailName(castId int, name string) error {
-	stmt := `UPDATE cast_members SET img_name = $1 WHERE id = $2`
-	_, err := m.DB.Exec(context.Background(), stmt, name, castId)
-	return err
+	member.ID = &id
+	return nil
 }
 
 func (m *CastModel) GetCastMembers(sketchId int) ([]*CastMember, error) {
 	stmt := `
-		SELECT p.id, p.slug, p.first, p.last, p.birthdate,
-		p.description, p.profile_img, 
+		SELECT p.id, p.slug, p.first, p.last, p.profile_img, 
 		cm.id, cm.position, cm.thumbnail_name, cm.profile_img, 
 		cm.character_name, cm.role, cm.minor,
 		ch.id, ch.slug, ch.name, ch.img_name,
@@ -161,7 +165,7 @@ func (m *CastModel) GetCastMembers(sketchId int) ([]*CastMember, error) {
 		LEFT JOIN tags as t ON ctr.tag_id = t.id
 		LEFT JOIN categories as c ON t.category_id = c.id
 		WHERE v.id = $1
-		ORDER BY cm.position asc
+		ORDER BY cm.position asc, cm.id asc
 	`
 	rows, err := m.DB.Query(context.Background(), stmt, sketchId)
 	if err != nil {
@@ -176,16 +180,16 @@ func (m *CastModel) GetCastMembers(sketchId int) ([]*CastMember, error) {
 	memberTagMap := map[int]map[int]*Tag{}
 	memberMap := map[int]*CastMember{}
 	for rows.Next() {
-		p := &Person{}
-		ch := &Character{}
+		p := &PersonRef{}
+		ch := &CharacterRef{}
 		cm := &CastMember{}
 		t := Tag{}
 		c := Category{}
 		err := rows.Scan(
-			&p.ID, &p.Slug, &p.First, &p.Last, &p.BirthDate,
-			&p.Description, &p.ProfileImg, &cm.ID, &cm.Position,
-			&cm.ThumbnailName, &cm.ProfileImg, &cm.CharacterName,
-			&cm.CastRole, &cm.MinorRole, &ch.ID, &ch.Slug, &ch.Name, &ch.Image,
+			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
+			&cm.ID, &cm.Position, &cm.ThumbnailName, &cm.ProfileImg,
+			&cm.CharacterName, &cm.CastRole, &cm.MinorRole,
+			&ch.ID, &ch.Slug, &ch.Name, &ch.Image,
 			&t.ID, &t.Name, &t.Slug, &t.Type,
 			&c.ID, &c.Name, &c.Slug,
 		)
@@ -197,8 +201,13 @@ func (m *CastModel) GetCastMembers(sketchId int) ([]*CastMember, error) {
 			continue
 		}
 
-		cm.Actor = p
-		cm.Character = ch
+		if p.ID != nil {
+			cm.Actor = p
+		}
+
+		if ch.ID != nil {
+			cm.Character = ch
+		}
 
 		memberMap[*cm.ID] = cm
 
@@ -215,13 +224,13 @@ func (m *CastModel) GetCastMembers(sketchId int) ([]*CastMember, error) {
 
 	members := []*CastMember{}
 	for cast_id, cm := range memberMap {
+		tags := []*Tag{}
 		if tagMap, ok := memberTagMap[cast_id]; ok {
-			tags := []*Tag{}
 			for _, tag := range tagMap {
 				tags = append(tags, tag)
 			}
-			cm.Tags = tags
 		}
+		cm.Tags = tags
 		members = append(members, cm)
 	}
 	sort.Slice(members, func(i, j int) bool {
@@ -229,6 +238,37 @@ func (m *CastModel) GetCastMembers(sketchId int) ([]*CastMember, error) {
 	})
 
 	return members, nil
+}
+
+func (m *CastModel) GetCastScreenshots(sketchId int) ([]*CastScreenshot, error) {
+	stmt := `
+		SELECT id, cluster_number, image_number, thumbnail_img, profile_img
+		FROM cast_auto_screenshots
+		WHERE sketch_id = $1
+		ORDER BY cluster_number, image_number
+	`
+
+	rows, err := m.DB.Query(context.Background(), stmt, sketchId)
+	if err != nil {
+		return nil, err
+	}
+
+	shots := []*CastScreenshot{}
+	for rows.Next() {
+		cs := CastScreenshot{}
+		err := rows.Scan(&cs.ID, &cs.ClusterNumber, &cs.ImageNumber, &cs.ThumbnailName, &cs.ProfileImage)
+		if err != nil {
+			return nil, err
+		}
+
+		shots = append(shots, &cs)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return shots, nil
 }
 
 func (m *CastModel) Update(member *CastMember) error {
@@ -240,10 +280,14 @@ func (m *CastModel) Update(member *CastMember) error {
 	var personId *int
 	if member.Actor != nil && safeDeref(member.Actor.ID) != 0 {
 		personId = member.Actor.ID
+	}
 
+	var characterId *int
+	if member.Character != nil && safeDeref(member.Character.ID) != 0 {
+		characterId = member.Character.ID
 	}
 	_, err := m.DB.Exec(context.Background(), stmt, personId, member.CharacterName,
-		member.Character.ID, member.CastRole, member.ThumbnailName, member.ProfileImg,
+		characterId, member.CastRole, member.ThumbnailName, member.ProfileImg,
 		member.MinorRole, member.ID,
 	)
 	return err

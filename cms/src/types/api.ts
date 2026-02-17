@@ -33,6 +33,26 @@ export type Sketch = {
   updatedAt: string;
 };
 
+export type CastMember = {
+  id: number;
+  position: number;
+  actor: PersonRef;
+  character: CharacterRef;
+  characterName: string;
+  castRole: string;
+  minorRole: boolean;
+  thumbnailName: string;
+  profileImage: string;
+};
+
+export type CastScreenshot = {
+  id: number;
+  clusterNumber: number;
+  imageNumber: number;
+  thumbnailName: string;
+  profileImage: string;
+};
+
 export type Category = {
   id: number;
   name: string;
@@ -154,7 +174,7 @@ export type Person = {
   last: string;
   alias: string;
   professions: string;
-  profileImg: string;
+  profileImage: string;
   birthDate: string;
   description: string;
   wikiPage: string;
@@ -165,10 +185,13 @@ export type Person = {
   updatedAt: Date;
 };
 
-export type PersonRef = Pick<
-  Person,
-  "id" | "slug" | "first" | "last" | "profileImg"
->;
+export type PersonRef = {
+  id: number;
+  slug: string;
+  first: string;
+  last: string;
+  profileImage: string;
+};
 
 export type Character = {
   id: number;
@@ -176,7 +199,7 @@ export type Character = {
   name: string;
   aliases: string;
   type: string;
-  profileImg: string;
+  profileImage: string;
   description: string;
   portrayal: PersonRef;
 
@@ -184,24 +207,10 @@ export type Character = {
   updatedAt: Date;
 };
 
-export type CharacterRef = Pick<
-  Character,
-  "id" | "name" | "slug" | "profileImg"
->;
-
-export type CastMember = {
-  id?: number;
-  sketchID?: number;
-  position?: number;
-  actor?: Person;
-  character?: Character;
-  characterName?: string;
-  castRole?: string;
-  minorRole?: boolean;
-  thumbnailName?: string;
-  profileImg?: string;
-  tags: Tag[];
-
-  createdAt: Date;
-  updatedAt: Date;
+export type CharacterRef = {
+  id: number;
+  slug: string;
+  name: string;
+  type: string;
+  profileImage: string;
 };

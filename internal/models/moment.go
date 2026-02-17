@@ -253,8 +253,8 @@ func (m *MomentModel) GetBySketch(sketchId int) ([]*Moment, error) {
 		cm := &CastMember{}
 		t := &Tag{}
 		ca := &Category{}
-		ch := &Character{}
-		p := &Person{}
+		ch := &CharacterRef{}
+		p := &PersonRef{}
 
 		hasRows = true
 		err := rows.Scan(
@@ -372,7 +372,7 @@ func (m *MomentModel) GetQuote(quoteId int) (*Quote, error) {
 	mo := Moment{}
 	q := Quote{}
 	cm := CastMember{}
-	p := Person{}
+	p := PersonRef{}
 	tags := []*Tag{}
 	hasRows := false
 	for rows.Next() {

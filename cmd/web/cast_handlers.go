@@ -64,7 +64,7 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.validateCastForm(&form)
+	app.validateCastForm(&form, false)
 	if !form.Valid() {
 		form.Action = fmt.Sprintf("/sketch/%d/cast", sketchId)
 		app.render(r, w, http.StatusUnprocessableEntity, "cast-form.gohtml", "cast-form", form)
@@ -72,6 +72,7 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 	}
 
 	castMember := convertFormtoCastMember(&form)
+	castMember.SketchID = &sketchId
 
 	if castMember.ThumbnailFile != nil {
 		thumbName, err := generateThumbnailName(castMember.ThumbnailFile)
@@ -91,7 +92,7 @@ func (app *application) addCast(w http.ResponseWriter, r *http.Request) {
 		castMember.ProfileImg = &profileName
 	}
 
-	_, err = app.cast.Insert(sketchId, &castMember)
+	err = app.cast.Insert(sketchId, &castMember)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -176,7 +177,7 @@ func (app *application) updateCast(w http.ResponseWriter, r *http.Request) {
 	currentThumbnail := safeDeref(staleMember.ThumbnailName)
 	currentProfile := safeDeref(staleMember.ProfileImg)
 
-	app.validateCastForm(&form)
+	app.validateCastForm(&form, true)
 	if !form.Valid() {
 		form.ThumbnailName = fmt.Sprintf(
 			"%s/cast/thumbnail/small/%s", app.baseImgUrl, currentThumbnail)

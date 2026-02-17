@@ -60,7 +60,7 @@ func CastCardView(member *models.CastMember, baseImgUrl string) (*CastCard, erro
 		}
 	}
 
-	card.ActorName = PrintPersonName(member.Actor)
+	card.ActorName = PrintPersonRefName(member.Actor)
 	card.CastRole = UppercaseFirst(safeDeref(member.CastRole))
 
 	var characterType string
@@ -127,7 +127,7 @@ func CastTableView(cast []*models.CastMember, sketchID int, baseImgUrl string) C
 
 		row.CharacterName = safeDeref(c.CharacterName)
 		if c.Actor != nil {
-			row.PersonName = PrintPersonName(c.Actor)
+			row.PersonName = PrintPersonRefName(c.Actor)
 			row.PersonUrl = fmt.Sprintf(
 				"/person/%d/%s",
 				safeDeref(c.Actor.ID),

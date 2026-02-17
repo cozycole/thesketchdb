@@ -9,11 +9,14 @@ export function cn(...inputs: ClassValue[]) {
 
 export function buildImageUrl(
   type: string,
-  size: "small" | "medium" | "large",
+  size?: "small" | "medium" | "large" | "",
   name?: string | null,
 ) {
   if (!name) return null;
-  return `${env.BUCKET_URL}/${type}/${size}/${name}`;
+  if (size) {
+    return `${env.BUCKET_URL}/${type}/${size}/${name}`;
+  }
+  return `${env.BUCKET_URL}/${type}/${name}`;
 }
 
 export function formatHMS(total: number): string {

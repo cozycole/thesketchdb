@@ -8,7 +8,7 @@ import { sketchQueryOptions } from "./getSketch";
 import { SketchFormData } from "../forms/sketchForm.schema";
 import { parseHMS, toYYYYMMDD } from "@/lib/utils";
 
-type SketchResponse = { sketch: Sketch };
+type CreateSketchResponse = { sketch: Sketch };
 
 export const createSketch = async ({
   data,
@@ -35,7 +35,7 @@ export const createSketch = async ({
   fd.append("recurringId", data.recurring?.id ? String(data.recurring.id) : "");
 
   if (data.thumbnail) fd.append("thumbnail", data.thumbnail);
-  const res = await api.post<SketchResponse>(`/admin/sketch`, fd);
+  const res = await api.post<CreateSketchResponse>(`/admin/sketch`, fd);
   return res.sketch;
 };
 

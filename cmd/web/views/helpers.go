@@ -29,7 +29,7 @@ func printCast(cast []*models.CastMember) string {
 			continue
 		}
 
-		name := PrintPersonName(cm.Actor)
+		name := PrintPersonRefName(cm.Actor)
 		if name != "" {
 			if i != 0 {
 				name = ", " + name
@@ -81,7 +81,7 @@ func PrintCastBlurb(c *models.CastMember) string {
 		return ""
 	}
 
-	pName := PrintPersonName(c.Actor)
+	pName := PrintPersonRefName(c.Actor)
 	if pName == "" {
 		pName = "Undefined Person"
 	}

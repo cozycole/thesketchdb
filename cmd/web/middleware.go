@@ -16,14 +16,17 @@ const userContextKey = contextKey("user")
 func (app *application) secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		scriptSrc := "script-src 'self' https://www.youtube.com"
+		scriptSrcElem := "script-src https://static.cloudflareinsights.com"
 		if app.debugMode {
-			// browser sync injected script
+			// browser sync injects script
 			scriptSrc += " 'unsafe-inline'"
+			scriptSrcElem += " 'unsafe-inline'"
 		}
 
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; "+
 				scriptSrc+";"+
+				scriptSrcElem+";"+
 				"connect-src 'self' https://www.youtube.com data:;"+
 				"frame-src 'self' https://www.youtube.com;"+
 				"style-src 'self' fonts.googleapis.com;"+

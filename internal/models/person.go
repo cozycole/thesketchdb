@@ -27,11 +27,11 @@ type Person struct {
 }
 
 type PersonRef struct {
-	ID         *int
-	Slug       *string
-	First      *string
-	Last       *string
-	ProfileImg *string
+	ID         *int    `json:"id"`
+	Slug       *string `json:"slug"`
+	First      *string `json:"first"`
+	Last       *string `json:"last"`
+	ProfileImg *string `json:"profileImage"`
 }
 
 type PersonStats struct {
@@ -46,6 +46,7 @@ type PersonStats struct {
 
 type PersonModelInterface interface {
 	Delete(id int) error
+	Exists(id int) (bool, error)
 	Get(filter *Filter) ([]*Person, error)
 	GetById(id int) (*Person, error)
 	GetCount(filter *Filter) (int, error)
@@ -53,8 +54,8 @@ type PersonModelInterface interface {
 	GetPeople(ids []int) ([]*Person, error)
 	GetPersonRefs(ids []int) ([]*PersonRef, error)
 	GetPersonStats(id int) (*PersonStats, error)
-	Exists(id int) (bool, error)
 	Insert(person *Person) (int, error)
+	List(f *Filter) ([]*PersonRef, Metadata, error)
 	Search(query string) ([]*Person, error)
 	SearchCount(query string) (int, error)
 	Update(person *Person) error
@@ -165,6 +166,82 @@ func (m *PersonModel) Exists(id int) (bool, error) {
 	return true, nil
 }
 
+func (m *PersonModel) List(f *Filter) ([]*PersonRef, Metadata, error) {
+	query := `SELECT count(*) OVER(), p.id, p.slug, p.first, p.last, p.profile_img%s
+			FROM person as p
+			WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+	if f.Query != "" {
+		rankParam := fmt.Sprintf(`
+		, ts_rank(
+			setweight(to_tsvector('simple', p.first) , 'A') ||
+			setweight(to_tsvector('simple', p.last) , 'A'),
+			websearch_to_tsquery('english', $%d)
+		) AS rank
+		`, argIndex)
+
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`AND
+			(
+			to_tsvector(
+			  'simple',
+			  COALESCE(p.first, '') || ' ' || COALESCE(p.last, '')
+			) @@ websearch_to_tsquery('english', $%d)
+			OR
+			COALESCE(p.first, '') || ' ' || COALESCE(p.last, '') ILIKE '%%' || $%d || '%%'
+			)
+
+		`, argIndex, argIndex)
+
+		args = append(args, f.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	query += fmt.Sprintf(`
+		LIMIT $%d OFFSET $%d
+		`, argIndex, argIndex+1)
+
+	args = append(args, f.Limit(), f.Offset())
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	people := []*PersonRef{}
+	var totalCount int
+	for rows.Next() {
+		var p PersonRef
+		destinations := []any{
+			&totalCount, &p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
+		}
+
+		var rank *float32
+		if f.Query != "" {
+			destinations = append(destinations, &rank)
+		}
+		err := rows.Scan(destinations...)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		people = append(people, &p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	return people, calculateMetadata(totalCount, f.Page, f.PageSize), nil
+
+}
+
 func (m *PersonModel) Get(filter *Filter) ([]*Person, error) {
 	query := `SELECT p.id, p.first, p.last, p.aliases, p.profile_img, p.birthdate, p.slug%s
 			FROM person as p
@@ -228,23 +305,6 @@ func (m *PersonModel) Get(filter *Filter) ([]*Person, error) {
 	}
 
 	return people, nil
-}
-
-func (m *PersonModel) GetIdBySlug(slug string) (int, error) {
-	stmt := `SELECT p.id FROM person AS p WHERE p.slug = $1`
-	id_row := m.DB.QueryRow(context.Background(), stmt, slug)
-
-	var id int
-	err := id_row.Scan(&id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrNoRecord
-		} else {
-			return 0, err
-		}
-	}
-
-	return id, nil
 }
 
 func (m *PersonModel) GetById(id int) (*Person, error) {
