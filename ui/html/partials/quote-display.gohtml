@@ -1,0 +1,102 @@
+{{ define "quote-display" }}
+  <div
+    class="flex gap-3{{ if .InsertDivider }}
+      border-t-2 border-t-slate-200 pt-3
+    {{ end }}"
+  >
+    <!-- avatar stack -->
+    <div class="w-12 flex-none pt-1">
+      <div class="flex -space-x-2">
+        {{ $n := len .CastImgUrls }}
+
+        {{ if eq $n 1 }}
+          <div
+            class="w-12 h-12 rounded-full ring-2 ring-white overflow-hidden bg-slate-200"
+          >
+            <img
+              src="{{ index .CastImgUrls 0 }}"
+              class="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        {{ else }}
+          <div class="flex flex-col ">
+            <!-- row 1 -->
+            <div class="flex -space-x-2">
+              {{ if ge $n 1 }}
+                <div
+                  class="w-7 h-7 rounded-full ring-2 ring-white overflow-hidden bg-slate-200 flex-none"
+                >
+                  <img
+                    src="{{ index .CastImgUrls 0 }}"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              {{ end }}
+              {{ if ge $n 2 }}
+                <div
+                  class="w-7 h-7 rounded-full ring-2 ring-white overflow-hidden bg-slate-200 flex-none"
+                >
+                  <img
+                    src="{{ index .CastImgUrls 1 }}"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              {{ end }}
+            </div>
+
+            <!-- row 2 -->
+            <div
+              class="flex -mt-2 -space-x-2 {{ if eq $n 3 }}
+                justify-center
+              {{ end }}"
+            >
+              {{ if ge $n 3 }}
+                <div
+                  class=" w-7 h-7 
+                  rounded-full ring-2 ring-white 
+                  overflow-hidden bg-slate-200 flex-none"
+                >
+                  <img
+                    src="{{ index .CastImgUrls 2 }}"
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              {{ end }}
+
+              {{ if ge $n 4 }}
+                {{ if gt .ExtraCast 0 }}
+                  <div
+                    class="w-7 h-7 rounded-full ring-2 ring-white bg-slate-100 flex-none flex items-center justify-center text-[10px] font-semibold text-slate-700"
+                  >
+                    +{{ inc .ExtraCast }}
+                  </div>
+                {{ else }}
+                  <div
+                    class="w-7 h-7 rounded-full ring-2 ring-white overflow-hidden bg-slate-200 flex-none"
+                  >
+                    <img
+                      src="{{ index $.CastImgUrls 3 }}"
+                      class="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                {{ end }}
+              {{ end }}
+            </div>
+          </div>
+        {{ end }}
+      </div>
+    </div>
+    <div class="flex-1">
+      <span class="block font-bold underline"> {{ .StartTimestamp }}</span>
+      <h5 class="font-semibold">
+        {{ .CastLabel }}
+      </h5>
+      <p>{{ .Text }}</p>
+    </div>
+  </div>
+{{ end }}

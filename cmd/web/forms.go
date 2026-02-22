@@ -5,7 +5,6 @@ import (
 	"mime/multipart"
 	"strings"
 
-	"sketchdb.cozycole.net/internal/models"
 	"sketchdb.cozycole.net/internal/validator"
 
 	"sketchdb.cozycole.net/internal/external/wikipedia"
@@ -519,27 +518,8 @@ func (app *application) validateRecurringForm(form *recurringForm) {
 	form.CheckField(validator.IsMime(thumbnail, "image/jpeg"), "thumbnail", "Uploaded file must be jpg")
 }
 
-type momentForm struct {
-	ID                  int    `form:"id"`
-	SketchID            int    `form:"sketchId"`
-	Timestamp           string `form:"timestamp"`
-	Description         string `form:"description"`
-	Action              string `form:"-"`
-	validator.Validator `form:"-"`
-}
-
-func (app *application) validateMomentForm(form *momentForm) {
-	if form.SketchID == 0 {
-		form.AddNonFieldError("Sketch ID not defined in form")
-		return
-	}
-	_, err := models.ParseTimestamp(form.Timestamp)
-	form.CheckField(err == nil, "timestamp", "Invalid timestamp, ensure it's of the format mm:ss")
-}
-
 type quoteForm struct {
 	SketchID            int          `form:"sketchId"`
-	MomentID            int          `form:"momentId"`
 	QuoteID             []int        `form:"quoteId"`
 	CastMemberID        []int        `form:"castId"`
 	CastImageUrl        []string     `form:"-"`
@@ -554,11 +534,6 @@ type quoteForm struct {
 }
 
 func (app *application) validateQuoteForm(form *quoteForm) {
-	if form.MomentID == 0 {
-		form.AddNonFieldError("Moment ID not defined")
-		return
-	}
-
 	for i := range len(form.QuoteID) {
 		if form.CastMemberID[i] == 0 {
 			form.AddNonFieldError("Ensure all cast members are defined")
@@ -568,7 +543,6 @@ func (app *application) validateQuoteForm(form *quoteForm) {
 
 type quoteTagForm struct {
 	ID                  int    `form:"id"`
-	MomentID            int    `form:"-"`
 	Tags                []int  `form:"tag_ids[]"`
 	Action              string `form:"-"`
 	validator.Validator `form:"-"`

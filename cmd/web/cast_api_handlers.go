@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func (app *application) getCastAPI(w http.ResponseWriter, r *http.Request) {
+func (app *application) adminGetCastAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {

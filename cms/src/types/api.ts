@@ -214,3 +214,11 @@ export type CharacterRef = {
   type: string;
   profileImage: string;
 };
+
+export type TranscriptLine = {
+  id: number;
+  lineNumber: number;
+  text: string;
+  startMs: number;
+  endMs: number;
+};

@@ -100,6 +100,10 @@ func derefString(s *string) string {
 	return *s
 }
 
+func inc(i int) int {
+	return i + 1
+}
+
 // Init global variable which maps string func names to
 // functions to be used within templates (since you can call
 // functions from template). NOTE: The tempalte functions should only
@@ -108,6 +112,7 @@ var functions = template.FuncMap{
 	"dict":        dict,
 	"until":       until,
 	"derefString": derefString,
+	"inc":         inc,
 }
 
 // Getting mapping of html page filename to template set for the page

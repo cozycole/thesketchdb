@@ -24,6 +24,7 @@ import (
 	"sketchdb.cozycole.net/internal/domain/characters"
 	"sketchdb.cozycole.net/internal/domain/creators"
 	"sketchdb.cozycole.net/internal/domain/people"
+	"sketchdb.cozycole.net/internal/domain/quotes"
 	"sketchdb.cozycole.net/internal/domain/recurring"
 	"sketchdb.cozycole.net/internal/domain/series"
 	"sketchdb.cozycole.net/internal/domain/shows"
@@ -43,7 +44,7 @@ type application struct {
 	categories     models.CategoryInterface
 	characters     models.CharacterModelInterface
 	creators       models.CreatorModelInterface
-	moments        models.MomentModelInterface
+	quotes         models.QuoteModelInterface
 	people         models.PersonModelInterface
 	profile        models.ProfileModelInterface
 	recurring      models.RecurringModelInterface
@@ -178,7 +179,7 @@ func main() {
 		categories:     &models.CategoryModel{DB: dbpool},
 		characters:     &models.CharacterModel{DB: dbpool},
 		creators:       &models.CreatorModel{DB: dbpool},
-		moments:        &models.MomentModel{DB: dbpool},
+		quotes:         &models.QuoteModel{DB: dbpool},
 		people:         &models.PersonModel{DB: dbpool},
 		profile:        &models.ProfileModel{DB: dbpool},
 		recurring:      &models.RecurringModel{DB: dbpool},
@@ -265,7 +266,7 @@ func newRepositories(dbpool *pgxpool.Pool) models.Repositories {
 		Categories: &models.CategoryModel{DB: dbpool},
 		Characters: &models.CharacterModel{DB: dbpool},
 		Creators:   &models.CreatorModel{DB: dbpool},
-		Moments:    &models.MomentModel{DB: dbpool},
+		Quotes:     &models.QuoteModel{DB: dbpool},
 		People:     &models.PersonModel{DB: dbpool},
 		Profile:    &models.ProfileModel{DB: dbpool},
 		Recurring:  &models.RecurringModel{DB: dbpool},
@@ -282,6 +283,7 @@ type Services struct {
 	Characters characters.CharacterService
 	Creators   creators.CreatorService
 	People     people.PersonService
+	Quotes     quotes.QuoteService
 	Recurring  recurring.RecurringService
 	Series     series.SeriesService
 	Shows      shows.ShowService
@@ -319,6 +321,10 @@ func NewServices(repos models.Repositories, fileStore fileStore.FileStorageInter
 			ImgStore: fileStore,
 		},
 		Characters: characters.CharacterService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+		Quotes: quotes.QuoteService{
 			Repos:    repos,
 			ImgStore: fileStore,
 		},

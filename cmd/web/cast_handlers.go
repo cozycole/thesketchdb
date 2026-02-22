@@ -342,7 +342,7 @@ func (app *application) castDropdown(w http.ResponseWriter, r *http.Request) {
 		r := result{}
 		r.ImageUrl = views.DetermineCastImageUrl(cm, "small", app.baseImgUrl)
 		r.ID = *cm.ID
-		r.Text = views.QuoteHeader(cm)
+		r.Text = views.QuoteHeader([]*models.CastMember{cm})
 		res = append(res, r)
 	}
 
@@ -363,6 +363,14 @@ type CastTagFormModal struct {
 	CastName   string
 	Form       any
 	Tags       []*views.Tag
+}
+
+func getCastInfo(cm *models.CastMember, baseImgUrl string) (string, string) {
+	if cm == nil || cm.ID == nil {
+		return "Undefined Cast Member", "/static/img/missing-profile.jpg"
+	}
+	return views.PrintCastBlurb(cm),
+		fmt.Sprintf("%s/cast/profile/small/%s", baseImgUrl, safeDeref(cm.ProfileImg))
 }
 
 func (app *application) castTagUpdateForm(w http.ResponseWriter, r *http.Request) {

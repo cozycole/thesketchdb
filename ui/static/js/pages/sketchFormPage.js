@@ -38,42 +38,6 @@ export function initSketchFormPage() {
     }
   });
 
-  const momentsContainer = document.querySelector("#momentsContainer");
-  momentsContainer.addEventListener("click", function (evt) {
-    const trashButton = evt.target.closest(".trashButton");
-    if (trashButton) {
-      const tbody = trashButton.closest("tbody");
-
-      const row = evt.target.closest("tr");
-      // this needs to be done to avoid an error
-      setTimeout(() => {
-        row.remove();
-        if (tbody.innerHTML.trim() === "") {
-          const template = document.getElementById("noQuoteRowTemplate");
-          const emptyRow = template.content.cloneNode(true);
-
-          tbody.appendChild(emptyRow);
-        }
-      }, 0);
-    }
-
-    const btn = evt.target.closest(".addQuoteButton");
-    if (btn) {
-      const form = btn.closest("form");
-      const tableBody = form.querySelector(".quoteTable tbody");
-
-      const template = document.getElementById("quoteRowTemplate");
-      const newRow = template.content.cloneNode(true);
-
-      const noQuoteRow = tableBody.querySelector("#noQuoteRow");
-      if (noQuoteRow) noQuoteRow.parentElement.remove();
-
-      // append the new row
-      tableBody.appendChild(newRow);
-      htmx.process(tableBody);
-    }
-  });
-
   document.body.addEventListener("htmx:afterSwap", function (evt) {
     // Process formViewer to enable closing on off click
     let formModal = document.body.querySelector("#formModal");
@@ -86,16 +50,6 @@ export function initSketchFormPage() {
           formModal.classList.add("hidden");
         }
       });
-    }
-
-    // Hide modal if there's been a swap into the castTable or quoteTable
-    if (
-      formModal &&
-      (evt.target.id === "castTable" ||
-        evt.target.id?.match(/^moment\d+QuoteTable$/))
-    ) {
-      formModal.classList.remove("flex");
-      formModal.classList.add("hidden");
     }
 
     if (evt.target.tagName === "TBODY") {

@@ -41,13 +41,13 @@ type SketchPage struct {
 	RecurringUrl   string
 	Rating         SketchRating
 	Cast           CastGallery
-	Moments        []Moment
+	Quotes         []Quote
 	Tags           []*Tag
 }
 
 func SketchPageView(
 	sketch *models.Sketch,
-	moments []*models.Moment,
+	quotes []*models.Quote,
 	tags []*models.Tag,
 	userSketchInfo *models.UserSketchInfo,
 	baseImgUrl string) (*SketchPage, error) {
@@ -91,7 +91,7 @@ func SketchPageView(
 		page.Liked = *sketch.Liked
 	}
 
-	page.UpdateUrl = fmt.Sprintf("/sketch/%d/update", *sketch.ID)
+	page.UpdateUrl = fmt.Sprintf("/admin/sketch/%d", *sketch.ID)
 	page.Cast, _ = CastGalleryView(sketch.Cast, baseImgUrl)
 	page.Tags = TagsView(tags)
 
@@ -173,7 +173,7 @@ func SketchPageView(
 			sketch.Recurring.ID != nil
 	}
 
-	page.Moments = SketchQuoteSection(moments, baseImgUrl)
+	page.Quotes = SketchQuoteSection(quotes, baseImgUrl)
 	page.Rating = SketchRatingView(userSketchInfo, sketch)
 	return &page, nil
 }

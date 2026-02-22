@@ -5,7 +5,7 @@ type Repositories struct {
 	Categories CategoryInterface
 	Characters CharacterModelInterface
 	Creators   CreatorModelInterface
-	Moments    MomentModelInterface
+	Quotes     QuoteModelInterface
 	People     PersonModelInterface
 	Profile    ProfileModelInterface
 	Recurring  RecurringModelInterface

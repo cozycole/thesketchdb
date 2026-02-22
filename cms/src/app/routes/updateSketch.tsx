@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { DraggableCastTable } from "@/features/sketches/components/castTable";
 import { ScreenshotGrid } from "@/features/sketches/components/screenshotGrid";
+import { TranscriptDisplay } from "@/features/sketches/components/transcriptDisplay";
 
 import {
   useSketch,
@@ -15,6 +16,7 @@ import {
 } from "@/features/sketches/api/getSketch";
 import { SketchForm } from "@/features/sketches/forms/sketchForm";
 
+import { useQuotes } from "@/features/sketches/api/getQuotes";
 import { useCast } from "@/features/sketches/api/getCast";
 import { useCastFormStore } from "@/features/sketches/stores/castFormStore";
 import { CastForm } from "@/features/sketches/forms/castForm";
@@ -40,13 +42,18 @@ const UpdateSketchRoute = () => {
   });
   const { openForm } = useCastFormStore();
 
+  const { data: quotesData, isLoading: quotesLoading } = useQuotes({
+    id: Number(id),
+  });
+
   return (
     <ContentLayout title={`Sketch ID ${sketch.id}`}>
-      <Tabs defaultValue="cast">
+      <Tabs defaultValue="quotes">
         <TabsList variant="line" className="w-[400px] mb-4 border-orange">
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
           <TabsTrigger value="cast">Cast</TabsTrigger>
           <TabsTrigger value="quotes">Quotes</TabsTrigger>
+          <TabsTrigger value="video">Video</TabsTrigger>
         </TabsList>
         <TabsContent value="metadata">
           {sketchLoading ? (
@@ -60,7 +67,10 @@ const UpdateSketchRoute = () => {
         <TabsContent value="cast">
           <div>
             <div className="mb-4">
-              <Button onClick={() => openForm()}>
+              <Button
+                className="text-white font-bold"
+                onClick={() => openForm()}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Cast Member
               </Button>
@@ -84,7 +94,24 @@ const UpdateSketchRoute = () => {
           </div>
         </TabsContent>
         <TabsContent value="quotes">
-          <h1>Quotes Form</h1>
+          <div className="w-full flex">
+            <div className="w-1/2 ">
+              <h1 className="text-center">Quotes Form</h1>
+            </div>
+            <div className="w-1/2  border-l border-black">
+              <h1 className="text-center">Transcript</h1>
+              {quotesLoading || !quotesData ? (
+                <div className="flex h-screen items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <TranscriptDisplay transcript={quotesData.transcript} />
+              )}
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="video">
+          <h1>Upload video to initiate pipeline</h1>
         </TabsContent>
       </Tabs>
     </ContentLayout>

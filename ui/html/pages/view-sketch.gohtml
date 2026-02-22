@@ -39,7 +39,11 @@
                 {{ .Title }}
                 {{- if $.IsEditor -}}
                   <span class="text-sm">
-                    (<a href="{{ .UpdateUrl }}" class="hover:underline">Edit</a
+                    (<a
+                      href="{{ .UpdateUrl }}"
+                      class="hover:underline"
+                      target="_blank"
+                      >Edit</a
                     >)
                   </span>
                 {{- end -}}
@@ -261,10 +265,15 @@
               </button>
             </div>
             <div
-              id="moments"
+              id="quotes"
               class="content overflow-hidden transition-all duration-500 ease-in-out"
             >
-              {{ template "moments" .Moments }}
+              <div class="my-3 space-y-2">
+                {{ range .Quotes }}
+                  {{ template "quote-display" . }}
+                {{ end }}
+
+              </div>
             </div>
           </collapse-content>
         </div>

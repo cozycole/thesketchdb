@@ -40,18 +40,6 @@
             {{ end }}
           {{ end }}
         </div>
-        <div id="momentSection">
-          {{ if .SketchID }}
-            <h2 class="inline-block mt-2 text-xl font-bold">
-              Quotes & Moments
-            </h2>
-            <div class="pb-3">
-              {{ template "update-moments" .Moments }}
-              <h3 class="mt-3 text-lg font-bold">Add Moment</h3>
-              {{ template "moment-form" .MomentForm }}
-            </div>
-          {{ end }}
-        </div>
         <div>
           {{ if .SketchID }}
             <h2 class="inline-block mt-2 text-xl font-bold">Sketch Tags</h2>
@@ -60,16 +48,6 @@
         </div>
       </div>
     {{ end }}
-    <template id="quoteRowTemplate">
-      {{ template "quote-rows" .Page.EmptyQuoteForm }}
-    </template>
-    <template id="noQuoteRowTemplate">
-      <tr>
-        <td id="noQuoteRow" colspan="8">
-          <div class="text-center p-4 font-bold">No Quotes</div>
-        </td>
-      </tr>
-    </template>
   </main>
 {{ end }}
 

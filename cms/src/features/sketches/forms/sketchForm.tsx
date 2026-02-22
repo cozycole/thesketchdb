@@ -1,4 +1,5 @@
 import { Pen } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { useNotifications } from "@/components/ui/notifications";
@@ -42,7 +43,7 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
     defaultValues: defaultValues,
   });
 
-  const createSketchMutation = useCreateSketch({
+  const { mutate: createMutate, isPending: createPending } = useCreateSketch({
     mutationConfig: {
       onSuccess: (sketch) => {
         addNotification({
@@ -65,7 +66,7 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
       },
     },
   });
-  const updateSketchMutation = useUpdateSketch({
+  const { mutate: updateMutate, isPending: updatePending } = useUpdateSketch({
     mutationConfig: {
       onSuccess: (sketch) => {
         addNotification({
@@ -99,12 +100,12 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
       className="space-y-4"
       onSubmit={form.handleSubmit((values) => {
         if (mode === "update") {
-          updateSketchMutation.mutate({
+          updateMutate({
             data: values,
             sketchId: existingData.id,
           });
         } else {
-          createSketchMutation.mutate({
+          createMutate({
             data: values,
           });
         }
@@ -323,10 +324,22 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
           </Field>
         )}
       />
-      <Button size="sm" className="text-white" type="submit" form="sketchForm">
-        <Pen className="size-4" />{" "}
-        {mode === "create" ? "Create Sketch" : "Update Sketch"}
-      </Button>
+      <div className="flex justify-end sticky bottom-6 ">
+        <Button
+          size="lg"
+          className="text-white text-lg rounded-full"
+          type="submit"
+          form="sketchForm"
+          disabled={createPending || updatePending}
+        >
+          {createPending || updatePending ? (
+            <Spinner />
+          ) : (
+            <Pen className="size-4" />
+          )}
+          {mode === "create" ? "Create Sketch" : "Update Sketch"}
+        </Button>
+      </div>
     </form>
   );
 }

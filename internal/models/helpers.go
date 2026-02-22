@@ -70,7 +70,8 @@ func ParseTimestamp(input string) (int, error) {
 	return total, nil
 }
 
-func SecondsToMMSS(seconds int) string {
+func MillisecondsToMMSS(ms int) string {
+	seconds := ms / 1000
 	minutes := seconds / 60
 	secs := seconds % 60
 	timeString := fmt.Sprintf("%02d:%02d", minutes, secs)
