@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { DraggableCastTable } from "@/features/sketches/components/castTable";
 import { ScreenshotGrid } from "@/features/sketches/components/screenshotGrid";
-import { TranscriptDisplay } from "@/features/sketches/components/transcriptDisplay";
+import { EditQuotesPage } from "@/features/sketches/components/editQuotesPage";
 
 import {
   useSketch,
@@ -16,7 +16,6 @@ import {
 } from "@/features/sketches/api/getSketch";
 import { SketchForm } from "@/features/sketches/forms/sketchForm";
 
-import { useQuotes } from "@/features/sketches/api/getQuotes";
 import { useCast } from "@/features/sketches/api/getCast";
 import { useCastFormStore } from "@/features/sketches/stores/castFormStore";
 import { CastForm } from "@/features/sketches/forms/castForm";
@@ -41,10 +40,6 @@ const UpdateSketchRoute = () => {
     id: Number(id),
   });
   const { openForm } = useCastFormStore();
-
-  const { data: quotesData, isLoading: quotesLoading } = useQuotes({
-    id: Number(id),
-  });
 
   return (
     <ContentLayout title={`Sketch ID ${sketch.id}`}>
@@ -94,21 +89,7 @@ const UpdateSketchRoute = () => {
           </div>
         </TabsContent>
         <TabsContent value="quotes">
-          <div className="w-full flex">
-            <div className="w-1/2 ">
-              <h1 className="text-center">Quotes Form</h1>
-            </div>
-            <div className="w-1/2  border-l border-black">
-              <h1 className="text-center">Transcript</h1>
-              {quotesLoading || !quotesData ? (
-                <div className="flex h-screen items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <TranscriptDisplay transcript={quotesData.transcript} />
-              )}
-            </div>
-          </div>
+          <EditQuotesPage sketchId={Number(id)} />
         </TabsContent>
         <TabsContent value="video">
           <h1>Upload video to initiate pipeline</h1>

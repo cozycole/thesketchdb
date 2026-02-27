@@ -33,35 +33,46 @@ export function formatHMS(total: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-// Accepts "m:ss", "mm:ss", or "h:mm:ss"
-// Examples:
-// "4:33"     -> 273
-// "04:33"    -> 273
-// "1:02:03"  -> 3723
-export function parseHMS(input: string): number {
-  if (!input) return 0;
-
-  const parts = input
-    .trim()
-    .split(":")
-    .map((p) => p.trim());
-  if (parts.some((p) => p === "" || isNaN(Number(p)))) {
-    throw new Error("Invalid time format");
+export function parseHMS(input: string): number | undefined {
+  input = input.trim();
+  if (!input) {
+    return undefined;
   }
 
-  if (parts.length === 2) {
-    const [m, s] = parts.map(Number);
-    if (s >= 60) throw new Error("Seconds must be < 60");
-    return m * 60 + s;
+  const value = input.trim();
+
+  // mm:ss  (e.g. 0:35, 12:05)
+  const mmss = /^(\d+):(\d{2})$/;
+
+  // hh:mm:ss (e.g. 1:00:00, 12:34:56)
+  const hhmmss = /^(\d+):(\d{2}):(\d{2})$/;
+
+  let match: RegExpMatchArray | null;
+
+  if ((match = value.match(mmss))) {
+    const minutes = Number(match[1]);
+    const seconds = Number(match[2]);
+
+    if (seconds >= 60) {
+      throw new Error("Seconds must be < 60");
+    }
+
+    return minutes * 60 + seconds;
   }
 
-  if (parts.length === 3) {
-    const [h, m, s] = parts.map(Number);
-    if (m >= 60 || s >= 60) throw new Error("Minutes/seconds must be < 60");
-    return h * 3600 + m * 60 + s;
+  if ((match = value.match(hhmmss))) {
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    const seconds = Number(match[3]);
+
+    if (minutes >= 60 || seconds >= 60) {
+      throw new Error("Minutes and seconds must be < 60");
+    }
+
+    return hours * 3600 + minutes * 60 + seconds;
   }
 
-  throw new Error("Expected m:ss or h:mm:ss");
+  throw new Error("Invalid time format. Expected mm:ss or hh:mm:ss");
 }
 
 export function toYYYYMMDD(d: Date): string {

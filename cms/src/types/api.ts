@@ -215,6 +215,17 @@ export type CharacterRef = {
   profileImage: string;
 };
 
+export type Quote = {
+  id: number;
+  text: string;
+  type: string;
+  funny: string;
+  startTimeMs: number;
+  endTimeMs: number;
+  castMembers: CastMember[];
+  tags: Tag[];
+};
+
 export type TranscriptLine = {
   id: number;
   lineNumber: number;

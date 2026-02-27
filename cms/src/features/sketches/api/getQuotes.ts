@@ -2,13 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 import { QueryConfig } from "@/lib/react-query";
-import { TranscriptLine } from "@/types/api";
+import { Quote, TranscriptLine } from "@/types/api";
 
 export const getQuotes = ({
   id,
 }: {
   id: number;
-}): Promise<{ transcript: TranscriptLine[] }> => {
+}): Promise<{ quotes: Quote[]; transcript: TranscriptLine[] }> => {
   return api.get(`admin/sketch/${id}/quotes`);
 };
 
@@ -23,7 +23,7 @@ export const quotesQueryOptions = ({ id }: { id: number }) => ({
 });
 
 export const useQuotes = ({ id, queryConfig }: UseQuoteOptions) => {
-  return useQuery<{ transcript: TranscriptLine[] }>({
+  return useQuery<{ quotes: Quote[]; transcript: TranscriptLine[] }>({
     ...quotesQueryOptions({ id }),
     placeholderData: (prev) => prev,
     ...queryConfig,
