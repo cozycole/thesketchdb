@@ -62,7 +62,7 @@ export function mapQuoteToQuoteFields(q: Quote): QuoteFieldsData {
   return {
     id: q.id ?? undefined,
     text: q.text ?? "",
-    startTimeMs: q.startTimeMs ? formatHMS(q.startTimeMs / 1000) : "",
+    startTimeMs: q.startTimeMs !== null ? formatHMS(q.startTimeMs / 1000) : "",
     endTimeMs: q.endTimeMs ? formatHMS(q.endTimeMs / 1000) : "",
     cast: q.castMembers
       ? q.castMembers.map((c) => {

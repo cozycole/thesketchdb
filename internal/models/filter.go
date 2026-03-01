@@ -10,9 +10,11 @@ type Filter struct {
 	Page         int
 	PageSize     int
 	Query        string
+	Type         string
 	CharacterIDs []int
 	CreatorIDs   []int
 	PersonIDs    []int
+	SketchIDs    []int
 	ShowIDs      []int
 	TagIDs       []int
 	SortBy       string

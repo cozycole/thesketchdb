@@ -1,10 +1,4 @@
 import * as React from "react";
-import {
-  Control,
-  FieldPath,
-  FieldValues,
-  useController,
-} from "react-hook-form";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -35,17 +29,15 @@ import {
 export type SelectEntity = {
   id: number;
   label: string;
-  image: string;
+  image?: string;
 };
 
 type PopoverSide = "top" | "bottom" | "left" | "right";
 
-type AsyncSearchSelectProps<
-  TFieldValues extends FieldValues,
-  TName extends FieldPath<TFieldValues>,
-> = {
-  control: Control<TFieldValues>;
-  name: TName;
+export type AsyncSearchSelectProps = {
+  value: SelectEntity | SelectEntity[] | null;
+  onChange: (val: SelectEntity | SelectEntity[] | null) => void;
+  error?: string;
 
   label?: string;
   placeholder?: string;
@@ -62,13 +54,11 @@ type AsyncSearchSelectProps<
   renderOption?: (opt: SelectEntity) => React.ReactNode;
 };
 
-export function AsyncSearchSelect<
-  TFieldValues extends FieldValues,
-  TName extends FieldPath<TFieldValues>,
->(props: AsyncSearchSelectProps<TFieldValues, TName>) {
+export function AsyncSearchSelect(props: AsyncSearchSelectProps) {
   const {
-    control,
-    name,
+    value,
+    onChange,
+    error,
     label,
     placeholder = "Select…",
     searchPlaceholder = "Search…",
@@ -80,9 +70,6 @@ export function AsyncSearchSelect<
     renderOption,
   } = props;
 
-  const { field, fieldState } = useController({ control, name });
-
-  const value = field.value as unknown;
   const selectedSingle =
     (!multiple ? (value as SelectEntity | null) : null) ?? null;
   const selectedMulti = (
@@ -123,21 +110,21 @@ export function AsyncSearchSelect<
   function select(opt: SelectEntity) {
     if (multiple) {
       if (selectedMulti.some((s) => s.id === opt.id)) return;
-      field.onChange([...selectedMulti, opt]);
+      onChange([...selectedMulti, opt]);
       setQuery("");
       return;
     }
-    field.onChange(opt);
+    onChange(opt);
     setOpen(false);
     setQuery("");
   }
 
   function remove(id: number) {
     if (multiple) {
-      field.onChange(selectedMulti.filter((s) => s.id !== id));
+      onChange(selectedMulti.filter((s) => s.id !== id));
       return;
     }
-    field.onChange(null);
+    onChange(null);
   }
 
   const buttonText = multiple
@@ -161,7 +148,7 @@ export function AsyncSearchSelect<
               disabled={disabled}
               className={cn(
                 "w-full justify-between",
-                fieldState.error && "border-destructive",
+                error && "border-destructive",
               )}
             >
               <span
@@ -238,7 +225,9 @@ export function AsyncSearchSelect<
             <div className="flex flex-wrap gap-2">
               {selectedMulti.map((s) => (
                 <Badge key={s.id} variant="secondary" className="gap-2 p-2">
-                  <img src={s.image} className="h-10 w-10 rounded-full" />
+                  {s.image && (
+                    <img src={s.image} className="h-10 w-10 rounded-full" />
+                  )}
                   <span className="max-w-[240px] truncate text-sm">
                     {s.label}
                   </span>
@@ -257,7 +246,9 @@ export function AsyncSearchSelect<
         ) : selectedSingle ? (
           <div className="flex items-center justify-between rounded-md border p-2 text-sm">
             <div className="flex gap-4 items-center">
-              <img src={selectedSingle.image} className="h-20" />
+              {selectedSingle.image && (
+                <img src={selectedSingle.image} className="h-20" />
+              )}
               <span className="truncate">{selectedSingle.label}</span>
             </div>
             <Button
@@ -271,7 +262,7 @@ export function AsyncSearchSelect<
           </div>
         ) : null}
 
-        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        {error && <FieldError errors={[{ message: error }]} />}
       </FieldContent>
     </Field>
   );

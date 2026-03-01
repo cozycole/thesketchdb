@@ -1,4 +1,5 @@
-import { useMemo, useReducer } from "react";
+import { useCallback, useMemo, useReducer } from "react";
+import { useNotifications } from "@/components/ui/notifications";
 import { TranscriptLine, Quote } from "@/types/api";
 import {
   QuoteFieldsData,
@@ -8,6 +9,7 @@ import {
 } from "../forms/quoteFields.schema";
 import { QuoteFieldsErrors } from "../forms/quoteFields.schema";
 import { parseHMS } from "@/lib/utils";
+import { useUpdateQuotes } from "../api/updateQuotes";
 
 type QuoteUI = QuoteFieldsData & {
   startMs: number;
@@ -39,9 +41,13 @@ type Action =
   | { type: "UPDATE_QUOTE"; new: QuoteUI }
   | { type: "DELETE_QUOTE"; key: string }
   | { type: "VALIDATE_QUOTE"; key: string }
+  | {
+      type: "SET_ERRORS";
+      errorsByKey: Record<string, QuoteFieldsErrors | undefined>;
+    }
   | { type: "RESTORE_QUOTE"; id: number }
   | { type: "SAVE_START" }
-  | { type: "SAVE_SUCCESS"; version: number; idMap: Record<string, number> } // tmpKey -> id
+  | { type: "SAVE_SUCCESS"; quotes: Quote[] }
   | { type: "SAVE_ERROR"; error: string };
 
 function isEqual(a?: QuoteUI, b?: QuoteUI) {
@@ -164,39 +170,43 @@ function reducer(state: EditorState, action: Action): EditorState {
       };
     }
 
-    //case 'SAVE_START':
-    //  return { ...state, saving: true, error: undefined };
-    //
-    //case 'SAVE_SUCCESS': {
-    //  // apply idMap: tmp:<uuid> -> new id
-    //  const quotesByKey: EditorState['quotesByKey'] = {};
-    //  const baselineByKey: EditorState['baselineByKey'] = {};
-    //
-    //  for (const [k, q] of Object.entries(state.quotesByKey)) {
-    //    if (k.startsWith('tmp:') && action.idMap[k]) {
-    //      const id = action.idMap[k];
-    //      const q2: QuoteLine = { ...q, id, clientId: undefined };
-    //      const nk = `id:${id}`;
-    //      quotesByKey[nk] = q2;
-    //      baselineByKey[nk] = snapshot(q2);
-    //    } else {
-    //      quotesByKey[k] = q;
-    //      baselineByKey[k] = snapshot(q);
-    //    }
-    //  }
-    //
-    //  return {
-    //    ...state,
-    //    saving: false,
-    //    version: action.version,
-    //    deletedIds: new Set(),
-    //    quotesByKey,
-    //    baselineByKey,
-    //  };
-    //}
-    //
-    //case 'SAVE_ERROR':
-    //  return { ...state, saving: false, error: action.error };
+    // used by save callback when errors are detected
+    // before sending request
+    case "SET_ERRORS": {
+      return {
+        ...state,
+        saving: false,
+        errorsByKey: action.errorsByKey,
+      };
+    }
+
+    case "SAVE_START":
+      return { ...state, saving: true, error: undefined };
+
+    case "SAVE_SUCCESS": {
+      const quotesByKey: EditorState["quotesByKey"] = {};
+      const baselineByKey: EditorState["baselineByKey"] = {};
+      for (const q of action.quotes) {
+        const q2: QuoteUI = {
+          ...mapQuoteToQuoteFields(q),
+          clientId: crypto.randomUUID(),
+          startMs: q.startTimeMs / 1000,
+        };
+        quotesByKey[q2.clientId] = q2;
+        baselineByKey[q2.clientId] = q2;
+      }
+      return {
+        ...state,
+        saving: false,
+        quotesByKey,
+        baselineByKey,
+        deletedIds: new Set(),
+        error: undefined,
+      };
+    }
+
+    case "SAVE_ERROR":
+      return { ...state, saving: false, error: action.error };
 
     default:
       return state;
@@ -209,6 +219,7 @@ export function useQuoteEditor(
     "quotesByKey" | "baselineByKey" | "deletedIds" | "errorsByKey" | "quoteKeys"
   >,
 ) {
+  const { addNotification } = useNotifications();
   const [state, dispatch] = useReducer(reducer, {
     ...initial,
     errorsByKey: {},
@@ -240,8 +251,59 @@ export function useQuoteEditor(
   }, [state.quotesByKey, state.baselineByKey]);
 
   const hasChanges = dirtyKeys.length > 0 || state.deletedIds.size > 0;
+  const { sketchId, saving, quotesByKey, deletedIds } = state;
+  const saveMutation = useUpdateQuotes({
+    mutationConfig: {
+      onSuccess: (data) => {
+        addNotification({
+          type: "success",
+          title: "Quotes saved",
+        });
+        dispatch({ type: "SAVE_SUCCESS", quotes: data });
+      },
+      onError: (err) => {
+        dispatch({ type: "SAVE_ERROR", error: err.message });
+        console.log(err);
+      },
+    },
+  });
 
-  return { state, dispatch, quoteKeysSorted, dirtyKeys, hasChanges };
+  const save = useCallback(async () => {
+    if (!hasChanges || saving) return;
+
+    const errorsByKey: Record<string, QuoteFieldsErrors | undefined> = {};
+    for (const k of dirtyKeys) {
+      const result = quoteFieldsSchema.safeParse(quotesByKey[k]);
+      if (!result.success) {
+        errorsByKey[k] = zodErrorToFieldErrors<typeof quoteFieldsSchema>(
+          result.error,
+        );
+      }
+    }
+
+    dispatch({ type: "SET_ERRORS", errorsByKey });
+
+    const hasErrors = Object.values(errorsByKey).some(Boolean);
+    if (hasErrors) return;
+
+    dispatch({ type: "SAVE_START" });
+
+    saveMutation.mutate({
+      sketchId: sketchId,
+      updatedQuotes: dirtyKeys.map((k) => quotesByKey[k]),
+      deletedIds: deletedIds,
+    });
+  }, [
+    hasChanges,
+    sketchId,
+    saveMutation,
+    saving,
+    quotesByKey,
+    deletedIds,
+    dirtyKeys,
+  ]);
+
+  return { state, dispatch, quoteKeysSorted, dirtyKeys, hasChanges, save };
 }
 
 export type { QuoteUI, EditorState };

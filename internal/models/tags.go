@@ -11,12 +11,12 @@ import (
 )
 
 type Tag struct {
-	ID       *int      `json:"id"`
-	Slug     *string   `json:"slug"`
-	Name     *string   `json:"name"`
-	Type     *string   `json:"type"`
-	Category *Category `json:"category"`
-	Count    *int      `json:"count"`
+	ID       *int         `json:"id"`
+	Slug     *string      `json:"slug"`
+	Name     *string      `json:"name"`
+	Type     *string      `json:"type"`
+	Category *CategoryRef `json:"category"`
+	Count    *int         `json:"-"`
 }
 
 type TagRef struct {
@@ -33,6 +33,7 @@ type TagModelInterface interface {
 	GetTagRefs(ids []int) ([]*TagRef, error)
 	GetTagsByType(string) ([]*Tag, error)
 	GetBySketch(sketchId int) ([]*Tag, error)
+	List(f *Filter) ([]*Tag, Metadata, error)
 	Insert(category *Tag) (int, error)
 	Search(query string) (*[]*Tag, error)
 	Update(*Tag) error
@@ -67,7 +68,7 @@ func (m *TagModel) Get(id int) (*Tag, error) {
 		ON t.category_id = c.id
 		WHERE t.id = $1
 	`
-	var c Category
+	var c CategoryRef
 	var t Tag
 	err := m.DB.QueryRow(context.Background(), stmt, id).
 		Scan(&t.ID, &t.Name, &t.Slug, &t.Type, &c.ID, &c.Name, &c.Slug)
@@ -114,7 +115,7 @@ func (m *TagModel) GetTags(ids []int) ([]*Tag, error) {
 	var tags []*Tag
 	for rows.Next() {
 		t := Tag{}
-		c := Category{}
+		c := CategoryRef{}
 
 		err := rows.Scan(&t.ID, &t.Name, &c.ID, &c.Name)
 		if err != nil {
@@ -130,6 +131,88 @@ func (m *TagModel) GetTags(ids []int) ([]*Tag, error) {
 	}
 
 	return tags, nil
+}
+
+func (m *TagModel) List(f *Filter) ([]*Tag, Metadata, error) {
+	query := `
+		SELECT count(*) OVER(), t.id, t.slug, t.name, t.type,
+		c.id, c.slug, c.name%s
+		FROM tags as t
+		LEFT JOIN categories as c ON t.category_id = c.id
+		WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+	if f.Query != "" {
+		rankParam := fmt.Sprintf(`
+		, ts_rank(
+			setweight(to_tsvector('english', t.name) , 'A') ||
+			setweight(to_tsvector('english', COALESCE(c.name, '')) , 'A'),
+			websearch_to_tsquery('english', $%d)
+		) AS rank
+		`, argIndex)
+
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`AND
+			(
+			to_tsvector(
+			  'simple',
+			  COALESCE(t.name, '') || ' ' || COALESCE(c.name, '')
+			) @@ websearch_to_tsquery('english', $%d)
+			OR
+			COALESCE(t.name, '') || ' ' || COALESCE(c.name, '') ILIKE '%%' || $%d || '%%'
+			)
+
+		`, argIndex, argIndex)
+
+		args = append(args, f.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, ", 0 AS rank")
+	}
+
+	if f.Type != "" {
+		query += fmt.Sprintf(`
+			AND t.type = $%d
+		`, argIndex)
+		args = append(args, f.Type)
+		argIndex++
+	}
+
+	query += fmt.Sprintf(`
+		LIMIT $%d OFFSET $%d
+		`, argIndex, argIndex+1)
+	args = append(args, f.Limit(), f.Offset())
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	tags := []*Tag{}
+	var totalCount int
+	var rank *float32
+	for rows.Next() {
+		var t Tag
+		var c CategoryRef
+		rows.Scan(
+			&totalCount, &t.ID, &t.Slug, &t.Name, &t.Type,
+			&c.ID, &c.Slug, &c.Name, &rank,
+		)
+
+		if c.ID != nil {
+			t.Category = &c
+		}
+
+		tags = append(tags, &t)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	return tags, calculateMetadata(totalCount, f.Page, f.PageSize), nil
 }
 
 func (m *TagModel) GetTagRefs(ids []int) ([]*TagRef, error) {
@@ -204,7 +287,7 @@ func (m *TagModel) GetBySketch(id int) ([]*Tag, error) {
 
 	var tags []*Tag
 	for rows.Next() {
-		var c Category
+		var c CategoryRef
 		var t Tag
 		err := rows.Scan(&t.ID, &t.Name, &t.Slug, &c.ID, &c.Name, &c.Slug)
 		if err != nil {
@@ -242,7 +325,7 @@ func (m *TagModel) GetTagsByType(tagType string) ([]*Tag, error) {
 
 	var tags []*Tag
 	for rows.Next() {
-		var c Category
+		var c CategoryRef
 		var t Tag
 		err := rows.Scan(&t.ID, &t.Name, &t.Slug, &c.ID, &c.Name, &c.Slug)
 		if err != nil {
@@ -277,6 +360,9 @@ func (m *TagModel) Insert(tag *Tag) (int, error) {
 		context.Background(), stmt, tag.Name, tag.Slug,
 		tag.Type, categoryId,
 	).Scan(&id)
+
+	tag.ID = &id
+
 	if err != nil {
 		return 0, err
 	}
@@ -302,7 +388,7 @@ func (m *TagModel) Search(query string) (*[]*Tag, error) {
 
 	tags := []*Tag{}
 	for rows.Next() {
-		c := &Category{}
+		c := &CategoryRef{}
 		t := &Tag{}
 		err := rows.Scan(
 			&t.ID, &t.Slug, &t.Name,

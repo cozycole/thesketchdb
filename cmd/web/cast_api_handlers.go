@@ -3,7 +3,11 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
+
+	"sketchdb.cozycole.net/internal/models"
 )
 
 func (app *application) adminGetCastAPI(w http.ResponseWriter, r *http.Request) {
@@ -155,4 +159,59 @@ func (app *application) deleteCastAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (app *application) listCastAPI(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	page := r.Form.Get("page")
+	selectedPage, err := strconv.Atoi(page)
+	if err != nil || selectedPage < 1 {
+		selectedPage = 1
+	}
+
+	pageSize := r.Form.Get("pageSize")
+	selectedPageSize, err := strconv.Atoi(pageSize)
+	if err != nil || selectedPageSize < 1 {
+		selectedPageSize = 10
+	}
+
+	sort := r.Form.Get("sort")
+	if sort == "" {
+		sort = "popular"
+	}
+
+	query := r.Form.Get("query")
+	if query == "" {
+		query = r.Form.Get("q")
+	}
+	query, _ = url.QueryUnescape(query)
+	filterQuery := strings.Join(strings.Fields(query), " | ")
+
+	sketchIds := extractUrlParamIDs(r.URL.Query()["sketch"])
+	app.infoLog.Printf("SKETCHES: %v", sketchIds)
+
+	castList, err := app.services.Casts.ListCasts(
+		&models.Filter{
+			Query:     filterQuery,
+			SortBy:    sort,
+			PageSize:  selectedPageSize,
+			Page:      selectedPage,
+			SketchIDs: sketchIds,
+		}, true)
+
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	response := envelope{
+		"castMembers": castList.Casts,
+		"meta":        castList.Metadata,
+	}
+
+	err = app.writeJSON(w, http.StatusOK, response, nil)
+	if err != nil {
+		app.serverError(r, w, err)
+	}
 }

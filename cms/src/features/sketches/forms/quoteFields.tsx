@@ -5,9 +5,13 @@ import { QuoteFieldsData } from "./quoteFields.schema";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { AutoResizeTextarea } from "@/components/ui/autoResizeTextarea";
+import { AsyncSearchSelect } from "@/components/ui/asyncSearchSelect";
+import { makeCastMemberLoadOptions } from "../api/castOptionAdapters";
+import { makeTagLoadOptions } from "../api/tagOptionAdapters";
 
 type QuoteFieldsProps<T extends QuoteFieldsData = QuoteFieldsData> = {
   value: T;
+  sketchId: number;
   onChange: (next: T) => void;
   onDelete: (q: T) => void;
   onBlurQuote?: (q: T) => void;
@@ -17,6 +21,7 @@ type QuoteFieldsProps<T extends QuoteFieldsData = QuoteFieldsData> = {
 
 export function QuoteFields<T extends QuoteFieldsData = QuoteFieldsData>({
   value,
+  sketchId,
   onChange,
   onDelete,
   onBlurQuote,
@@ -80,8 +85,26 @@ export function QuoteFields<T extends QuoteFieldsData = QuoteFieldsData>({
         {errors?.text && <FieldError>{errors.text}</FieldError>}
       </Field>
 
-      {/* cast + tags pickers can be controlled the same way:
-          set("cast", nextCast) / set("tags", nextTags) */}
+      <AsyncSearchSelect
+        value={value.cast ?? []}
+        onChange={(c) => set("cast", c)}
+        error={errors?.cast}
+        label="Cast Members"
+        multiple={true}
+        popoverSide="top"
+        loadOptions={makeCastMemberLoadOptions({ pageSize: 8, sketchId })}
+        searchPlaceholder="Search cast members..."
+      />
+      <AsyncSearchSelect
+        value={value.tags ?? []}
+        onChange={(t) => set("tags", t)}
+        error={errors?.cast}
+        label="Quote Tags"
+        multiple={true}
+        popoverSide="top"
+        loadOptions={makeTagLoadOptions({ pageSize: 8, tagType: "quote" })}
+        searchPlaceholder="Search quote tags..."
+      />
     </div>
   );
 }

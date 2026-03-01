@@ -19,7 +19,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { AsyncSearchSelect } from "@/components/ui/asyncSearchSelect";
+import { AsyncSearchSelectRHF } from "@/components/ui/asyncSearchSelectRHF";
 import { ImageUploadField } from "@/components/ui/imageUpload";
 
 import { useUpdateSketch } from "../api/updateSketch";
@@ -227,7 +227,7 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
           </Field>
         )}
       />
-      <AsyncSearchSelect
+      <AsyncSearchSelectRHF
         control={form.control}
         name="creator"
         popoverSide="top"
@@ -235,7 +235,7 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
         loadOptions={makeCreatorLoadOptions({ pageSize: 10 })}
         searchPlaceholder="Search creators..."
       />
-      <AsyncSearchSelect
+      <AsyncSearchSelectRHF
         control={form.control}
         name="episode"
         popoverSide="top"
@@ -287,7 +287,7 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
           </Field>
         )}
       />
-      <AsyncSearchSelect
+      <AsyncSearchSelectRHF
         control={form.control}
         name="recurring"
         popoverSide="top"
@@ -296,7 +296,7 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
         searchPlaceholder="Search recurring sketches..."
       />
 
-      <AsyncSearchSelect
+      <AsyncSearchSelectRHF
         control={form.control}
         name="series"
         popoverSide="top"

@@ -1,6 +1,7 @@
 package quotes
 
 import (
+	"errors"
 	"fmt"
 
 	"sketchdb.cozycole.net/internal/models"
@@ -18,6 +19,12 @@ func (s *QuoteService) GetAdminQuotes(sketchId int) (AdminQuoteData, error) {
 		return data, fmt.Errorf("get transcript error: %w", err)
 	}
 
+	quotes, err := s.Repos.Quotes.GetBySketch(sketchId)
+	if err != nil && !errors.Is(err, models.ErrNoRecord) {
+		return data, fmt.Errorf("get quotes error: %w", err)
+	}
+
+	data.Quotes = quotes
 	data.TranscriptLines = transcript
 	return data, nil
 }

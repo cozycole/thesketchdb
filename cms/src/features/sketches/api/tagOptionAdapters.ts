@@ -1,27 +1,29 @@
-import { getPeople } from "./getPeople";
-import { buildImageUrl } from "@/lib/utils";
+import { getTags } from "./getTags";
 import type { SelectEntity } from "@/components/ui/asyncSearchSelect";
 import type { QueryClient } from "@tanstack/react-query";
 
-export const makePersonLoadOptions = (opts?: { pageSize?: number }) => {
+export const makeTagLoadOptions = (opts?: {
+  pageSize?: number;
+  tagType?: string;
+}) => {
   const pageSize = opts?.pageSize ?? 10;
 
   return async (q: string): Promise<SelectEntity[]> => {
-    const { people } = await getPeople({
+    const { tags } = await getTags({
       page: 1,
       pageSize,
       search: q,
+      type: opts?.tagType,
     });
 
-    return people.map((s) => ({
-      id: s.id,
-      label: s.first + " " + s.last,
-      image: buildImageUrl("person", "small", s.profileImage),
+    return tags.map((t) => ({
+      id: t.id,
+      label: t.name,
     }));
   };
 };
 
-export const makePersonLoadOptionsRQ = (
+export const makeTagLoadOptionsRQ = (
   queryClient: QueryClient,
   opts?: { pageSize?: number },
 ) => {
@@ -29,20 +31,18 @@ export const makePersonLoadOptionsRQ = (
 
   return async (q: string): Promise<SelectEntity[]> => {
     const data = await queryClient.fetchQuery({
-      queryKey: ["person-options", pageSize, q],
+      queryKey: ["tags-options", pageSize, q],
       queryFn: () =>
-        getPeople({
+        getTags({
           page: 1,
           pageSize,
           search: q,
         }),
       staleTime: 30_000,
     });
-
-    return data.people.map((s) => ({
-      id: s.id,
-      label: s.first + " " + s.last,
-      image: buildImageUrl("person", "small", s.profileImage),
+    return data.tags.map((t) => ({
+      id: t.id,
+      label: t.name,
     }));
   };
 };

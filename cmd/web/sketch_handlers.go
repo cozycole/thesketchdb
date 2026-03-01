@@ -51,7 +51,6 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 		app.serverError(r, w, err)
 		return
 	}
-	app.infoLog.Printf("%+v", quotes)
 
 	data := app.newTemplateData(r)
 	sketchPage, err := views.SketchPageView(sketch, quotes, tags, userSketchInfo, app.baseImgUrl)

@@ -32,7 +32,6 @@ func SketchQuoteSection(quotes []*models.Quote, baseImgUrl string) []Quote {
 		viewQuote.CastLabel = QuoteHeader(q.CastMembers)
 
 		// logic to insert dividers between long pauses between quotes
-		fmt.Printf("Previous: %d Current: %d\n", previousTimestamp, timestamp)
 		if i != 0 && safeDeref(q.StartTimeMs)-previousTimestamp > QUOTE_TIMESTAMP_MS_DIVIDER {
 			viewQuote.InsertDivider = true
 		}

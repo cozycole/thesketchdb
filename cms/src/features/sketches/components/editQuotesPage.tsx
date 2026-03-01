@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useQuotes } from "@/features/sketches/api/getQuotes";
 
-import { Loader2 } from "lucide-react";
+import { SaveIcon } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { QuoteUI } from "../hooks/useQuoteEditor";
 import { TranscriptPanel } from "@/features/sketches/components/transcriptPanel";
@@ -17,14 +18,15 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
     id: Number(sketchId),
   });
 
-  const { state, dispatch, quoteKeysSorted, dirtyKeys, hasChanges } =
-    useQuoteEditor({
+  const { state, dispatch, quoteKeysSorted, hasChanges, save } = useQuoteEditor(
+    {
       sketchId,
       transcript: [],
       selectedTranscriptIds: new Set(),
       selectedQuoteKeys: new Set(),
       saving: false,
-    });
+    },
+  );
 
   useEffect(() => {
     if (!data) return;
@@ -51,7 +53,7 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
     <div className="w-full flex">
       {quotesLoading ? (
         <div className="h-screen mx-auto">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Spinner className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : quotesError ? (
         <div className="mx-auto">Error getting quote data</div>
@@ -62,6 +64,7 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
               quoteKeys={quoteKeysSorted}
               quotesByKey={state.quotesByKey}
               errorsByKey={state.errorsByKey}
+              sketchId={sketchId}
               onAddQuote={actions.addQuote}
               onUpdateQuote={actions.updateQuote}
               onDeleteQuote={actions.deleteQuote}
@@ -71,7 +74,11 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
             />
 
             {hasChanges && (
-              <Button className="sticky bottom-6 self-center text-lg text-white rounded-lg">
+              <Button
+                className="sticky bottom-6 self-center text-lg text-white rounded-lg"
+                onClick={() => save()}
+              >
+                {state.saving ? <Spinner /> : <SaveIcon />}
                 Save
               </Button>
             )}

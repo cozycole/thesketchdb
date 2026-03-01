@@ -51,7 +51,7 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 	stmt := `
 		SELECT s.id, s.slug, s.title, s.description, s.thumbnail_name,
 		sk.id, sk.slug, sk.title, sk.thumbnail_name, 
-		sk.upload_date, sk.sketch_number, sk.part_number,
+		sk.upload_date, sk.sketch_number,
 		e.id, e.slug, e.episode_number, e.air_date, 
 		e.thumbnail_name,
 		se.id, se.slug, se.season_number,
@@ -89,7 +89,7 @@ func (m *SeriesModel) GetById(id int) (*Series, error) {
 			&s.ID, &s.Slug, &s.Title, &s.Description, &s.ThumbnailName,
 			&sk.ID, &sk.Slug, &sk.Title, &sk.Thumbnail,
 			&sk.UploadDate, &sk.Number,
-			&ep.ID, &ep.Slug, &ep.Number, &ep.AirDate,
+			&ep.ID, &ep.Slug, &ep.Number, &ep.AirDate, &ep.Thumbnail,
 			&se.ID, &se.Slug, &se.Number,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,

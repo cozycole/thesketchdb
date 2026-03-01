@@ -34,10 +34,10 @@ export function formatHMS(total: number): string {
 }
 
 export function parseHMS(input: string): number | undefined {
-  input = input.trim();
-  if (!input) {
+  if (!input || !input.trim()) {
     return undefined;
   }
+  input = input.trim();
 
   const value = input.trim();
 

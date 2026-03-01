@@ -28,7 +28,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-import { AsyncSearchSelect } from "@/components/ui/asyncSearchSelect";
+import { AsyncSearchSelectRHF } from "@/components/ui/asyncSearchSelectRHF";
 import { ImageUploadField } from "@/components/ui/imageUpload";
 
 import { useCreateCast } from "../api/createCast";
@@ -62,7 +62,7 @@ export function CastForm({ sketchId }: CastFormProps) {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Cast member created successfully",
+          title: "Cast member created",
         });
         closeForm();
       },
@@ -86,7 +86,7 @@ export function CastForm({ sketchId }: CastFormProps) {
       onSuccess: () => {
         addNotification({
           type: "success",
-          title: "Cast updated successfully",
+          title: "Cast updated",
         });
         closeForm();
       },
@@ -216,14 +216,14 @@ export function CastForm({ sketchId }: CastFormProps) {
                   </Field>
                 )}
               />
-              <AsyncSearchSelect
+              <AsyncSearchSelectRHF
                 control={control}
                 name="actor"
                 label="Actor"
                 loadOptions={makePersonLoadOptions({ pageSize: 8 })}
                 searchPlaceholder="Search people..."
               />
-              <AsyncSearchSelect
+              <AsyncSearchSelectRHF
                 control={control}
                 name="character"
                 label="Character Link"

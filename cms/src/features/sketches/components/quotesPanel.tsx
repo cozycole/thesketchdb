@@ -38,6 +38,8 @@ type QuotesPanelProps = {
   quotesByKey: Record<string, QuoteUI>;
   errorsByKey: Record<string, QuoteFieldsErrors>;
 
+  sketchId: number;
+
   onAddQuote: (q: QuoteUI) => void;
   onUpdateQuote: (q: QuoteUI) => void;
   onDeleteQuote: (q: QuoteUI) => void;
@@ -52,6 +54,7 @@ export function QuotesPanel({
   quoteKeys,
   quotesByKey,
   errorsByKey,
+  sketchId,
   onAddQuote,
   onUpdateQuote,
   onDeleteQuote,
@@ -69,7 +72,10 @@ export function QuotesPanel({
   return (
     <>
       <div>
-        <Button className="ml-2 text-white" onClick={() => setDialogOpen(true)}>
+        <Button
+          className="ml-2 text-white font-bold"
+          onClick={() => setDialogOpen(true)}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add Quote
         </Button>
@@ -87,6 +93,7 @@ export function QuotesPanel({
                 <div key={k}>
                   <QuoteFields
                     value={quotesByKey[k]}
+                    sketchId={sketchId}
                     errors={errorsByKey[k]}
                     onChange={onUpdateQuote}
                     onDelete={onDeleteQuote}
@@ -104,6 +111,7 @@ export function QuotesPanel({
           </DialogHeader>
           <QuoteFields<QuoteUI>
             value={newQuoteDraft}
+            sketchId={sketchId}
             onChange={setNewQuoteDraft}
             onDelete={onDeleteQuote}
             errors={quoteDraftErrors}

@@ -347,7 +347,7 @@ func convertFormtoTag(form *tagForm) models.Tag {
 		ID:       &form.ID,
 		Name:     &form.Name,
 		Type:     &form.Type,
-		Category: &models.Category{ID: categoryId},
+		Category: &models.CategoryRef{ID: categoryId},
 	}
 }
 

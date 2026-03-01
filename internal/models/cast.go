@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"sort"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,12 +37,13 @@ type CastScreenshot struct {
 }
 
 type CastModelInterface interface {
+	BatchUpdateCastTags(castID int, tags []*Tag) error
 	Delete(id int) error
 	GetById(id int) (*CastMember, error)
-	Insert(sketchId int, member *CastMember) error
 	GetCastMembers(sketchId int) ([]*CastMember, error)
 	GetCastScreenshots(sketchId int) ([]*CastScreenshot, error)
-	BatchUpdateCastTags(castID int, tags []*Tag) error
+	Insert(sketchId int, member *CastMember) error
+	List(f *Filter) ([]*CastMember, Metadata, error)
 	Update(member *CastMember) error
 	UpdatePositions([]int) error
 }
@@ -82,7 +84,7 @@ func (m *CastModel) GetById(id int) (*CastMember, error) {
 	rows, err := m.DB.Query(context.Background(), stmt, id)
 	for rows.Next() {
 		t := Tag{}
-		ca := Category{}
+		ca := CategoryRef{}
 		rows.Scan(
 			&c.ID, &c.SketchID, &c.Position, &c.CharacterName, &c.CastRole,
 			&c.MinorRole, &c.ThumbnailName, &c.ProfileImg, &p.ID, &p.First,
@@ -269,6 +271,118 @@ func (m *CastModel) GetCastScreenshots(sketchId int) ([]*CastScreenshot, error) 
 	}
 
 	return shots, nil
+}
+
+func (m *CastModel) List(f *Filter) ([]*CastMember, Metadata, error) {
+	query := `SELECT count(*) OVER(), cm.id, cm.position, cm.character_name, cm.role, 
+			cm.thumbnail_name, cm.profile_img, cm.minor,
+			p.id, p.slug, p.first, p.last, p.profile_img, 
+			ch.id, ch.slug, ch.name, ch.img_name%s
+			FROM cast_members as cm
+			LEFT JOIN person as p ON cm.person_id = p.id
+			LEFT JOIN character as ch on cm.character_id = ch.id
+			WHERE 1=1
+	`
+
+	args := []any{}
+	argIndex := 1
+	if f.Query != "" {
+		rankParam := fmt.Sprintf(`
+		, ts_rank(
+			setweight(to_tsvector('simple', cm.character_name) , 'A') ||
+			setweight(to_tsvector('simple', p.first) , 'B') ||
+			setweight(to_tsvector('simple', p.last) , 'B'),
+			websearch_to_tsquery('english', $%d)
+		) AS rank
+		`, argIndex)
+
+		query = fmt.Sprintf(query, rankParam)
+
+		query += fmt.Sprintf(`AND
+			(
+			to_tsvector(
+			  'simple',
+			  COALESCE(p.first, '') || ' ' || COALESCE(p.last, '')
+			) @@ websearch_to_tsquery('english', $%d)
+			OR
+			COALESCE(p.first, '') || ' ' || COALESCE(p.last, '') ILIKE '%%' || $%d || '%%'
+			)
+
+		`, argIndex, argIndex)
+
+		args = append(args, f.Query)
+		argIndex++
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	if len(f.SketchIDs) > 0 {
+		sketchPlaceholders := []string{}
+		for _, sketchId := range f.SketchIDs {
+			sketchPlaceholders = append(sketchPlaceholders, fmt.Sprintf("$%d", argIndex))
+			args = append(args, sketchId)
+			argIndex++
+		}
+		fmt.Printf("PLACEHOLDERS: %v", sketchPlaceholders)
+
+		query += fmt.Sprintf(" AND cm.sketch_id IN (%s)", strings.Join(sketchPlaceholders, ","))
+	}
+
+	query += fmt.Sprintf(`
+		LIMIT $%d OFFSET $%d
+		`, argIndex, argIndex+1)
+
+	fmt.Println(query)
+
+	args = append(args, f.Limit(), f.Offset())
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	casts := []*CastMember{}
+	var totalCount int
+	for rows.Next() {
+		var cm CastMember
+		var p PersonRef
+		var ch CharacterRef
+		destinations := []any{
+			&totalCount, &cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole,
+			&cm.ThumbnailName, &cm.ProfileImg, &cm.MinorRole,
+			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
+			&ch.ID, &ch.Slug, &ch.Name, &ch.Image,
+		}
+
+		var rank *float32
+		if f.Query != "" {
+			destinations = append(destinations, &rank)
+		}
+		err := rows.Scan(destinations...)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		if cm.ID == nil {
+			continue
+		}
+
+		if p.ID != nil {
+			cm.Actor = &p
+		}
+
+		if ch.ID != nil {
+			cm.Character = &ch
+		}
+
+		casts = append(casts, &cm)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	return casts, calculateMetadata(totalCount, f.Page, f.PageSize), nil
 }
 
 func (m *CastModel) Update(member *CastMember) error {

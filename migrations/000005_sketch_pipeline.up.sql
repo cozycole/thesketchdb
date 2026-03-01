@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS transcription_lines (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE FUNCTION set_edited_at()
+CREATE OR REPLACE FUNCTION set_edited_at()
 RETURNS trigger AS $$
 BEGIN
   NEW.edited_at := NOW();
@@ -36,7 +36,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_edited_at
+CREATE OR REPLACE TRIGGER update_edited_at
 BEFORE UPDATE ON pipeline_jobs
 FOR EACH ROW
 EXECUTE FUNCTION set_edited_at();

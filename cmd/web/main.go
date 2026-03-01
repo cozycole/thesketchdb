@@ -29,6 +29,7 @@ import (
 	"sketchdb.cozycole.net/internal/domain/series"
 	"sketchdb.cozycole.net/internal/domain/shows"
 	"sketchdb.cozycole.net/internal/domain/sketches"
+	"sketchdb.cozycole.net/internal/domain/tags"
 
 	"sketchdb.cozycole.net/internal/fileStore"
 	"sketchdb.cozycole.net/internal/models"
@@ -288,6 +289,7 @@ type Services struct {
 	Series     series.SeriesService
 	Shows      shows.ShowService
 	Sketches   sketches.SketchService
+	Tags       tags.TagsService
 }
 
 func NewServices(repos models.Repositories, fileStore fileStore.FileStorageInterface) Services {
@@ -325,6 +327,10 @@ func NewServices(repos models.Repositories, fileStore fileStore.FileStorageInter
 			ImgStore: fileStore,
 		},
 		Quotes: quotes.QuoteService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+		Tags: tags.TagsService{
 			Repos:    repos,
 			ImgStore: fileStore,
 		},

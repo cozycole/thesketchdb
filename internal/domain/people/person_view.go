@@ -11,7 +11,6 @@ type PeopleListResult struct {
 	TotalCount    int
 	CharacterRefs []*models.CharacterRef
 	CreatorRefs   []*models.CreatorRef
-	PersonRefs    []*models.PersonRef
 	ShowRefs      []*models.ShowRef
 	TagRefs       []*models.TagRef
 	Metadata      models.Metadata
