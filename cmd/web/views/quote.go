@@ -25,6 +25,7 @@ func SketchQuoteSection(quotes []*models.Quote, baseImgUrl string) []Quote {
 	previousTimestamp := 0
 	for i, q := range quotes {
 		viewQuote := Quote{}
+
 		timestamp := safeDeref(q.StartTimeMs)
 		viewQuote.ID = safeDeref(q.ID)
 		viewQuote.StartTimestamp = models.MillisecondsToMMSS(timestamp)
@@ -36,6 +37,9 @@ func SketchQuoteSection(quotes []*models.Quote, baseImgUrl string) []Quote {
 			viewQuote.InsertDivider = true
 		}
 		previousTimestamp = safeDeref(q.StartTimeMs)
+		if q.EndTimeMs != nil {
+			previousTimestamp = *q.EndTimeMs
+		}
 
 		for _, cm := range q.CastMembers {
 			viewQuote.CastImgUrls = append(

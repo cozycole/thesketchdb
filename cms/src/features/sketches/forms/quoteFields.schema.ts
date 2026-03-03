@@ -65,30 +65,34 @@ export function mapQuoteToQuoteFields(q: Quote): QuoteFieldsData {
     startTimeMs: q.startTimeMs !== null ? formatHMS(q.startTimeMs / 1000) : "",
     endTimeMs: q.endTimeMs ? formatHMS(q.endTimeMs / 1000) : "",
     cast: q.castMembers
-      ? q.castMembers.map((c) => {
-          let label = c.characterName;
-          if (c.actor && c.actor.id) {
-            label += ` (${c.actor.first} ${c.actor.last})`;
-          }
+      ? q.castMembers
+          .sort((a, b) => a.position - b.position)
+          .map((c) => {
+            let label = c.characterName;
+            if (c.actor && c.actor.id) {
+              label += ` (${c.actor.first} ${c.actor.last})`;
+            }
 
-          let imgUrl = "";
-          if (c.profileImage) {
-            imgUrl = buildImageUrl("cast/profile", "small", c.profileImage);
-          } else if (!c.profileImage && c.actor) {
-            imgUrl = buildImageUrl("person", "small", c.actor.profileImage);
-          }
-          return {
-            id: c.id,
-            label: label,
-            image: imgUrl,
-          };
-        })
+            let imgUrl = "";
+            if (c.profileImage) {
+              imgUrl = buildImageUrl("cast/profile", "small", c.profileImage);
+            } else if (!c.profileImage && c.actor) {
+              imgUrl = buildImageUrl("person", "small", c.actor.profileImage);
+            }
+            return {
+              id: c.id,
+              label: label,
+              image: imgUrl,
+            };
+          })
       : [],
     tags: q.tags
-      ? q.tags.map((t) => ({
-          id: t.id,
-          label: t.category ? `${t.category.name} / ${t.name}` : t.name,
-        }))
+      ? q.tags
+          .sort((a, b) => a.id - b.id)
+          .map((t) => ({
+            id: t.id,
+            label: t.category ? `${t.category.name} / ${t.name}` : t.name,
+          }))
       : [],
   };
 }

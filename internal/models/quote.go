@@ -259,7 +259,8 @@ func (m *QuoteModel) BatchUpdateQuotes(sketchID int, quotes []*Quote, deletedIds
 				return fmt.Errorf("failed to update quote with id %d: %w", q.ID, err)
 			}
 		} else {
-			_, err = insertQuote(ctx, tx, q, sketchID)
+			id, err = insertQuote(ctx, tx, q, sketchID)
+			q.ID = &id
 			if err != nil {
 				return fmt.Errorf("failed to insert quote with id %d: %w", q.ID, err)
 			}

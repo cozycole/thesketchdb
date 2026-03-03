@@ -292,7 +292,7 @@ func (m *CastModel) List(f *Filter) ([]*CastMember, Metadata, error) {
 			setweight(to_tsvector('simple', cm.character_name) , 'A') ||
 			setweight(to_tsvector('simple', p.first) , 'B') ||
 			setweight(to_tsvector('simple', p.last) , 'B'),
-			websearch_to_tsquery('english', $%d)
+			websearch_to_tsquery('simple', $%d)
 		) AS rank
 		`, argIndex)
 
@@ -302,12 +302,12 @@ func (m *CastModel) List(f *Filter) ([]*CastMember, Metadata, error) {
 			(
 			to_tsvector(
 			  'simple',
-			  COALESCE(p.first, '') || ' ' || COALESCE(p.last, '')
+			  COALESCE(p.first, '') || ' ' || COALESCE(p.last, '') || ' ' || COALESCE(cm.character_name)
 			) @@ websearch_to_tsquery('english', $%d)
 			OR
-			COALESCE(p.first, '') || ' ' || COALESCE(p.last, '') ILIKE '%%' || $%d || '%%'
+			COALESCE(p.first, '') || ' ' || COALESCE(p.last, '') || ' ' || 
+			COALESCE(cm.character_name) ILIKE '%%' || $%d || '%%'
 			)
-
 		`, argIndex, argIndex)
 
 		args = append(args, f.Query)
@@ -323,7 +323,6 @@ func (m *CastModel) List(f *Filter) ([]*CastMember, Metadata, error) {
 			args = append(args, sketchId)
 			argIndex++
 		}
-		fmt.Printf("PLACEHOLDERS: %v", sketchPlaceholders)
 
 		query += fmt.Sprintf(" AND cm.sketch_id IN (%s)", strings.Join(sketchPlaceholders, ","))
 	}
@@ -332,9 +331,10 @@ func (m *CastModel) List(f *Filter) ([]*CastMember, Metadata, error) {
 		LIMIT $%d OFFSET $%d
 		`, argIndex, argIndex+1)
 
-	fmt.Println(query)
-
 	args = append(args, f.Limit(), f.Offset())
+
+	fmt.Println(query)
+	fmt.Printf("%+v", args)
 
 	rows, err := m.DB.Query(context.Background(), query, args...)
 	if err != nil {

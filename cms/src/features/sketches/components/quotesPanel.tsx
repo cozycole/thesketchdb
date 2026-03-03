@@ -1,6 +1,14 @@
 import { useState } from "react";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  useDroppable,
+} from "@dnd-kit/core";
 
-import { QuoteIcon, Plus } from "lucide-react";
+import { QuoteIcon, Plus, MergeIcon, XIcon } from "lucide-react";
 import { QuoteUI } from "../hooks/useQuoteEditor";
 
 import {
@@ -18,7 +26,7 @@ import {
   zodErrorToFieldErrors,
 } from "../forms/quoteFields.schema";
 
-import { formatHMS } from "@/lib/utils";
+import { cn, formatHMS } from "@/lib/utils";
 
 function createEmptyQuote(): QuoteUI {
   return {
@@ -40,14 +48,16 @@ type QuotesPanelProps = {
 
   sketchId: number;
 
-  onAddQuote: (q: QuoteUI) => void;
+  onAddQuote: (q: QuoteUI[]) => void;
   onUpdateQuote: (q: QuoteUI) => void;
   onDeleteQuote: (q: QuoteUI) => void;
   onBlur: (q: QuoteUI) => void;
 
   // optional UI
   selectedKeys: Set<string>;
-  onSelectKeys: (keys: Set<string>) => void;
+  onSelectKey: (key: string, e: PointerEvent) => void;
+  onClearSelected: () => void;
+  onMerge: () => void;
 };
 
 export function QuotesPanel({
@@ -59,8 +69,10 @@ export function QuotesPanel({
   onUpdateQuote,
   onDeleteQuote,
   onBlur,
-  //selectedKeys,
-  //onSelectKeys,
+  selectedKeys,
+  onSelectKey,
+  onClearSelected,
+  onMerge,
 }: QuotesPanelProps) {
   const [quoteDialogOpen, setDialogOpen] = useState(false);
   const [newQuoteDraft, setNewQuoteDraft] =
@@ -69,18 +81,45 @@ export function QuotesPanel({
     {},
   );
 
+  const { isOver, setNodeRef, active } = useDroppable({
+    id: "quotes-dropzone",
+  });
+
+  const isTranscriptDragging = active?.data?.current?.type === "transcriptLine";
+  const highlight = isOver && isTranscriptDragging;
+
   return (
     <>
-      <div>
+      <div className="flex sticky justify-between mx-2 top-16">
         <Button
-          className="ml-2 text-white font-bold"
+          className="text-white font-bold"
           onClick={() => setDialogOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Quote
         </Button>
+        {selectedKeys.size > 1 && (
+          <div className="flex gap-2">
+            <Button
+              className="bg-blue-500 text-white hover:bg-blue-400"
+              onClick={onMerge}
+            >
+              <MergeIcon className="mr-2 h-4 w-4" />
+              Merge
+            </Button>
+            <Button variant="secondary" onClick={onClearSelected}>
+              <XIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
-      <div className="grid grid-cols-1 gap-4 my-2 mx-2">
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "flex flex-col gap-3 mt-2 rounded-lg transition-colors",
+          highlight && "ring-2 ring-orange-500 bg-orange-50/40",
+        )}
+      >
         {quoteKeys.length === 0 ? (
           <p className="col-span-full mt-10 text-center text-muted-foreground">
             <QuoteIcon className="mx-auto mb-6" />
@@ -90,7 +129,15 @@ export function QuotesPanel({
           quoteKeys.map(
             (k) =>
               quotesByKey[k] && (
-                <div key={k}>
+                <div
+                  key={k}
+                  className={
+                    selectedKeys.has(k)
+                      ? "rounded-lg ring-2 ring-orange-400"
+                      : ""
+                  }
+                  onPointerDown={(e) => onSelectKey(k, e)}
+                >
                   <QuoteFields
                     value={quotesByKey[k]}
                     sketchId={sketchId}
@@ -120,6 +167,8 @@ export function QuotesPanel({
             <Button
               className="text-white ml-auto"
               onClick={() => {
+                // this logic is necessary because the quote panel handles
+                // the state of the quoteDraft before adding it
                 const result = quoteFieldsSchema.safeParse(newQuoteDraft);
 
                 if (!result.success) {
@@ -129,7 +178,8 @@ export function QuotesPanel({
                   setQuoteDraftErrors(fieldErrors);
                   return;
                 }
-                onAddQuote(newQuoteDraft);
+
+                onAddQuote([newQuoteDraft]);
                 setDialogOpen(false);
                 setNewQuoteDraft(createEmptyQuote());
                 setQuoteDraftErrors({});

@@ -28,6 +28,7 @@ type EditorState = {
   // UI
   errorsByKey: Record<string, QuoteFieldsErrors>;
   selectedTranscriptIds: Set<number>;
+  anchorTranscriptId: number;
   selectedQuoteKeys: Set<string>;
 
   saving: boolean;
@@ -36,7 +37,7 @@ type EditorState = {
 
 type Action =
   | { type: "LOAD"; transcript: TranscriptLine[]; quotes: Quote[] }
-  | { type: "ADD_QUOTE"; quote: QuoteUI }
+  | { type: "ADD_QUOTES"; quotes: QuoteUI[] }
   | { type: "ADD_FROM_TRANSCRIPT"; transcriptIds: number[] }
   | { type: "UPDATE_QUOTE"; new: QuoteUI }
   | { type: "DELETE_QUOTE"; key: string }
@@ -45,6 +46,10 @@ type Action =
       type: "SET_ERRORS";
       errorsByKey: Record<string, QuoteFieldsErrors | undefined>;
     }
+  | { type: "SELECT_TRANSCRIPT"; id: number; e: MouseEvent }
+  | { type: "SELECT_QUOTE"; key: string; e: PointerEvent }
+  | { type: "CLEAR_SELECTED" }
+  | { type: "MERGE_QUOTES" }
   | { type: "RESTORE_QUOTE"; id: number }
   | { type: "SAVE_START" }
   | { type: "SAVE_SUCCESS"; quotes: Quote[] }
@@ -78,7 +83,9 @@ function reducer(state: EditorState, action: Action): EditorState {
       }
       return {
         ...state,
-        transcript: action.transcript,
+        transcript: action.transcript.sort(
+          (a, b) => a.lineNumber - b.lineNumber,
+        ),
         quotesByKey,
         baselineByKey,
         deletedIds: new Set(),
@@ -86,35 +93,20 @@ function reducer(state: EditorState, action: Action): EditorState {
       };
     }
 
-    case "ADD_QUOTE": {
+    case "ADD_QUOTES": {
+      // this assumes the quote has been validated
       const quotesByKey = { ...state.quotesByKey };
-      action.quote.clientId = crypto.randomUUID();
-      quotesByKey[action.quote.clientId] = action.quote;
+
+      for (const q of action.quotes) {
+        q.clientId = crypto.randomUUID();
+        q.startMs = parseHMS(q.startTimeMs);
+        quotesByKey[q.clientId] = q;
+      }
       return {
         ...state,
         quotesByKey,
       };
     }
-
-    //case 'ADD_FROM_TRANSCRIPT': {
-    //  const quotesByKey = { ...state.quotesByKey };
-    //  for (const tid of action.transcriptIds) {
-    //    const tl = state.transcript.find(t => t.id === tid);
-    //    if (!tl) continue;
-    //    const clientId = crypto.randomUUID();
-    //    const q: QuoteLine = {
-    //      clientId,
-    //      startMs: tl.startMs,
-    //      endMs: tl.endMs ?? null,
-    //      text: tl.text,
-    //      castMemberIds: [],
-    //      tagIds: [],
-    //      source: 'transcript',
-    //    };
-    //    quotesByKey[`tmp:${clientId}`] = q;
-    //  }
-    //  return { ...state, quotesByKey };
-    //}
 
     case "UPDATE_QUOTE": {
       const cur = state.quotesByKey[action.new.clientId];
@@ -190,7 +182,7 @@ function reducer(state: EditorState, action: Action): EditorState {
         const q2: QuoteUI = {
           ...mapQuoteToQuoteFields(q),
           clientId: crypto.randomUUID(),
-          startMs: q.startTimeMs / 1000,
+          startMs: q.startTimeMs ? q.startTimeMs / 1000 : 0,
         };
         quotesByKey[q2.clientId] = q2;
         baselineByKey[q2.clientId] = q2;
@@ -205,6 +197,173 @@ function reducer(state: EditorState, action: Action): EditorState {
       };
     }
 
+    case "SELECT_QUOTE": {
+      const next = new Set(state.selectedQuoteKeys);
+
+      if (action.e.ctrlKey) {
+        next.add(action.key);
+      }
+
+      return {
+        ...state,
+        selectedQuoteKeys: next,
+      };
+    }
+
+    case "SELECT_TRANSCRIPT": {
+      const orderedIds = state.transcript.map((t) => t.id);
+
+      const next = new Set<number>(state.selectedTranscriptIds);
+
+      const clickedId = action.id;
+      const prevAnchor = state.anchorTranscriptId;
+
+      const isToggle = action.e ? action.e.ctrlKey || action.e.metaKey : false; // cmd on mac
+      const isRange = action.e ? action.e.shiftKey : false;
+
+      // shift: select inclusive range between anchor and clicked (based on transcript order)
+      if (isRange && prevAnchor != null) {
+        const a = orderedIds.indexOf(prevAnchor);
+        const b = orderedIds.indexOf(clickedId);
+
+        // if either id isn't found, fall back to single-select
+        if (a !== -1 && b !== -1) {
+          const [lo, hi] = a < b ? [a, b] : [b, a];
+          next.clear();
+          for (let i = lo; i <= hi; i++) next.add(orderedIds[i]!);
+
+          return {
+            ...state,
+            selectedTranscriptIds: next,
+            // keep anchor stable during shift so repeated shift-click extends from same anchor
+            anchorTranscriptId: prevAnchor,
+          };
+        }
+      }
+
+      // ctrl/cmd: toggle clicked id without clearing
+      if (isToggle) {
+        if (next.has(clickedId)) next.delete(clickedId);
+        else next.add(clickedId);
+
+        return {
+          ...state,
+          selectedTranscriptIds: next,
+          // update anchor to last interacted item
+          anchorTranscriptId: clickedId,
+        };
+      }
+
+      // plain click: single selection
+      next.clear();
+      next.add(clickedId);
+
+      return {
+        ...state,
+        selectedTranscriptIds: next,
+        anchorTranscriptId: clickedId,
+      };
+    }
+
+    case "CLEAR_SELECTED": {
+      return {
+        ...state,
+        selectedQuoteKeys: new Set(),
+        selectedTranscriptIds: new Set(),
+      };
+    }
+
+    case "MERGE_QUOTES": {
+      const keys = Array.from(state.selectedQuoteKeys);
+      if (keys.length < 2) return state;
+
+      // Get selected quote objects
+      const selected = keys.map((k) => state.quotesByKey[k]).filter(Boolean);
+
+      if (selected.length < 2) return state;
+
+      // Sort by start time (ascending)
+      selected.sort((a, b) => Number(a.startMs) - Number(b.startMs));
+
+      // Compute merged fields
+      const startTimeMs = selected[0].startTimeMs;
+      const startTime = selected[0].startMs;
+
+      const endTimes = selected
+        .map((q) => q.endTimeMs)
+        .filter((v): v is string => Boolean(v));
+
+      const endTimeMs =
+        endTimes.length > 0
+          ? endTimes.sort((a, b) => Number(a) - Number(b))[endTimes.length - 1]
+          : undefined;
+
+      const text = selected.map((q) => q.text).join(" ");
+
+      // Merge cast (dedupe by id)
+      const castMap = new Map<
+        number,
+        { id: number; label: string; image: string }
+      >();
+      for (const q of selected) {
+        for (const c of q.cast ?? []) {
+          castMap.set(c.id, c);
+        }
+      }
+
+      const cast = Array.from(castMap.values());
+
+      // Merge tags (dedupe by id)
+      const tagMap = new Map<number, { id: number; label: string }>();
+      for (const q of selected) {
+        for (const t of q.tags ?? []) {
+          tagMap.set(t.id, t);
+        }
+      }
+
+      const tags = Array.from(tagMap.values());
+
+      // Create merged quote (new clientId)
+      const mergedKey = crypto.randomUUID();
+
+      const mergedQuote = {
+        id: undefined,
+        text,
+        startMs: startTime,
+        startTimeMs,
+        endTimeMs,
+        cast,
+        tags,
+        clientId: mergedKey,
+      };
+      console.log("MERGED QUOTE");
+      console.log(mergedQuote);
+
+      // Build new quotesByKey
+      const nextQuotesByKey = { ...state.quotesByKey };
+
+      // Remove old
+      for (const k of keys) {
+        delete nextQuotesByKey[k];
+      }
+
+      // Add to deleted IDs
+      const nextDeletedIds = new Set(state.deletedIds);
+      for (const q of selected) {
+        if (q.id) nextDeletedIds.add(q.id);
+      }
+
+      // Insert merged
+      nextQuotesByKey[mergedKey] = mergedQuote;
+
+      return {
+        ...state,
+        quotesByKey: nextQuotesByKey,
+        selectedQuoteKeys: new Set(),
+        deletedIds: nextDeletedIds,
+      };
+    }
+
     case "SAVE_ERROR":
       return { ...state, saving: false, error: action.error };
 
@@ -216,7 +375,12 @@ function reducer(state: EditorState, action: Action): EditorState {
 export function useQuoteEditor(
   initial: Omit<
     EditorState,
-    "quotesByKey" | "baselineByKey" | "deletedIds" | "errorsByKey" | "quoteKeys"
+    | "quotesByKey"
+    | "baselineByKey"
+    | "deletedIds"
+    | "errorsByKey"
+    | "quoteKeys"
+    | "anchorTranscriptId"
   >,
 ) {
   const { addNotification } = useNotifications();
@@ -226,6 +390,7 @@ export function useQuoteEditor(
     quotesByKey: {},
     baselineByKey: {},
     deletedIds: new Set<number>(),
+    anchorTranscriptId: undefined,
   });
 
   // sort the keys on start timestamp
