@@ -185,7 +185,21 @@ func (m *QuoteModel) GetBySketch(sketchId int) ([]*Quote, error) {
 	}
 
 	sort.Slice(quoteList, func(i, j int) bool {
-		return *quoteList[i].StartTimeMs < *quoteList[j].StartTimeMs
+		// guarding against start timestamp being null
+		iStart := 0
+		if quoteList[i].StartTimeMs != nil {
+			iStart = *quoteList[i].StartTimeMs
+		}
+		jStart := 0
+		if quoteList[j].StartTimeMs != nil {
+			jStart = *quoteList[j].StartTimeMs
+		}
+
+		if iStart == 0 && jStart == 0 {
+			iStart = *quoteList[i].ID
+			jStart = *quoteList[j].ID
+		}
+		return iStart < jStart
 	})
 
 	return quoteList, nil

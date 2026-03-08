@@ -33,6 +33,20 @@ export type Sketch = {
   updatedAt: string;
 };
 
+export type SketchVideo = {
+  id: number;
+  hotS3Key: string;
+  coldS3Key: string;
+  archivedAt: string;
+  jobs: PipelineJob[];
+};
+
+export type PipelineJob = {
+  id: number;
+  status: string;
+  error: string;
+};
+
 export type CastMember = {
   id: number;
   position: number;

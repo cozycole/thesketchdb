@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic bool) http.Handler {
+func (app *application) routes(staticRoute string, serveStatic bool) http.Handler {
 	r := chi.NewRouter()
 
 	r.Group(func(r chi.Router) {
@@ -21,13 +21,6 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 				w.Header().Set("Expires", "0")
 				fs.ServeHTTP(w, r)
 			})))
-		}
-
-		if app.fileStorage.Type() == "Local" {
-			app.infoLog.Printf("Starting image file server rooted at %s\n", imageStorageRoot)
-			imgFs := http.FileServer(http.Dir(imageStorageRoot))
-			r.Handle("/images/*", http.StripPrefix(app.baseImgUrl, imgFs))
-			app.infoLog.Printf("Image Url: %s\n", app.baseImgUrl)
 		}
 	})
 
@@ -101,6 +94,10 @@ func (app *application) routes(staticRoute, imageStorageRoot string, serveStatic
 		r.Get("/tag/search", app.tagSearch)
 
 		r.Get("/api/v1/tags", app.listTagsAPI)
+
+		r.Get("/api/v1/admin/sketch/{id}/videos", app.getSketchVideos)
+		r.Post("/api/v1/admin/sketch/upload-url", app.generateSketchVideoS3PutUrl)
+		r.Post("/api/v1/admin/sketch/{id}/video-uploaded", app.sketchVideoUploaded)
 
 		r.Get("/user/{username}", app.userView)
 

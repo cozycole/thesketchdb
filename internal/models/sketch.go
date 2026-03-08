@@ -52,6 +52,14 @@ type SketchRef struct {
 	Rating        *float32    `json:"rating"`
 }
 
+type SketchVideo struct {
+	ID           *int           `json:"id"`
+	HotS3Key     *string        `json:"hotS3Key"`
+	ColdS3Key    *string        `json:"coldS3Key"`
+	ArchivedAt   *time.Time     `json:"archivedAt"`
+	PipelineJobs []*PipelineJob `json:"jobs"`
+}
+
 type SketchModelInterface interface {
 	BatchUpdateTags(sketchId int, tags *[]*Tag) error
 	Delete(id int) error
@@ -61,9 +69,11 @@ type SketchModelInterface interface {
 	GetByUserLikes(id int) ([]*SketchRef, error)
 	GetCount(filter *Filter) (int, error)
 	GetFeatured() ([]*Sketch, error)
+	GetVideos(int) ([]*SketchVideo, error)
 	HasLike(sketchId, userId int) (bool, error)
 	Insert(sketch *Sketch) (int, error)
 	InsertSketchCreatorRelation(sketchId, creatorId int) error
+	InsertSketchVideo(sketchId int, video *SketchVideo) error
 	SearchCount(query string) (int, error)
 	SyncSketchCreators(sketchID int, creatorIDs []int) error
 	Update(sketch *Sketch) error
@@ -837,6 +847,38 @@ func (m *SketchModel) GetByUserLikes(userId int) ([]*SketchRef, error) {
 	return sketches, nil
 }
 
+// NOTE: This function doesn't currently account for multiple videos assigned
+// to a single sketch! Implement later...
+func (m *SketchModel) GetVideos(sketchId int) ([]*SketchVideo, error) {
+	stmt := `
+		SELECT v.id, v.hot_s3_key, v.cold_s3_key, v.archived_at,
+		p.id, p.status, p.error
+		FROM sketch_video as v
+		LEFT JOIN pipeline_jobs as p ON v.id = p.video_id
+		WHERE v.sketch_id = $1
+		ORDER BY v.id asc
+		LIMIT 1
+	`
+
+	row := m.DB.QueryRow(context.Background(), stmt, sketchId)
+
+	v := SketchVideo{}
+	p := PipelineJob{}
+	err := row.Scan(&v.ID, &v.HotS3Key, &v.ColdS3Key, &v.ArchivedAt,
+		&p.ID, &p.Status, &p.Error)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+
+	videos := []*SketchVideo{}
+	if v.ID != nil {
+		v.PipelineJobs = []*PipelineJob{&p}
+		videos = append(videos, &v)
+	}
+
+	return videos, nil
+}
+
 func (m *SketchModel) HasLike(sketchId, userId int) (bool, error) {
 	var exists bool
 
@@ -888,6 +930,26 @@ func (m *SketchModel) InsertSketchCreatorRelation(sketchId, creatorId int) error
 	stmt := `INSERT INTO sketch_creator_rel (sketch_id, creator_id) VALUES ($1, $2)`
 	_, err := m.DB.Exec(context.Background(), stmt, sketchId, creatorId)
 	return err
+}
+
+func (m *SketchModel) InsertSketchVideo(sketchId int, video *SketchVideo) error {
+	stmt := `
+		INSERT INTO sketch_video (sketch_id, hot_s3_key, cold_s3_key, archived_at)
+		VALUES ($1,$2,$3,$4)
+		RETURNING id;
+	`
+
+	row := m.DB.QueryRow(context.Background(), stmt, sketchId,
+		video.HotS3Key, video.ColdS3Key, video.ArchivedAt)
+
+	var id int
+	err := row.Scan(&id)
+	if err != nil {
+		return err
+	}
+	video.ID = &id
+
+	return nil
 }
 
 func (m *SketchModel) UpdateCreatorRelation(sketchId, creatorId int) error {

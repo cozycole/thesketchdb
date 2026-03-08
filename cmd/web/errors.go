@@ -59,7 +59,7 @@ func (app *application) logError(r *http.Request, err error) {
 		method = r.Method
 		uri    = r.URL.RequestURI()
 	)
-	app.errorLog.Printf(err.Error(), "method=", method, "uri=", uri)
+	app.errorLog.Printf("%s method=%s uri=%s", err.Error(), method, uri)
 }
 
 func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, status int, message any) {

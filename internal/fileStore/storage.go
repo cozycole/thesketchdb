@@ -2,60 +2,20 @@ package fileStore
 
 import (
 	"bytes"
-	"errors"
-	"io"
+	"fmt"
 	"net/http"
-	"os"
-	"path"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 type FileStorageInterface interface {
-	SaveFile(string, *bytes.Buffer) error
 	DeleteFile(string) error
-	Type() string
-}
-
-type FileStorage struct {
-	RootPath string
-}
-
-func (s *FileStorage) SaveFile(subPath string, file *bytes.Buffer) error {
-	imgPath := path.Join(s.RootPath, subPath)
-	imgDir := path.Dir(imgPath)
-	// Make the dir if it doesn't exist
-	if _, err := os.Stat(imgPath); errors.Is(err, os.ErrNotExist) {
-		err = os.MkdirAll(imgDir, 0755)
-		if err != nil {
-			return err
-		}
-	}
-
-	dst, err := os.Create(imgPath)
-	if err != nil {
-		return err
-	}
-	defer dst.Close()
-
-	body := bytes.NewReader(file.Bytes())
-	if _, err := io.Copy(dst, body); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *FileStorage) DeleteFile(subPath string) error {
-	imgPath := path.Join(s.RootPath, subPath)
-	if _, err := os.Stat(imgPath); errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
-	return os.Remove(imgPath)
-}
-
-func (s *FileStorage) Type() string {
-	return "Local"
+	Exists(string) (bool, error)
+	PresignedUploadURL(string, time.Duration, int) (string, error)
+	SaveFile(string, *bytes.Buffer) error
 }
 
 type S3Storage struct {
@@ -84,6 +44,42 @@ func (s *S3Storage) DeleteFile(subPath string) error {
 	return err
 }
 
-func (s *S3Storage) Type() string {
-	return "S3"
+func (s *S3Storage) Exists(s3Key string) (bool, error) {
+	_, err := s.Client.HeadObject(&s3.HeadObjectInput{
+		Bucket: aws.String(s.BucketName),
+		Key:    aws.String(s3Key),
+	})
+
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case s3.ErrCodeNoSuchKey:
+				// The object does not exist
+				return false, nil
+			default:
+				// Other AWS error (e.g., permissions, network issues)
+				return false, fmt.Errorf("AWS error: %w", err)
+			}
+		}
+		// Non-AWS error
+		return false, fmt.Errorf("non-AWS error: %w", err)
+	}
+
+	return true, nil
+}
+
+func (s *S3Storage) PresignedUploadURL(filename string, duration time.Duration, contentLength int) (string, error) {
+	putObject := &s3.PutObjectInput{
+		Bucket:        aws.String(s.BucketName),
+		Key:           aws.String(filename),
+		ContentLength: aws.Int64(int64(contentLength)),
+	}
+
+	req, _ := s.Client.PutObjectRequest(putObject)
+	url, err := req.Presign(duration)
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
 }

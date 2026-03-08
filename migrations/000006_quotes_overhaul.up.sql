@@ -34,9 +34,9 @@ ON CONFLICT DO NOTHING;
 ALTER TABLE quote DROP COLUMN IF EXISTS cast_id;
 
 -- alter quote_tag table to allow quote deletes
-ALTER TABLE quote_tag_rel
-  DROP CONSTRAINT IF EXISTS quote_tag_rel_quote_id_fkey,
-  ADD CONSTRAINT quote_tag_rel_quote_id_fkey
+ALTER TABLE quote_tags_rel
+  DROP CONSTRAINT IF EXISTS quote_tags_rel_quote_id_fkey,
+  ADD CONSTRAINT quote_tags_rel_quote_id_fkey
     FOREIGN KEY (quote_id) REFERENCES quote(id) ON DELETE CASCADE;
 
 -- delete moments table

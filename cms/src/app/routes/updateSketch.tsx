@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DraggableCastTable } from "@/features/sketches/components/castTable";
 import { ScreenshotGrid } from "@/features/sketches/components/screenshotGrid";
 import { EditQuotesPage } from "@/features/sketches/components/editQuotesPage";
+import { SketchVideoUpload } from "@/features/sketches/components/videoUpload";
 
 import {
   useSketch,
@@ -43,7 +44,7 @@ const UpdateSketchRoute = () => {
 
   return (
     <ContentLayout title={`Sketch ID ${sketch.id}`}>
-      <Tabs defaultValue="quotes">
+      <Tabs defaultValue="video">
         <TabsList variant="line" className="w-[400px] mb-4 border-orange">
           <TabsTrigger value="metadata">Metadata</TabsTrigger>
           <TabsTrigger value="cast">Cast</TabsTrigger>
@@ -92,7 +93,7 @@ const UpdateSketchRoute = () => {
           <EditQuotesPage sketchId={Number(id)} />
         </TabsContent>
         <TabsContent value="video">
-          <h1>Upload video to initiate pipeline</h1>
+          <SketchVideoUpload sketchId={sketch.id} />
         </TabsContent>
       </Tabs>
     </ContentLayout>

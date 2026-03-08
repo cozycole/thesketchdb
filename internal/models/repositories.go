@@ -7,6 +7,7 @@ type Repositories struct {
 	Creators   CreatorModelInterface
 	Quotes     QuoteModelInterface
 	People     PersonModelInterface
+	Pipeline   PipelineModelInterface
 	Profile    ProfileModelInterface
 	Recurring  RecurringModelInterface
 	Shows      ShowModelInterface

@@ -24,6 +24,7 @@ import (
 	"sketchdb.cozycole.net/internal/domain/characters"
 	"sketchdb.cozycole.net/internal/domain/creators"
 	"sketchdb.cozycole.net/internal/domain/people"
+	"sketchdb.cozycole.net/internal/domain/pipeline"
 	"sketchdb.cozycole.net/internal/domain/quotes"
 	"sketchdb.cozycole.net/internal/domain/recurring"
 	"sketchdb.cozycole.net/internal/domain/series"
@@ -110,19 +111,14 @@ func main() {
 		StaticAssets["css"] = "dist/styles.css"
 		StaticAssets["js"] = "dist/main.js"
 
-		if *localImgServer {
-			imgStoragePath = os.Getenv("DEV_IMG_DISK_STORAGE")
-			fileStorage = &fileStore.FileStorage{RootPath: imgStoragePath}
-		} else {
-			client := S3Client(
-				os.Getenv("DEV_S3_ENDPOINT"),
-				os.Getenv("DEV_S3_KEY"),
-				os.Getenv("DEV_S3_SECRET"),
-			)
-			fileStorage = &fileStore.S3Storage{
-				Client:     client,
-				BucketName: os.Getenv("DEV_S3_BUCKET"),
-			}
+		client := S3Client(
+			os.Getenv("DEV_S3_ENDPOINT"),
+			os.Getenv("DEV_S3_KEY"),
+			os.Getenv("DEV_S3_SECRET"),
+		)
+		fileStorage = &fileStore.S3Storage{
+			Client:     client,
+			BucketName: os.Getenv("DEV_S3_BUCKET"),
 		}
 	} else {
 		infoLog.Println("Production env selected")
@@ -208,7 +204,7 @@ func main() {
 	srv := &http.Server{
 		Addr:     *addr,
 		ErrorLog: errorLog,
-		Handler:  app.routes("./ui/static/", imgStoragePath, *serveStatic),
+		Handler:  app.routes("./ui/static/", *serveStatic),
 	}
 
 	infoLog.Println("Starting server on", *addr)
@@ -270,6 +266,7 @@ func newRepositories(dbpool *pgxpool.Pool) models.Repositories {
 		Quotes:     &models.QuoteModel{DB: dbpool},
 		People:     &models.PersonModel{DB: dbpool},
 		Profile:    &models.ProfileModel{DB: dbpool},
+		Pipeline:   &models.PipelineModel{DB: dbpool},
 		Recurring:  &models.RecurringModel{DB: dbpool},
 		Shows:      &models.ShowModel{DB: dbpool},
 		Tags:       &models.TagModel{DB: dbpool},
@@ -284,6 +281,7 @@ type Services struct {
 	Characters characters.CharacterService
 	Creators   creators.CreatorService
 	People     people.PersonService
+	Pipeline   pipeline.PipelineService
 	Quotes     quotes.QuoteService
 	Recurring  recurring.RecurringService
 	Series     series.SeriesService
@@ -319,6 +317,10 @@ func NewServices(repos models.Repositories, fileStore fileStore.FileStorageInter
 			ImgStore: fileStore,
 		},
 		People: people.PersonService{
+			Repos:    repos,
+			ImgStore: fileStore,
+		},
+		Pipeline: pipeline.PipelineService{
 			Repos:    repos,
 			ImgStore: fileStore,
 		},
