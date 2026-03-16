@@ -13,20 +13,40 @@ import (
 const MAX_FILE_SIZE = 262_144_000 // 250 MiB
 
 var allowedMIMETypes = map[string]bool{
-	"video/mp4":       true,
-	"video/quicktime": true,
-	"video/x-msvideo": true, // avi
-	"video/webm":      true,
+	"video/mp4":        true,
+	"video/quicktime":  true,
+	"video/x-msvideo":  true, // avi
+	"video/webm":       true,
+	"video/x-matroska": true,
 }
 
 func (app *application) generateSketchVideoS3PutUrl(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("sketch id param not defined"))
+		return
+	}
+
+	videos, err := app.services.Sketches.GetVideos(sketchId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// currently not accepting more than one video per sketch
+	if len(videos) > 0 {
+		app.badRequestResponse(w, r, fmt.Errorf("sketch already has a video"))
+		return
+	}
+
 	var input struct {
 		FileName    string `json:"fileName"`
 		ContentType string `json:"contentType"`
 		FileSize    int    `json:"fileSize"`
 	}
 
-	err := app.readJSON(w, r, &input)
+	err = app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return

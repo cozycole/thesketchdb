@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 
 	"sketchdb.cozycole.net/internal/models"
 )
@@ -27,7 +28,7 @@ func (app *application) secureHeaders(next http.Handler) http.Handler {
 			"default-src 'self'; "+
 				scriptSrc+";"+
 				scriptSrcElem+";"+
-				"connect-src 'self' https://www.youtube.com data:;"+
+				"connect-src 'self' https://www.youtube.com https://*.digitaloceanspaces.com data:;"+
 				"frame-src 'self' https://www.youtube.com;"+
 				"style-src 'self' fonts.googleapis.com;"+
 				"img-src 'self' data: blob: https://*.digitaloceanspaces.com https://i.ytimg.com https://*.ytimg.com https://www.gstatic.com;"+
@@ -71,33 +72,54 @@ func (app *application) logRequest(next http.Handler) http.Handler {
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
-		if id == 0 {
+		if id != 0 {
+			user, err := app.users.GetById(id)
+			if err != nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), userContextKey, user)
+			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		user, err := app.users.GetById(id)
-		if err != nil && err != models.ErrNoRecord {
-			app.serverError(r, w, err)
+		authHeader := r.Header.Get("Authorization")
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			token := strings.TrimPrefix(authHeader, "Bearer ")
+			user, err := app.users.GetByToken(token)
+			if err != nil {
+				app.errorLog.Print(err)
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), userContextKey, user)
+			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
 			return
 		}
-
-		ctx := context.WithValue(r.Context(), userContextKey, user)
-		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-func (app *application) requireRoles(roles []string, next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		user, ok := r.Context().Value(userContextKey).(*models.User)
-		if ok && !slices.Contains(roles, derefString(user.Role)) {
-			app.unauthorized(w)
-			return
-		}
+var (
+	editorAdmin = []string{"editor", "admin"}
+	adminOnly   = []string{"admin"}
+)
 
-		next.ServeHTTP(w, r)
+func (app *application) requireRoles(roles []string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user, ok := r.Context().Value(userContextKey).(*models.User)
+			if !ok || !slices.Contains(roles, derefString(user.Role)) {
+				app.unauthorized(w)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 
@@ -114,6 +136,5 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 		w.Header().Add("Cache-Control", "no-store")
 
 		next.ServeHTTP(w, r)
-
 	})
 }

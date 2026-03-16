@@ -113,7 +113,6 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	if app.sessionManager.Exists(r.Context(), "postLoginRedirectURL") {
 		url := app.sessionManager.Pop(r.Context(), "postLoginRedirectURL").(string)
 		http.Redirect(w, r, url, http.StatusSeeOther)
-
 	} else {
 		http.Redirect(w, r, "/browse", http.StatusSeeOther)
 	}

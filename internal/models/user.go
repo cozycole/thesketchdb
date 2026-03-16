@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"strings"
 	"time"
@@ -66,6 +67,7 @@ type UserModelInterface interface {
 	Authenticate(username, password string) (int, error)
 	DeleteRating(userId, sketchId int) error
 	GetById(id int) (*User, error)
+	GetByToken(plaintext string) (*User, error)
 	GetByUsername(username string) (*User, error)
 	GetUserSketchInfo(userId, sketchId int) (*UserSketchInfo, error)
 	Insert(user *User) error
@@ -222,6 +224,45 @@ func (m *UserModel) GetById(id int) (*User, error) {
 
 	password := password{}
 	err := m.DB.QueryRow(ctx, query, id).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Username,
+		&user.Email,
+		&password.hash,
+		&user.Activated,
+		&user.Role,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+
+	user.Password = password
+
+	return &user, nil
+}
+
+func (m *UserModel) GetByToken(plaintext string) (*User, error) {
+	sum := sha256.Sum256([]byte(plaintext))
+	hash := sum[:]
+
+	query := `
+		SELECT u.id, u.created_at, u.username, u.email, u.password_hash, u.activated, u.role
+		FROM users as u
+		JOIN token as t ON u.id = t.user_id
+		WHERE t.token_hash = $1
+	`
+
+	var user User
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	password := password{}
+	err := m.DB.QueryRow(ctx, query, hash).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Username,

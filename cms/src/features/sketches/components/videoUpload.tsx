@@ -49,15 +49,19 @@ const STATUS_CONFIG = {
 };
 
 async function getUploadUrl(
+  sketchId: number,
   fileName: string,
   contentType: string,
   fileSize: number,
 ): Promise<UploadUrlResponse> {
-  const res = await api.post<UploadUrlResponse>("/admin/sketch/upload-url", {
-    fileName,
-    contentType,
-    fileSize,
-  });
+  const res = await api.post<UploadUrlResponse>(
+    `/admin/sketch/${sketchId}/upload-url`,
+    {
+      fileName,
+      contentType,
+      fileSize,
+    },
+  );
   return res;
 }
 
@@ -355,6 +359,7 @@ export function SketchVideoUpload({ sketchId }: SketchVideoUploadProps) {
         // 1. Get signed URL
         setProgress(10);
         const { uploadUrl, s3Key } = await getUploadUrl(
+          sketchId,
           file.name,
           file.type,
           file.size,

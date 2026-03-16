@@ -95,7 +95,12 @@ func convertStringsToInts(strs []string) ([]int, error) {
 }
 
 func (app *application) isAutheticated(r *http.Request) bool {
-	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+	if app.sessionManager.Exists(r.Context(), "authenticatedUserID") {
+		return true
+	}
+
+	_, ok := r.Context().Value(userContextKey).(*models.User)
+	return ok
 }
 
 func (app *application) render(r *http.Request, w http.ResponseWriter, status int, page string, baseTemplate string, data any) {

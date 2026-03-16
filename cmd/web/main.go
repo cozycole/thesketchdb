@@ -53,6 +53,7 @@ type application struct {
 	shows          models.ShowModelInterface
 	series         models.SeriesModelInterface
 	tags           models.TagModelInterface
+	tokens         models.TokenModelInterface
 	users          models.UserModelInterface
 	sketches       models.SketchModelInterface
 	services       Services
@@ -176,15 +177,16 @@ func main() {
 		categories:     &models.CategoryModel{DB: dbpool},
 		characters:     &models.CharacterModel{DB: dbpool},
 		creators:       &models.CreatorModel{DB: dbpool},
-		quotes:         &models.QuoteModel{DB: dbpool},
 		people:         &models.PersonModel{DB: dbpool},
 		profile:        &models.ProfileModel{DB: dbpool},
+		quotes:         &models.QuoteModel{DB: dbpool},
 		recurring:      &models.RecurringModel{DB: dbpool},
-		shows:          &models.ShowModel{DB: dbpool},
-		tags:           &models.TagModel{DB: dbpool},
-		users:          &models.UserModel{DB: dbpool},
-		sketches:       &models.SketchModel{DB: dbpool},
 		series:         &models.SeriesModel{DB: dbpool},
+		shows:          &models.ShowModel{DB: dbpool},
+		sketches:       &models.SketchModel{DB: dbpool},
+		tags:           &models.TagModel{DB: dbpool},
+		tokens:         &models.TokenModel{DB: dbpool},
+		users:          &models.UserModel{DB: dbpool},
 		services:       NewServices(newRepositories(dbpool), fileStorage),
 		sessionManager: sessionManager,
 		debugMode:      *debug,
