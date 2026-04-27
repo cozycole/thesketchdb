@@ -16,17 +16,21 @@ export const createSketch = async ({
   data: SketchFormData;
 }): Promise<Sketch> => {
   const fd = new FormData();
+
+  const duration = parseHMS(data.duration);
+  const episodeStart = parseHMS(data.episodeStartTime);
+
   fd.append("title", data.title);
   fd.append("url", data.url);
   fd.append("description", data.description);
-  fd.append("duration", String(parseHMS(data.duration)));
+  fd.append("duration", duration ? String(duration) : "");
   fd.append("uploadDate", toYYYYMMDD(data.uploadDate));
   fd.append("popularity", String(data.popularity));
 
   fd.append("creatorId", data.creator?.id ? String(data.creator.id) : "");
 
   fd.append("episodeId", data.episode?.id ? String(data.episode.id) : "");
-  fd.append("episodeStart", String(parseHMS(data.episodeStartTime)));
+  fd.append("episodeStart", episodeStart ? String(episodeStart) : "");
   fd.append("number", String(data.episodeSketchOrder));
 
   fd.append("seriesId", data.series?.id ? String(data.series.id) : "");

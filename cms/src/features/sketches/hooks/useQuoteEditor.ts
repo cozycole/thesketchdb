@@ -30,6 +30,7 @@ type EditorState = {
   selectedTranscriptIds: Set<number>;
   anchorTranscriptId: number;
   selectedQuoteKeys: Set<string>;
+  saveAttemptId: number;
 
   saving: boolean;
   error?: string;
@@ -46,6 +47,10 @@ type Action =
       type: "SET_ERRORS";
       errorsByKey: Record<string, QuoteFieldsErrors | undefined>;
     }
+  | {
+      type: "SET_ERRORS_AFTER_SAVE_ATTEMPT";
+      errorsByKey: Record<string, QuoteFieldsErrors | undefined>;
+    }
   | { type: "SELECT_TRANSCRIPT"; id: number; e: MouseEvent }
   | { type: "SELECT_QUOTE"; key: string; e: PointerEvent }
   | { type: "CLEAR_SELECTED" }
@@ -55,6 +60,13 @@ type Action =
   | { type: "SAVE_SUCCESS"; quotes: Quote[] }
   | { type: "SAVE_ERROR"; error: string };
 
+function idsEqual<T extends { id: string | number }>(a: T[], b: T[]): boolean {
+  if (a.length !== b.length) return false;
+
+  const ids = new Set(a.map((x) => x.id));
+  return b.every((x) => ids.has(x.id));
+}
+
 function isEqual(a?: QuoteUI, b?: QuoteUI) {
   if (!a || !b) return false;
   return (
@@ -62,8 +74,8 @@ function isEqual(a?: QuoteUI, b?: QuoteUI) {
     a.startTimeMs === b.startTimeMs &&
     (a.endTimeMs ?? null) === (b.endTimeMs ?? null) &&
     a.text === b.text &&
-    a.cast.join(",") === b.cast.join(",") &&
-    a.tags.join(",") === b.tags.join(",")
+    idsEqual(a.cast, b.cast) &&
+    idsEqual(a.tags, b.tags)
   );
 }
 
@@ -111,11 +123,19 @@ function reducer(state: EditorState, action: Action): EditorState {
     case "UPDATE_QUOTE": {
       const cur = state.quotesByKey[action.new.clientId];
       if (!cur || !cur.clientId) return state;
+
+      // update timestamp number if valid timestamp string
+      let startMs = 0;
+      try {
+        startMs = parseHMS(action.new.startTimeMs);
+      } catch {
+        startMs = cur.startMs;
+      }
       return {
         ...state,
         quotesByKey: {
           ...state.quotesByKey,
-          [action.new.clientId]: { ...cur, ...action.new },
+          [action.new.clientId]: { ...cur, ...action.new, startMs },
         },
       };
     }
@@ -196,6 +216,13 @@ function reducer(state: EditorState, action: Action): EditorState {
         error: undefined,
       };
     }
+
+    case "SET_ERRORS_AFTER_SAVE_ATTEMPT":
+      return {
+        ...state,
+        errorsByKey: action.errorsByKey,
+        saveAttemptId: state.saveAttemptId + 1,
+      };
 
     case "SELECT_QUOTE": {
       const next = new Set(state.selectedQuoteKeys);
@@ -303,7 +330,7 @@ function reducer(state: EditorState, action: Action): EditorState {
       // Merge cast (dedupe by id)
       const castMap = new Map<
         number,
-        { id: number; label: string; image: string }
+        { id: number; label: string; image?: string }
       >();
       for (const q of selected) {
         for (const c of q.cast ?? []) {
@@ -336,8 +363,6 @@ function reducer(state: EditorState, action: Action): EditorState {
         tags,
         clientId: mergedKey,
       };
-      console.log("MERGED QUOTE");
-      console.log(mergedQuote);
 
       // Build new quotesByKey
       const nextQuotesByKey = { ...state.quotesByKey };
@@ -381,6 +406,7 @@ export function useQuoteEditor(
     | "errorsByKey"
     | "quoteKeys"
     | "anchorTranscriptId"
+    | "saveAttemptId"
   >,
 ) {
   const { addNotification } = useNotifications();
@@ -391,6 +417,7 @@ export function useQuoteEditor(
     baselineByKey: {},
     deletedIds: new Set<number>(),
     anchorTranscriptId: undefined,
+    saveAttemptId: 0,
   });
 
   // sort the keys on start timestamp
@@ -407,7 +434,7 @@ export function useQuoteEditor(
     for (const [k, q] of Object.entries(state.quotesByKey)) {
       const base = state.baselineByKey[k];
       if (!base) {
-        dirty.push(k); // new
+        dirty.push(k); // new quote
       } else if (!isEqual(base, q)) {
         dirty.push(k);
       }
@@ -437,8 +464,8 @@ export function useQuoteEditor(
     if (!hasChanges || saving) return;
 
     const errorsByKey: Record<string, QuoteFieldsErrors | undefined> = {};
-    for (const k of dirtyKeys) {
-      const result = quoteFieldsSchema.safeParse(quotesByKey[k]);
+    for (const [k, v] of Object.entries(quotesByKey)) {
+      const result = quoteFieldsSchema.safeParse(v);
       if (!result.success) {
         errorsByKey[k] = zodErrorToFieldErrors<typeof quoteFieldsSchema>(
           result.error,
@@ -446,7 +473,24 @@ export function useQuoteEditor(
       }
     }
 
-    dispatch({ type: "SET_ERRORS", errorsByKey });
+    // map timestamp to array of quote keys
+    const keysByTimestamp: Record<number, Array<string>> = {};
+    for (const [k, v] of Object.entries(quotesByKey)) {
+      if (Number.isFinite(v.startMs)) {
+        (keysByTimestamp[v.startMs] ??= []).push(k);
+      }
+    }
+
+    for (const keys of Object.values(keysByTimestamp)) {
+      if (keys.length <= 1) continue;
+
+      for (const key of keys) {
+        (errorsByKey[key] ??= {}).global =
+          "Identical timestamp, please group and specify order.";
+      }
+    }
+
+    dispatch({ type: "SET_ERRORS_AFTER_SAVE_ATTEMPT", errorsByKey });
 
     const hasErrors = Object.values(errorsByKey).some(Boolean);
     if (hasErrors) return;

@@ -50,6 +50,7 @@ export function ImageUploadField<T extends FieldValues>({
   >("idle");
 
   const file: File | null = useWatch({ control, name }) ?? null;
+  const errorThumbnailUrl = "/static/img/missing-thumbnail.jpg";
 
   React.useEffect(() => {
     if (!file) {
@@ -171,14 +172,8 @@ export function ImageUploadField<T extends FieldValues>({
                     }}
                     className="block border p-2 rounded-md"
                     onError={(e) => {
-                      console.error("Image load error:", {
-                        src: e.currentTarget.src,
-                        error: e,
-                      });
-                      setImageError(
-                        "Failed to load image preview - file may be corrupted or have an unsupported format",
-                      );
-                      setLoadingState("error");
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/static/img/missing-thumbnail.jpg";
                     }}
                   />
                   <div className="mt-2 text-xs text-muted-foreground">

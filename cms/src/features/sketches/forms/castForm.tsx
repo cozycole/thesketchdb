@@ -36,7 +36,11 @@ import { useUpdateCast } from "../api/updateCast";
 import { useDeleteCast } from "../api/deleteCast";
 import { useCastFormStore } from "../stores/castFormStore";
 
-import { castFormSchema, castToFormDefaults } from "./castForm.schema";
+import {
+  CastFormData,
+  castFormSchema,
+  castToFormDefaults,
+} from "./castForm.schema";
 import { buildImageUrl } from "@/lib/utils";
 
 interface CastFormProps {
@@ -53,7 +57,13 @@ export function CastForm({ sketchId }: CastFormProps) {
     closeForm,
   } = useCastFormStore();
 
-  const { control, handleSubmit, reset, setError } = useForm({
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors },
+  } = useForm<CastFormData>({
     resolver: zodResolver(castFormSchema),
   });
 
@@ -138,7 +148,7 @@ export function CastForm({ sketchId }: CastFormProps) {
       } else {
         // SCENARIO 2 & 3: Adding new cast member
         // Either from screenshot (with pre-selected images) or manually (all empty)
-        // if it's form screenshot, the existingUrls will be filled into the image upload
+        // if it's from screenshot, the existingUrls will be filled into the image upload
         // component (see below)
         reset({
           characterName: "",
@@ -194,6 +204,11 @@ export function CastForm({ sketchId }: CastFormProps) {
             }
           })}
         >
+          {errors.global?.message && (
+            <div className="mb-4 rounded-md border border-destructive p-3 text-sm text-destructive">
+              {String(errors.global.message)}
+            </div>
+          )}
           <div className="flex gap-4">
             <div className="w-72 space-y-4">
               <Controller

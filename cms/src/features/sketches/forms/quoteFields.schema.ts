@@ -1,7 +1,8 @@
 import * as z from "zod";
 
 import { Quote } from "@/types/api";
-import { buildImageUrl, formatHMS, parseHMS } from "@/lib/utils";
+import { formatHMS, parseHMS } from "@/lib/utils";
+import { toCastOption } from "../api/castOptionAdapters";
 
 const hmsField = z.string().superRefine((val, ctx) => {
   try {
@@ -24,10 +25,10 @@ export const quoteFieldsSchema = z.object({
       z.object({
         id: z.number(),
         label: z.string(),
-        image: z.string(),
+        image: z.string().optional(),
       }),
     )
-    .optional(),
+    .nonempty("Must attribute cast member"),
   tags: z
     .array(
       z.object({
@@ -40,7 +41,7 @@ export const quoteFieldsSchema = z.object({
 
 export type QuoteFieldsData = z.infer<typeof quoteFieldsSchema>;
 export type QuoteFieldsErrors = Partial<
-  Record<keyof z.infer<typeof quoteFieldsSchema>, string>
+  Record<keyof z.infer<typeof quoteFieldsSchema> | "global", string>
 >;
 
 export function zodErrorToFieldErrors<T extends z.ZodTypeAny>(
@@ -67,24 +68,7 @@ export function mapQuoteToQuoteFields(q: Quote): QuoteFieldsData {
     cast: q.castMembers
       ? q.castMembers
           .sort((a, b) => a.position - b.position)
-          .map((c) => {
-            let label = c.characterName;
-            if (c.actor && c.actor.id) {
-              label += ` (${c.actor.first} ${c.actor.last})`;
-            }
-
-            let imgUrl = "";
-            if (c.profileImage) {
-              imgUrl = buildImageUrl("cast/profile", "small", c.profileImage);
-            } else if (!c.profileImage && c.actor) {
-              imgUrl = buildImageUrl("person", "small", c.actor.profileImage);
-            }
-            return {
-              id: c.id,
-              label: label,
-              image: imgUrl,
-            };
-          })
+          .map((c) => toCastOption(c))
       : [],
     tags: q.tags
       ? q.tags

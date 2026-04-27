@@ -1,12 +1,5 @@
-import { useState } from "react";
-import {
-  DndContext,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  useDroppable,
-} from "@dnd-kit/core";
+import { useState, Ref, RefObject } from "react";
+import { useDroppable } from "@dnd-kit/core";
 
 import { QuoteIcon, Plus, MergeIcon, XIcon } from "lucide-react";
 import { QuoteUI } from "../hooks/useQuoteEditor";
@@ -58,6 +51,9 @@ type QuotesPanelProps = {
   onSelectKey: (key: string, e: PointerEvent) => void;
   onClearSelected: () => void;
   onMerge: () => void;
+
+  quoteRefs: RefObject<Record<string, HTMLDivElement | null>>;
+  scrollContainerRef: Ref<HTMLDivElement> | null;
 };
 
 export function QuotesPanel({
@@ -73,6 +69,8 @@ export function QuotesPanel({
   onSelectKey,
   onClearSelected,
   onMerge,
+  quoteRefs,
+  scrollContainerRef,
 }: QuotesPanelProps) {
   const [quoteDialogOpen, setDialogOpen] = useState(false);
   const [newQuoteDraft, setNewQuoteDraft] =
@@ -90,7 +88,7 @@ export function QuotesPanel({
 
   return (
     <>
-      <div className="flex sticky justify-between mx-2 top-16">
+      <div className="shrink-0 flex sticky justify-between mx-2">
         <Button
           className="text-white font-bold"
           onClick={() => setDialogOpen(true)}
@@ -116,40 +114,48 @@ export function QuotesPanel({
       <div
         ref={setNodeRef}
         className={cn(
-          "flex flex-col gap-3 mt-2 rounded-lg transition-colors",
+          "flex flex-1 min-h-0 h-full flex-col gap-3 mt-2 rounded-lg overflow-hidden transition-colors",
           highlight && "ring-2 ring-orange-500 bg-orange-50/40",
         )}
       >
-        {quoteKeys.length === 0 ? (
-          <p className="col-span-full mt-10 text-center text-muted-foreground">
-            <QuoteIcon className="mx-auto mb-6" />
-            No quotes yet. Create one or drag a transcript line here
-          </p>
-        ) : (
-          quoteKeys.map(
-            (k) =>
-              quotesByKey[k] && (
-                <div
-                  key={k}
-                  className={
-                    selectedKeys.has(k)
-                      ? "rounded-lg ring-2 ring-orange-400"
-                      : ""
-                  }
-                  onPointerDown={(e) => onSelectKey(k, e)}
-                >
-                  <QuoteFields
-                    value={quotesByKey[k]}
-                    sketchId={sketchId}
-                    errors={errorsByKey[k]}
-                    onChange={onUpdateQuote}
-                    onDelete={onDeleteQuote}
-                    onBlurQuote={onBlur}
-                  />
-                </div>
-              ),
-          )
-        )}
+        <div
+          ref={scrollContainerRef}
+          className="grid grid-cols-1 gap-4 p-2 overflow-y-auto min-h-0 flex-1"
+        >
+          {quoteKeys.length === 0 ? (
+            <p className="col-span-full mt-10 text-center text-muted-foreground">
+              <QuoteIcon className="mx-auto mb-6" />
+              No quotes yet. Create one or drag a transcript line here
+            </p>
+          ) : (
+            quoteKeys.map(
+              (k) =>
+                quotesByKey[k] && (
+                  <div
+                    key={k}
+                    ref={(el) => {
+                      quoteRefs.current[k] = el;
+                    }}
+                    className={
+                      selectedKeys.has(k)
+                        ? "rounded-lg ring-2 ring-orange-400"
+                        : ""
+                    }
+                    onPointerDown={(e) => onSelectKey(k, e)}
+                  >
+                    <QuoteFields
+                      value={quotesByKey[k]}
+                      sketchId={sketchId}
+                      errors={errorsByKey[k]}
+                      onChange={onUpdateQuote}
+                      onDelete={onDeleteQuote}
+                      onBlurQuote={onBlur}
+                    />
+                  </div>
+                ),
+            )
+          )}
+        </div>
       </div>
       <Dialog open={quoteDialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>

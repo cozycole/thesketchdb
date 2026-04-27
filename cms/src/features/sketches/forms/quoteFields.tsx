@@ -1,7 +1,7 @@
 import { Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import { QuoteFieldsData } from "./quoteFields.schema";
+import { QuoteFieldsData, QuoteFieldsErrors } from "./quoteFields.schema";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { AutoResizeTextarea } from "@/components/ui/autoResizeTextarea";
@@ -15,7 +15,7 @@ type QuoteFieldsProps<T extends QuoteFieldsData = QuoteFieldsData> = {
   onChange: (next: T) => void;
   onDelete: (q: T) => void;
   onBlurQuote?: (q: T) => void;
-  errors?: Partial<Record<keyof QuoteFieldsData, string>>;
+  errors?: Partial<Record<keyof QuoteFieldsErrors, string>>;
   disabled?: boolean;
 };
 
@@ -34,6 +34,11 @@ export function QuoteFields<T extends QuoteFieldsData = QuoteFieldsData>({
   ) => onChange({ ...value, [key]: v });
   return (
     <div className="flex flex-col gap-4 p-4 rounded-lg border-gray-200 border-2">
+      {errors?.global && (
+        <div className="mb-4 rounded-md border border-destructive p-3 text-sm text-destructive">
+          {errors.global}
+        </div>
+      )}
       <div className="flex gap-4">
         <Field>
           <FieldLabel>Start Timestamp</FieldLabel>
@@ -98,7 +103,7 @@ export function QuoteFields<T extends QuoteFieldsData = QuoteFieldsData>({
       <AsyncSearchSelect
         value={value.tags ?? []}
         onChange={(t) => set("tags", t)}
-        error={errors?.cast}
+        error={errors?.tags}
         label="Quote Tags"
         multiple={true}
         popoverSide="top"

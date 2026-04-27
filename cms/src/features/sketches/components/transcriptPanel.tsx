@@ -53,27 +53,29 @@ export function TranscriptPanel({
   onSelect,
 }: TranscriptPanelProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 my-2 mx-2">
-      {transcript.length === 0 ? (
-        <p className="col-span-full mt-10 text-center text-muted-foreground">
-          <NewspaperIcon className="mx-auto mb-6" />
-          No transcript available. Upload a video to generate one.
-        </p>
-      ) : (
-        transcript.map((line) => (
-          <div
-            key={line.id}
-            onClick={(e) => onSelect(line.id, e)}
-            className={
-              selectedIds.has(line.id)
-                ? "rounded-lg ring-2 ring-orange-400"
-                : ""
-            }
-          >
-            <DraggableTranscriptLine line={line} />
-          </div>
-        ))
-      )}
+    <div className="flex h-full min-h-0 flex-col overflow-hidden select-none">
+      <div className="grid grid-cols-1 gap-4 p-2 overflow-y-auto min-h-0 flex-1">
+        {transcript.length === 0 ? (
+          <p className="col-span-full mt-10 text-center text-muted-foreground">
+            <NewspaperIcon className="mx-auto mb-6" />
+            No transcript available. Upload a video to generate one.
+          </p>
+        ) : (
+          transcript.map((line) => (
+            <div
+              key={line.id}
+              onClick={(e) => onSelect(line.id, e)}
+              className={
+                selectedIds.has(line.id)
+                  ? "rounded-lg ring-2 ring-orange-400"
+                  : ""
+              }
+            >
+              <DraggableTranscriptLine line={line} />
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }

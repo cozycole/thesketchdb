@@ -95,251 +95,253 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
   });
 
   return (
-    <form
-      id="sketchForm"
-      className="space-y-4"
-      onSubmit={form.handleSubmit((values) => {
-        if (mode === "update") {
-          updateMutate({
-            data: values,
-            sketchId: existingData.id,
-          });
-        } else {
-          createMutate({
-            data: values,
-          });
-        }
-      })}
-    >
-      <Controller
-        name="title"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor="sketchTitle">Title</FieldLabel>
-            <Input
-              {...field}
-              id="sketchTitle"
-              aria-invalid={fieldState.invalid}
-              autoComplete="off"
-            />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-      <Controller
-        name="url"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor="sketchUrl">URL</FieldLabel>
-            <Input
-              {...field}
-              id="sketchUrl"
-              aria-invalid={fieldState.invalid}
-              autoComplete="off"
-            />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-      <ImageUploadField
-        control={form.control}
-        name="thumbnail"
-        label="Thumbnail"
-        existingUrl={buildImageUrl(
-          "sketch",
-          "small",
-          existingData?.thumbnailName,
-        )}
-        maxPreviewWidthPx={420}
-      />
-      <Controller
-        name="description"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor="sketchDescription">Description</FieldLabel>
-            <Textarea
-              {...field}
-              id="sketchDescription"
-              autoComplete="off"
-              aria-invalid={fieldState.invalid}
-              className="min-h-[120px]"
-            />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-      <Controller
-        name="uploadDate"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor="uploadDate">Upload Date</FieldLabel>
-            <DatePicker
-              value={field.value ? new Date(String(field.value)) : undefined}
-              onChange={field.onChange}
-              name={field.name}
-              placeholder="Select upload date"
-            />
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-      <Controller
-        name="duration"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor="duration">Duration</FieldLabel>
-            <div className="flex">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <form
+        id="sketchForm"
+        className="min-h-0 flex-1 overflow-y-auto space-y-4"
+        onSubmit={form.handleSubmit((values) => {
+          if (mode === "update") {
+            updateMutate({
+              data: values,
+              sketchId: existingData.id,
+            });
+          } else {
+            createMutate({
+              data: values,
+            });
+          }
+        })}
+      >
+        <Controller
+          name="title"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="sketchTitle">Title</FieldLabel>
               <Input
                 {...field}
-                id="duration"
-                type="text"
-                className="w-16"
+                id="sketchTitle"
                 aria-invalid={fieldState.invalid}
                 autoComplete="off"
               />
-            </div>
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-      <Controller
-        name="popularity"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor="popularity">Popularity</FieldLabel>
-            <div className="flex">
-              <Input
-                {...field}
-                id="popularity"
-                type="text"
-                className="w-16"
-                aria-invalid={fieldState.invalid}
-                autoComplete="off"
-              />
-            </div>
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-      <AsyncSearchSelectRHF
-        control={form.control}
-        name="creator"
-        popoverSide="top"
-        label="Creator"
-        loadOptions={makeCreatorLoadOptions({ pageSize: 10 })}
-        searchPlaceholder="Search creators..."
-      />
-      <AsyncSearchSelectRHF
-        control={form.control}
-        name="episode"
-        popoverSide="top"
-        label="Show Episode"
-        loadOptions={makeEpisodeLoadOptions({ pageSize: 10 })}
-        searchPlaceholder="Search episodes..."
-      />
-      <Controller
-        name="episodeStartTime"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor="episodeSketchOrder">
-              Episode Start Time
-            </FieldLabel>
-            <div className="flex">
-              <Input
-                {...field}
-                id="episodeSketchOrder"
-                type="text"
-                className="w-20"
-                aria-invalid={fieldState.invalid}
-                autoComplete="off"
-              />
-            </div>
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-      <Controller
-        name="episodeSketchOrder"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor="episodeSketchOrder">
-              Episode Sketch Order
-            </FieldLabel>
-            <div className="flex">
-              <Input
-                {...field}
-                id="episodeSketchOrder"
-                type="number"
-                className="w-20"
-                aria-invalid={fieldState.invalid}
-                autoComplete="off"
-              />
-            </div>
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-      <AsyncSearchSelectRHF
-        control={form.control}
-        name="recurring"
-        popoverSide="top"
-        label="Recurring Sketch"
-        loadOptions={makeRecurringLoadOptions({ pageSize: 10 })}
-        searchPlaceholder="Search recurring sketches..."
-      />
-
-      <AsyncSearchSelectRHF
-        control={form.control}
-        name="series"
-        popoverSide="top"
-        label="Multipart Series"
-        loadOptions={makeSeriesLoadOptions({ pageSize: 10 })}
-        searchPlaceholder="Search multipart series..."
-      />
-      <Controller
-        name="seriesPart"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor="seriesPart">Series Part Number</FieldLabel>
-            <div className="flex">
-              <Input
-                {...field}
-                id="seriesPart"
-                type="number"
-                className="w-20"
-                aria-invalid={fieldState.invalid}
-                autoComplete="off"
-              />
-            </div>
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-      <div className="flex justify-end sticky bottom-6 ">
-        <Button
-          size="lg"
-          className="text-white text-lg rounded-full"
-          type="submit"
-          form="sketchForm"
-          disabled={createPending || updatePending}
-        >
-          {createPending || updatePending ? (
-            <Spinner />
-          ) : (
-            <Pen className="size-4" />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
-          {mode === "create" ? "Create Sketch" : "Update Sketch"}
-        </Button>
-      </div>
-    </form>
+        />
+        <Controller
+          name="url"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="sketchUrl">URL</FieldLabel>
+              <Input
+                {...field}
+                id="sketchUrl"
+                aria-invalid={fieldState.invalid}
+                autoComplete="off"
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+        <ImageUploadField
+          control={form.control}
+          name="thumbnail"
+          label="Thumbnail"
+          existingUrl={buildImageUrl(
+            "sketch",
+            "small",
+            existingData?.thumbnailName,
+          )}
+          maxPreviewWidthPx={420}
+        />
+        <Controller
+          name="description"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="sketchDescription">Description</FieldLabel>
+              <Textarea
+                {...field}
+                id="sketchDescription"
+                autoComplete="off"
+                aria-invalid={fieldState.invalid}
+                className="min-h-[120px]"
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+        <Controller
+          name="uploadDate"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="uploadDate">Upload Date</FieldLabel>
+              <DatePicker
+                value={field.value ? new Date(String(field.value)) : undefined}
+                onChange={field.onChange}
+                name={field.name}
+                placeholder="Select upload date"
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+        <Controller
+          name="duration"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="duration">Duration</FieldLabel>
+              <div className="flex">
+                <Input
+                  {...field}
+                  id="duration"
+                  type="text"
+                  className="w-16"
+                  aria-invalid={fieldState.invalid}
+                  autoComplete="off"
+                />
+              </div>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+        <Controller
+          name="popularity"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="popularity">Popularity</FieldLabel>
+              <div className="flex">
+                <Input
+                  {...field}
+                  id="popularity"
+                  type="text"
+                  className="w-16"
+                  aria-invalid={fieldState.invalid}
+                  autoComplete="off"
+                />
+              </div>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+        <AsyncSearchSelectRHF
+          control={form.control}
+          name="creator"
+          popoverSide="top"
+          label="Creator"
+          loadOptions={makeCreatorLoadOptions({ pageSize: 10 })}
+          searchPlaceholder="Search creators..."
+        />
+        <AsyncSearchSelectRHF
+          control={form.control}
+          name="episode"
+          popoverSide="top"
+          label="Show Episode"
+          loadOptions={makeEpisodeLoadOptions({ pageSize: 10 })}
+          searchPlaceholder="Search episodes..."
+        />
+        <Controller
+          name="episodeStartTime"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="episodeSketchOrder">
+                Episode Start Time
+              </FieldLabel>
+              <div className="flex">
+                <Input
+                  {...field}
+                  id="episodeSketchOrder"
+                  type="text"
+                  className="w-20"
+                  aria-invalid={fieldState.invalid}
+                  autoComplete="off"
+                />
+              </div>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+        <Controller
+          name="episodeSketchOrder"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="episodeSketchOrder">
+                Episode Sketch Order
+              </FieldLabel>
+              <div className="flex">
+                <Input
+                  {...field}
+                  id="episodeSketchOrder"
+                  type="number"
+                  className="w-20"
+                  aria-invalid={fieldState.invalid}
+                  autoComplete="off"
+                />
+              </div>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+        <AsyncSearchSelectRHF
+          control={form.control}
+          name="recurring"
+          popoverSide="top"
+          label="Recurring Sketch"
+          loadOptions={makeRecurringLoadOptions({ pageSize: 10 })}
+          searchPlaceholder="Search recurring sketches..."
+        />
+
+        <AsyncSearchSelectRHF
+          control={form.control}
+          name="series"
+          popoverSide="top"
+          label="Multipart Series"
+          loadOptions={makeSeriesLoadOptions({ pageSize: 10 })}
+          searchPlaceholder="Search multipart series..."
+        />
+        <Controller
+          name="seriesPart"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="seriesPart">Series Part Number</FieldLabel>
+              <div className="flex">
+                <Input
+                  {...field}
+                  id="seriesPart"
+                  type="number"
+                  className="w-20"
+                  aria-invalid={fieldState.invalid}
+                  autoComplete="off"
+                />
+              </div>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+        <div className="flex justify-end sticky bottom-6 ">
+          <Button
+            size="lg"
+            className="text-white text-lg rounded-full"
+            type="submit"
+            form="sketchForm"
+            disabled={createPending || updatePending}
+          >
+            {createPending || updatePending ? (
+              <Spinner />
+            ) : (
+              <Pen className="size-4" />
+            )}
+            {mode === "create" ? "Create Sketch" : "Update Sketch"}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }

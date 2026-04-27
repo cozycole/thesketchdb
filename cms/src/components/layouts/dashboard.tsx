@@ -71,16 +71,16 @@ function AddItemDropdown() {
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="">
+    <div>
       <SidebarProvider>
         <AppSidebar />
-        <main className="flex-1 items-start">
+        <div className="flex h-screen w-full flex-col overflow-hidden">
           <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background p-4">
             <SidebarTrigger />
             <AddItemDropdown />
           </header>
-          {children}
-        </main>
+          <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
+        </div>
       </SidebarProvider>
     </div>
   );

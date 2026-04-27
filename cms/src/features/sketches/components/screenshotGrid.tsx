@@ -40,8 +40,8 @@ export function ScreenshotGrid({ screenshots }: ScreenshotGridProps) {
   };
 
   return (
-    <div className="space-y-4 w-full lg:max-w-[500px]">
-      <div className="grid grid-cols-3 gap-4">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="grid min-h-0 flex-1 grid-cols-3 auto-rows-max gap-4 overflow-y-auto">
         {screenshots.length === 0 ? (
           <p className="col-span-full mt-10 text-center text-muted-foreground">
             No screenshots available. Run pipeline to generate screenshots
@@ -50,7 +50,7 @@ export function ScreenshotGrid({ screenshots }: ScreenshotGridProps) {
           screenshots.map((screenshot) => (
             <div
               key={screenshot.id}
-              className="relative aspect-square cursor-pointer overflow-hidden rounded-md bg-muted transition-all hover:opacity-80 hover:ring-2 hover:ring-primary"
+              className="relative aspect-square w-full cursor-pointer overflow-hidden rounded-md bg-muted transition-all hover:opacity-80 hover:ring-2 hover:ring-primary"
               onClick={() => handleScreenshotClick(screenshot)}
             >
               {failedImages.has(screenshot.id) ? (

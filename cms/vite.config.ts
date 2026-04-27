@@ -15,6 +15,7 @@ export default defineConfig(({ command }) => ({
   server: {
     proxy: {
       "/api/v1": "http://localhost:8080",
+      "/static/img": "http://localhost:8080",
     },
   },
 }));

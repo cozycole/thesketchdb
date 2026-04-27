@@ -64,7 +64,6 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
     selectTranscriptLine: (id: number, e: MouseEvent) => {
       dispatch({ type: "SELECT_TRANSCRIPT", id, e });
     },
-
     mergeQuotes: () => {
       dispatch({ type: "MERGE_QUOTES" });
     },
@@ -80,7 +79,7 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
       const el = editorRef.current;
       if (!el) return;
 
-      // If click is outside transcript panel → clear selection
+      // If click is outside transcript panel -> clear selection
       if (!el.contains(e.target as Node)) {
         dispatch({ type: "CLEAR_SELECTED" });
       }
@@ -91,6 +90,38 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
       document.removeEventListener("pointerdown", handlePointerDown);
     };
   }, [dispatch]);
+
+  // scroll to error on failed save
+  const quoteRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const saveId = useRef(0);
+
+  useEffect(() => {
+    if (saveId.current === state.saveAttemptId) return;
+
+    const firstErrorKey = Object.entries(state.errorsByKey).find(
+      ([, errors]) => errors && Object.keys(errors).length > 0,
+    )?.[0];
+
+    if (!firstErrorKey) return;
+
+    const el = quoteRefs.current[firstErrorKey];
+    const container = scrollContainerRef.current;
+
+    if (!el || !container) return;
+
+    const elRect = el.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    const isInView =
+      elRect.top >= containerRect.top && elRect.bottom <= containerRect.bottom;
+
+    if (!isInView) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    saveId.current = state.saveAttemptId;
+  }, [state.saveAttemptId, state.errorsByKey]);
 
   // transcript to quotes drag and drop set up
   const sensors = useSensors(
@@ -147,7 +178,10 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <div className="w-full flex" ref={editorRef}>
+      <div
+        className="flex h-full min-h-0 w-full overflow-hidden"
+        ref={editorRef}
+      >
         {quotesLoading ? (
           <div className="h-screen mx-auto">
             <Spinner className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -156,7 +190,7 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
           <div className="mx-auto">Error getting quote data</div>
         ) : (
           <>
-            <div className="w-1/2 flex flex-col select-none">
+            <div className="flex w-1/2 min-h-0 px-1 flex-1 flex-col overflow-hidden">
               <QuotesPanel
                 sketchId={sketchId}
                 quoteKeys={quoteKeysSorted}
@@ -170,11 +204,13 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
                 onSelectKey={actions.selectQuote}
                 onClearSelected={actions.clearSelected}
                 onMerge={actions.mergeQuotes}
+                quoteRefs={quoteRefs}
+                scrollContainerRef={scrollContainerRef}
               />
 
               {hasChanges && (
                 <Button
-                  className="sticky mt-3 bottom-6 self-center text-lg text-white rounded-lg "
+                  className="fixed bottom-4 self-center text-lg text-white rounded-lg "
                   onClick={() => save()}
                 >
                   {state.saving ? <Spinner /> : <SaveIcon />}
@@ -182,13 +218,15 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
                 </Button>
               )}
             </div>
-            <div className="w-1/2 select-none">
-              <h1 className="text-center mb-5">Transcript</h1>
-              <TranscriptPanel
-                transcript={data.transcript}
-                onSelect={actions.selectTranscriptLine}
-                selectedIds={state.selectedTranscriptIds}
-              />
+            <div className="flex w-1/2 min-h-0 flex-1 flex-col overflow-hidden">
+              <h1 className="shrink-0 text-center mb-5">Transcript</h1>
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <TranscriptPanel
+                  transcript={data.transcript}
+                  onSelect={actions.selectTranscriptLine}
+                  selectedIds={state.selectedTranscriptIds}
+                />
+              </div>
             </div>
             {/* Optional: render a grouped drag preview */}
             <DragOverlay dropAnimation={null}>

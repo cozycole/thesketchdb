@@ -24,7 +24,9 @@ func validateCastIds(castIds []int, castMembers []*models.CastMember) error {
 func getNextPosition(castMembers []*models.CastMember) int {
 	positions := []int{}
 	for _, cm := range castMembers {
-		positions = append(positions, *cm.Position)
+		if cm.Position != nil {
+			positions = append(positions, *cm.Position)
+		}
 	}
 
 	if len(positions) == 0 {

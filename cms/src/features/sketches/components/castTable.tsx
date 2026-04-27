@@ -154,51 +154,53 @@ export function DraggableCastTable({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={localCast.map((c) => c.id)}
-        strategy={verticalListSortingStrategy}
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
       >
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12"></TableHead>
-                <TableHead className="w-24"></TableHead>
-                <TableHead className="w-52">Actor</TableHead>
-                <TableHead className="w-52">Character</TableHead>
-                <TableHead className="w-20">Role</TableHead>
-                <TableHead className="w-16">Minor</TableHead>
-                <TableHead className="w-20">Edit</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {localCast.length === 0 ? (
+        <SortableContext
+          items={localCast.map((c) => c.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="min-h-0 flex-1 rounded-md border overflow-hidden">
+            <Table containerClassName="relative h-full min-h-0 w-full overflow-auto">
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center text-muted-foreground"
-                  >
-                    No cast members yet. Add one to get started.
-                  </TableCell>
+                  <TableHead className="w-12"></TableHead>
+                  <TableHead className="w-24"></TableHead>
+                  <TableHead className="w-52">Actor</TableHead>
+                  <TableHead className="w-52">Character</TableHead>
+                  <TableHead className="w-20">Role</TableHead>
+                  <TableHead className="w-16">Minor</TableHead>
+                  <TableHead className="w-20">Edit</TableHead>
                 </TableRow>
-              ) : (
-                localCast.map((castMember) => (
-                  <SortableCastRow
-                    key={castMember.id}
-                    castMember={castMember}
-                    onEdit={openForm}
-                  />
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </SortableContext>
-    </DndContext>
+              </TableHeader>
+              <TableBody>
+                {localCast.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-center text-muted-foreground"
+                    >
+                      No cast members yet. Add one to get started.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  localCast.map((castMember) => (
+                    <SortableCastRow
+                      key={castMember.id}
+                      castMember={castMember}
+                      onEdit={openForm}
+                    />
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
   );
 }
