@@ -10,6 +10,7 @@ import { makeCreatorLoadOptions } from "@/features/creators/api/creatorOptionAda
 import { makeEpisodeLoadOptions } from "@/features/shows/api/showOptionAdapters";
 import { makeRecurringLoadOptions } from "@/features/recurring/api/recurringOptionAdapters";
 import { makeSeriesLoadOptions } from "@/features/series/api/seriesOptionAdapters";
+import { makeTagLoadOptions } from "../api/tagOptionAdapters";
 
 import { Sketch } from "@/types/api";
 
@@ -18,6 +19,7 @@ import { DatePicker } from "@/components/ui/datePicker";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { AsyncSearchSelectRHF } from "@/components/ui/asyncSearchSelectRHF";
 import { ImageUploadField } from "@/components/ui/imageUpload";
@@ -98,7 +100,7 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <form
         id="sketchForm"
-        className="min-h-0 flex-1 overflow-y-auto space-y-4"
+        className="min-h-0 flex-1 px-1 overflow-y-auto space-y-4"
         onSubmit={form.handleSubmit((values) => {
           if (mode === "update") {
             updateMutate({
@@ -154,6 +156,23 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
             existingData?.thumbnailName,
           )}
           maxPreviewWidthPx={420}
+        />
+        <Controller
+          name="cropBorder"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid} orientation="horizontal">
+              <Checkbox
+                name="cropBorder"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                disabled={field.disabled}
+                aria-invalid={fieldState.invalid}
+              />
+              <FieldLabel htmlFor="minorRole">Crop Thumbnail Border</FieldLabel>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
         />
         <Controller
           name="description"
@@ -325,7 +344,19 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
             </Field>
           )}
         />
-        <div className="flex justify-end sticky bottom-6 ">
+        <AsyncSearchSelectRHF
+          control={form.control}
+          name="tags"
+          label="Tags"
+          multiple={true}
+          popoverSide="top"
+          loadOptions={makeTagLoadOptions({
+            pageSize: 8,
+            tagType: "sketch",
+          })}
+          searchPlaceholder="Search sketch tags..."
+        />
+        <div className="flex justify-end sticky bottom-4 ">
           <Button
             size="lg"
             className="text-white text-lg rounded-full"

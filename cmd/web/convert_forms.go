@@ -38,6 +38,11 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		}
 	}
 
+	tags := []*models.Tag{}
+	for _, id := range form.Tags {
+		tags = append(tags, &models.Tag{ID: &id})
+	}
+
 	return models.Sketch{
 		ID:           &form.ID,
 		Title:        &form.Title,
@@ -54,6 +59,7 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		Series:       series,
 		SeriesPart:   &form.SeriesPart,
 		Recurring:    recurring,
+		Tags:         tags,
 	}
 }
 
@@ -152,6 +158,11 @@ func convertFormtoCastMember(form *castForm) models.CastMember {
 	if form.CharacterID != 0 {
 		character.ID = &form.CharacterID
 	}
+
+	tags := []*models.Tag{}
+	for _, id := range form.Tags {
+		tags = append(tags, &models.Tag{ID: &id})
+	}
 	return models.CastMember{
 		ID:            &form.ID,
 		Actor:         &actor,
@@ -161,6 +172,7 @@ func convertFormtoCastMember(form *castForm) models.CastMember {
 		CharacterName: &form.CharacterName,
 		ThumbnailFile: form.CharacterThumbnail,
 		ProfileFile:   form.CharacterProfile,
+		Tags:          tags,
 	}
 }
 

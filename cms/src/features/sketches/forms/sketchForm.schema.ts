@@ -13,6 +13,7 @@ export const sketchFormSchema = z
     duration: z.string().optional(),
     popularity: z.string().optional(),
     // optional in schema; required only when mode==create (below)
+    cropBorder: z.boolean().optional(),
     thumbnail: z
       .instanceof(File)
       .refine((file) => !file || file.size <= 5_000_000, "Max file size is 5MB")
@@ -55,6 +56,14 @@ export const sketchFormSchema = z
       .optional()
       .nullable(),
     seriesPart: z.string().optional(),
+    tags: z
+      .array(
+        z.object({
+          id: z.number(),
+          label: z.string(),
+        }),
+      )
+      .optional(),
   })
   .superRefine((val, ctx) => {
     if (val.mode === "create" && !val.thumbnail) {
@@ -84,6 +93,7 @@ export function sketchToFormDefaults(
     duration: formatHMS(sketch?.duration),
     popularity: sketch?.popularity ? String(sketch?.popularity) : "",
     uploadDate: sketch?.uploadDate ? new Date(sketch.uploadDate) : undefined,
+    cropBorder: undefined,
     thumbnail: undefined,
     creator: c
       ? {
@@ -123,5 +133,6 @@ export function sketchToFormDefaults(
         }
       : undefined,
     seriesPart: sketch?.seriesPart ? String(sketch.seriesPart) : "",
+    tags: sketch?.tags?.map((t) => ({ id: t.id, label: t.name })) || [],
   };
 }

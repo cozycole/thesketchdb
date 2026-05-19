@@ -27,7 +27,7 @@ type Sketch struct {
 	Creator       *CreatorRef   `json:"creator"`
 	Cast          []*CastMember `json:"cast"`
 	CastThumbnail *string       `json:"castThumbnail"`
-	Tags          *[]*Tag       `json:"tags"`
+	Tags          []*Tag        `json:"tags"`
 	Episode       *Episode      `json:"episode"`
 	EpisodeStart  *int          `json:"episodeStart"`
 	Number        *int          `json:"episodeSketchOrder"`
@@ -61,7 +61,7 @@ type SketchVideo struct {
 }
 
 type SketchModelInterface interface {
-	BatchUpdateTags(sketchId int, tags *[]*Tag) error
+	BatchUpdateTags(sketchId int, tags []*Tag) error
 	Delete(id int) error
 	Exists(id int) (bool, error)
 	Get(filter *Filter) ([]*SketchRef, Metadata, error)
@@ -107,11 +107,7 @@ func (m *SketchModel) Exists(id int) (bool, error) {
 
 }
 
-func (m *SketchModel) BatchUpdateTags(sketchId int, tags *[]*Tag) error {
-	if tags == nil {
-		return fmt.Errorf("tags argument is nil")
-	}
-
+func (m *SketchModel) BatchUpdateTags(sketchId int, tags []*Tag) error {
 	tx, err := m.DB.Begin(context.Background())
 	if err != nil {
 		return err
@@ -140,11 +136,11 @@ func (m *SketchModel) BatchUpdateTags(sketchId int, tags *[]*Tag) error {
 		existingTags[id] = true
 	}
 
-	fmt.Printf("EXISTING TAGS: %+v\n", existingTags)
+	// fmt.Printf("EXISTING TAGS: %+v\n", existingTags)
 
 	// New tags
 	newTags := make(map[int]bool)
-	for _, tag := range *tags {
+	for _, tag := range tags {
 		newTags[*tag.ID] = true
 	}
 
@@ -154,7 +150,7 @@ func (m *SketchModel) BatchUpdateTags(sketchId int, tags *[]*Tag) error {
 			tagsToInsert = append(tagsToInsert, tag_id)
 		}
 	}
-	fmt.Printf("TAGS TO INSERT: %+v\n", tagsToInsert)
+	// fmt.Printf("TAGS TO INSERT: %+v\n", tagsToInsert)
 
 	// Find tags to delete
 	tagsToDelete := []int{}

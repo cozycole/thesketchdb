@@ -97,24 +97,6 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 
 			r.Get("/admin*", app.serveCMS)
 
-			r.Get("/sketch/add", app.sketchAddPage)
-			r.Post("/sketch/add", app.sketchAdd)
-			r.Get("/sketch/{id}/update", app.sketchUpdatePage)
-			r.Post("/sketch/{id}/update", app.sketchUpdate)
-			r.Post("/sketch/{id}/tag", app.sketchUpdateTags)
-
-			r.Get("/sketch/{id}/cast", app.addCastPage)
-			r.Post("/sketch/{id}/cast", app.addCast)
-
-			r.Get("/cast/{id}/update", app.updateCastPage)
-			r.Post("/cast/{castId}/update", app.updateCast)
-			r.Delete("/cast/{castId}", app.deleteCast)
-			r.Patch("/sketch/{id}/cast/order", app.orderCast)
-
-			r.Get("/cast", app.castDropdown)
-			r.Get("/cast/{id}/tags", app.castTagUpdateForm)
-			r.Post("/cast/{id}/tags", app.castTagUpdate)
-
 			r.Get("/show/add", app.addShowPage)
 			r.Post("/show/add", app.addShow)
 			r.Get("/show/{id}/update", app.updateShowPage)

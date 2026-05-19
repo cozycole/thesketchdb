@@ -2,7 +2,6 @@ package sketches
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"mime/multipart"
 
@@ -11,7 +10,7 @@ import (
 	"sketchdb.cozycole.net/internal/utils"
 )
 
-func (s *SketchService) CreateSketch(sketch *models.Sketch, thumbnail *multipart.FileHeader) (*models.Sketch, error) {
+func (s *SketchService) CreateSketch(sketch *models.Sketch, thumbnail *multipart.FileHeader, cropBorder bool) (*models.Sketch, error) {
 	if sketch.Episode != nil && sketch.Episode.ID != nil {
 		ep, err := s.Repos.Shows.GetEpisode(*sketch.Episode.ID)
 		if err != nil {
@@ -69,6 +68,13 @@ func (s *SketchService) CreateSketch(sketch *models.Sketch, thumbnail *multipart
 		}
 	}
 
+	if len(sketch.Tags) > 0 {
+		err = s.Repos.Sketches.BatchUpdateTags(id, sketch.Tags)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	err = media.RunImagePipeline(
 		thumbnailFile,
 		media.Large,
@@ -76,6 +82,7 @@ func (s *SketchService) CreateSketch(sketch *models.Sketch, thumbnail *multipart
 		thumbName,
 		"/sketch",
 		s.ImgStore,
+		cropBorder,
 	)
 	if err != nil {
 		s.Repos.Sketches.Delete(id)
@@ -91,7 +98,7 @@ func (s *SketchService) CreateSketch(sketch *models.Sketch, thumbnail *multipart
 	return createdSketch, nil
 }
 
-func (s *SketchService) UpdateSketch(sketch *models.Sketch, thumbnail []byte) (*models.Sketch, error) {
+func (s *SketchService) UpdateSketch(sketch *models.Sketch, thumbnail []byte, cropBorder bool) (*models.Sketch, error) {
 	oldSketch, err := s.Repos.Sketches.GetById(safeDeref(sketch.ID))
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
@@ -121,7 +128,6 @@ func (s *SketchService) UpdateSketch(sketch *models.Sketch, thumbnail []byte) (*
 
 	slug := createSketchSlug(sketch)
 	sketch.Slug = &slug
-	fmt.Printf("SKETCH SLUG: %s", slug)
 
 	youtubeID, _ := extractYouTubeVideoID(*sketch.URL)
 	if youtubeID != "" {
@@ -146,6 +152,7 @@ func (s *SketchService) UpdateSketch(sketch *models.Sketch, thumbnail []byte) (*
 			thumbnailName,
 			"/sketch",
 			s.ImgStore,
+			cropBorder,
 		)
 		if err != nil {
 			return sketch, err
@@ -165,6 +172,11 @@ func (s *SketchService) UpdateSketch(sketch *models.Sketch, thumbnail []byte) (*
 		}
 	}
 
+	err = s.Repos.Sketches.BatchUpdateTags(*sketch.ID, sketch.Tags)
+	if err != nil {
+		return nil, err
+	}
+
 	if thumbnail != nil && oldSketch.ThumbnailName != nil {
 		err = media.DeleteImageVariants(s.ImgStore, "sketch", *oldSketch.ThumbnailName)
 		if err != nil {
@@ -172,5 +184,5 @@ func (s *SketchService) UpdateSketch(sketch *models.Sketch, thumbnail []byte) (*
 		}
 	}
 
-	return s.Repos.Sketches.GetById(*sketch.ID)
+	return s.GetSketch(*sketch.ID)
 }

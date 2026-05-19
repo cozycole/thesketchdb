@@ -25,6 +25,7 @@ export type Sketch = {
   recurring: RecurringRef;
   series: SeriesRef;
   seriesPart: number;
+  tags: Tag[];
 
   popularity: number;
   rating: number;
@@ -57,6 +58,7 @@ export type CastMember = {
   minorRole: boolean;
   thumbnailName: string;
   profileImage: string;
+  tags: Tag[];
 };
 
 export type CastScreenshot = {

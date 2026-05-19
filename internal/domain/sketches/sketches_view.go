@@ -72,5 +72,8 @@ func (s *SketchService) GetSketch(id int) (*models.Sketch, error) {
 
 	}
 
+	tags, err := s.Repos.Tags.GetBySketch(*sketch.ID)
+	sketch.Tags = tags
+
 	return sketch, nil
 }

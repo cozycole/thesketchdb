@@ -94,7 +94,7 @@ func (app *application) createCastAPI(w http.ResponseWriter, r *http.Request) {
 	thumbnail, _ := fileHeaderToBytes(form.CharacterThumbnail)
 	profile, _ := fileHeaderToBytes(form.CharacterProfile)
 
-	newCast, err := app.services.Casts.CreateCastMember(&castMember, thumbnail, profile)
+	newCast, err := app.services.Casts.CreateCastMember(&castMember, thumbnail, profile, form.CropThumbnailBorder)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -132,8 +132,9 @@ func (app *application) updateCastAPI(w http.ResponseWriter, r *http.Request) {
 
 	thumbnail, _ := fileHeaderToBytes(form.CharacterThumbnail)
 	profile, _ := fileHeaderToBytes(form.CharacterProfile)
+	app.infoLog.Printf("%+v", castMember)
 
-	updatedCast, err := app.services.Casts.UpdateCastMember(&castMember, thumbnail, profile)
+	updatedCast, err := app.services.Casts.UpdateCastMember(&castMember, thumbnail, profile, form.CropThumbnailBorder)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

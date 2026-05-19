@@ -22,7 +22,7 @@ func (s *CastService) ReorderCast(sketchId int, castIds []int) error {
 	return s.Repos.Cast.UpdatePositions(castIds)
 }
 
-func (s *CastService) CreateCastMember(cm *models.CastMember, thumbnail []byte, profile []byte) (*models.CastMember, error) {
+func (s *CastService) CreateCastMember(cm *models.CastMember, thumbnail []byte, profile []byte, cropBorder bool) (*models.CastMember, error) {
 	if cm.SketchID == nil {
 		return nil, fmt.Errorf("sketch id not defined in cast member input")
 	}
@@ -65,6 +65,7 @@ func (s *CastService) CreateCastMember(cm *models.CastMember, thumbnail []byte, 
 			*cm.ThumbnailName,
 			"/cast/thumbnail",
 			s.ImgStore,
+			cropBorder,
 		)
 
 		if err != nil {
@@ -81,6 +82,7 @@ func (s *CastService) CreateCastMember(cm *models.CastMember, thumbnail []byte, 
 			*cm.ProfileImg,
 			"/cast/profile",
 			s.ImgStore,
+			false, // no need to crop profile
 		)
 
 		if err != nil {
@@ -88,6 +90,8 @@ func (s *CastService) CreateCastMember(cm *models.CastMember, thumbnail []byte, 
 			return nil, err
 		}
 	}
+
+	s.Repos.Cast.BatchUpdateCastTags(*cm.ID, cm.Tags)
 
 	newMember, err := s.Repos.Cast.GetById(*cm.ID)
 	if err != nil {
@@ -97,7 +101,7 @@ func (s *CastService) CreateCastMember(cm *models.CastMember, thumbnail []byte, 
 	return newMember, nil
 }
 
-func (s *CastService) UpdateCastMember(cm *models.CastMember, thumbnail []byte, profile []byte) (*models.CastMember, error) {
+func (s *CastService) UpdateCastMember(cm *models.CastMember, thumbnail []byte, profile []byte, cropBorder bool) (*models.CastMember, error) {
 	if cm.ID == nil {
 		return nil, fmt.Errorf("no id specified for cast member update")
 	}
@@ -123,6 +127,7 @@ func (s *CastService) UpdateCastMember(cm *models.CastMember, thumbnail []byte, 
 			newThumbnailName,
 			"/cast/thumbnail",
 			s.ImgStore,
+			cropBorder,
 		)
 
 		currentThumbnailName = newThumbnailName
@@ -140,6 +145,7 @@ func (s *CastService) UpdateCastMember(cm *models.CastMember, thumbnail []byte, 
 			newProfileName,
 			"/cast/profile",
 			s.ImgStore,
+			false,
 		)
 
 		currentProfileName = newProfileName
@@ -147,6 +153,8 @@ func (s *CastService) UpdateCastMember(cm *models.CastMember, thumbnail []byte, 
 
 	cm.ThumbnailName = &currentThumbnailName
 	cm.ProfileImg = &currentProfileName
+
+	err = s.Repos.Cast.BatchUpdateCastTags(*cm.ID, cm.Tags)
 
 	err = s.Repos.Cast.Update(cm)
 	if err != nil {

@@ -41,7 +41,7 @@ export function ScreenshotGrid({ screenshots }: ScreenshotGridProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="grid min-h-0 flex-1 grid-cols-3 auto-rows-max gap-4 overflow-y-auto">
+      <div className="grid min-h-0 p-1 flex-1 grid-cols-3 auto-rows-max gap-4 overflow-y-auto">
         {screenshots.length === 0 ? (
           <p className="col-span-full mt-10 text-center text-muted-foreground">
             No screenshots available. Run pipeline to generate screenshots

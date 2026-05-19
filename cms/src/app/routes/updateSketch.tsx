@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 
 import { QueryClient } from "@tanstack/react-query";
-import { ContentLayout } from "@/components/layouts/content";
+import { FixedContentLayout } from "@/components/layouts/fixedContent";
 import { useParams } from "react-router";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,7 +32,7 @@ const UpdateSketchRoute = () => {
   const sketch = sketchData.sketch;
 
   return (
-    <ContentLayout title={`Sketch ID ${sketch.id}`}>
+    <FixedContentLayout title={`Sketch ID ${sketch.id}`}>
       <Tabs defaultValue="metadata" className="flex h-full min-h-0 flex-col">
         <TabsList
           variant="line"
@@ -69,7 +69,7 @@ const UpdateSketchRoute = () => {
           <SketchVideoUpload sketchId={sketch.id} />
         </TabsContent>
       </Tabs>
-    </ContentLayout>
+    </FixedContentLayout>
   );
 };
 

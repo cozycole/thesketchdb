@@ -7,6 +7,7 @@ import { useNotifications } from "@/components/ui/notifications";
 
 import { makePersonLoadOptions } from "@/features/people/api/personOptionAdapters";
 import { makeCharacterLoadOptions } from "@/features/characters/api/characterOptionAdapters";
+import { makeTagLoadOptions } from "../api/tagOptionAdapters";
 
 import {
   Dialog,
@@ -144,6 +145,7 @@ export function CastForm({ sketchId }: CastFormProps) {
           minorRole: defaultValues.minorRole || false,
           characterThumbnail: undefined,
           characterProfile: undefined,
+          tags: defaultValues.tags || [],
         });
       } else {
         // SCENARIO 2 & 3: Adding new cast member
@@ -158,6 +160,7 @@ export function CastForm({ sketchId }: CastFormProps) {
           minorRole: false,
           characterThumbnail: undefined,
           characterProfile: undefined,
+          tags: [],
         });
       }
     }
@@ -296,8 +299,20 @@ export function CastForm({ sketchId }: CastFormProps) {
                   </Field>
                 )}
               />
+              <AsyncSearchSelectRHF
+                control={control}
+                name="tags"
+                label="Tags"
+                multiple={true}
+                popoverSide="top"
+                loadOptions={makeTagLoadOptions({
+                  pageSize: 8,
+                  tagType: "cast",
+                })}
+                searchPlaceholder="Search cast tags..."
+              />
             </div>
-            <div>
+            <div className="space-y-3">
               <div className="min-h-72">
                 <ImageUploadField
                   control={control}
@@ -307,13 +322,41 @@ export function CastForm({ sketchId }: CastFormProps) {
                   maxPreviewWidthPx={350}
                 />
               </div>
-              <ImageUploadField
-                control={control}
-                name="characterProfile"
-                label="Profile Image"
-                existingUrl={existingProfileUrl}
-                maxPreviewWidthPx={250}
-              />
+              <div>
+                <Controller
+                  name="cropBorder"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field
+                      data-invalid={fieldState.invalid}
+                      orientation="horizontal"
+                    >
+                      <Checkbox
+                        name="cropBorder"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={field.disabled}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      <FieldLabel htmlFor="minorRole">
+                        Crop Thumbnail Border
+                      </FieldLabel>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
+              <div>
+                <ImageUploadField
+                  control={control}
+                  name="characterProfile"
+                  label="Profile Image"
+                  existingUrl={existingProfileUrl}
+                  maxPreviewWidthPx={250}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2">

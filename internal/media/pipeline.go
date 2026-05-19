@@ -39,8 +39,9 @@ func RunImagePipeline(
 	imgType ImageType,
 	imgName, prefix string,
 	imgStore fileStore.FileStorageInterface,
+	cropBorders bool,
 ) error {
-	variants, err := CreateImageVariants(src, maxSize, imgType)
+	variants, err := CreateImageVariants(src, maxSize, imgType, cropBorders)
 	if err != nil {
 		return err
 	}
@@ -53,13 +54,15 @@ func RunImagePipeline(
 	return nil
 }
 
-func CreateImageVariants(src []byte, maxSize Size, imgType ImageType) ([]Variant, error) {
+func CreateImageVariants(src []byte, maxSize Size, imgType ImageType, cropBorders bool) ([]Variant, error) {
 	img, _, err := image.Decode(bytes.NewReader(src))
 	if err != nil {
 		return nil, err
 	}
 
-	img = RemoveBorders(img, 15, 2)
+	if cropBorders {
+		img = RemoveBorders(img, 2, 2)
+	}
 
 	specs, err := createImageVariantSpec(img, maxSize, imgType)
 	if err != nil {

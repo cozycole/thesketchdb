@@ -35,6 +35,7 @@ export const createCast = async ({
     fd.append("characterProfile", data.characterProfile);
 
   // if we're using an auto screenshot
+  fd.append("cropBorder", data.cropBorder ? "true" : "");
   if (!data.characterThumbnail && existingThumbnail) {
     const response = await fetch(existingThumbnail);
     if (response.ok) {
@@ -49,6 +50,10 @@ export const createCast = async ({
       fd.append("characterProfile", blob);
     }
   }
+
+  data.tags?.forEach((t) => {
+    fd.append("tags", String(t.id));
+  });
 
   const res = await api.post<CreateCastResponse>(
     `/admin/sketch/${sketchId}/cast`,

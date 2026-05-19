@@ -135,7 +135,7 @@ func (app *application) createSketchAPI(w http.ResponseWriter, r *http.Request) 
 	}
 
 	formSketch := convertFormToSketch(&form)
-	sketch, err := app.services.Sketches.CreateSketch(&formSketch, form.Thumbnail)
+	sketch, err := app.services.Sketches.CreateSketch(&formSketch, form.Thumbnail, form.CropThumbnailBorder)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -173,7 +173,7 @@ func (app *application) updateSketchAPI(w http.ResponseWriter, r *http.Request) 
 	sketch.ID = &sketchId
 	file, _ := fileHeaderToBytes(form.Thumbnail)
 
-	updatedSketch, err := app.services.Sketches.UpdateSketch(&sketch, file)
+	updatedSketch, err := app.services.Sketches.UpdateSketch(&sketch, file, form.CropThumbnailBorder)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

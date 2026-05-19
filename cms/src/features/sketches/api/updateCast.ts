@@ -25,10 +25,15 @@ export const updateCast = async ({
   fd.append("personId", data.actor?.id ? String(data.actor.id) : "");
   fd.append("characterId", data.character?.id ? String(data.character.id) : "");
 
+  fd.append("cropBorder", data.cropBorder ? "true" : "");
   if (data.characterThumbnail)
     fd.append("characterThumbnail", data.characterThumbnail);
   if (data.characterProfile)
     fd.append("characterProfile", data.characterProfile);
+
+  data.tags?.forEach((t) => {
+    fd.append("tags", String(t.id));
+  });
 
   const res = await api.put<UpdateCastResponse>(
     `/admin/sketch/${sketchId}/cast/${data.id}`,

@@ -41,6 +41,12 @@ export const updateSketch = async ({
 
   fd.append("recurringId", data.recurring?.id ? String(data.recurring.id) : "");
 
+  fd.append("cropBorder", data.cropBorder ? "true" : "");
+
+  data.tags?.forEach((t) => {
+    fd.append("tags", String(t.id));
+  });
+
   if (data.thumbnail) fd.append("thumbnail", data.thumbnail);
   const res = await api.put<SketchResponse>(`/admin/sketch/${sketchId}`, fd);
   return res.sketch;

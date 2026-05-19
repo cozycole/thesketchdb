@@ -162,6 +162,7 @@ type sketchForm struct {
 	Popularity          float32               `form:"popularity"`
 	Description         string                `form:"description"`
 	Thumbnail           *multipart.FileHeader `img:"thumbnail"`
+	CropThumbnailBorder bool                  `form:"cropBorder"`
 	CreatorID           int                   `form:"creatorId"`
 	CreatorInput        string                `form:"creatorInput"`
 	EpisodeID           int                   `form:"episodeId"`
@@ -172,6 +173,7 @@ type sketchForm struct {
 	SeriesPart          int                   `form:"seriesPart"`
 	RecurringID         int                   `form:"recurringId"`
 	RecurringInput      string                `form:"recurringInput"`
+	Tags                []int                 `form:"tags"`
 	Action              string                `form:"-"`
 	ImageUrl            string                `form:"-"`
 	validator.Validator `form:"-"`
@@ -216,10 +218,12 @@ type castForm struct {
 	CharacterInput      string                `form:"characterInput"`
 	ThumbnailName       string                `form:"-"`
 	CharacterThumbnail  *multipart.FileHeader `img:"characterThumbnail"`
+	CropThumbnailBorder bool                  `form:"cropBorder"`
 	ProfileImage        string                `form:"-"`
 	CharacterProfile    *multipart.FileHeader `img:"characterProfile"`
 	Action              string                `form:"-"`
 	ImageUrl            string                `form:"-"`
+	Tags                []int                 `form:"tags"`
 	validator.Validator `form:"-"`
 }
 

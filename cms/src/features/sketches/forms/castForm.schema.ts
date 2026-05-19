@@ -24,6 +24,7 @@ export const castFormSchema = z
       })
       .nullable()
       .optional(),
+    cropBorder: z.boolean().optional(),
     // optional in schema; required only when mode==create (below)
     characterThumbnail: z
       .instanceof(File)
@@ -39,6 +40,14 @@ export const castFormSchema = z
       .refine(
         (file) => ["image/jpeg"].includes(file.type),
         "Only .jpg are supported",
+      )
+      .optional(),
+    tags: z
+      .array(
+        z.object({
+          id: z.number(),
+          label: z.string(),
+        }),
       )
       .optional(),
   })
@@ -84,7 +93,9 @@ export function castToFormDefaults(cast?: CastMember): CastFormData {
           image: buildImageUrl("character", "small", c.profileImage),
         }
       : undefined,
+    cropBorder: undefined,
     characterThumbnail: undefined,
     characterProfile: undefined,
+    tags: cast?.tags.map((t) => ({ id: t.id, label: t.name })),
   };
 }
