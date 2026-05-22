@@ -16,6 +16,7 @@ type FileStorageInterface interface {
 	Exists(string) (bool, error)
 	PresignedUploadURL(string, time.Duration, int) (string, error)
 	SaveFile(string, *bytes.Buffer) error
+	DeleteFiles([]string) error
 }
 
 type S3Storage struct {
@@ -82,4 +83,53 @@ func (s *S3Storage) PresignedUploadURL(filename string, duration time.Duration, 
 	}
 
 	return url, nil
+}
+
+func (s *S3Storage) DeleteFiles(keys []string) error {
+	const maxDeleteObjects = 1000
+
+	for start := 0; start < len(keys); start += maxDeleteObjects {
+		end := start + maxDeleteObjects
+		if end > len(keys) {
+			end = len(keys)
+		}
+
+		if err := s.deleteFilesChunk(keys[start:end]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *S3Storage) deleteFilesChunk(keys []string) error {
+	objects := make([]*s3.ObjectIdentifier, 0, len(keys))
+
+	for _, key := range keys {
+		if key == "" {
+			continue
+		}
+
+		objects = append(objects, &s3.ObjectIdentifier{
+			Key: aws.String(key),
+		})
+	}
+
+	if len(objects) == 0 {
+		return nil
+	}
+
+	_, err := s.Client.DeleteObjects(&s3.DeleteObjectsInput{
+		Bucket: aws.String(s.BucketName),
+		Delete: &s3.Delete{
+			Objects: objects,
+			Quiet:   aws.Bool(true),
+		},
+	})
+
+	if err != nil {
+		return fmt.Errorf("delete s3 objects chunk: %w", err)
+	}
+
+	return nil
 }

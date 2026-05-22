@@ -173,6 +173,7 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 				r.Get("/admin/sketch/{id}", app.adminGetSketchAPI)
 				r.Post("/admin/sketch", app.createSketchAPI)
 				r.Put("/admin/sketch/{id}", app.updateSketchAPI)
+				r.Delete("/admin/sketch/{id}", app.deleteSketchAPI)
 
 				r.Get("/admin/sketch/{id}/cast", app.adminGetCastAPI)
 				r.Post("/admin/sketch/{id}/cast", app.createCastAPI)

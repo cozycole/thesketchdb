@@ -1,4 +1,4 @@
-import { Pen } from "lucide-react";
+import { Pen, Trash2Icon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
@@ -21,14 +21,72 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 import { AsyncSearchSelectRHF } from "@/components/ui/asyncSearchSelectRHF";
 import { ImageUploadField } from "@/components/ui/imageUpload";
 
-import { useUpdateSketch } from "../api/updateSketch";
 import { useCreateSketch } from "../api/createSketch";
+import { useUpdateSketch } from "../api/updateSketch";
+import { useDeleteSketch } from "../api/deleteSketch";
 
 import { sketchFormSchema, sketchToFormDefaults } from "./sketchForm.schema";
 import { buildImageUrl } from "@/lib/utils";
+
+type AlertDialogDestructiveProps = {
+  sketchId: number;
+  deleteMutate: (args: { sketchId: number }) => void;
+  disabled?: boolean;
+};
+
+function AlertDialogDestructive({
+  sketchId,
+  deleteMutate,
+  disabled,
+}: AlertDialogDestructiveProps) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button type="button" variant="destructive" disabled={disabled}>
+          <Trash2Icon />
+        </Button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+            <Trash2Icon />
+          </AlertDialogMedia>
+          <AlertDialogTitle>Delete sketch?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete this sketch and related data.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            onClick={() => deleteMutate({ sketchId })}
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
 
 interface SketchFormProps {
   mode: "create" | "update";
@@ -68,6 +126,7 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
       },
     },
   });
+
   const { mutate: updateMutate, isPending: updatePending } = useUpdateSketch({
     mutationConfig: {
       onSuccess: (sketch) => {
@@ -96,11 +155,23 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
     },
   });
 
+  const { mutate: deleteMutate, isPending: deletePending } = useDeleteSketch({
+    mutationConfig: {
+      onSuccess: () => {
+        addNotification({
+          type: "success",
+          title: "Sketch deleted",
+        });
+        navigate(`/admin/sketches`);
+      },
+    },
+  });
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <form
         id="sketchForm"
-        className="min-h-0 flex-1 px-1 overflow-y-auto space-y-4"
+        className="min-h-0 flex-1 px-2 overflow-y-auto space-y-4"
         onSubmit={form.handleSubmit((values) => {
           if (mode === "update") {
             updateMutate({
@@ -356,7 +427,7 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
           })}
           searchPlaceholder="Search sketch tags..."
         />
-        <div className="flex justify-end sticky bottom-4 ">
+        <div className="flex justify-end gap-4 sticky bottom-4 ">
           <Button
             size="lg"
             className="text-white text-lg rounded-full"
@@ -371,6 +442,13 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
             )}
             {mode === "create" ? "Create Sketch" : "Update Sketch"}
           </Button>
+          {mode === "update" && existingData && (
+            <AlertDialogDestructive
+              sketchId={defaultValues.id}
+              deleteMutate={deleteMutate}
+              disabled={deletePending}
+            />
+          )}
         </div>
       </form>
     </div>

@@ -6,6 +6,7 @@ import (
 )
 
 type SketchService struct {
-	Repos    models.Repositories
-	ImgStore fileStore.FileStorageInterface
+	Repos        models.Repositories
+	ImgStore     fileStore.FileStorageInterface
+	ArchiveStore fileStore.FileStorageInterface
 }

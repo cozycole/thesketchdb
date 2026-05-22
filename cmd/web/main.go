@@ -41,6 +41,7 @@ type application struct {
 	infoLog        *log.Logger
 	templateCache  map[string]*template.Template
 	fileStorage    fileStore.FileStorageInterface
+	archiveStorage fileStore.FileStorageInterface
 	baseImgUrl     string
 	cast           models.CastModelInterface
 	categories     models.CategoryInterface
@@ -97,7 +98,7 @@ func main() {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	var dbUrl, imgStoragePath, imgBaseUrl, origin string
-	var fileStorage fileStore.FileStorageInterface
+	var fileStorage, archiveStorage fileStore.FileStorageInterface
 	if *dev {
 		*debug = true
 		*serveStatic = true
@@ -121,24 +122,46 @@ func main() {
 			Client:     client,
 			BucketName: os.Getenv("DEV_S3_BUCKET"),
 		}
+		archiveClient := S3Client(
+			os.Getenv("DEV_S3_ARCHIVE_ENDPOINT"),
+			os.Getenv("DEV_S3_ARCHIVE_KEY"),
+			os.Getenv("DEV_S3_ARCHIVE_SECRET"),
+		)
+
+		archiveStorage = &fileStore.S3Storage{
+			Client:     archiveClient,
+			BucketName: os.Getenv("DEV_S3_ARCHIVE_BUCKET"),
+		}
+
 	} else {
 		infoLog.Println("Production env selected")
 		dbUrl = os.Getenv("DB_URL")
 		imgBaseUrl = os.Getenv("IMG_URL")
 		origin = os.Getenv("ORIGIN")
-		client := S3Client(
-			os.Getenv("S3_ENDPOINT"),
-			os.Getenv("S3_KEY"),
-			os.Getenv("S3_SECRET"),
-		)
 
 		err = loadAssets()
 		if err != nil {
 			log.Fatal("Error loading manifest found in production build")
 		}
+		client := S3Client(
+			os.Getenv("S3_ENDPOINT"),
+			os.Getenv("S3_KEY"),
+			os.Getenv("S3_SECRET"),
+		)
 		fileStorage = &fileStore.S3Storage{
 			Client:     client,
 			BucketName: os.Getenv("S3_BUCKET"),
+		}
+
+		archiveClient := S3Client(
+			os.Getenv("S3_ARCHIVE_ENDPOINT"),
+			os.Getenv("S3_ARCHIVE_KEY"),
+			os.Getenv("S3_ARCHIVE_SECRET"),
+		)
+
+		archiveStorage = &fileStore.S3Storage{
+			Client:     archiveClient,
+			BucketName: os.Getenv("S3_ARCHIVE_BUCKET"),
 		}
 	}
 
@@ -173,6 +196,7 @@ func main() {
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		fileStorage:    fileStorage,
+		archiveStorage: archiveStorage,
 		cast:           &models.CastModel{DB: dbpool},
 		categories:     &models.CategoryModel{DB: dbpool},
 		characters:     &models.CharacterModel{DB: dbpool},
@@ -187,7 +211,7 @@ func main() {
 		tags:           &models.TagModel{DB: dbpool},
 		tokens:         &models.TokenModel{DB: dbpool},
 		users:          &models.UserModel{DB: dbpool},
-		services:       NewServices(newRepositories(dbpool), fileStorage),
+		services:       NewServices(newRepositories(dbpool), fileStorage, archiveStorage),
 		sessionManager: sessionManager,
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,
@@ -292,11 +316,16 @@ type Services struct {
 	Tags       tags.TagsService
 }
 
-func NewServices(repos models.Repositories, fileStore fileStore.FileStorageInterface) Services {
+func NewServices(
+	repos models.Repositories,
+	fileStore fileStore.FileStorageInterface,
+	archiveStore fileStore.FileStorageInterface,
+) Services {
 	return Services{
 		Sketches: sketches.SketchService{
-			Repos:    repos,
-			ImgStore: fileStore,
+			Repos:        repos,
+			ImgStore:     fileStore,
+			ArchiveStore: archiveStore,
 		},
 		Creators: creators.CreatorService{
 			Repos:    repos,

@@ -2,6 +2,7 @@ package sketches
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
 
@@ -185,4 +186,73 @@ func (s *SketchService) UpdateSketch(sketch *models.Sketch, thumbnail []byte, cr
 	}
 
 	return s.GetSketch(*sketch.ID)
+}
+
+type DeleteSketchInfo struct {
+	Videos          []*models.SketchVideo
+	CastScreenshots []*models.CastScreenshot
+}
+
+func (s *SketchService) DeleteSketch(id int) (*DeleteSketchInfo, error) {
+	deleteInfo := DeleteSketchInfo{}
+
+	var err error
+	deleteInfo.Videos, err = s.Repos.Sketches.GetVideos(id)
+	if err != nil {
+		return nil, err
+	}
+
+	deleteInfo.CastScreenshots, err = s.Repos.Cast.GetCastScreenshots(id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.Repos.Sketches.Delete(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &deleteInfo, nil
+}
+
+// Delete any images or videos associated with a previously deleted sketch
+func (s *SketchService) CleanupSketchMedia(info *DeleteSketchInfo) error {
+	coldVidKeys := []string{}
+	hotVidKeys := []string{}
+	for _, v := range info.Videos {
+		if v.HotS3Key != nil {
+			hotKey := fmt.Sprintf("video/%s", *v.HotS3Key)
+			hotVidKeys = append(hotVidKeys, hotKey)
+		}
+		if v.ColdS3Key != nil {
+			coldKey := fmt.Sprintf("video/%s", *v.ColdS3Key)
+			coldVidKeys = append(coldVidKeys, coldKey)
+		}
+	}
+
+	screenshotKeys := []string{}
+	for _, s := range info.CastScreenshots {
+		if s.ProfileImage != nil {
+			shotKey := fmt.Sprintf("cast_auto_screenshots/profile/%s", *s.ProfileImage)
+			screenshotKeys = append(screenshotKeys, shotKey)
+		}
+		if s.ThumbnailName != nil {
+			shotKey := fmt.Sprintf("cast_auto_screenshots/thumbnail/%s", *s.ThumbnailName)
+			screenshotKeys = append(screenshotKeys, shotKey)
+		}
+	}
+
+	err := s.ArchiveStore.DeleteFiles(coldVidKeys)
+	if err != nil {
+		return err
+	}
+	err = s.ImgStore.DeleteFiles(hotVidKeys)
+	if err != nil {
+		return err
+	}
+	err = s.ImgStore.DeleteFiles(screenshotKeys)
+	if err != nil {
+		return err
+	}
+	return nil
 }

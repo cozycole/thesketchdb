@@ -184,3 +184,49 @@ func (app *application) updateSketchAPI(w http.ResponseWriter, r *http.Request) 
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) deleteSketchAPI(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("id param not defined"))
+		return
+	}
+
+	// verify sketch has no cast and quotes
+	castInfo, err := app.services.Casts.GetAdminCast(sketchId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if len(castInfo.Cast) > 0 {
+		app.errorResponse(w, r, http.StatusUnprocessableEntity, "Delete all cast members before deleting sketch.")
+		return
+	}
+
+	quoteInfo, err := app.services.Quotes.GetAdminQuotes(sketchId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if len(quoteInfo.Quotes) > 0 {
+		app.errorResponse(w, r, http.StatusUnprocessableEntity, "Delete all quotes before deleting sketch.")
+		return
+	}
+
+	// deleting between postgres and s3 isn't atomic so need two step process
+	deleteInfo, err := app.services.Sketches.DeleteSketch(sketchId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.services.Sketches.CleanupSketchMedia(deleteInfo)
+	if err != nil {
+		app.errorLog.Print(err)
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"message": "Sketch successfully deleted."}, nil)
+}
