@@ -6,7 +6,8 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta name="htmx-config" content='{"historyCacheSize": 0}' />
       <meta name="theme-color" content="#0f172a" />
-      <title>{{ template "title" . }} - theSketchDb</title>
+      <title>{{ template "title" . }} | theSketchDb</title>
+      {{ block "header-tags" . }}{{ end }}
       <link rel="stylesheet" href="/static/css/{{ index .Assets "css" }}" />
       <link
         rel="shortcut icon"

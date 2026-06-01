@@ -1,5 +1,9 @@
 {{ define "title" }}Catalog{{ end }}
 
+{{ define "header-tags" }}
+  <link rel="canonical" href="{{ .Origin }}/catalog/sketches" />
+{{ end }}
+
 {{ define "main" }}
   <main data-page="catalog" class="w-full flex flex-col grow mb-4">
     <div class="bg-slate-100 w-full">

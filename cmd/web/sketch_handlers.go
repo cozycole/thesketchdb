@@ -46,7 +46,13 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	quotes, err := app.quotes.GetBySketch(sketchId)
+	var userId *int
+	if user == nil {
+		userId = nil
+	} else {
+		userId = user.ID
+	}
+	quotes, err := app.quotes.GetBySketch(sketchId, userId)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return

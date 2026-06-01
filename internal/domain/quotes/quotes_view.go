@@ -19,7 +19,7 @@ func (s *QuoteService) GetAdminQuotes(sketchId int) (AdminQuoteData, error) {
 		return data, fmt.Errorf("get transcript error: %w", err)
 	}
 
-	quotes, err := s.Repos.Quotes.GetBySketch(sketchId)
+	quotes, err := s.Repos.Quotes.GetBySketch(sketchId, nil)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		return data, fmt.Errorf("get quotes error: %w", err)
 	}

@@ -167,6 +167,9 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 			r.Get("/sketches", app.viewSketchesAPI)
 			r.Get("/tags", app.listTagsAPI)
 
+			r.Post("/quotes/like", app.insertQuoteLike)
+			r.Delete("/quotes/like", app.deleteQuoteLike)
+
 			// editor / admin API routes
 			r.Group(func(r chi.Router) {
 				r.Use(app.requireRoles(editorAdmin))

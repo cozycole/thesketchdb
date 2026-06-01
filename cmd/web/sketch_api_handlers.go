@@ -230,3 +230,53 @@ func (app *application) deleteSketchAPI(w http.ResponseWriter, r *http.Request) 
 
 	app.writeJSON(w, http.StatusOK, envelope{"message": "Sketch successfully deleted."}, nil)
 }
+
+func (app *application) insertQuoteLike(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	quoteIdParam := r.Form.Get("quoteId")
+	quoteId, err := strconv.Atoi(quoteIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, errors.New("no/malformed quote id defined"))
+		return
+	}
+
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	if !ok || user.ID == nil {
+		app.errorResponse(w, r, http.StatusUnauthorized, "please sign in to like quotes")
+		return
+	}
+
+	err = app.quotes.InsertQuoteLike(quoteId, *user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"message": "quote like added"}, nil)
+}
+
+func (app *application) deleteQuoteLike(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	quoteIdParam := r.Form.Get("quoteId")
+	quoteId, err := strconv.Atoi(quoteIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, errors.New("no/malformed quote id defined"))
+		return
+	}
+
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	if !ok || user.ID == nil {
+		app.errorResponse(w, r, http.StatusUnauthorized, "please sign in to like quotes")
+		return
+	}
+
+	err = app.quotes.DeleteQuoteLike(quoteId, *user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"message": "quote like removed"}, nil)
+}

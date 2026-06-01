@@ -8,13 +8,16 @@ import (
 )
 
 type Quote struct {
-	ID             int
-	StartTimestamp string
-	Text           string
-	CastLabel      string
-	CastImgUrls    []string
-	ExtraCast      int
-	InsertDivider  bool
+	ID                    int
+	StartTimestamp        string
+	StartTimestampSeconds int
+	Text                  string
+	CastLabel             string
+	CastImgUrls           []string
+	ExtraCast             int
+	IsLiked               bool
+	LikeCount             int
+	InsertDivider         bool
 }
 
 const MAX_DISPLAY_IMAGES = 4
@@ -29,8 +32,11 @@ func SketchQuoteSection(quotes []*models.Quote, baseImgUrl string) []Quote {
 		timestamp := safeDeref(q.StartTimeMs)
 		viewQuote.ID = safeDeref(q.ID)
 		viewQuote.StartTimestamp = models.MillisecondsToMMSS(timestamp)
+		viewQuote.StartTimestampSeconds = timestamp
 		viewQuote.Text = safeDeref(q.Text)
 		viewQuote.CastLabel = QuoteHeader(q.CastMembers)
+		viewQuote.IsLiked = safeDeref(q.UserLiked)
+		viewQuote.LikeCount = safeDeref(q.LikeCount)
 
 		// logic to insert dividers between long pauses between quotes
 		if i != 0 && safeDeref(q.StartTimeMs)-previousTimestamp > QUOTE_TIMESTAMP_MS_DIVIDER {

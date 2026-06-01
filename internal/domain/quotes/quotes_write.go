@@ -40,7 +40,7 @@ func (s *QuoteService) UpdateQuotes(sketchId int, quotes []*models.Quote, delete
 		}
 	}
 
-	updatedQuotes, err := s.Repos.Quotes.GetBySketch(sketchId)
+	updatedQuotes, err := s.Repos.Quotes.GetBySketch(sketchId, nil)
 	if err != nil {
 		return nil, err
 	}

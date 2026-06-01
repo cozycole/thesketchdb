@@ -19,6 +19,8 @@ type Quote struct {
 	EndTimeMs   *int          `json:"endTimeMs"`
 	CastMembers []*CastMember `json:"castMembers"`
 	Tags        []*Tag        `json:"tags"`
+	UserLiked   *bool         `json:"userLiked"`
+	LikeCount   *int          `json:"likeCount"`
 }
 
 type TranscriptLine struct {
@@ -33,35 +35,57 @@ type QuoteModelInterface interface {
 	BatchUpdateQuotes(int, []*Quote, []int) error
 	BatchUpdateQuoteCastMembers(quoteId int, castMemberIds []int) error
 	BatchUpdateQuoteTags(quoteId int, tagIds []int) error
-	GetBySketch(int) ([]*Quote, error)
+	DeleteQuoteLike(int, int) error
+	GetBySketch(int, *int) ([]*Quote, error)
 	GetTranscriptBySketch(int) ([]*TranscriptLine, error)
+	InsertQuoteLike(int, int) error
 }
 
 type QuoteModel struct {
 	DB *pgxpool.Pool
 }
 
-func (m *QuoteModel) GetBySketch(sketchId int) ([]*Quote, error) {
+func (m *QuoteModel) GetBySketch(sketchId int, userId *int) ([]*Quote, error) {
 	stmt := `
-		SELECT q.id, q.text, q.type, q.funny, q.start_time_ms, q.end_time_ms,
-		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
-		p.id, p.slug, p.first, p.last, p.profile_img,
-		ch.id, ch.slug, ch.name, ch.img_name,
-		t.id, t.slug, t.name, t.type,
-		ca.id, ca.slug, ca.name
-		FROM quote as q
-		LEFT JOIN quote_tags_rel as qtr ON q.id = qtr.quote_id
-		LEFT JOIN tags as t ON qtr.tag_id = t.id
-		LEFT JOIN categories as ca ON t.category_id = ca.id
-		LEFT JOIN quote_cast_rel as qc ON q.id = qc.quote_id
-		LEFT JOIN cast_members as cm ON qc.cast_id = cm.id
-		LEFT JOIN person as p ON cm.person_id = p.id
-		LEFT JOIN character as ch ON cm.character_id = ch.id
-		WHERE q.sketch_id = $1
-		ORDER BY q.start_time_ms asc, q.id
+	WITH sketch_quotes AS (
+	  SELECT *
+	  FROM quote
+	  WHERE sketch_id = $1
+	),
+	quote_like_counts AS (
+	  SELECT ql.quote_id, COUNT(*)::int AS like_count
+	  FROM quote_likes ql
+	  JOIN sketch_quotes q ON q.id = ql.quote_id
+	  GROUP BY ql.quote_id
+	)
+	SELECT
+	  q.id, q.text, q.type, q.funny, q.start_time_ms, q.end_time_ms,
+	  COALESCE(qlc.like_count, 0) AS like_count,
+	  EXISTS (
+		SELECT 1
+		FROM quote_likes ql
+		WHERE ql.quote_id = q.id
+		  AND ql.user_id = $2
+	  ) AS user_liked,
+
+	  cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
+	  p.id, p.slug, p.first, p.last, p.profile_img,
+	  ch.id, ch.slug, ch.name, ch.img_name,
+	  t.id, t.slug, t.name, t.type,
+	  ca.id, ca.slug, ca.name
+	FROM sketch_quotes AS q
+	LEFT JOIN quote_like_counts qlc ON qlc.quote_id = q.id
+	LEFT JOIN quote_tags_rel AS qtr ON q.id = qtr.quote_id
+	LEFT JOIN tags AS t ON qtr.tag_id = t.id
+	LEFT JOIN categories AS ca ON t.category_id = ca.id
+	LEFT JOIN quote_cast_rel AS qc ON q.id = qc.quote_id
+	LEFT JOIN cast_members AS cm ON qc.cast_id = cm.id
+	LEFT JOIN person AS p ON cm.person_id = p.id
+	LEFT JOIN character AS ch ON cm.character_id = ch.id
+	ORDER BY q.start_time_ms ASC, q.id;
 	`
 
-	rows, err := m.DB.Query(context.Background(), stmt, sketchId)
+	rows, err := m.DB.Query(context.Background(), stmt, sketchId, userId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -86,6 +110,8 @@ func (m *QuoteModel) GetBySketch(sketchId int) ([]*Quote, error) {
 		hasRows = true
 		err := rows.Scan(
 			&q.ID, &q.Text, &q.Type, &q.Funny, &q.StartTimeMs, &q.EndTimeMs,
+			&q.LikeCount, &q.UserLiked,
+
 			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg,
 			&cm.ThumbnailName,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
@@ -93,6 +119,9 @@ func (m *QuoteModel) GetBySketch(sketchId int) ([]*Quote, error) {
 			&t.ID, &t.Slug, &t.Name, &t.Type,
 			&ca.ID, &ca.Slug, &ca.Name,
 		)
+		if err != nil {
+			return nil, err
+		}
 
 		if q.ID == nil {
 			continue
@@ -163,8 +192,8 @@ func (m *QuoteModel) GetBySketch(sketchId int) ([]*Quote, error) {
 				icmPosition = *q.CastMembers[i].Position
 			}
 			jcmPosition := 0
-			if q.CastMembers[i].Position != nil {
-				jcmPosition = *q.CastMembers[i].Position
+			if q.CastMembers[j].Position != nil {
+				jcmPosition = *q.CastMembers[j].Position
 			}
 
 			return icmPosition < jcmPosition
@@ -236,6 +265,26 @@ func (m *QuoteModel) GetTranscriptBySketch(sketchId int) ([]*TranscriptLine, err
 	}
 
 	return lines, nil
+}
+
+func (m *QuoteModel) DeleteQuoteLike(quoteId, userId int) error {
+	stmt := `
+		DELETE FROM quote_likes
+		WHERE quote_id = $1
+		AND user_id = $2
+	`
+	_, err := m.DB.Exec(context.Background(), stmt, quoteId, userId)
+	return err
+}
+
+func (m *QuoteModel) InsertQuoteLike(quoteId, userId int) error {
+	stmt := `
+		INSERT INTO quote_likes (quote_id, user_id)
+		VALUES ($1, $2)
+	`
+	_, err := m.DB.Exec(context.Background(), stmt, quoteId, userId)
+	return err
+
 }
 
 // UpdateQuotes handles the complete update

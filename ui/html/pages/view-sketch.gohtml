@@ -1,4 +1,4 @@
-{{ define "title" }}{{ .Page.Title }}{{ end }}
+{{ define "title" }}{{ .Page.Title }} - {{ .Page.CreatorName }}{{ end }}
 
 
 <!-- See SketchPageView for template data -->
@@ -11,12 +11,12 @@
       {{ with .Page }}
         <div class="lg:flex gap-3 items-stretch">
           <div
-            class="thumbnail toggleSketch basis-auto w-fit lg:basis-[640px] md:max-w-[640px]"
+            class="thumbnail toggleSketch basis-auto w-full lg:basis-[640px] md:max-w-[640px]"
           >
             <button class="relative block w-full">
-              <div class="aspect-video">
+              <div class="aspect-video w-full object-cover block">
                 <img
-                  class="rounded-lg w-auto lg:object-cover lg:h-full block"
+                  class="rounded-lg w-full lg:object-cover lg:h-full block"
                   src="{{ .Image }}"
                   data-fallback="/static/img/missing-thumbnail.jpg"
                 />
@@ -135,7 +135,7 @@
                     >
                   </button>
                 </favorite-button>
-                {{ with .YoutubeId }}
+                {{ if .YoutubeId }}
                   <button
                     class="toggleSketch px-4 py-2
                       rounded-full bg-slate-900 hover:text-orange-500 text-white font-bold
@@ -143,15 +143,16 @@
                   >
                     Watch Now
                   </button>
-                {{ end }}
-                {{ with .YoutubeUrl }}
-                  <button
-                    class="px-4 py-2
+
+                  <a href="{{ .YoutubeUrl }}" target="_blank">
+                    <button
+                      class="px-4 py-2
                       rounded-full bg-slate-900 hover:text-orange-500 text-white font-bold
                       transition-all duration-300"
-                  >
-                    <a href="{{ . }}" target="_blank"> Watch on Youtube </a>
-                  </button>
+                    >
+                      Watch on Youtube
+                    </button>
+                  </a>
                 {{ end }}
               </div>
             </div>
@@ -268,12 +269,31 @@
               id="quotes"
               class="content overflow-hidden transition-all duration-500 ease-in-out"
             >
-              <div class="my-3 space-y-2">
-                {{ range .Quotes }}
-                  {{ template "quote-display" . }}
-                {{ end }}
-
-              </div>
+              {{ if .Quotes }}
+                <quote-list>
+                  <div class="flex gap-2 my-3">
+                    <button
+                      data-sort="timestamp"
+                      class="quote-sort-btn border-2 border-orange-500 rounded-lg px-3 py-1.5 text-sm font-medium transition-all
+                  bg-orange-500 text-white shadow-sm"
+                    >
+                      Timestamp
+                    </button>
+                    <button
+                      data-sort="top"
+                      class="quote-sort-btn border-2 border-slate-500 rounded-lg px-3 py-1.5 text-sm font-medium
+                  text-slate-600 hover:text-slate-900 transition-all"
+                    >
+                      Top
+                    </button>
+                  </div>
+                  <div data-quotes class="my-3 space-y-2">
+                    {{ range .Quotes }}
+                      {{ template "quote-display" . }}
+                    {{ end }}
+                  </div>
+                </quote-list>
+              {{ end }}
             </div>
           </collapse-content>
         </div>

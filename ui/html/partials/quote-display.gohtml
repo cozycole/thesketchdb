@@ -2,7 +2,10 @@
   <div
     class="flex gap-3{{ if .InsertDivider }}
       border-t-2 border-t-slate-200 pt-3
-    {{ end }}"
+    {{ end }}
+    "
+    data-like-count="{{ .LikeCount }}"
+    data-timestamp="{{ .StartTimestampSeconds }}"
   >
     <!-- avatar stack -->
     <div class="w-12 flex-none pt-1">
@@ -91,11 +94,33 @@
         {{ end }}
       </div>
     </div>
-    <div class="flex-1">
-      <span class="block font-bold underline"> {{ .StartTimestamp }}</span>
-      <h5 class="font-semibold">
-        {{ .CastLabel }}
-      </h5>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <span class="block font-bold underline">{{ .StartTimestamp }}</span>
+          <h5 class="font-semibold">{{ .CastLabel }}</h5>
+        </div>
+
+        <quote-like-button
+          class="flex-none"
+          data-id="{{ .ID }}"
+          {{ if .IsLiked }}data-liked{{ end }}
+        >
+          <button
+            class="flex items-center gap-1 text-sm {{ if .IsLiked }}
+              text-orange-500
+            {{ else }}
+              text-slate-800
+            {{ end }} hover:text-orange-500 transition-colors"
+          >
+            <div class="w-5">
+              {{ template "heart-icon" (dict "Filled" .IsLiked) }}
+            </div>
+            <span class="count">{{ .LikeCount }}</span>
+          </button>
+        </quote-like-button>
+      </div>
+
       <p>{{ .Text }}</p>
     </div>
   </div>

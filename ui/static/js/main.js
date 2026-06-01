@@ -2,7 +2,6 @@ import htmx from "htmx.org";
 
 import { initHome } from "./pages/home.js";
 import { initViewSketch } from "./pages/viewSketch.js";
-import { initSketchFormPage } from "./pages/sketchFormPage.js";
 import { initAddTag } from "./pages/addTag.js";
 import { initAddCategory } from "./pages/addCategory.js";
 import { initSearch } from "./pages/search.js";
@@ -21,6 +20,8 @@ import { FormDropdown } from "./components/formDropdown.js";
 import { SelectDropdown } from "./components/selectDropdown.js";
 import { SketchRating } from "./components/sketchRating.js";
 import { TagSelector } from "./components/tagSelector.js";
+import { QuoteLikeButton } from "./components/quoteLikeButton.js";
+import { QuoteList } from "./components/quoteDisplay.js";
 
 import "./components/flashMessage.js";
 
@@ -204,9 +205,6 @@ import "./components/flashMessage.js";
       break;
     case "search":
       initSearch();
-      break;
-    case "sketch-form":
-      initSketchFormPage();
       break;
     case "show-form":
       initShowFormPage();

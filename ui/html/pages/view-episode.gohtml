@@ -6,16 +6,14 @@
         <section>
           <div class="lg:flex gap-3 items-stretch">
             <div
-              class="basis-auto w-fit lg:basis-[640px] md:max-w-[640px] flex-shrink"
+              class="basis-auto w-full lg:basis-[640px] md:max-w-[640px] flex-shrink"
             >
-              <div class="h-full w-full relative">
-                <div class="aspect-video">
-                  <img
-                    class="rounded-lg w-auto lg:object-cover lg:h-full block"
-                    src="{{ .Image }}"
-                    data-fallback="/static/img/missing-thumbnail.jpg"
-                  />
-                </div>
+              <div class="aspect-video w-full overflow-hidden rounded-lg">
+                <img
+                  src="{{ .Image }}"
+                  class="rounded-lg w-full lg:object-cover lg:h-full block"
+                  data-fallback="/static/img/missing-thumbnail.jpg"
+                />
               </div>
             </div>
             <div
@@ -59,23 +57,25 @@
                   {{ end }}
                 </div>
               </div>
-              <div class="mt-4">
-                <h3
-                  class="mb-3 py-1 font-medium text-slate-500 border-b border-slate-200"
-                >
-                  Watch On
-                </h3>
-                <div class="flex gap-3">
-                  {{ if .WatchUrl }}
-                    <a href="{{ .WatchUrl }}" target="_blank">
-                      <img
-                        class="w-14 rounded-full transition-all duration-300 hover:shadow-lg"
-                        src="{{ .WatchImage }}"
-                      />
-                    </a>
-                  {{ end }}
+              {{ if .WatchUrl }}
+                <div class="mt-4">
+                  <h3
+                    class="mb-3 py-1 font-medium text-slate-500 border-b border-slate-200"
+                  >
+                    Watch On
+                  </h3>
+                  <div class="flex gap-3">
+                    {{ if .WatchUrl }}
+                      <a href="{{ .WatchUrl }}" target="_blank">
+                        <img
+                          class="w-14 rounded-full transition-all duration-300 hover:shadow-lg"
+                          src="{{ .WatchImage }}"
+                        />
+                      </a>
+                    {{ end }}
+                  </div>
                 </div>
-              </div>
+              {{ end }}
             </div>
           </div>
         </section>
