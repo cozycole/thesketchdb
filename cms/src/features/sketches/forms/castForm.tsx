@@ -63,7 +63,7 @@ export function CastForm({ sketchId }: CastFormProps) {
     handleSubmit,
     reset,
     setError,
-    formState: { errors },
+    formState: { errors, defaultValues },
   } = useForm<CastFormData>({
     resolver: zodResolver(castFormSchema),
   });
@@ -132,6 +132,25 @@ export function CastForm({ sketchId }: CastFormProps) {
   // It populates the form with the appropriate data
   useEffect(() => {
     if (isOpen) {
+      const existingThumbnailUrl = editingCast
+        ? buildImageUrl("cast/thumbnail", "small", selectedThumbnail)
+        : selectedThumbnail
+          ? buildImageUrl(
+              "cast_auto_screenshots/thumbnail",
+              "",
+              selectedThumbnail,
+            )
+          : undefined;
+
+      const existingProfileUrl = editingCast
+        ? buildImageUrl("cast/profile", "medium", selectedProfileImage)
+        : selectedProfileImage
+          ? buildImageUrl(
+              "cast_auto_screenshots/profile",
+              "",
+              selectedProfileImage,
+            )
+          : undefined;
       if (editingCast) {
         // SCENARIO 1: Editing existing cast member
         // Reset form with data from editingCast object
@@ -144,7 +163,9 @@ export function CastForm({ sketchId }: CastFormProps) {
           castRole: defaultValues.castRole || "",
           minorRole: defaultValues.minorRole || false,
           characterThumbnail: undefined,
+          existingThumbnailUrl: existingThumbnailUrl,
           characterProfile: undefined,
+          existingProfileUrl: existingProfileUrl,
           tags: defaultValues.tags || [],
         });
       } else {
@@ -159,24 +180,15 @@ export function CastForm({ sketchId }: CastFormProps) {
           character: undefined,
           minorRole: false,
           characterThumbnail: undefined,
+          existingThumbnailUrl: existingThumbnailUrl,
           characterProfile: undefined,
+          existingProfileUrl: existingProfileUrl,
           tags: [],
         });
       }
     }
   }, [isOpen, editingCast, selectedThumbnail, selectedProfileImage, reset]);
 
-  const existingThumbnailUrl = editingCast
-    ? buildImageUrl("cast/thumbnail", "small", selectedThumbnail)
-    : selectedThumbnail
-      ? buildImageUrl("cast_auto_screenshots/thumbnail", "", selectedThumbnail)
-      : undefined;
-
-  const existingProfileUrl = editingCast
-    ? buildImageUrl("cast/profile", "medium", selectedProfileImage)
-    : selectedProfileImage
-      ? buildImageUrl("cast_auto_screenshots/profile", "", selectedProfileImage)
-      : undefined;
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeForm()}>
       <DialogContent
@@ -201,8 +213,6 @@ export function CastForm({ sketchId }: CastFormProps) {
               createMutate({
                 sketchId: sketchId,
                 data: values,
-                existingThumbnail: existingThumbnailUrl,
-                existingProfile: existingProfileUrl,
               });
             }
           })}
@@ -318,7 +328,7 @@ export function CastForm({ sketchId }: CastFormProps) {
                   control={control}
                   name="characterThumbnail"
                   label="Thumbnail"
-                  existingUrl={existingThumbnailUrl}
+                  existingUrl={defaultValues?.existingThumbnailUrl}
                   maxPreviewWidthPx={350}
                 />
               </div>
@@ -353,7 +363,7 @@ export function CastForm({ sketchId }: CastFormProps) {
                   control={control}
                   name="characterProfile"
                   label="Profile Image"
-                  existingUrl={existingProfileUrl}
+                  existingUrl={defaultValues?.existingProfileUrl}
                   maxPreviewWidthPx={250}
                 />
               </div>

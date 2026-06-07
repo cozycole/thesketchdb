@@ -539,7 +539,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		p.id, p.slug, p.first, p.last, p.profile_img,
 		ch.id, ch.name, ch.slug, ch.img_name, ch.character_type,
 		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
-		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name,
+		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name, e.youtube_id,
 		se.id, se.slug, se.season_number,
 		ser.id, ser.slug, ser.title, ser.thumbnail_name,
 		rec.id, rec.slug, rec.title, rec.thumbnail_name
@@ -590,7 +590,7 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 			&ch.ID, &ch.Name, &ch.Slug, &ch.Image, &ch.Type,
 			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg, &cm.ThumbnailName,
-			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
+			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail, &e.YoutubeID,
 			&s.ID, &s.Slug, &s.Number,
 			&se.ID, &se.Slug, &se.Title, &se.ThumbnailName,
 			&rec.ID, &rec.Slug, &rec.Title, &rec.ThumbnailName,

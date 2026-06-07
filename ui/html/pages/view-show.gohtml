@@ -12,34 +12,49 @@
         >
           <section
             id="profile"
-            class="md:w-64 w-full p-4 h-fit flex flex-col gap-2 shrink-0
-                bg-white rounded-lg text-center"
+            class="w-full md:w-64 shrink-0 overflow-hidden rounded-xl border border-slate-300
+         bg-white text-slate-800 shadow-sm"
           >
-            <div>
-              <div>
-                <img
-                  src="{{ .Image }}"
-                  class="w-52 aspect-square rounded-full mx-auto mb-2"
-                />
-              </div>
-              <h2 class="font-bold text-lg">{{ .ShowName }}</h2>
+            <div class="p-4 text-center">
+              <img
+                src="{{ .Image }}"
+                alt="{{ .ShowName }}"
+                class="mx-auto mb-3 aspect-square w-36 rounded-full object-cover ring-2 ring-slate-700"
+              />
+
+              <h2 class="text-lg font-bold leading-tight">{{ .ShowName }}</h2>
+
               {{- if $.IsEditor -}}
-                <h3 class="text-sm text-center">
-                  (<a href="{{ .UpdateUrl }}" class="hover:underline">Edit</a>)
-                </h3>
+                <a
+                  href="{{ .UpdateUrl }}"
+                  class="mt-1 inline-block text-sm text-slate-900 hover:text-slate-800 hover:underline"
+                >
+                  Edit
+                </a>
               {{- end -}}
             </div>
-            <div class="mx-auto">
-              <h3 class="font-bold">Seasons</h3>
-              <p>{{ .SeasonCount }}</p>
-            </div>
-            <div class="mx-auto">
-              <h3 class="font-bold">Episodes</h3>
-              <p>{{ .EpisodeCount }}</p>
-            </div>
-            <div class="mx-auto">
-              <h3 class="font-bold">Sketches</h3>
-              <p>{{ .SketchCount }}</p>
+
+            <div class="grid grid-cols-3 border-t border-slate-300 text-center">
+              <div class="p-3">
+                <p class="text-base font-bold">{{ .SeasonCount }}</p>
+                <p class="text-xs uppercase tracking-wide text-slate-900">
+                  Seasons
+                </p>
+              </div>
+
+              <div class="border-x border-slate-300 p-3">
+                <p class="text-base font-bold">{{ .EpisodeCount }}</p>
+                <p class="text-xs uppercase tracking-wide text-slate-900">
+                  Episodes
+                </p>
+              </div>
+
+              <div class="p-3">
+                <p class="text-base font-bold">{{ .SketchCount }}</p>
+                <p class="text-xs uppercase tracking-wide text-slate-900">
+                  Sketches
+                </p>
+              </div>
             </div>
           </section>
           <div class="w-full flex flex-col gap-3">

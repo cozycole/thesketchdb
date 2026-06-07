@@ -12,13 +12,9 @@ type CreateCastResponse = { castMember: CastMember };
 export const createCast = async ({
   sketchId,
   data,
-  existingThumbnail,
-  existingProfile,
 }: {
   sketchId: number;
   data: CastFormData;
-  existingThumbnail: string;
-  existingProfile: string;
 }): Promise<CastMember> => {
   const fd = new FormData();
   fd.append("characterName", data.characterName || "");
@@ -36,15 +32,15 @@ export const createCast = async ({
 
   // if we're using an auto screenshot
   fd.append("cropBorder", data.cropBorder ? "true" : "");
-  if (!data.characterThumbnail && existingThumbnail) {
-    const response = await fetch(existingThumbnail);
+  if (!data.characterThumbnail && data.existingThumbnailUrl) {
+    const response = await fetch(data.existingThumbnailUrl);
     if (response.ok) {
       const blob = await response.blob();
       fd.append("characterThumbnail", blob);
     }
   }
-  if (!data.characterProfile && existingProfile) {
-    const response = await fetch(existingProfile);
+  if (!data.characterProfile && data.existingProfileUrl) {
+    const response = await fetch(data.existingProfileUrl);
     if (response.ok) {
       const blob = await response.blob();
       fd.append("characterProfile", blob);

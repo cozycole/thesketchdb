@@ -18,6 +18,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { formatHMS } from "@/lib/utils";
+import { useSketchDirty } from "../contexts/sketchDirtyContext";
 
 type DragBundle = { kind: "transcript"; ids: number[] } | null;
 
@@ -40,6 +41,8 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
     },
   );
 
+  const { setDirty } = useSketchDirty();
+
   useEffect(() => {
     if (!data) return;
     dispatch({
@@ -48,6 +51,10 @@ export function EditQuotesPage({ sketchId }: { sketchId: number }) {
       quotes: data.quotes,
     });
   }, [data, dispatch]);
+
+  useEffect(() => {
+    setDirty("Quotes", hasChanges);
+  }, [hasChanges, setDirty]);
 
   const actions = {
     addQuote: (qs: QuoteUI[]) => dispatch({ type: "ADD_QUOTES", quotes: qs }),

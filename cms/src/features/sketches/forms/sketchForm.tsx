@@ -43,6 +43,7 @@ import { useDeleteSketch } from "../api/deleteSketch";
 
 import { sketchFormSchema, sketchToFormDefaults } from "./sketchForm.schema";
 import { buildImageUrl } from "@/lib/utils";
+import { useEffect } from "react";
 
 type AlertDialogDestructiveProps = {
   sketchId: number;
@@ -91,9 +92,14 @@ function AlertDialogDestructive({
 interface SketchFormProps {
   mode: "create" | "update";
   existingData?: Sketch;
+  onDirtyChange?: (tab: string, dirty: boolean) => void;
 }
 
-export function SketchForm({ mode, existingData }: SketchFormProps) {
+export function SketchForm({
+  mode,
+  existingData,
+  onDirtyChange,
+}: SketchFormProps) {
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
   const defaultValues = sketchToFormDefaults(mode, existingData);
@@ -102,6 +108,10 @@ export function SketchForm({ mode, existingData }: SketchFormProps) {
     resolver: zodResolver(sketchFormSchema),
     defaultValues: defaultValues,
   });
+
+  useEffect(() => {
+    onDirtyChange?.("Metadata", form.formState.isDirty);
+  }, [form.formState.isDirty, onDirtyChange]);
 
   const { mutate: createMutate, isPending: createPending } = useCreateSketch({
     mutationConfig: {

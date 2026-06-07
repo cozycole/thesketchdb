@@ -80,11 +80,15 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 
 		r.Get("/user/{username}", app.userView)
 
+		// AUTH
 		r.Get("/signup", app.userSignup)
 		r.Post("/signup", app.userSignupPost)
 		r.Get("/login", app.userLogin)
 		r.Post("/login", app.userLoginPost)
 		r.Post("/logout", app.userLogoutPost)
+
+		// GOTH
+		// r.Get("/auth/{provider}", app.authCallback)
 
 		r.HandleFunc("/ping", ping)
 

@@ -34,6 +34,7 @@ export const castFormSchema = z
         "Only .jpg are supported",
       )
       .optional(),
+    existingThumbnailUrl: z.string().optional(),
     characterProfile: z
       .instanceof(File)
       .refine((file) => !file || file.size <= 5_000_000, "Max file size is 5MB")
@@ -42,6 +43,7 @@ export const castFormSchema = z
         "Only .jpg are supported",
       )
       .optional(),
+    existingProfileUrl: z.string().optional(),
     tags: z
       .array(
         z.object({
@@ -53,16 +55,16 @@ export const castFormSchema = z
   })
   .superRefine((cast, ctx) => {
     const hasActor = !!cast.actor?.id;
+    const hasImages =
+      (cast.characterThumbnail instanceof File || cast.existingThumbnailUrl) &&
+      (cast.characterProfile instanceof File || cast.existingProfileUrl);
 
-    const hasNewCharacter =
-      !!cast.characterName?.trim() &&
-      cast.characterThumbnail instanceof File &&
-      cast.characterProfile instanceof File;
+    const hasNewCharacter = !!cast.characterName?.trim() && hasImages;
     if (!hasActor && !hasNewCharacter) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
-          "Character name and images necessary if actor is not specified",
+          "Character name and profile/thumbnail images necessary if actor is not specified",
         path: ["global"],
       });
     }
