@@ -1,6 +1,3 @@
-import { CatalogFilter } from "../components/catalogFilter.js";
-import { FilterContent } from "../components/filterMenu.js";
-
 export function initViewCatalog() {
   // scroll up on pagination button click
   addPaginationListener();
@@ -10,8 +7,6 @@ export function initViewCatalog() {
   });
 
   // style tab bar
-  const tabContainer = document.getElementById("tabContainer");
-  const tabUnderline = document.getElementById("tabUnderline");
   const tabs = document.querySelectorAll(".tab");
 
   // Set active tab

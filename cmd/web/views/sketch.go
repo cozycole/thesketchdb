@@ -493,10 +493,10 @@ func SketchCatalogResultView(
 		return nil, err
 	}
 
-	fmt.Println("current page", currentPage, "totalPages", totalPages, results.Filter.ParamsString())
-	for _, p := range pages {
-		fmt.Printf("PAGES: %+v\n", p)
-	}
+	// fmt.Println("current page", currentPage, "totalPages", totalPages, results.Filter.ParamsString())
+	// for _, p := range pages {
+	// 	fmt.Printf("PAGES: %+v\n", p)
+	// }
 
 	labelString := "%d Sketch"
 	if results.TotalCount != 1 {
@@ -546,8 +546,9 @@ func SketchCatalogFilterView(result *sketches.SketchListResult, baseUrl string) 
 	sortBy := result.Filter.SortBy
 	view.SortOptions = []SortOption{
 		{Value: "popular", Label: "Popular", Selected: sortBy == "popular"},
-		{Value: "latest", Label: "Latest", Selected: sortBy == "latest"},
-		{Value: "oldest", Label: "Oldest", Selected: sortBy == "oldest"},
+		{Value: "recent", Label: "Recently Added", Selected: sortBy == "recent"},
+		{Value: "newest", Label: "Newest Release", Selected: sortBy == "latest"},
+		{Value: "oldest", Label: "Oldest Release", Selected: sortBy == "oldest"},
 		{Value: "az", Label: "A-Z", Selected: sortBy == "az"},
 		{Value: "za", Label: "Z-A", Selected: sortBy == "za"},
 	}

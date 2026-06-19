@@ -11,17 +11,19 @@ import { initViewShow } from "./pages/viewShow.js";
 import { initViewSeason } from "./pages/viewSeason.js";
 import { initViewCatalog } from "./pages/viewCatalog.js";
 
-import { UploadImagePreview } from "./components/uploadImagePreview.js";
-import { CollapsibleContent } from "./components/collapseContent.js";
-import { FavoriteButton } from "./components/favoriteButton.js";
-import { YoutubeEmbed } from "./components/youtubeEmbed.js";
-import { FormSearchDropdown } from "./components/formSearchDropdown.js";
-import { FormDropdown } from "./components/formDropdown.js";
-import { SelectDropdown } from "./components/selectDropdown.js";
-import { SketchRating } from "./components/sketchRating.js";
-import { TagSelector } from "./components/tagSelector.js";
-import { QuoteLikeButton } from "./components/quoteLikeButton.js";
-import { QuoteList } from "./components/quoteDisplay.js";
+import "./components/uploadImagePreview.js";
+import "./components/collapseContent.js";
+import "./components/favoriteButton.js";
+import "./components/youtubeEmbed.js";
+import "./components/formSearchDropdown.js";
+import "./components/formDropdown.js";
+import "./components/selectDropdown.js";
+import "./components/sketchRating.js";
+import "./components/tagSelector.js";
+import "./components/quoteLikeButton.js";
+import "./components/quoteDisplay.js";
+import "./components/catalogFilter.js";
+import "./components/filterMenu.js";
 
 import "./components/flashMessage.js";
 

@@ -18,7 +18,7 @@ var pageSize = 16
 
 type HomePage struct {
 	Featured        []*views.SketchThumbnail
-	LatestSketches  []*views.SketchThumbnail
+	RecentSketches  []*views.SketchThumbnail
 	PopularSketches []*views.SketchThumbnail
 	Actors          []*models.Person
 }
@@ -40,16 +40,16 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	filter := models.Filter{
 		Page:     1,
 		PageSize: 8,
-		SortBy:   "latest",
+		SortBy:   "recent",
 	}
 
-	latest, _, err := app.sketches.Get(&filter)
+	recentSketches, _, err := app.sketches.Get(&filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	latestViews, err := views.SketchThumbnailsView(latest, app.baseImgUrl, "", true)
+	recentSketchView, err := views.SketchThumbnailsView(recentSketches, app.baseImgUrl, "", true)
 
 	popularFilter := models.Filter{
 		SortBy:   "popular",
@@ -65,7 +65,8 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	popularSketchViews, err := views.SketchThumbnailsView(popularSketches, app.baseImgUrl, "", true)
 
-	peopleIds := []int{61, 52, 42, 1, 2, 3, 39, 54, 56}
+	// peopleIds := []int{61, 52, 42, 1, 2, 3, 39, 54, 56}
+	peopleIds := []int{5, 6, 7, 9, 2, 3, 1, 10, 4}
 	people, err := app.people.GetPeople(peopleIds)
 	if err != nil {
 		app.serverError(r, w, err)
@@ -84,7 +85,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	homePageData := HomePage{
 		Featured:        featuredSketchViews,
-		LatestSketches:  latestViews,
+		RecentSketches:  recentSketchView,
 		PopularSketches: popularSketchViews,
 		Actors:          people,
 	}

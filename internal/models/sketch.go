@@ -786,9 +786,10 @@ func (m *SketchModel) GetByUserLikes(userId int) ([]*SketchRef, error) {
 		v.slug as sketch_slug, v.thumbnail_name as thumbnail_name, 
 		v.upload_date as upload_date, v.rating,
 		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
-		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
-		sh.profile_img as show_img, sh.slug as show_slug, 
-		se.season_number as season_number, e.episode_number as episode_number
+		c.profile_img as creator_img, 
+		sh.id as show_id, sh.name as show_name, sh.profile_img as show_img, sh.slug as show_slug, 
+		se.id, se.season_number as season_number, 
+		e.id, e.episode_number as episode_number
 		FROM sketch AS v
 		LEFT JOIN sketch_creator_rel as vcr ON v.id = vcr.sketch_id
 		LEFT JOIN creator as c ON vcr.creator_id = c.id
@@ -822,7 +823,9 @@ func (m *SketchModel) GetByUserLikes(userId int) ([]*SketchRef, error) {
 		destinations := []any{
 			&v.ID, &v.Title, &v.Number, &v.Slug, &v.Thumbnail, &v.UploadDate, &v.Rating,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
-			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug, &se.Number, &ep.Number,
+			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
+			&se.ID, &se.Number,
+			&ep.ID, &ep.Number,
 		}
 		err := rows.Scan(destinations...)
 		if err != nil {

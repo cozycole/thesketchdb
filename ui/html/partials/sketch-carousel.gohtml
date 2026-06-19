@@ -4,9 +4,9 @@
       class="gt glide__track w-full scroll-smooth scrollbar-hide"
       data-glide-el="track"
     >
-      <div class="gs glide__slides flex space-x-2 scrollbar-hide">
+      <div class="gs glide__slides flex px-2 space-x-2 scrollbar-hide">
         {{ range . }}
-          <div class="w-60">
+          <div class="w-60 shrink-0">
             {{ template "sketch-thumbnail" . }}
           </div>
         {{ end }}

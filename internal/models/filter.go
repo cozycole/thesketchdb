@@ -30,7 +30,8 @@ func (f Filter) Offset() int {
 
 var sortMap = map[string]string{
 	"popular": "popularity DESC, upload_date DESC",
-	"latest":  "upload_date DESC, sketch_title ASC",
+	"recent":  "sketch_id DESC",
+	"newest":  "upload_date DESC, sketch_title ASC",
 	"oldest":  "upload_date ASC, sketch_title ASC",
 	"az":      "sketch_title ASC",
 	"za":      "sketch_title DESC",

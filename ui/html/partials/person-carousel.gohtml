@@ -4,9 +4,9 @@
       class="gt glide__track scroll-smooth space-x-4 scrollbar-hide"
       data-glide-el="track"
     >
-      <div class="gs glide__slides flex space-x-4">
+      <div class="gs glide__slides flex space-x-2 px-2">
         {{ range .People }}
-          <div class="flex-shrink-0 w-44">
+          <div class="w-44">
             {{ template "person-card" (dict "Person" . "ImageBaseUrl" $.ImageBaseUrl) }}
           </div>
         {{ end }}
