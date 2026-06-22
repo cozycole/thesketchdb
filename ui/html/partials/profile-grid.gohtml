@@ -1,0 +1,17 @@
+{{ define "profile-grid" }}
+  <div
+    class="grid grid-cols-2 xs:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+  >
+    {{ range .Cards }}
+      <div class="w-full flex">
+        {{ template "profile-card" . }}
+      </div>
+    {{ else }}
+      <div
+        class="w-full flex items-center justify-center col-span-full h-16 text-lg"
+      >
+        <h1 class="text-center">No Results</h1>
+      </div>
+    {{ end }}
+  </div>
+{{ end }}

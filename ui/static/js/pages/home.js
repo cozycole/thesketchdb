@@ -82,7 +82,7 @@ export function initHome() {
               perView: 3,
               peek: { before: 0, after: 40 },
             },
-            575: {
+            600: {
               perView: 2,
               peek: { before: 0, after: 40 },
             },

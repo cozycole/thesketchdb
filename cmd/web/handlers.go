@@ -65,8 +65,8 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	popularSketchViews, err := views.SketchThumbnailsView(popularSketches, app.baseImgUrl, "", true)
 
-	// peopleIds := []int{61, 52, 42, 1, 2, 3, 39, 54, 56}
-	peopleIds := []int{5, 6, 7, 9, 2, 3, 1, 10, 4}
+	peopleIds := []int{61, 52, 42, 1, 2, 3, 39, 54, 56}
+	// peopleIds := []int{5, 6, 7, 9, 2, 3, 1, 10, 4}
 	people, err := app.people.GetPeople(peopleIds)
 	if err != nil {
 		app.serverError(r, w, err)

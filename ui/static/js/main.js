@@ -11,21 +11,7 @@ import { initViewShow } from "./pages/viewShow.js";
 import { initViewSeason } from "./pages/viewSeason.js";
 import { initViewCatalog } from "./pages/viewCatalog.js";
 
-import "./components/uploadImagePreview.js";
-import "./components/collapseContent.js";
-import "./components/favoriteButton.js";
-import "./components/youtubeEmbed.js";
-import "./components/formSearchDropdown.js";
-import "./components/formDropdown.js";
-import "./components/selectDropdown.js";
-import "./components/sketchRating.js";
-import "./components/tagSelector.js";
-import "./components/quoteLikeButton.js";
-import "./components/quoteDisplay.js";
-import "./components/catalogFilter.js";
-import "./components/filterMenu.js";
-
-import "./components/flashMessage.js";
+import "./components/index.js";
 
 (function () {
   const firstDiv = document.querySelector("main");

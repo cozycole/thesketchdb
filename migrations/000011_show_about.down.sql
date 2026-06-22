@@ -1,0 +1,1 @@
+ALTER TABLE show DROP COLUMN about, DROP COLUMN wiki_page;

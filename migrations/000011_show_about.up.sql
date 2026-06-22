@@ -1,0 +1,1 @@
+ALTER TABLE show ADD COLUMN about TEXT, ADD COLUMN wiki_page TEXT;

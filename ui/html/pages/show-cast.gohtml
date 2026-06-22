@@ -1,0 +1,11 @@
+{{ define "title" }}{{ .Page.ShowName }} Cast{{ end }}
+
+{{ define "main" }}
+  {{ template "show-layout" . }}
+{{ end }}
+
+{{ define "show-content" }}
+  <section id="cast" class="mt-4">
+    {{- template "profile-grid" .CastSection -}}
+  </section>
+{{ end }}

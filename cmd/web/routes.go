@@ -67,7 +67,11 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 		r.Get("/recurring/{id}/{slug}", app.recurringView)
 		r.Get("/recurring/search", app.recurringSearch)
 
-		r.Get("/show/{id}/{slug}", app.viewShow)
+		r.Get("/show/{id}/{slug}", app.viewShowHome)
+		r.Get("/show/{id}/{slug}/sketches", app.viewShowSketches)
+		r.Get("/show/{id}/{slug}/seasons", app.viewShowSeasons)
+		r.Get("/show/{id}/{slug}/cast", app.viewShowCast)
+
 		r.Get("/show/search", app.showSearch)
 		r.Get("/show/{id}/{slug}/season", app.viewSeason)
 		r.Get("/season/{id}/{slug}", app.viewSeason)

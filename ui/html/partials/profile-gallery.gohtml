@@ -1,23 +1,11 @@
 {{ define "profile-gallery" }}
   <div
-    class="flex-to-grid overflow-x-auto gap-2 sm:gap-6 min-w-0 scrollbar-hide scroll-smooth
+    class="flex-to-grid overflow-x-auto gap-4 sm:gap-6 min-w-0 scrollbar-hide scroll-smooth
   sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
   >
     {{ range .Cards }}
-      <div class="flex flex-col w-36 sm:w-full flex-shrink-0 items-center">
-        <a class="block" href="{{ .Url }}">
-          <img
-            src="{{ .ImageUrl }}"
-            class="w-28 h-28 object-cover mx-auto rounded-full border border-slate-300"
-            data-fallback="/static/img/missing-thumbnail.jpg"
-          />
-        </a>
-        <h3
-          class="mt-4 font-bold text-slate-950 text-center line-clamp-2 hover:underline"
-        >
-          <a href="{{ .Url }}">{{ .Title }}</a>
-        </h3>
-        <h4 class="font-medium text-sm italic text-center">{{ .Subtitle }}</h4>
+      <div class="w-36 flex-shrink-0">
+        {{ template "profile-card" . }}
       </div>
     {{ end }}
   </div>

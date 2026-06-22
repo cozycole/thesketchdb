@@ -362,6 +362,8 @@ type showForm struct {
 	Name                string                `form:"name"`
 	Aliases             string                `form:"alias"`
 	Slug                string                `form:"slug"`
+	About               string                `form:"about"`
+	WikiPage            string                `form:"wikiPage"`
 	ProfileImg          *multipart.FileHeader `img:"profileImg"`
 	ProfileImgUrl       string                `form:"-"`
 	Action              string                `form:"-"`

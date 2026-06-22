@@ -1,0 +1,184 @@
+{{ define "show-layout" }}
+  <main
+    data-page="view-show"
+    class="w-full flex-1 px-2 py-4 sm:px-4 sm:py-4 text-slate-950 bg-white"
+  >
+    <div class="max-w-screen-xl mx-auto">
+      {{ with .Page }}
+        <div
+          class="flex flex-col w-full gap-4 items-center md:flex-row sm:items-start"
+        >
+          <section
+            id="profile"
+            class="w-full md:w-64 shrink-0 overflow-hidden rounded-xl border border-slate-300
+         bg-white text-slate-800 shadow-sm"
+          >
+            <div class="p-4 text-center">
+              <img
+                src="{{ .Image }}"
+                alt="{{ .ShowName }}"
+                class="mx-auto mb-3 aspect-square w-36 rounded-full object-cover ring-2 ring-slate-700"
+              />
+
+              <h2 class="text-lg font-bold leading-tight">{{ .ShowName }}</h2>
+
+              {{- if $.IsEditor -}}
+                <a
+                  href="{{ .UpdateUrl }}"
+                  class="mt-1 inline-block text-sm text-slate-900 hover:text-slate-800 hover:underline"
+                >
+                  Edit
+                </a>
+              {{- end -}}
+            </div>
+
+            <div class="grid grid-cols-3 border-t border-slate-300 text-center">
+              <div class="p-3">
+                <p class="text-base font-bold">{{ .SeasonCount }}</p>
+                <p class="text-xs uppercase tracking-wide text-slate-900">
+                  Seasons
+                </p>
+              </div>
+
+              <div class="border-x border-slate-300 p-3">
+                <p class="text-base font-bold">{{ .EpisodeCount }}</p>
+                <p class="text-xs uppercase tracking-wide text-slate-900">
+                  Episodes
+                </p>
+              </div>
+
+              <div class="p-3">
+                <p class="text-base font-bold">{{ .SketchCount }}</p>
+                <p class="text-xs uppercase tracking-wide text-slate-900">
+                  Sketches
+                </p>
+              </div>
+            </div>
+          </section>
+          <div id="showNavigationAnchor" class="w-full flex flex-col gap-4">
+            <horizontal-fade class="sticky top-0 z-10 block bg-white">
+              <nav
+                id="showNavigation"
+                aria-label="Show navigation"
+                class="overflow-x-auto scrollbar-hide"
+              >
+                <div class="flex min-w-max gap-1 scrollbar-hide">
+                  <a
+                    href="/show/{{ .ID }}/{{ .Slug }}"
+                    hx-get="/show/{{ .ID }}/{{ .Slug }}"
+                    hx-target="#showContent"
+                    hx-push-url="true"
+                    class="
+                  border-b-2 px-4 py-3 text-sm hover:text-slate-950
+                  {{ if eq .ActiveTab `home` }}
+                      border-slate-950 font-bold text-slate-950
+                    {{ else }}
+                      border-transparent font-medium text-slate-600
+                      hover:border-slate-300
+                    {{ end }}
+                  "
+                  >
+                    Home
+                  </a>
+
+                  <a
+                    href="/show/{{ .ID }}/{{ .Slug }}/sketches"
+                    hx-get="/show/{{ .ID }}/{{ .Slug }}/sketches"
+                    hx-target="#showContent"
+                    hx-push-url="true"
+                    class="
+                  border-b-2 px-4 py-3 text-sm
+                  {{ if eq .ActiveTab `sketches` }}
+                      border-slate-950 font-bold text-slate-950
+                    {{ else }}
+                      border-transparent font-medium text-slate-600
+                      hover:border-slate-300 hover:text-slate-950
+                    {{ end }}
+                  "
+                  >
+                    Sketches
+                  </a>
+
+                  <a
+                    href="/show/{{ .ID }}/{{ .Slug }}/seasons"
+                    hx-get="/show/{{ .ID }}/{{ .Slug }}/seasons"
+                    hx-target="#showContent"
+                    hx-push-url="true"
+                    class="
+                  border-b-2 px-4 py-3 text-sm
+                  {{ if eq .ActiveTab `seasons` }}
+                      border-slate-950 font-bold text-slate-950
+                    {{ else }}
+                      border-transparent font-medium text-slate-600
+                      hover:border-slate-300 hover:text-slate-950
+                    {{ end }}
+                  "
+                  >
+                    Seasons
+                  </a>
+
+                  <a
+                    href="/show/{{ .ID }}/{{ .Slug }}/cast"
+                    hx-get="/show/{{ .ID }}/{{ .Slug }}/cast"
+                    hx-target="#showContent"
+                    hx-push-url="true"
+                    class="
+                  border-b-2 px-4 py-3 text-sm
+                  {{ if eq .ActiveTab `cast` }}
+                      border-slate-950 font-bold text-slate-950
+                    {{ else }}
+                      border-transparent font-medium text-slate-600
+                      hover:border-slate-300 hover:text-slate-950
+                    {{ end }}
+                  "
+                  >
+                    Cast
+                  </a>
+
+                  <!--<a-->
+                  <!--  href="/show/{{ .ID }}/{{ .Slug }}/characters"-->
+                  <!--  hx-get="/show/{{ .ID }}/{{ .Slug }}/characters"-->
+                  <!--  hx-target="#showContent"-->
+                  <!--  hx-push-url="true"-->
+                  <!--  class="-->
+                  <!--border-b-2 px-4 py-3 text-sm-->
+                  <!--{{ if eq .ActiveTab `characters` }}-->
+                  <!--    border-slate-950 font-bold text-slate-950-->
+                  <!--  {{ else }}-->
+                  <!--    border-transparent font-medium text-slate-600-->
+                  <!--    hover:border-slate-300 hover:text-slate-950-->
+                  <!--  {{ end }}-->
+                  <!--"-->
+                  <!-->-->
+                  <!--  Characters-->
+                  <!--</a>-->
+                  <!---->
+                  <!--<a-->
+                  <!--  href="/show/{{ .ID }}/{{ .Slug }}/quotes"-->
+                  <!--  hx-get="/show/{{ .ID }}/{{ .Slug }}/quotes"-->
+                  <!--  hx-target="#showContent"-->
+                  <!--  hx-push-url="true"-->
+                  <!--  class="-->
+                  <!--border-b-2 px-4 py-3 text-sm-->
+                  <!--{{ if eq .ActiveTab `quotes` }}-->
+                  <!--    border-slate-950 font-bold text-slate-950-->
+                  <!--  {{ else }}-->
+                  <!--    border-transparent font-medium text-slate-600-->
+                  <!--    hover:border-slate-300 hover:text-slate-950-->
+                  <!--  {{ end }}-->
+                  <!--"-->
+                  <!-->-->
+                  <!--  Quotes-->
+                  <!--</a>-->
+                </div>
+              </nav>
+            </horizontal-fade>
+            <div id="showContent">
+              {{ template "show-content" . }}
+            </div>
+          </div>
+        </div>
+      {{ end }}
+    </div>
+  </main>
+{{ end }}

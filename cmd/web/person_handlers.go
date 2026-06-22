@@ -103,7 +103,6 @@ func (app *application) addPerson(w http.ResponseWriter, r *http.Request) {
 			Title: "Add Person",
 			Form:  form,
 		}
-		app.infoLog.Printf("%+v\n", form)
 		app.render(r, w, http.StatusUnprocessableEntity, "add-person.gohtml", "base", data)
 		return
 	}

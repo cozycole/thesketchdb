@@ -1,0 +1,45 @@
+{{ define "title" }}{{ .Page.ShowName }}{{ end }}
+
+{{ define "main" }}
+  {{ template "show-layout" . }}
+{{ end }}
+
+{{ define "show-content" }}
+  <div class="space-y-4">
+    {{ if .About }}
+      <section
+        id="about"
+        class="bg-white rounded-lg border border-slate-200 shadow-sm p-6"
+      >
+        <h2 class="text-xl font-semibold text-slate-900 mb-4">About</h2>
+        <show-more max-height="200" class="text-slate-700">
+          <div class="leading-7 space-y-3">
+            {{ .About }}
+          </div>
+        </show-more>
+      </section>
+    {{ end }}
+    <section id="popular">
+      <header class="w-full flex items-center justify-between">
+        <h2 class="text-xl font-bold hover:underline">
+          <a href="/show/{{ .ID }}/{{ .Slug }}/sketches">Popular</a>
+        </h2>
+      </header>
+      <div class="content w-full overflow-hidden">
+        <div class="mt-4">
+          {{- template "browse-gallery" .PopularSection -}}
+        </div>
+      </div>
+    </section>
+    <section id="cast">
+      <h2 class="text-xl font-bold hover:underline">
+        <a href="/show/{{ .ID }}/{{ .Slug }}/cast">Featured Cast</a>
+      </h2>
+      <div class="w-full overflow-hidden">
+        <div class="mt-4">
+          {{- template "profile-gallery" .CastSection -}}
+        </div>
+      </div>
+    </section>
+  </div>
+{{ end }}

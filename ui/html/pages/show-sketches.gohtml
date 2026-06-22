@@ -1,0 +1,65 @@
+{{ define "title" }}{{ .Page.ShowName }} Sketches{{ end }}
+
+{{ define "main" }}
+  {{ template "show-layout" . }}
+{{ end }}
+
+{{ define "show-content" }}
+  <section id="sketches">
+    <div id="filterHeader" class="flex justify-between items-center mb-3">
+      <a
+        href="{{ .SketchCatalogUrl }}"
+        class="text-sm text-slate-800 hover:text-slate-900 hover:underline"
+      >
+        View in Catalog
+      </a>
+      <select
+        id="sortDropdown"
+        data-type="sort"
+        autocomplete="off"
+        class="block 
+              border border-slate-300 hover:border-slate-400 
+              px-3 py-1.5 rounded-lg shadow-sm focus:outline-none"
+      >
+        <option value="popular">Popular</option>
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <!--<option value="worst">Worst</option>-->
+      </select>
+    </div>
+    <div id="results">
+      {{- if .HasResults -}}
+        {{- template "thumbnail-gallery" .SketchResultsGallery -}}
+      {{- else -}}
+        <div class="text-center p-6">
+          <p class="text-lg font-bold">No sketches.</p>
+        </div>
+      {{- end -}}
+      <div class="flex justify-center gap-x-2.5 mt-auto mb-2">
+        {{ range .Pages }}
+          {{ if .IsEllipsis }}
+            <span class="inline-block leading-8 text-slate-500">...</span>
+          {{ else if .IsCurrent }}
+            <span
+              class="inline-block leading-8 h-8 font-bold px-3 rounded-md bg-slate-300"
+              >{{ .Page }}</span
+            >
+          {{ else }}
+            <a
+              class="htmxSearchPage inline-block leading-8 h-8 text-slate-600 px-3 rounded-md bg-slate-300 hover:cursor-pointer hover:bg-slate-400"
+              hx-get="{{ .URL }}"
+              hx-swap="innerHTML"
+              hx-target="#results"
+              >{{ .Page }}</a
+            >
+          {{ end }}
+        {{ else }}
+          <span
+            class="inline-block leading-8 h-8 font-bold px-3 rounded-md bg-slate-300"
+            >0</span
+          >
+        {{ end }}
+      </div>
+    </div>
+  </section>
+{{ end }}

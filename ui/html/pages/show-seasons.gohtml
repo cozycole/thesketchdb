@@ -1,0 +1,12 @@
+{{ define "title" }}{{ .Page.ShowName }} Seasons{{ end }}
+
+{{ define "main" }}
+  {{ template "show-layout" . }}
+{{ end }}
+
+{{ define "show-content" }}
+
+  <section id="seasons">
+    {{ template "season-select-gallery" .SeasonSection }}
+  </section>
+{{ end }}

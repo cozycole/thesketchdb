@@ -18,6 +18,8 @@ type Show struct {
 	ID         *int
 	Name       *string
 	Aliases    *string
+	About      *string
+	WikiPage   *string
 	Slug       *string
 	ProfileImg *string
 	Seasons    []*Season
@@ -489,6 +491,7 @@ func (m *ShowModel) GetCount(filter *Filter) (int, error) {
 func (m *ShowModel) GetById(id int) (*Show, error) {
 	stmt := `
 		SELECT DISTINCT s.id, s.name, s.aliases, s.profile_img, s.slug,
+		s.about, s.wiki_page,
 		se.id, se.slug, se.season_number, 
 		e.id, e.slug, e.episode_number, e.title, e.air_date, e.thumbnail_name,
 		v.id
@@ -517,7 +520,8 @@ func (m *ShowModel) GetById(id int) (*Show, error) {
 		e := &EpisodeRef{}
 		v := &SketchRef{}
 		err := rows.Scan(
-			&show.ID, &show.Name, &show.Aliases, &show.ProfileImg, &show.Slug,
+			&show.ID, &show.Name, &show.Aliases, &show.ProfileImg,
+			&show.Slug, &show.About, &show.WikiPage,
 			&s.ID, &s.Slug, &s.Number,
 			&e.ID, &e.Slug, &e.Number, &e.Title, &e.AirDate, &e.Thumbnail,
 			&v.ID,
@@ -672,12 +676,13 @@ func (m *ShowModel) GetShowCast(id int) ([]*Person, error) {
 
 func (m *ShowModel) Insert(show *Show) (int, error) {
 	stmt := `
-	INSERT INTO show (name, aliases, slug, profile_img)
-	VALUES ($1,$2,$3,$4)
+	INSERT INTO show (name, aliases, slug, about, wiki_page, profile_img)
+	VALUES ($1,$2,$3,$4,$5,$6)
 	RETURNING id`
 	result := m.DB.QueryRow(
 		context.Background(), stmt, show.Name,
-		show.Aliases, show.Slug, show.ProfileImg,
+		show.Aliases, show.Slug, show.About,
+		show.WikiPage, show.ProfileImg,
 	)
 	var id int
 	err := result.Scan(&id)
@@ -689,11 +694,13 @@ func (m *ShowModel) Insert(show *Show) (int, error) {
 
 func (m *ShowModel) Update(show *Show) error {
 	stmt := `
-	UPDATE show SET name = $1, aliases = $2, slug = $3, profile_img = $4
-	WHERE id = $5`
+	UPDATE show SET name = $1, aliases = $2, slug = $3, profile_img = $4,
+	about = $5, wiki_page = $6
+	WHERE id = $7`
 	_, err := m.DB.Exec(
 		context.Background(), stmt, show.Name, show.Aliases,
-		show.Slug, show.ProfileImg, show.ID,
+		show.Slug, show.ProfileImg, show.About, show.WikiPage,
+		show.ID,
 	)
 	return err
 }

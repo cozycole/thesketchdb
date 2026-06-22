@@ -15,3 +15,4 @@ cmd/testing
 ui/static/js/dist
 dist
 testing-nginx.conf
+scripts/backup_script.sh

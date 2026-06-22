@@ -394,20 +394,36 @@ func (app *application) convertFormtoSketchTags(form *sketchTagsForm) ([]*models
 }
 
 func (app *application) convertFormtoShow(form *showForm) models.Show {
+	var wikiUrl *string
+	if form.WikiPage != "" {
+		url, _ := wikipedia.ExtractPageName(form.WikiPage)
+		if url != "" {
+			wikiUrl = &url
+		}
+	}
+
 	return models.Show{
-		ID:      &form.ID,
-		Name:    &form.Name,
-		Aliases: &form.Aliases,
-		Slug:    &form.Slug,
+		ID:       &form.ID,
+		Slug:     &form.Slug,
+		Name:     &form.Name,
+		About:    &form.About,
+		WikiPage: wikiUrl,
+		Aliases:  &form.Aliases,
 	}
 }
 
 func (app *application) convertShowtoForm(show *models.Show) showForm {
+	var wikiUrl string
+	if pageId := safeDeref(show.WikiPage); pageId != "" {
+		wikiUrl = fmt.Sprintf(wikipedia.URL_TEMPLATE, pageId)
+	}
 	return showForm{
-		ID:      safeDeref(show.ID),
-		Aliases: safeDeref(show.Aliases),
-		Name:    safeDeref(show.Name),
-		Slug:    safeDeref(show.Slug),
+		ID:       safeDeref(show.ID),
+		Slug:     safeDeref(show.Slug),
+		Name:     safeDeref(show.Name),
+		Aliases:  safeDeref(show.Aliases),
+		About:    safeDeref(show.About),
+		WikiPage: wikiUrl,
 	}
 }
 

@@ -28,6 +28,9 @@ func buildPagination(current, total int, baseUrl string, filter *models.Filter) 
 		} else {
 			item.Page = page
 			item.URL, err = BuildURL(baseUrl, page, filter)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		pageItems = append(pageItems, item)
