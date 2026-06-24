@@ -9,58 +9,41 @@ class ShowMore extends HTMLElement {
     this.classList.add("block");
 
     const content = document.createElement("div");
-    content.className = "show-more-content relative overflow-hidden";
-    content.style.maxHeight = `${this.maxHeight}px`;
+    content.className = "show-more-content";
 
     while (this.firstChild) {
       content.appendChild(this.firstChild);
     }
 
-    const fade = document.createElement("div");
-    fade.className =
-      "show-more-fade pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent";
+    this.appendChild(content);
 
-    content.appendChild(fade);
+    requestAnimationFrame(() => {
+      if (content.scrollHeight <= this.maxHeight + 1) {
+        return;
+      }
 
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className =
-      "show-more-button mt-3 block mx-auto text-sm font-bold text-slate-700 hover:text-slate-950";
-    button.textContent = "Show more";
+      content.classList.add("relative", "overflow-hidden");
+      content.style.maxHeight = `${this.maxHeight}px`;
 
-    this.append(content, button);
+      const fade = document.createElement("div");
+      fade.className =
+        "show-more-fade pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent";
 
-    this.content = content;
-    this.fade = fade;
-    this.button = button;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className =
+        "show-more-button mt-3 block mx-auto text-sm font-bold text-slate-700 hover:text-slate-950";
+      button.textContent = "Show more";
 
-    this.button.addEventListener("click", () => this.toggle());
+      content.appendChild(fade);
+      this.appendChild(button);
 
-    requestAnimationFrame(() => this.update());
-    window.addEventListener(
-      "resize",
-      (this.updateBound ??= () => this.update()),
-    );
-  }
+      this.content = content;
+      this.fade = fade;
+      this.button = button;
 
-  disconnectedCallback() {
-    window.removeEventListener("resize", this.updateBound);
-  }
-
-  update() {
-    const isOverflowing = this.content.scrollHeight > this.maxHeight + 1;
-
-    this.button.hidden = !isOverflowing;
-    this.fade.hidden = !isOverflowing || this.expanded;
-
-    if (!isOverflowing) {
-      this.content.style.maxHeight = "";
-      return;
-    }
-
-    this.content.style.maxHeight = this.expanded
-      ? `${this.content.scrollHeight}px`
-      : `${this.maxHeight}px`;
+      button.addEventListener("click", () => this.toggle());
+    });
   }
 
   toggle() {

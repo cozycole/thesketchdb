@@ -158,59 +158,61 @@
             </div>
           </div>
         </div>
-        <div
-          id="infoSection"
-          class="w-full h-full my-3 bg-white p-4 rounded-md"
-        >
-          <collapse-content>
-            <div class="castHeader flex items-center justify-between">
-              <div class="flex items-center">
-                <div class="w-6 text-slate-900">
-                  {{ template "description-icon" }}
+        {{ if .DisplayDescription }}
+          <section
+            id="infoSection"
+            class="w-full h-full my-3 bg-white p-4 rounded-md"
+          >
+            <collapse-content>
+              <div class="castHeader flex items-center justify-between">
+                <div class="flex items-center">
+                  <div class="w-6 text-slate-900">
+                    {{ template "description-icon" }}
+                  </div>
+                  <h2 class="ml-2 text-xl font-bold">Info</h2>
                 </div>
-                <h2 class="ml-2 text-xl font-bold">Sketch Info</h2>
+                <button class="toggleBtn transition-all">
+                  <svg
+                    class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    focusable="false"
+                  >
+                    <path
+                      d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
+                      fill="currentColor"
+                    ></path>
+                  </svg>
+                </button>
               </div>
-              <button class="toggleBtn transition-all">
-                <svg
-                  class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  focusable="false"
-                >
-                  <path
-                    d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
-                    fill="currentColor"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-            <div
-              class="content overflow-hidden transition-all duration-500 ease-in-out"
-            >
-              <div class="mt-3">
-                {{ if .InSeries }}
-                  <p class="font-medium italic line-clamp-1">
-                    Part {{ .SeriesPart }} of
-                    <a class="underline" href="{{ .SeriesUrl }}"
-                      >{{ .SeriesTitle }}</a
-                    >
+              <div
+                class="content overflow-hidden transition-all duration-500 ease-in-out"
+              >
+                <div class="mt-3">
+                  {{ if .InSeries }}
+                    <p class="font-medium italic line-clamp-1">
+                      Part {{ .SeriesPart }} of
+                      <a class="underline" href="{{ .SeriesUrl }}"
+                        >{{ .SeriesTitle }}</a
+                      >
+                    </p>
+                  {{ end }}
+                  {{ if .InRecurring }}
+                    <p class="font-medium italic line-clamp-1">
+                      See More of
+                      <a class="underline" href="{{ .RecurringUrl }}"
+                        >{{ .RecurringTitle }}</a
+                      >
+                    </p>
+                  {{ end }}
+                  <p class="whitespace-pre-line">
+                    {{- .Description -}}
                   </p>
-                {{ end }}
-                {{ if .InRecurring }}
-                  <p class="font-medium italic line-clamp-1">
-                    See More of
-                    <a class="underline" href="{{ .RecurringUrl }}"
-                      >{{ .RecurringTitle }}</a
-                    >
-                  </p>
-                {{ end }}
-                <p class="whitespace-pre-line">
-                  {{- .Description -}}
-                </p>
+                </div>
               </div>
-            </div>
-          </collapse-content>
-        </div>
+            </collapse-content>
+          </section>
+        {{ end }}
         <div id="castSection" class="w-full my-3 bg-white p-4 rounded-md">
           <collapse-content>
             <div class="castHeader flex items-center justify-between">
@@ -238,7 +240,15 @@
               id="castGallery"
               class="content overflow-hidden transition-all duration-500 ease-in-out"
             >
-              {{ template "cast-gallery" .Cast }}
+              {{ if .Cast.CastCards }}
+                {{ template "cast-gallery" .Cast }}
+              {{ else }}
+                <div
+                  class="flex h-16 items-center justify-center text-slate-600 text-lg"
+                >
+                  No cast members cataloged yet
+                </div>
+              {{ end }}
             </div>
           </collapse-content>
         </div>
@@ -293,51 +303,59 @@
                     {{ end }}
                   </div>
                 </quote-list>
+              {{ else }}
+                <div
+                  class="flex h-16 items-center justify-center text-slate-600 text-lg"
+                >
+                  No quotes cataloged yet
+                </div>
               {{ end }}
             </div>
           </collapse-content>
         </div>
-        <div id="tagSection" class="w-full my-3 bg-white p-4 rounded-md">
-          <collapse-content>
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <div class="w-6 text-slate-900">
-                  {{ template "tag-icon" }}
+        {{ if .Tags }}
+          <div id="tagSection" class="w-full my-3 bg-white p-4 rounded-md">
+            <collapse-content>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <div class="w-6 text-slate-900">
+                    {{ template "tag-icon" }}
+                  </div>
+                  <h2 class="ml-2 text-xl font-bold">Tags</h2>
                 </div>
-                <h2 class="ml-2 text-xl font-bold">Tags</h2>
+                <button class="toggleBtn transition-all">
+                  <svg
+                    class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    focusable="false"
+                  >
+                    <path
+                      d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
+                      fill="currentColor"
+                    ></path>
+                  </svg>
+                </button>
               </div>
-              <button class="toggleBtn transition-all">
-                <svg
-                  class="arrow stroke-slate-950 w-7 transform transition-transform duration-300"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  focusable="false"
-                >
-                  <path
-                    d="m17 13.41-4.29-4.24a.999.999 0 0 0-1.42 0l-4.24 4.24a.999.999 0 0 0 0 1.42 1 1 0 0 0 1.41 0L12 11.29l3.54 3.54a1 1 0 0 0 1.41 0 1 1 0 0 0 .05-1.42Z"
-                    fill="currentColor"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-            <div
-              id="tags"
-              class="content overflow-hidden transition-all duration-300 ease-in-out"
-            >
-              <div class=" flex flex-wrap gap-2 mt-4 text-slate-50 text-sm">
-                {{ range .Tags }}
-                  <a {{ with .Url }}href="{{ . }}"{{ end }}>
-                    <div
-                      class="p-3 font-bold rounded-full bg-slate-950 hover:bg-slate-850 hover:cursor-pointer"
-                    >
-                      {{ .Name }}
-                    </div>
-                  </a>
-                {{ end }}
+              <div
+                id="tags"
+                class="content overflow-hidden transition-all duration-300 ease-in-out"
+              >
+                <div class=" flex flex-wrap gap-2 mt-4 text-slate-50 text-sm">
+                  {{ range .Tags }}
+                    <a {{ with .Url }}href="{{ . }}"{{ end }}>
+                      <div
+                        class="p-3 font-bold rounded-full bg-slate-950 hover:bg-slate-850 hover:cursor-pointer"
+                      >
+                        {{ .Name }}
+                      </div>
+                    </a>
+                  {{ end }}
+                </div>
               </div>
-            </div>
-          </collapse-content>
-        </div>
+            </collapse-content>
+          </div>
+        {{ end }}
       {{ end }}
     </div>
     {{ if .Page.YoutubeId }}

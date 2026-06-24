@@ -14,35 +14,36 @@ import (
 const YOUTUBE_URL = "https://www.youtube.com/watch?v=%s&t=%ds"
 
 type SketchPage struct {
-	SketchID       int
-	Title          string
-	Description    string
-	Image          string
-	UpdateUrl      string
-	YoutubeId      string
-	YoutubeUrl     string
-	Date           string
-	Liked          bool
-	CreatorName    string
-	CreatorImage   string
-	CreatorUrl     string
-	SeasonNumber   int
-	SeasonUrl      string
-	EpisodeNumber  int
-	EpisodeUrl     string
-	SketchNumber   int
-	StartTime      int
-	InSeries       bool
-	SeriesPart     int
-	SeriesTitle    string
-	SeriesUrl      string
-	InRecurring    bool
-	RecurringTitle string
-	RecurringUrl   string
-	Rating         SketchRating
-	Cast           CastGallery
-	Quotes         []Quote
-	Tags           []*Tag
+	SketchID           int
+	Title              string
+	Description        string
+	Image              string
+	UpdateUrl          string
+	YoutubeId          string
+	YoutubeUrl         string
+	Date               string
+	Liked              bool
+	CreatorName        string
+	CreatorImage       string
+	CreatorUrl         string
+	SeasonNumber       int
+	SeasonUrl          string
+	EpisodeNumber      int
+	EpisodeUrl         string
+	SketchNumber       int
+	StartTime          int
+	InSeries           bool
+	SeriesPart         int
+	SeriesTitle        string
+	SeriesUrl          string
+	InRecurring        bool
+	RecurringTitle     string
+	RecurringUrl       string
+	DisplayDescription bool
+	Rating             SketchRating
+	Cast               CastGallery
+	Quotes             []Quote
+	Tags               []*Tag
 }
 
 func SketchPageView(
@@ -72,7 +73,7 @@ func SketchPageView(
 		page.Title = "Missing Title"
 	}
 
-	page.Description = safeDeref(sketch.Description)
+	page.Description = strings.TrimSpace(safeDeref(sketch.Description))
 
 	if sketch.UploadDate != nil {
 		page.Date = sketch.UploadDate.UTC().Format("Jan 2, 2006")
@@ -172,6 +173,8 @@ func SketchPageView(
 		page.InRecurring = page.RecurringTitle != "" &&
 			sketch.Recurring.ID != nil
 	}
+
+	page.DisplayDescription = page.InRecurring || page.InSeries || page.Description != ""
 
 	page.Quotes = SketchQuoteSection(quotes, baseImgUrl)
 	page.Rating = SketchRatingView(userSketchInfo, sketch)
