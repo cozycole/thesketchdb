@@ -55,7 +55,7 @@
               </div>
             </div>
           </section>
-          <div id="showNavigationAnchor" class="w-full flex flex-col gap-4">
+          <div id="showNavigationAnchor" class="w-full flex flex-col gap-2">
             <horizontal-fade class="sticky top-0 z-10 block bg-white">
               <nav
                 id="showNavigation"
@@ -115,6 +115,23 @@
                   "
                   >
                     Seasons
+                  </a>
+                  <a
+                    href="/show/{{ .ID }}/{{ .Slug }}/extras"
+                    hx-get="/show/{{ .ID }}/{{ .Slug }}/extras"
+                    hx-target="#showContent"
+                    hx-push-url="true"
+                    class="
+                  border-b-2 px-4 py-3 text-sm
+                  {{ if eq .ActiveTab `extras` }}
+                      border-slate-950 font-bold text-slate-950
+                    {{ else }}
+                      border-transparent font-medium text-slate-600
+                      hover:border-slate-300 hover:text-slate-950
+                    {{ end }}
+                  "
+                  >
+                    Extras
                   </a>
 
                   <a

@@ -37,6 +37,7 @@ export const createSketch = async ({
   fd.append("seriesPart", data.seriesPart);
 
   fd.append("recurringId", data.recurring?.id ? String(data.recurring.id) : "");
+  fd.append("groupingId", data.groupingId ? String(data.groupingId) : "");
 
   fd.append("cropBorder", data.cropBorder ? "true" : "");
 

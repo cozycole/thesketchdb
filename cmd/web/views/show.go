@@ -15,6 +15,7 @@ const (
 	ShowTabHome       ShowTab = "home"
 	ShowTabSketches   ShowTab = "sketches"
 	ShowTabSeasons    ShowTab = "seasons"
+	ShowTabExtras     ShowTab = "extras"
 	ShowTabCast       ShowTab = "cast"
 	ShowTabCharacters ShowTab = "characters"
 	ShowTabQuotes     ShowTab = "quotes"
@@ -87,7 +88,7 @@ func ShowHomePageView(show *models.Show, popular []*models.SketchRef, cast []*mo
 
 	popularPageSize := 12
 	page.PopularSection, err = SketchGalleryView(
-		popular, baseImgUrl, baseImgUrl, "sub", popularPageSize)
+		popular, baseImgUrl, baseImgUrl, "sub")
 	if err != nil {
 		return nil, err
 	}
@@ -171,6 +172,28 @@ func ShowSeasonsPageView(show *models.Show, baseImgUrl string) (*ShowSeasonsPage
 		season = show.Seasons[0]
 	}
 	page.SeasonSection = SeasonSelectGalleryView(show.Seasons, season, baseImgUrl, "sub")
+
+	return &page, nil
+}
+
+type ShowExtrasPage struct {
+	baseShowLayout
+	Groupings []Grouping
+}
+
+func ShowExtrasPageView(show *models.Show, groupings []*models.Grouping, baseImgUrl string) (*ShowExtrasPage, error) {
+	base, err := baseShowLayoutView(show, ShowTabExtras, baseImgUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	page := ShowExtrasPage{
+		baseShowLayout: base,
+	}
+
+	for _, g := range groupings {
+		page.Groupings = append(page.Groupings, GroupingView(g, baseImgUrl))
+	}
 
 	return &page, nil
 }

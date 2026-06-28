@@ -57,7 +57,7 @@ func SearchPageView(results *models.SearchResult, query, baseImgUrl string, maxR
 	}
 
 	page.SketchResultCount = results.TotalSketchCount
-	page.SketchResults, err = SketchGalleryView(results.SketchResults, baseImgUrl, "Default", "Full", maxResults)
+	page.SketchResults, err = SketchGalleryView(results.SketchResults, baseImgUrl, "Default", "Full")
 	if err != nil {
 		return nil, err
 	}

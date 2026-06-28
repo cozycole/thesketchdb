@@ -36,7 +36,6 @@ func SeriesPageView(series *models.Series, baseImgUrl string) (*SeriesPage, erro
 		baseImgUrl,
 		"default",
 		"full",
-		-1,
 	)
 
 	if err != nil {

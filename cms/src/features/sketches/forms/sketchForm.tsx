@@ -388,6 +388,26 @@ export function SketchForm({
             </Field>
           )}
         />
+        <Controller
+          name="groupingId"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="groupingId">groupingId</FieldLabel>
+              <div className="flex">
+                <Input
+                  {...field}
+                  id="groupingId"
+                  type="number"
+                  className="w-20"
+                  aria-invalid={fieldState.invalid}
+                  autoComplete="off"
+                />
+              </div>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
         <AsyncSearchSelectRHF
           control={form.control}
           name="recurring"

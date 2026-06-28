@@ -39,6 +39,7 @@ export const sketchFormSchema = z
       .optional(),
     episodeSketchOrder: z.string().optional(),
     episodeStartTime: z.string().optional(),
+    groupingId: z.string().optional(),
     recurring: z
       .object({
         id: z.number(),
@@ -133,6 +134,7 @@ export function sketchToFormDefaults(
         }
       : undefined,
     seriesPart: sketch?.seriesPart ? String(sketch.seriesPart) : "",
+    groupingId: sketch?.grouping ? String(sketch.grouping.id) : "",
     tags: sketch?.tags?.map((t) => ({ id: t.id, label: t.name })) || [],
   };
 }

@@ -98,7 +98,6 @@ func PersonPageView(
 		baseImgUrl,
 		"cast",
 		"sub",
-		12,
 	)
 	if len(popular) == 12 {
 		page.Popular.SeeMore = true

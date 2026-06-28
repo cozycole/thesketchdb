@@ -25,11 +25,13 @@ type Sketch struct {
 	Popularity    *float32      `json:"popularity"`
 	UploadDate    *time.Time    `json:"uploadDate"`
 	Creator       *CreatorRef   `json:"creator"`
+	Show          *ShowRef      `json:"show"`
+	Episode       *Episode      `json:"episode"`
+	EpisodeStart  *int          `json:"episodeStart"`
+	Grouping      *Grouping     `json:"grouping,omitempty"`
 	Cast          []*CastMember `json:"cast"`
 	CastThumbnail *string       `json:"castThumbnail"`
 	Tags          []*Tag        `json:"tags"`
-	Episode       *Episode      `json:"episode"`
-	EpisodeStart  *int          `json:"episodeStart"`
 	Number        *int          `json:"episodeSketchOrder"`
 	Series        *SeriesRef    `json:"series"`
 	SeriesPart    *int          `json:"seriesPart"`
@@ -47,6 +49,7 @@ type SketchRef struct {
 	CastThumbnail *string     `json:"castThumbnail"`
 	UploadDate    *time.Time  `json:"uploadDate"`
 	Creator       *CreatorRef `json:"creator"`
+	Show          *ShowRef    `json:"show"`
 	Episode       *EpisodeRef `json:"episode"`
 	Number        *int        `json:"episodeSketchOrder"`
 	Rating        *float32    `json:"rating"`
@@ -536,6 +539,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		v.episode_start, v.part_number, v.duration, v.rating, v.total_ratings,
 		c.id, c.name, c.slug, c.profile_img,
 		sh.id, sh.name, sh.slug, sh.profile_img,
+		g.id, g.slug, g.title,
+		shg.id, shg.name, shg.slug, shg.profile_img,
 		p.id, p.slug, p.first, p.last, p.profile_img,
 		ch.id, ch.name, ch.slug, ch.img_name, ch.character_type,
 		cm.id, cm.position, cm.character_name, cm.role, cm.profile_img, cm.thumbnail_name,
@@ -549,6 +554,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		LEFT JOIN episode as e ON v.episode_id = e.id
 		LEFT JOIN season as se ON e.season_id = se.id
 		LEFT JOIN show as sh ON se.show_id = sh.id
+		LEFT JOIN sketch_grouping as g ON v.grouping_id = g.id
+		LEFT JOIN show as shg ON g.show_id = shg.id
 		LEFT JOIN cast_members as cm ON v.id = cm.sketch_id
 		LEFT JOIN person as p ON cm.person_id = p.id
 		LEFT JOIN character as ch ON cm.character_id = ch.id
@@ -570,6 +577,9 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 	v := &Sketch{}
 	c := &CreatorRef{}
 	sh := &ShowRef{}
+	g := &Grouping{}
+	// show for grouping
+	shg := &ShowRef{}
 	s := &SeasonRef{}
 	e := &Episode{}
 	rec := &RecurringRef{}
@@ -587,6 +597,8 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 			&v.Duration, &v.Rating, &v.TotalRatings,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.Slug, &sh.ProfileImg,
+			&g.ID, &g.Slug, &g.Title,
+			&shg.ID, &shg.Name, &shg.Slug, &shg.ProfileImg,
 			&p.ID, &p.Slug, &p.First, &p.Last, &p.ProfileImg,
 			&ch.ID, &ch.Name, &ch.Slug, &ch.Image, &ch.Type,
 			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg, &cm.ThumbnailName,
@@ -619,7 +631,18 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 		return nil, err
 	}
 
-	s.Show = sh
+	if sh.ID != nil {
+		s.Show = sh
+		v.Show = sh
+	} else {
+		s.Show = shg
+		v.Show = shg
+	}
+
+	if g.ID != nil {
+		v.Grouping = g
+	}
+
 	e.Season = s
 	if e.ID != nil {
 		v.Episode = e
@@ -901,12 +924,17 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 		recurringId = sketch.Recurring.ID
 	}
 
+	var groupingId *int
+	if sketch.Grouping != nil {
+		groupingId = sketch.Grouping.ID
+	}
+
 	stmt := `
 	INSERT INTO sketch (
 		title, sketch_url, thumbnail_name, upload_date, slug, youtube_id, sketch_number,
 		episode_id, episode_start, series_id, part_number, recurring_id, duration, description,
-		popularity_score)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+		popularity_score, grouping_id)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
 	RETURNING id;`
 	result := m.DB.QueryRow(
 		context.Background(), stmt, sketch.Title,
@@ -914,6 +942,7 @@ func (m *SketchModel) Insert(sketch *Sketch) (int, error) {
 		sketch.Slug, sketch.YoutubeID, sketch.Number, episodeId,
 		sketch.EpisodeStart, seriesId, sketch.SeriesPart, recurringId,
 		sketch.Duration, sketch.Description, sketch.Popularity,
+		groupingId,
 	)
 
 	var id int
@@ -990,18 +1019,24 @@ func (m *SketchModel) Update(sketch *Sketch) error {
 		recurringId = sketch.Recurring.ID
 	}
 
+	var groupingId *int
+	if sketch.Grouping != nil {
+		groupingId = sketch.Grouping.ID
+	}
+
 	stmt := `
 	UPDATE sketch SET title = $1, sketch_url = $2, upload_date = $3, 
 	slug = $4, thumbnail_name = $5, sketch_number = $6, episode_id = $7, episode_start = $8,
 	series_id = $9, part_number = $10, recurring_id = $11, duration = $12, description = $13,
-	popularity_score = $14, youtube_id = $15
-	WHERE id = $16
+	popularity_score = $14, youtube_id = $15, grouping_id = $16
+	WHERE id = $17
 	`
 	_, err := m.DB.Exec(
 		context.Background(), stmt,
-		sketch.Title, sketch.URL, sketch.UploadDate, sketch.Slug, sketch.ThumbnailName,
-		sketch.Number, episodeId, sketch.EpisodeStart, seriesId, sketch.SeriesPart,
-		recurringId, sketch.Duration, sketch.Description, sketch.Popularity, sketch.YoutubeID,
+		sketch.Title, sketch.URL, sketch.UploadDate,
+		sketch.Slug, sketch.ThumbnailName, sketch.Number, episodeId, sketch.EpisodeStart,
+		seriesId, sketch.SeriesPart, recurringId, sketch.Duration, sketch.Description,
+		sketch.Popularity, sketch.YoutubeID, groupingId,
 		sketch.ID,
 	)
 	return err

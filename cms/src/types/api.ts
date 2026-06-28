@@ -25,6 +25,7 @@ export type Sketch = {
   recurring: RecurringRef;
   series: SeriesRef;
   seriesPart: number;
+  grouping: Grouping;
   tags: Tag[];
 
   popularity: number;
@@ -102,6 +103,13 @@ export type SeriesRef = {
   slug: string;
   title: string;
   thumbnailName: string;
+};
+
+export type Grouping = {
+  id: number;
+  slug: string;
+  title: string;
+  position: number;
 };
 
 export type Creator = {

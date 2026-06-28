@@ -51,7 +51,6 @@ func BrowsePageView(sections []BrowseSectionDefinition, baseImgUrl string) (Brow
 			baseImgUrl,
 			"base",
 			"full",
-			section.Filter.Limit(),
 		)
 		if err != nil {
 			return page, err

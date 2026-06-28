@@ -38,6 +38,13 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		}
 	}
 
+	var grouping *models.Grouping
+	if form.GroupingID != 0 {
+		grouping = &models.Grouping{
+			ID: &form.GroupingID,
+		}
+	}
+
 	tags := []*models.Tag{}
 	for _, id := range form.Tags {
 		tags = append(tags, &models.Tag{ID: &id})
@@ -56,6 +63,7 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 		Creator:      creator,
 		Episode:      episode,
 		EpisodeStart: &form.EpisodeStart,
+		Grouping:     grouping,
 		Series:       series,
 		SeriesPart:   &form.SeriesPart,
 		Recurring:    recurring,
@@ -93,6 +101,13 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		recurringID = safeDeref(sketch.Recurring.ID)
 		recurringName = safeDeref(sketch.Recurring.Title)
 	}
+
+	var groupingID int
+	var groupingName string
+	if sketch.Grouping != nil {
+		groupingID = safeDeref(sketch.Grouping.ID)
+		groupingName = safeDeref(sketch.Grouping.Title)
+	}
 	// intTime, _ := models.ParseTimestamp(form.Timestamp)
 	return sketchForm{
 		ID:             safeDeref(sketch.ID),
@@ -109,6 +124,8 @@ func convertSketchToForm(sketch *models.Sketch) sketchForm {
 		EpisodeID:      episodeID,
 		EpisodeInput:   episodeName,
 		EpisodeStart:   safeDeref(sketch.EpisodeStart),
+		GroupingID:     groupingID,
+		GroupingInput:  groupingName,
 		SeriesID:       seriesID,
 		SeriesInput:    seriesName,
 		SeriesPart:     safeDeref(sketch.SeriesPart),

@@ -78,7 +78,6 @@ func EpisodePageView(episode *models.Episode, baseImgUrl string) (*EpisodePage, 
 		baseImgUrl,
 		"base",
 		"full",
-		1000,
 	)
 	if err != nil {
 		return nil, err

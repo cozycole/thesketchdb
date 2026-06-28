@@ -96,6 +96,7 @@ func SketchPageView(
 	page.Cast, _ = CastGalleryView(sketch.Cast, baseImgUrl)
 	page.Tags = TagsView(tags)
 
+	// fmt.Printf("Show ID: %d", safeDeref(sketch.Show.ID))
 	if sketch.Episode != nil && sketch.Episode.ID != nil {
 		if sketch.Episode != nil && safeDeref(sketch.Episode.ID) != 0 {
 			ep := sketch.Episode
@@ -130,6 +131,16 @@ func SketchPageView(
 		}
 
 		page.SketchNumber = safeDeref(sketch.Number)
+	} else if show := safeDeref(sketch.Show); show.ID != nil {
+		page.CreatorName = safeDeref(show.Name)
+		if show.ID != nil && show.Slug != nil {
+			page.CreatorUrl = fmt.Sprintf("/show/%d/%s", *show.ID, *show.Slug)
+		}
+		if show.ProfileImg != nil {
+			page.CreatorImage = fmt.Sprintf("%s/show/small/%s", baseImgUrl, *show.ProfileImg)
+		} else {
+			page.CreatorImage = fmt.Sprintf("%s/missing-profile.jpg", baseImgUrl)
+		}
 
 	} else if sketch.Creator != nil && sketch.Creator.ID != nil {
 		if sketch.Creator.Name != nil {
@@ -210,9 +221,8 @@ type SketchThumbnail struct {
 func SketchGalleryView(
 	sketches []*models.SketchRef,
 	baseImgUrl,
-	thumbnailType,
+	thumbnailType, // CAST or DEFAULT
 	sectionType string,
-	maxResults int,
 ) (*SketchGallery, error) {
 	sketchViews, err := SketchThumbnailsView(sketches, baseImgUrl, thumbnailType, false)
 	if err != nil {
@@ -231,7 +241,6 @@ func SketchCarouselView(
 	baseImgUrl,
 	thumbnailType,
 	sectionType string,
-	maxResults int,
 ) (*SketchGallery, error) {
 	sketchViews, err := SketchThumbnailsView(sketches, baseImgUrl, thumbnailType, true)
 	if err != nil {
@@ -376,7 +385,10 @@ func SketchThumbnailView(sketch *models.SketchRef, baseImgUrl string, thumbnailT
 		sketchView.CreatorImage = fmt.Sprintf("%s/show/small/%s", baseImgUrl, info.showImage)
 
 		sketchView.CreatorInfo = fmt.Sprintf("S%dE%d · #%d", info.seNum, info.epNum, safeDeref(sketch.Number))
-
+	} else if show := safeDeref(sketch.Show); show.ID != nil {
+		sketchView.CreatorName = safeDeref(sketch.Show.Name)
+		sketchView.CreatorUrl = fmt.Sprintf("/show/%d/%s", *show.ID, safeDeref(show.Slug))
+		sketchView.CreatorImage = fmt.Sprintf("%s/show/small/%s", baseImgUrl, safeDeref(show.ProfileImg))
 	} else if sketch.Creator != nil && sketch.Creator.ID != nil {
 		sketchView.CreatorName = safeDeref(sketch.Creator.Name)
 		sketchView.CreatorUrl = fmt.Sprintf("/creator/%d/%s", *sketch.Creator.ID, safeDeref(sketch.Creator.Slug))

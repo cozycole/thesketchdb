@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -32,112 +31,6 @@ type ShowRef struct {
 	ProfileImg *string `json:"profileImage"`
 }
 
-type Season struct {
-	ID       *int
-	Slug     *string
-	Number   *int
-	Show     *ShowRef
-	Episodes []*EpisodeRef
-}
-
-type SeasonRef struct {
-	ID     *int     `json:"id"`
-	Slug   *string  `json:"slug"`
-	Number *int     `json:"number"`
-	Show   *ShowRef `json:"show"`
-}
-
-type Episode struct {
-	ID        *int         `json:"id"`
-	Slug      *string      `json:"slug"`
-	Title     *string      `json:"title"`
-	Number    *int         `json:"number"`
-	AirDate   *time.Time   `json:"airDate"`
-	Thumbnail *string      `json:"thumbnail"`
-	Season    *SeasonRef   `json:"season"`
-	URL       *string      `json:"url"`
-	Sketches  []*SketchRef `json:"sketches"`
-	YoutubeID *string      `json:"youtubeId"`
-}
-
-func (e *Episode) GetTitle() *string     { return e.Title }
-func (e *Episode) GetNumber() *int       { return e.Number }
-func (e *Episode) GetSeason() *SeasonRef { return e.Season }
-func (e *Episode) GetSketchCount() int   { return len(e.Sketches) }
-
-func (e *Episode) GetShow() *ShowRef {
-	if e.Season == nil ||
-		e.Season.ID == nil ||
-		e.Season.Show == nil ||
-		e.Season.Show.ID == nil {
-		return nil
-	}
-	return e.Season.Show
-}
-
-func (e *Episode) ToRef() *EpisodeRef {
-	if e.ID == nil {
-		return nil
-	}
-
-	sketchCount := len(e.Sketches)
-	return &EpisodeRef{
-		ID:          e.ID,
-		Slug:        e.Slug,
-		Title:       e.Title,
-		Number:      e.Number,
-		AirDate:     e.AirDate,
-		Thumbnail:   e.Thumbnail,
-		Season:      e.Season,
-		SketchCount: &sketchCount,
-	}
-}
-
-type EpisodeRef struct {
-	ID          *int       `json:"id"`
-	Slug        *string    `json:"slug"`
-	Title       *string    `json:"title"`
-	Number      *int       `json:"number"`
-	AirDate     *time.Time `json:"airDate"`
-	Thumbnail   *string    `json:"thumbnail"`
-	Season      *SeasonRef `json:"season"`
-	SketchCount *int       `json:"-"`
-}
-
-func (e *EpisodeRef) GetTitle() *string     { return e.Title }
-func (e *EpisodeRef) GetNumber() *int       { return e.Number }
-func (e *EpisodeRef) GetSeason() *SeasonRef { return e.Season }
-func (e *EpisodeRef) GetSketchCount() int   { return safeDeref(e.SketchCount) }
-
-func (e *EpisodeRef) GetShow() *ShowRef {
-	if e.Season == nil ||
-		e.Season.ID == nil ||
-		e.Season.Show.ID == nil {
-		return nil
-	}
-	return e.Season.Show
-}
-
-func (s *Season) AirYear() string {
-	var airDates []time.Time
-	for _, e := range s.Episodes {
-		if e.AirDate != nil {
-			airDates = append(airDates, *e.AirDate)
-		}
-	}
-	if len(airDates) == 0 {
-		return ""
-	}
-
-	min := airDates[0]
-	for _, t := range airDates[1:] {
-		if t.Before(min) {
-			min = t
-		}
-	}
-	return strconv.Itoa(min.Year())
-}
-
 type ShowModelInterface interface {
 	AddSeason(*Season) (int, error)
 	Delete(show *Show) error
@@ -149,6 +42,7 @@ type ShowModelInterface interface {
 	GetBySlug(slug string) (*Show, error)
 	GetCount(filter *Filter) (int, error)
 	GetEpisode(episodeId int) (*Episode, error)
+	GetGroupings(showId int) ([]*Grouping, error)
 	GetSeason(seasonId int) (*Season, error)
 	GetShowCast(id int) ([]*Person, error)
 	GetShowRefs(ids []int) ([]*ShowRef, error)
@@ -324,6 +218,79 @@ func (m *ShowModel) GetSeason(seasonId int) (*Season, error) {
 	})
 
 	return s, nil
+}
+
+func (m *ShowModel) GetGroupings(showId int) ([]*Grouping, error) {
+	stmt := `
+		SELECT g.id, g.slug, g.title, g.description, g.position,
+		s.id, s.slug, s.title, s.upload_date, s.thumbnail_name, s.rating,
+		sh.id, sh.slug, sh.name, sh.profile_img
+		FROM sketch_grouping as g
+		JOIN show as sh ON g.show_id = sh.id
+		JOIN sketch as s ON g.id = s.grouping_id
+		WHERE g.show_id = $1
+		ORDER BY g.position, s.popularity_score, s.id
+	`
+
+	rows, err := m.DB.Query(context.Background(), stmt, showId)
+	if err != nil {
+		return nil, err
+	}
+	groupingMap := map[int]*Grouping{}
+	for rows.Next() {
+		g := &Grouping{}
+		s := &SketchRef{}
+		sh := &ShowRef{}
+		err := rows.Scan(
+			&g.ID, &g.Slug, &g.Title, &g.Description, &g.Position,
+			&s.ID, &s.Slug, &s.Title, &s.UploadDate, &s.Thumbnail, &s.Rating,
+			&sh.ID, &sh.Slug, &sh.Name, &sh.ProfileImg,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := groupingMap[*g.ID]; !ok {
+			groupingMap[*g.ID] = g
+		}
+
+		g = groupingMap[*g.ID]
+
+		if s.ID == nil {
+			continue
+		}
+
+		s.Show = sh
+		g.Sketches = append(g.Sketches, s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	groupings := []*Grouping{}
+	for _, g := range groupingMap {
+		groupings = append(groupings, g)
+	}
+
+	sort.Slice(groupings, func(i, j int) bool {
+		pi := groupings[i].Position
+		pj := groupings[j].Position
+
+		if pi == nil && pj == nil {
+			return false
+		}
+		if pi == nil {
+			return false // i goes after j
+		}
+		if pj == nil {
+			return true // i goes before j
+		}
+
+		return *pi < *pj
+	})
+
+	return groupings, nil
 }
 
 func (m *ShowModel) InsertEpisode(episode *Episode) (int, error) {

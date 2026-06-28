@@ -168,6 +168,8 @@ type sketchForm struct {
 	EpisodeID           int                   `form:"episodeId"`
 	EpisodeInput        string                `form:"episodeInput"`
 	EpisodeStart        int                   `form:"episodeStart"`
+	GroupingID          int                   `form:"groupingId"`
+	GroupingInput       string                `form:"groupingInput"`
 	SeriesID            int                   `form:"seriesId"`
 	SeriesInput         string                `form:"seriesInput"`
 	SeriesPart          int                   `form:"seriesPart"`
@@ -183,7 +185,9 @@ type sketchForm struct {
 // to validate based on database queries
 func (app *application) validateSketchForm(form *sketchForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
-	form.CheckField(form.CreatorID != 0 || form.EpisodeID != 0, "creatorId", "A creator or episode must be defined")
+	form.CheckField(form.CreatorID != 0 || form.EpisodeID != 0 || form.GroupingID != 0,
+		"creatorId", "A creator, episode or grouping must be defined",
+	)
 
 	if form.ID == 0 {
 		form.CheckField(form.Thumbnail != nil, "thumbnail", "Please upload an image")

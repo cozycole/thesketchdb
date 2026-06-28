@@ -37,7 +37,6 @@ func UserPageView(user *models.User, favorited []*models.SketchRef, baseImgUrl s
 		baseImgUrl,
 		"base",
 		"sub",
-		12,
 	)
 	if err != nil {
 		return nil, err

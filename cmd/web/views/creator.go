@@ -50,7 +50,6 @@ func CreatorPageView(
 		baseImgUrl,
 		"base",
 		"sub",
-		popularPageSize,
 	)
 	if err != nil {
 		return nil, err

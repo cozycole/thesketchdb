@@ -51,7 +51,6 @@ func CharacterPageView(character *models.Character, popular []*models.SketchRef,
 		baseImgUrl,
 		"cast",
 		"sub",
-		popularPageSize,
 	)
 	if err != nil {
 		return nil, err

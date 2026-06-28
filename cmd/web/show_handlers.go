@@ -186,12 +186,52 @@ func (app *application) viewShowSeasons(w http.ResponseWriter, r *http.Request) 
 	app.render(r, w, http.StatusOK, "show-seasons.gohtml", "base", data)
 }
 
+func (app *application) viewShowGroupings(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	showId, err := strconv.Atoi(id)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	show, err := app.shows.GetById(showId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	groupings, err := app.shows.GetGroupings(showId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	pageData, err := views.ShowExtrasPageView(show, groupings, app.baseImgUrl)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	data.Page = pageData
+	isHxRequest := r.Header.Get("HX-Request") == "true"
+	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
+	if isHxRequest && !isHistoryRestore {
+		app.render(r, w, http.StatusOK, "show-extras.gohtml", "show-content", pageData)
+		return
+	}
+	app.render(r, w, http.StatusOK, "show-extras.gohtml", "base", data)
+}
+
 func (app *application) viewShowCast(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	showId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
 		return
 	}
 
@@ -227,8 +267,6 @@ func (app *application) viewShowCast(w http.ResponseWriter, r *http.Request) {
 	}
 	app.render(r, w, http.StatusOK, "show-cast.gohtml", "base", data)
 }
-
-
 
 type showFormPage struct {
 	Title           string
@@ -433,7 +471,6 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 	form.ProfileImgUrl = fmt.Sprintf("%s/show/small/%s", app.baseImgUrl, safeDeref(oldShow.ProfileImg))
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "show-form", form)
 }
-
 
 func isSeasonPath(r *http.Request) bool {
 	rawURL := r.Header.Get("Hx-Current-URL")

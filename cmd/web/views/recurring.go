@@ -36,7 +36,6 @@ func RecurringPageView(recurring *models.Recurring, baseImgUrl string) (*Recurri
 		baseImgUrl,
 		"default",
 		"full",
-		-1,
 	)
 
 	if err != nil {
