@@ -1,0 +1,18 @@
+{{ define "title" }}{{ .Page.ShowName }} Extras{{ end }}
+
+{{ define "main" }}
+  {{ template "show-layout" . }}
+{{ end }}
+
+{{ define "show-content" }}
+  <section id="extras" class="space-y-3">
+    {{ range .Groupings }}
+      <div>
+        <h2 class="font-bold text-xl my-3">
+          {{ .Title }}
+        </h2>
+        {{ template "browse-gallery" .Sketches }}
+      </div>
+    {{ end }}
+  </section>
+{{ end }}
