@@ -66,6 +66,7 @@ type SketchVideo struct {
 type SketchModelInterface interface {
 	BatchUpdateTags(sketchId int, tags []*Tag) error
 	Delete(id int) error
+	DeleteScreenshots(id int) error
 	Exists(id int) (bool, error)
 	Get(filter *Filter) ([]*SketchRef, Metadata, error)
 	GetById(id int) (*Sketch, error)
@@ -91,6 +92,15 @@ func (m *SketchModel) Delete(id int) error {
 	stmt := `
 		DELETE from sketch
 		WHERE id = $1
+	`
+	_, err := m.DB.Exec(context.Background(), stmt, id)
+	return err
+}
+
+func (m *SketchModel) DeleteScreenshots(id int) error {
+	stmt := `
+		DELETE from cast_auto_screenshots
+		WHERE sketch_id = $1
 	`
 	_, err := m.DB.Exec(context.Background(), stmt, id)
 	return err
@@ -258,6 +268,7 @@ func determineFields(filter *Filter, args *Arguements) string {
 		sh.profile_img as show_img, sh.slug as show_slug, v.popularity_score as popularity,
 		se.id as season_id, se.slug as season_slug, se.season_number as season_number, 
 		e.id as episode_id, e.slug as episode_slug, e.episode_number as episode_number, e.air_date as episode_airdate,
+		shg.id as grouping_show_id, shg.slug as grouping_show_slug, shg.name as grouping_show_name, shg.profile_img as grouping_show_img, 
 		(select thumbnail_name from cast_members where %s and sketch_id = v.id order by position limit 1) as cast_thumbnail_name
 		%s
 	`
@@ -394,7 +405,9 @@ func determineConditions(filter *Filter, args *Arguements) string {
 		         c.id, c.name, c.page_url, c.slug, c.profile_img,
 				sh.id, sh.name, sh.profile_img, sh.slug, 
 				se.id, se.slug, se.season_number, 
-				e.id, e.slug, e.episode_number, e.air_date`
+				e.id, e.slug, e.episode_number, e.air_date,
+				shg.id, shg.slug, shg.name, shg.profile_img,
+		`
 
 		if filter.Query != "" {
 			clause += ", rank"
@@ -439,6 +452,8 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
 		LEFT JOIN episode as e ON v.episode_id = e.id
 		LEFT JOIN season as se ON e.season_id = se.id
 		LEFT JOIN show as sh ON se.show_id = sh.id
+		LEFT JOIN sketch_grouping as g ON v.grouping_id = g.id
+		LEFT JOIN show as shg ON g.show_id = shg.id
 		WHERE 1=1
 		%s
 		),
@@ -453,6 +468,7 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
 		show_id, show_name, show_img, show_slug, 
 		season_id, season_slug, season_number, 
 		episode_id, episode_slug, episode_number, episode_airdate,
+		grouping_show_id, grouping_show_slug, grouping_show_name, grouping_show_img,
 		cast_thumbnail_name, popularity %s
 		FROM ranked_sketches
 		WHERE rn = 1
@@ -492,6 +508,7 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
 		v := &SketchRef{}
 		c := &CreatorRef{}
 		sh := &ShowRef{}
+		shg := &ShowRef{}
 		se := &SeasonRef{}
 		ep := &EpisodeRef{}
 		destinations := []any{
@@ -501,6 +518,7 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
 			&se.ID, &se.Slug, &se.Number,
 			&ep.ID, &ep.Slug, &ep.Number, &ep.AirDate,
+			&shg.ID, &shg.Slug, &shg.Name, &shg.ProfileImg,
 			&v.CastThumbnail, nil,
 		}
 		var rank *float32
@@ -518,7 +536,9 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
 		if c.ID != nil {
 			v.Creator = c
 		}
-
+		if shg.ID != nil {
+			v.Show = shg
+		}
 		if ep.ID != nil {
 			v.Episode = ep
 		}
@@ -675,6 +695,8 @@ func (m *SketchModel) GetCount(filter *Filter) (int, error) {
 			LEFT JOIN episode as e ON v.episode_id = e.id
 			LEFT JOIN season as se ON e.season_id = se.id
 			LEFT JOIN show as sh ON se.show_id = sh.id
+			LEFT JOIN sketch_grouping as g ON v.grouping_id = g.id
+			LEFT JOIN show as shg ON g.show_id = shg.id
 			WHERE 1=1
 			%s
 		) as grouped_content

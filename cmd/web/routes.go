@@ -205,6 +205,7 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 			r.Group(func(r chi.Router) {
 				r.Use(app.requireRoles(adminOnly))
 				r.Get("/admin/get-token", app.createAdminToken)
+				r.Delete("/sketch/{id}/screenshots", app.deleteScreenshotsAPI)
 			})
 		})
 	})

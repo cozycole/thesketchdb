@@ -251,8 +251,31 @@ func (s *SketchService) CleanupSketchMedia(info *DeleteSketchInfo) error {
 		return err
 	}
 	err = s.ImgStore.DeleteFiles(screenshotKeys)
+	return err
+}
+
+func (s *SketchService) DeleteScreenshots(sketchId int) error {
+	screenshots, err := s.Repos.Cast.GetCastScreenshots(sketchId)
 	if err != nil {
 		return err
 	}
-	return nil
+
+	err = s.Repos.Sketches.DeleteScreenshots(sketchId)
+	if err != nil {
+		return err
+	}
+
+	screenshotKeys := []string{}
+	for _, s := range screenshots {
+		if s.ProfileImage != nil {
+			shotKey := fmt.Sprintf("cast_auto_screenshots/profile/%s", *s.ProfileImage)
+			screenshotKeys = append(screenshotKeys, shotKey)
+		}
+		if s.ThumbnailName != nil {
+			shotKey := fmt.Sprintf("cast_auto_screenshots/thumbnail/%s", *s.ThumbnailName)
+			screenshotKeys = append(screenshotKeys, shotKey)
+		}
+	}
+
+	return s.ImgStore.DeleteFiles(screenshotKeys)
 }

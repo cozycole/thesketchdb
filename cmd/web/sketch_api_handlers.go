@@ -223,12 +223,29 @@ func (app *application) deleteSketchAPI(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	app.writeJSON(w, http.StatusOK, envelope{"message": "Sketch successfully deleted."}, nil)
+
 	err = app.services.Sketches.CleanupSketchMedia(deleteInfo)
 	if err != nil {
 		app.errorLog.Print(err)
 	}
+}
 
-	app.writeJSON(w, http.StatusOK, envelope{"message": "Sketch successfully deleted."}, nil)
+func (app *application) deleteScreenshotsAPI(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("id param not defined"))
+		return
+	}
+
+	err = app.services.Sketches.DeleteScreenshots(sketchId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"message": "Screenshots deleted successfully"}, nil)
 }
 
 func (app *application) insertQuoteLike(w http.ResponseWriter, r *http.Request) {
