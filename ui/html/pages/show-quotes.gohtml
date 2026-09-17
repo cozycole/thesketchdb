@@ -1,0 +1,49 @@
+{{ define "title" }}{{ .Page.ShowName }} Cast{{ end }}
+
+{{ define "main" }}
+  {{ template "show-layout" . }}
+{{ end }}
+
+{{ define "show-content" }}
+  <section id="quotes" class="flex flex-col flex-1 mt-1">
+    <span class="font-bold">{{ .TotalQuotes }} Liked Quotes</span>
+    <div id="results" class="w-full flex flex-col flex-1 gap-3 mt-3">
+      <div class="w-full flex flex-col flex-1 gap-3">
+        {{- if .HasResults -}}
+          {{ range .QuoteResultsList }}
+            <div class="rounded-lg border border-slate-200 bg-white px-4 py-4">
+              {{- template "quote-list-item" . -}}
+            </div>
+          {{ end }}
+        {{ else }}
+          <div class="text-center p-6">
+            <p class="text-lg">
+              Like a quote for it to show up on the leaderboard
+            </p>
+          </div>
+        {{ end }}
+
+      </div>
+      <div class="flex justify-center gap-x-2.5 mt-auto mb-2">
+        {{ range .Pages }}
+          {{ if .IsEllipsis }}
+            <span class="inline-block leading-8 text-slate-500">...</span>
+          {{ else if .IsCurrent }}
+            <span
+              class="inline-block leading-8 h-8 font-bold px-3 rounded-md bg-slate-300"
+              >{{ .Page }}</span
+            >
+          {{ else }}
+            <a
+              class="htmxSearchPage inline-block leading-8 h-8 text-slate-600 px-3 rounded-md bg-slate-300 hover:cursor-pointer hover:bg-slate-400"
+              hx-get="{{ .URL }}"
+              hx-swap="innerHTML"
+              hx-target="#results"
+              >{{ .Page }}</a
+            >
+          {{ end }}
+        {{ end }}
+      </div>
+    </div>
+  </section>
+{{ end }}

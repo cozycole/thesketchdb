@@ -182,8 +182,8 @@ func (m *SketchModel) BatchUpdateTags(sketchId int, tags []*Tag) error {
 		}
 		query = query[:len(query)-1] // Trim last comma
 		values = append([]any{sketchId}, values...)
-		fmt.Printf("QUERY: %s\n", query)
-		fmt.Printf("VALUES: %+v\n", values)
+		// fmt.Printf("QUERY: %s\n", query)
+		// fmt.Printf("VALUES: %+v\n", values)
 
 		_, err = tx.Exec(context.Background(), query, values...)
 		if err != nil {
@@ -406,7 +406,7 @@ func determineConditions(filter *Filter, args *Arguements) string {
 				sh.id, sh.name, sh.profile_img, sh.slug, 
 				se.id, se.slug, se.season_number, 
 				e.id, e.slug, e.episode_number, e.air_date,
-				shg.id, shg.slug, shg.name, shg.profile_img,
+				shg.id, shg.slug, shg.name, shg.profile_img
 		`
 
 		if filter.Query != "" {
@@ -439,7 +439,7 @@ func determineSort(filter *Filter, args *Arguements) string {
 
 func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
 	// The CTE is used due to possiblility of a single cast member playing
-	// multiple rows in a sketch, this can cause duplicate sketch results (one for
+	// multiple roles in a sketch, this can cause duplicate sketch results (one for
 	// each character/person pairing) so we want to limit it to one (rn = 1)
 	query := `
 		WITH sketch_cast AS (

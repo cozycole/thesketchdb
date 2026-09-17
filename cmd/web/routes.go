@@ -72,6 +72,7 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 		r.Get("/show/{id}/{slug}/seasons", app.viewShowSeasons)
 		r.Get("/show/{id}/{slug}/extras", app.viewShowGroupings)
 		r.Get("/show/{id}/{slug}/cast", app.viewShowCast)
+		r.Get("/show/{id}/{slug}/quotes", app.viewShowQuotes)
 
 		r.Get("/show/search", app.showSearch)
 		r.Get("/show/{id}/{slug}/season", app.viewSeason)

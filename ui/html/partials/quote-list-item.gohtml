@@ -1,0 +1,231 @@
+{{ define "quote-list-item" }}
+  <div class="flex flex-col gap-3" data-like-count="{{ .LikeCount }}">
+    <!-- Quote content -->
+    <p class="text-[16px] text-slate-800 leading-relaxed">
+      {{ .Text }}
+    </p>
+    <div class="flex flex-1 gap-3 min-w-0">
+      <!-- Avatar stack -->
+      <div class="w-12 flex-none pt-1">
+        <div class="flex -space-x-2">
+          {{ $n := len .CastMembers }}
+
+          {{ if eq $n 1 }}
+            <div
+              class="w-12 h-12 rounded-full ring-2 ring-white overflow-hidden bg-slate-200"
+            >
+              <img
+                src="{{ (index .CastMembers 0).ImageURL }}"
+                alt=""
+                class="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          {{ else }}
+            <div class="flex flex-col">
+              <div class="flex -space-x-2">
+                {{ if ge $n 1 }}
+                  <div
+                    class="w-7 h-7 rounded-full ring-2 ring-white overflow-hidden bg-slate-200 flex-none"
+                  >
+                    <img
+                      src="{{ (index .CastMembers 0).ImageURL }}"
+                      alt=""
+                      class="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                {{ end }}
+
+                {{ if ge $n 2 }}
+                  <div
+                    class="w-7 h-7 rounded-full ring-2 ring-white overflow-hidden bg-slate-200 flex-none"
+                  >
+                    <img
+                      src="{{ (index .CastMembers 1).ImageURL }}"
+                      alt=""
+                      class="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                {{ end }}
+              </div>
+
+              <div
+                class="flex -mt-2 -space-x-2{{ if eq $n 3 }}
+                  justify-center
+                {{ end }}"
+              >
+                {{ if ge $n 3 }}
+                  <div
+                    class="w-7 h-7 rounded-full ring-2 ring-white overflow-hidden bg-slate-200 flex-none"
+                  >
+                    <img
+                      src="{{ (index .CastMembers 2).ImageURL }}"
+                      alt=""
+                      class="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                {{ end }}
+
+                {{ if ge $n 4 }}
+                  {{ if gt .ExtraCastImagesCount 0 }}
+                    <div
+                      class="w-7 h-7 rounded-full ring-2 ring-white bg-slate-100 flex-none flex items-center justify-center text-[10px] font-semibold text-slate-700"
+                    >
+                      +{{ inc .ExtraCastImagesCount }}
+                    </div>
+                  {{ else }}
+                    <div
+                      class="w-7 h-7 rounded-full ring-2 ring-white overflow-hidden bg-slate-200 flex-none"
+                    >
+                      <img
+                        src="{{ (index .CastMembers 3).ImageURL }}"
+                        alt=""
+                        class="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  {{ end }}
+                {{ end }}
+              </div>
+            </div>
+          {{ end }}
+        </div>
+      </div>
+      <!-- Attribution display -->
+      <div class="mt-2 flex items-center justify-between gap-3">
+        {{ $n := len .CastMembers }}
+        {{ if eq $n 1 }}
+          {{ $cm := index .CastMembers 0 }}
+          <p class="min-w-0 text-[14px] italic text-slate-500">
+            <a
+              href="{{ $cm.PersonURL }}"
+              class="font-medium text-slate-600 hover:text-orange-600"
+            >
+              {{ $cm.PersonName }}
+            </a>
+            {{ with $cm.CharacterName }}
+              <span class="text-slate-400"> as </span>
+              <a
+                href="{{ $cm.CharacterURL }}"
+                class="font-medium text-slate-600 hover:text-orange-600"
+              >
+                {{ $cm.CharacterName }}
+              </a>
+            {{ end }}
+            <span class="text-slate-400"> in </span>
+            <a
+              href="{{ .SketchURL }}"
+              class="font-medium text-slate-600 hover:text-orange-600"
+            >
+              {{ .SketchTitle }}
+            </a>
+          </p>
+        {{ else if eq $n 2 }}
+          {{ $cm0 := index .CastMembers 0 }}
+          {{ $cm1 := index .CastMembers 1 }}
+          <p class="min-w-0 text-[14px] italic text-slate-500">
+            <a
+              href="{{ $cm0.PersonURL }}"
+              class="font-medium text-slate-600 hover:text-orange-600"
+            >
+              {{ $cm0.PersonName }}
+            </a>
+            {{ with $cm0.CharacterName }}
+              <span class="text-slate-400"> as </span>
+              <a
+                href="{{ $cm0.CharacterURL }}"
+                class="font-medium text-slate-600 hover:text-orange-600"
+              >
+                {{ $cm0.CharacterName }}
+              </a>
+            {{ end }}
+            <span class="text-slate-400"> and </span>
+            <a
+              href="{{ $cm1.PersonURL }}"
+              class="font-medium text-slate-600 hover:text-orange-600"
+            >
+              {{ $cm1.PersonName }}
+            </a>
+            {{ with $cm1.CharacterName }}
+              <span class="text-slate-400"> as </span>
+              <a
+                href="{{ $cm1.CharacterURL }}"
+                class="font-medium text-slate-600 hover:text-orange-600"
+              >
+                {{ $cm1.CharacterName }}
+              </a>
+            {{ end }}
+            <span class="text-slate-400"> in </span>
+            <a
+              href="{{ .SketchURL }}"
+              class="font-medium text-slate-600 hover:text-orange-600"
+            >
+              {{ .SketchTitle }}
+            </a>
+          </p>
+        {{ else if gt $n 2 }}
+          {{ $cm0 := index .CastMembers 0 }}
+          {{ $cm1 := index .CastMembers 1 }}
+          <p class="min-w-0 text-[14px] italic text-slate-500">
+            <a
+              href="{{ $cm0.PersonURL }}"
+              class="font-medium text-slate-600 hover:text-orange-600"
+            >
+              {{ $cm0.PersonName }}
+            </a>
+            <span class="text-slate-400"> , </span>
+            <a
+              href="{{ $cm1.PersonURL }}"
+              class="font-medium text-slate-600 hover:text-orange-600"
+            >
+              {{ $cm1.PersonName }}
+            </a>
+            <span class="text-slate-400"> and </span>
+            <span class="font-medium text-slate-600">
+              {{ .ExtraCastNamesCount }}
+              {{ if eq (inc .ExtraCastNamesCount) 1 -}}
+                other
+              {{- else -}}
+                others
+              {{- end -}}
+            </span>
+            <span class="text-slate-400"> in </span>
+            <a
+              href="{{ .SketchURL }}"
+              class="font-medium text-slate-600 hover:text-orange-600"
+            >
+              {{ .SketchTitle }}
+            </a>
+          </p>
+        {{ end }}
+
+
+        <quote-like-button
+          class="flex-none"
+          data-id="{{ .ID }}"
+          {{ if .IsLiked }}data-liked{{ end }}
+        >
+          <button
+            type="button"
+            aria-label="Like quote"
+            class="flex items-center gap-1 rounded-md px-2 py-1 text-sm
+          {{ if .IsLiked }}
+              text-orange-500
+            {{ else }}
+              text-slate-800
+            {{ end }}
+          hover:text-orange-500 transition-colors"
+          >
+            <span class="w-5">
+              {{ template "heart-icon" (dict "Filled" .IsLiked) }}
+            </span>
+            <span class="count">{{ .LikeCount }}</span>
+          </button>
+        </quote-like-button>
+      </div>
+    </div>
+  </div>
+{{ end }}

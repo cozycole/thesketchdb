@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,6 +23,14 @@ type Quote struct {
 	Tags        []*Tag        `json:"tags"`
 	UserLiked   *bool         `json:"userLiked"`
 	LikeCount   *int          `json:"likeCount"`
+
+	SketchID    *int       `json:"sketchId"`
+	SketchSlug  *string    `json:"sketchSlug"`
+	SketchTitle *string    `json:"sketchTitle"`
+	Date        *time.Time `json:"date"`
+
+	Show     *ShowRef     `json:"show"`
+	Creators []CreatorRef `json:"creators"`
 }
 
 type TranscriptLine struct {
@@ -36,6 +46,7 @@ type QuoteModelInterface interface {
 	BatchUpdateQuoteCastMembers(quoteId int, castMemberIds []int) error
 	BatchUpdateQuoteTags(quoteId int, tagIds []int) error
 	DeleteQuoteLike(int, int) error
+	GetAll(*Filter, int) ([]*Quote, Metadata, error)
 	GetBySketch(int, *int) ([]*Quote, error)
 	GetTranscriptBySketch(int) ([]*TranscriptLine, error)
 	InsertQuoteLike(int, int) error
@@ -43,6 +54,429 @@ type QuoteModelInterface interface {
 
 type QuoteModel struct {
 	DB *pgxpool.Pool
+}
+
+func (m *QuoteModel) GetAll(f *Filter, userId int) ([]*Quote, Metadata, error) {
+	total, err := m.countQuotes(f)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	if total == 0 {
+		return []*Quote{},
+			Metadata{
+				CurrentPage:  1,
+				PageSize:     f.PageSize,
+				TotalPages:   0,
+				TotalRecords: 0,
+			}, nil
+	}
+
+	quotes, err := m.getQuotePage(f, userId)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	quoteIDs := make([]int, len(quotes))
+	sketchIDs := make([]int, len(quotes))
+
+	for i := range quotes {
+		quoteIDs[i] = *quotes[i].ID
+		sketchIDs[i] = *quotes[i].SketchID
+	}
+
+	if err := m.loadQuoteCast(quotes, quoteIDs); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	if err := m.loadCreators(quotes, sketchIDs); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	return quotes, calculateMetadata(total, f.Page, f.PageSize), nil
+}
+
+func (m QuoteModel) getQuotePage(f *Filter, userID int) ([]*Quote, error) {
+	where, args := buildQuoteWhere(f)
+
+	orderBy := "like_count DESC, q.id DESC"
+	limit := addArg(f.Limit(), &args)
+	offset := addArg(f.Offset(), &args)
+	user := addArg(userID, &args)
+	query := fmt.Sprintf(`
+		WITH filtered_quotes AS (
+			SELECT
+				q.id,
+				COUNT(ql.quote_id) AS like_count
+			FROM quote q
+			JOIN quote_likes ql
+				ON ql.quote_id = q.id
+			WHERE %s
+			GROUP BY q.id
+			ORDER BY %s
+			LIMIT %s
+			OFFSET %s
+		)
+		SELECT
+			q.id,
+			q.text,
+			q.type,
+			COALESCE(q.start_time_ms, 0),
+			COALESCE(q.end_time_ms, 0),
+
+			fq.like_count,
+			EXISTS (
+				SELECT 1
+				FROM quote_likes ql
+				WHERE ql.quote_id = q.id
+				  AND ql.user_id = %s
+			) AS user_liked,
+
+			s.id,
+			s.slug,
+			s.title,
+
+			COALESCE(e.air_date, s.upload_date),
+
+			sh.id,
+			sh.slug,
+			sh.name
+
+		FROM filtered_quotes fq
+		JOIN quote q
+			ON q.id = fq.id
+
+		JOIN sketch s
+			ON s.id = q.sketch_id
+
+		LEFT JOIN episode e
+			ON e.id = s.episode_id
+
+		LEFT JOIN season se
+			ON se.id = e.season_id
+
+		LEFT JOIN show sh
+			ON sh.id = se.show_id
+
+		ORDER BY %s
+	`,
+		where,
+		orderBy,
+		limit,
+		offset,
+		user,
+		orderBy,
+	)
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	quotes := []*Quote{}
+
+	for rows.Next() {
+		var q Quote
+		var show ShowRef
+
+		err := rows.Scan(
+			&q.ID,
+			&q.Text,
+			&q.Type,
+			&q.StartTimeMs,
+			&q.EndTimeMs,
+			&q.LikeCount,
+			&q.UserLiked,
+
+			&q.SketchID,
+			&q.SketchSlug,
+			&q.SketchTitle,
+
+			&q.Date,
+
+			&show.ID,
+			&show.Slug,
+			&show.Name,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if show.ID != nil {
+			q.Show = &show
+		}
+
+		quotes = append(quotes, &q)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return quotes, nil
+}
+func buildQuoteWhere(filter *Filter) (string, []any) {
+	args := []any{}
+	where := []string{"TRUE"}
+
+	addArg := func(value any) string {
+		args = append(args, value)
+		return fmt.Sprintf("$%d", len(args))
+	}
+
+	if filter.Query != "" {
+		p := addArg("%" + filter.Query + "%")
+		where = append(where, fmt.Sprintf("q.text ILIKE %s", p))
+	}
+
+	if filter.Type != "" {
+		p := addArg(filter.Type)
+		where = append(where, fmt.Sprintf("q.type = %s", p))
+	}
+
+	if len(filter.PersonIDs) > 0 {
+		p := addArg(filter.PersonIDs)
+
+		where = append(where, fmt.Sprintf(`
+			EXISTS (
+				SELECT 1
+				FROM quote_cast_rel qcr
+				JOIN cast_members cm ON cm.id = qcr.cast_id
+				WHERE qcr.quote_id = q.id
+				  AND cm.person_id = ANY(%s)
+			)`, p))
+	}
+
+	if len(filter.CharacterIDs) > 0 {
+		p := addArg(filter.CharacterIDs)
+
+		where = append(where, fmt.Sprintf(`
+			EXISTS (
+				SELECT 1
+				FROM quote_cast_rel qcr
+				JOIN cast_members cm ON cm.id = qcr.cast_id
+				WHERE qcr.quote_id = q.id
+				  AND cm.character_id = ANY(%s)
+			)`, p))
+	}
+
+	if len(filter.CreatorIDs) > 0 {
+		p := addArg(filter.CreatorIDs)
+
+		where = append(where, fmt.Sprintf(`
+			EXISTS (
+				SELECT 1
+				FROM sketch_creator_rel scr
+				WHERE scr.sketch_id = q.sketch_id
+				  AND scr.creator_id = ANY(%s)
+			)`, p))
+	}
+
+	if len(filter.ShowIDs) > 0 {
+		p := addArg(filter.ShowIDs)
+
+		where = append(where, fmt.Sprintf(`
+			EXISTS (
+				SELECT 1
+				FROM sketch s
+				JOIN episode e ON e.id = s.episode_id
+				JOIN season se ON se.id = e.season_id
+				WHERE s.id = q.sketch_id
+				  AND se.show_id = ANY(%s)
+			)`, p))
+	}
+
+	if len(filter.SketchIDs) > 0 {
+		p := addArg(filter.SketchIDs)
+		where = append(where, fmt.Sprintf(
+			"q.sketch_id = ANY(%s)", p,
+		))
+	}
+
+	// if len(filter.TagIDs) > 0 {
+	// 	p := addArg(filter.TagIDs)
+	//
+	// 	where = append(where, fmt.Sprintf(`
+	// 		EXISTS (
+	// 			SELECT 1
+	// 			FROM quote_tags_rel qtr
+	// 			WHERE qtr.quote_id = q.id
+	// 			  AND qtr.tag_id = ANY(%s)
+	// 		)`, p))
+	// }
+
+	return strings.Join(where, " AND "), args
+}
+
+func (m QuoteModel) countQuotes(
+	f *Filter,
+) (int, error) {
+	where, args := buildQuoteWhere(f)
+
+	query := fmt.Sprintf(`
+		SELECT COUNT(DISTINCT q.id)
+		FROM quote q
+
+		JOIN quote_likes ql
+			ON ql.quote_id = q.id
+		WHERE %s
+	`, where)
+
+	var total int
+
+	err := m.DB.QueryRow(context.Background(), query, args...).Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+
+	return total, nil
+}
+func (m QuoteModel) loadQuoteCast(
+	quotes []*Quote,
+	quoteIDs []int,
+) error {
+	rows, err := m.DB.Query(context.Background(), `
+		SELECT
+			qcr.quote_id,
+			
+			cm.character_name,
+			cm.profile_img,
+			cm.position,
+
+			p.id,
+			p.slug,
+			p.first,
+			p.last,
+
+			c.id,
+			c.slug,
+			c.name
+
+		FROM quote_cast_rel qcr
+
+		JOIN cast_members cm
+			ON cm.id = qcr.cast_id
+
+		LEFT JOIN person p
+			ON p.id = cm.person_id
+
+		LEFT JOIN character c
+			ON c.id = cm.character_id
+
+		WHERE qcr.quote_id = ANY($1)
+	`, quoteIDs)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	byID := make(map[int]*Quote, len(quotes))
+
+	for i := range quotes {
+		byID[*quotes[i].ID] = quotes[i]
+	}
+
+	for rows.Next() {
+		var (
+			quoteID int
+
+			castMember CastMember
+			person     PersonRef
+			character  CharacterRef
+		)
+
+		err := rows.Scan(
+			&quoteID,
+
+			&castMember.CharacterName,
+			&castMember.ProfileImg,
+			&castMember.Position,
+
+			&person.ID,
+			&person.Slug,
+			&person.First,
+			&person.Last,
+
+			&character.ID,
+			&character.Slug,
+			&character.Name,
+		)
+		if err != nil {
+			return err
+		}
+
+		if person.ID != nil {
+			castMember.Actor = &person
+		}
+
+		if character.ID != nil {
+			castMember.Character = &character
+		}
+
+		q := byID[quoteID]
+		q.CastMembers = append(q.CastMembers, &castMember)
+	}
+
+	return rows.Err()
+}
+
+func (m QuoteModel) loadCreators(
+	quotes []*Quote,
+	sketchIDs []int,
+) error {
+	rows, err := m.DB.Query(context.Background(), `
+		SELECT
+			scr.sketch_id,
+			c.id,
+			c.slug,
+			c.name
+
+		FROM sketch_creator_rel scr
+
+		JOIN creator c
+			ON c.id = scr.creator_id
+
+		WHERE scr.sketch_id = ANY($1)
+
+		ORDER BY
+			scr.sketch_id,
+			scr.position
+	`, sketchIDs)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	bySketchID := make(map[int][]*Quote)
+
+	for i := range quotes {
+		id := *quotes[i].SketchID
+		bySketchID[id] = append(bySketchID[id], quotes[i])
+	}
+
+	for rows.Next() {
+		var (
+			sketchID int
+			creator  CreatorRef
+		)
+
+		if err := rows.Scan(
+			&sketchID,
+			&creator.ID,
+			&creator.Slug,
+			&creator.Name,
+		); err != nil {
+			return err
+		}
+
+		// Multiple quotes on this page can belong to the same sketch.
+		for _, q := range bySketchID[sketchID] {
+			q.Creators = append(q.Creators, creator)
+		}
+	}
+
+	return rows.Err()
 }
 
 func (m *QuoteModel) GetBySketch(sketchId int, userId *int) ([]*Quote, error) {

@@ -1,12 +1,12 @@
 {{ define "show-layout" }}
   <main
     data-page="view-show"
-    class="w-full flex-1 px-2 py-4 sm:px-4 sm:py-4 text-slate-950 bg-white"
+    class="w-full min-h-[calc(100vh-64px)] flex flex-col flex-1 px-2 py-4 sm:px-4 sm:py-4 text-slate-950 bg-white"
   >
-    <div class="max-w-screen-xl mx-auto">
+    <div class="w-full flex flex-col flex-1 max-w-screen-xl mx-auto">
       {{ with .Page }}
         <div
-          class="flex flex-col w-full gap-4 items-center md:flex-row sm:items-start"
+          class="flex flex-col flex-1 w-full gap-4 items-center md:flex-row sm:items-start"
         >
           <section
             id="profile"
@@ -55,7 +55,7 @@
               </div>
             </div>
           </section>
-          <div id="showNavigationAnchor" class="w-full flex flex-col gap-2">
+          <div id="showNavigationAnchor" class="w-full flex flex-col flex-1 gap-2 self-stretch">
             <horizontal-fade class="sticky top-0 z-10 block bg-white">
               <nav
                 id="showNavigation"
@@ -170,27 +170,27 @@
                   <!--  Characters-->
                   <!--</a>-->
                   <!---->
-                  <!--<a-->
-                  <!--  href="/show/{{ .ID }}/{{ .Slug }}/quotes"-->
-                  <!--  hx-get="/show/{{ .ID }}/{{ .Slug }}/quotes"-->
-                  <!--  hx-target="#showContent"-->
-                  <!--  hx-push-url="true"-->
-                  <!--  class="-->
-                  <!--border-b-2 px-4 py-3 text-sm-->
-                  <!--{{ if eq .ActiveTab `quotes` }}-->
-                  <!--    border-slate-950 font-bold text-slate-950-->
-                  <!--  {{ else }}-->
-                  <!--    border-transparent font-medium text-slate-600-->
-                  <!--    hover:border-slate-300 hover:text-slate-950-->
-                  <!--  {{ end }}-->
-                  <!--"-->
-                  <!-->-->
-                  <!--  Quotes-->
-                  <!--</a>-->
+                  <a
+                    href="/show/{{ .ID }}/{{ .Slug }}/quotes"
+                    hx-get="/show/{{ .ID }}/{{ .Slug }}/quotes"
+                    hx-target="#showContent"
+                    hx-push-url="true"
+                    class="
+                  border-b-2 px-4 py-3 text-sm
+                  {{ if eq .ActiveTab `quotes` }}
+                      border-slate-950 font-bold text-slate-950
+                    {{ else }}
+                      border-transparent font-medium text-slate-600
+                      hover:border-slate-300 hover:text-slate-950
+                    {{ end }}
+                  "
+                  >
+                    Quotes
+                  </a>
                 </div>
               </nav>
             </horizontal-fade>
-            <div id="showContent">
+            <div id="showContent" class="flex flex-col flex-1">
               {{ template "show-content" . }}
             </div>
           </div>

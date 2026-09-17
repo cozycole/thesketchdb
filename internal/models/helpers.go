@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+func addArg(value any, args *[]any) string {
+	*args = append(*args, value)
+	return fmt.Sprintf("$%d", len(*args))
+}
+
 func CreateSlugName(text string) string {
 	// Convert to lowercase
 	slug := strings.ToLower(text)
