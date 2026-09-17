@@ -319,10 +319,6 @@ func (app *application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
 		app.serverError(r, w, err)
 		return
 	}
-	prettyJSON, _ := json.MarshalIndent(quoteResults, "", "  ")
-	println(string(prettyJSON))
-	// prettyJSON, _ = json.MarshalIndent(pageData, "", "  ")
-	// println(string(prettyJSON))
 
 	filter.ShowIDs = nil
 	url, err := views.BuildURL(

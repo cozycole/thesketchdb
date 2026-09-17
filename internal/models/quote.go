@@ -167,8 +167,6 @@ func (m QuoteModel) getQuotePage(f *Filter, userID int) ([]*Quote, error) {
 		user,
 		orderBy,
 	)
-	println(query)
-	fmt.Printf("%+v", args)
 
 	rows, err := m.DB.Query(context.Background(), query, args...)
 	if err != nil {
