@@ -50,6 +50,18 @@ export class QuoteList extends HTMLElement {
       return Number(a.dataset.timestamp) - Number(b.dataset.timestamp);
     });
 
+    if (mode === "top") {
+      sorted.forEach((e) => {
+        if (e.dataset.likeCount == 0) {
+          e.classList.add("hidden");
+        }
+      });
+    } else {
+      sorted.forEach((e) => {
+        e.classList.remove("hidden");
+      });
+    }
+
     this.container.replaceChildren(...sorted);
   }
 }

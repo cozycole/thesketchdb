@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 
+	"sketchdb.cozycole.net/internal/domain/quotes"
 	"sketchdb.cozycole.net/internal/domain/sketches"
 	"sketchdb.cozycole.net/internal/models"
 )
@@ -142,11 +143,11 @@ func ShowSketchesPageView(
 	pagination, err := buildPagination(
 		results.Metadata.CurrentPage,
 		results.Metadata.TotalPages,
-		fmt.Sprintf("/show/%d/%show/sketches", page.ID, page.Slug),
+		fmt.Sprintf("/show/%d/%s/sketches", page.ID, page.Slug),
 		results.Filter,
 	)
 
-	page.SketchResultsGallery = SketchGallery{Sketches: sketches, SectionType: "full"}
+	page.SketchResultsGallery = SketchGallery{Sketches: sketches, SectionType: "sub"}
 	page.Pages = pagination
 	page.HasResults = len(sketches) > 0
 	return &page, nil
@@ -218,6 +219,42 @@ func ShowCastPageView(show *models.Show, cast []*models.Person, baseImgUrl strin
 	}
 
 	page.SeasonSection = SeasonSelectGalleryView(show.Seasons, show.Seasons[0], baseImgUrl, "sub")
+	return &page, nil
+}
+
+type ShowQuotesPage struct {
+	baseShowLayout
+	QuoteResultsList []QuoteListItem
+	HasResults       bool
+	TotalQuotes      int
+	Pages            []*PaginationItem
+}
+
+func ShowQuotesPageView(
+	show *models.Show,
+	results quotes.QuoteListResult,
+	baseImgUrl string,
+) (*ShowQuotesPage, error) {
+	base, err := baseShowLayoutView(show, ShowTabQuotes, baseImgUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	page := ShowQuotesPage{
+		baseShowLayout: base,
+	}
+
+	page.QuoteResultsList = QuoteListView(results.Quotes, baseImgUrl)
+	pagination, err := buildPagination(
+		results.Metadata.CurrentPage,
+		results.Metadata.TotalPages,
+		fmt.Sprintf("/show/%d/%s/quotes", page.ID, page.Slug),
+		results.Filter,
+	)
+	page.TotalQuotes = results.Metadata.TotalRecords
+
+	page.Pages = pagination
+	page.HasResults = len(results.Quotes) > 0
 	return &page, nil
 }
 

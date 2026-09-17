@@ -6,6 +6,8 @@ export function initViewShow() {
   setupNavbar();
 
   document.addEventListener("change", (e) => {
+    // auto update the sketch results when the sort
+    // dropdown has changed
     if (e.target.id !== "sortDropdown") return;
 
     const url = new URL(window.location.href);

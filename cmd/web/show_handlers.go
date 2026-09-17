@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -266,6 +267,84 @@ func (app *application) viewShowCast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	app.render(r, w, http.StatusOK, "show-cast.gohtml", "base", data)
+}
+
+func (app *application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	id := r.PathValue("id")
+	showId, err := strconv.Atoi(id)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	page := r.Form.Get("page")
+	currentPage, err := strconv.Atoi(page)
+	if err != nil || currentPage < 1 {
+		currentPage = 1
+	}
+
+	show, err := app.shows.GetById(showId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	filter := &models.Filter{
+		Page:     currentPage,
+		PageSize: 10,
+		ShowIDs:  []int{showId},
+	}
+
+	userId := 0
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	if ok && user.ID != nil {
+		userId = *user.ID
+	}
+
+	quoteResults, err := app.services.Quotes.GetQuotes(filter, userId)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	pageData, err := views.ShowQuotesPageView(show, quoteResults, app.baseImgUrl)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+	prettyJSON, _ := json.MarshalIndent(quoteResults, "", "  ")
+	println(string(prettyJSON))
+	// prettyJSON, _ = json.MarshalIndent(pageData, "", "  ")
+	// println(string(prettyJSON))
+
+	filter.ShowIDs = nil
+	url, err := views.BuildURL(
+		fmt.Sprintf("/show/%d/%s/quotes", *show.ID, *show.Slug),
+		currentPage,
+		filter,
+	)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	w.Header().Add("HX-Push-Url", url)
+
+	data.Page = pageData
+	isHxRequest := r.Header.Get("HX-Request") == "true"
+	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
+	if isHxRequest && !isHistoryRestore {
+		app.render(r, w, http.StatusOK, "show-quotes.gohtml", "show-content", pageData)
+		return
+	}
+	app.render(r, w, http.StatusOK, "show-quotes.gohtml", "base", data)
 }
 
 type showFormPage struct {

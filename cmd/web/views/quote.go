@@ -104,3 +104,108 @@ func QuoteHeader(members []*models.CastMember) string {
 
 	return strings.Join(charNames, ", ")
 }
+
+type QuoteListItem struct {
+	ID                   int
+	Text                 string
+	CastMembers          []QuoteCastMember
+	ExtraCastImagesCount int
+	ExtraCastNamesCount  int
+	IsLiked              bool
+	LikeCount            int
+
+	SketchURL   string
+	SketchTitle string
+
+	Show QuoteLinkRef
+
+	Creators []QuoteLinkRef
+}
+
+type QuoteLinkRef struct {
+	URL   string
+	Title string
+}
+
+type QuoteCastMember struct {
+	PersonName    string
+	PersonURL     string
+	CharacterName string
+	CharacterURL  string
+	ImageURL      string
+}
+
+const MAX_DISPLAY_NAMES = 2
+
+func QuoteListView(quotes []*models.Quote, baseImgUrl string) []QuoteListItem {
+	quoteItems := []QuoteListItem{}
+	for _, q := range quotes {
+		qi := QuoteListItem{}
+		qi.ID = safeDeref(q.ID)
+
+		qi.Text = safeDeref(q.Text)
+		for _, cm := range q.CastMembers {
+			qcm := QuoteCastMember{
+				ImageURL: DetermineCastImageUrl(cm, "small", baseImgUrl),
+			}
+			if cm.Actor != nil {
+				qcm.PersonName = PrintPersonRefName(cm.Actor)
+				qcm.PersonURL = fmt.Sprintf(
+					"/person/%d/%s",
+					safeDeref(cm.Actor.ID),
+					safeDeref(cm.Actor.Slug),
+				)
+			}
+
+			qcm.CharacterName = safeDeref(cm.CharacterName)
+			if cm.Character != nil {
+				if qcm.CharacterName == "" {
+					qcm.CharacterName = safeDeref(cm.Character.Name)
+				}
+				qcm.PersonName = PrintPersonRefName(cm.Actor)
+				qcm.CharacterURL = fmt.Sprintf(
+					"/character/%d/%s",
+					safeDeref(cm.Character.ID),
+					safeDeref(cm.Character.Slug),
+				)
+			}
+			qi.CastMembers = append(qi.CastMembers, qcm)
+		}
+		// we want to show up to 4 cast images and up to 2 cast names
+		qi.ExtraCastImagesCount = max(len(qi.CastMembers)-MAX_DISPLAY_IMAGES, 0)
+		qi.ExtraCastNamesCount = max(len(qi.CastMembers)-MAX_DISPLAY_NAMES, 0)
+		qi.LikeCount = safeDeref(q.LikeCount)
+
+		qi.SketchURL = fmt.Sprintf(
+			"/sketch/%d/%s",
+			safeDeref(q.SketchID),
+			safeDeref(q.SketchSlug),
+		)
+
+		qi.IsLiked = safeDeref(q.UserLiked)
+		qi.SketchTitle = safeDeref(q.SketchTitle)
+		if q.Show != nil {
+			qi.Show.URL = fmt.Sprintf(
+				"/show/%d/%s",
+				safeDeref(q.Show.ID),
+				safeDeref(q.Show.Slug),
+			)
+			qi.Show.Title = safeDeref(q.Show.Name)
+		}
+
+		for _, c := range q.Creators {
+			qi.Creators = append(qi.Creators, QuoteLinkRef{
+				URL: fmt.Sprintf(
+					"/creator/%d/%s",
+					safeDeref(c.ID),
+					safeDeref(c.Slug),
+				),
+				Title: safeDeref(c.Name),
+			})
+		}
+
+		quoteItems = append(quoteItems, qi)
+	}
+
+	return quoteItems
+}

@@ -28,3 +28,19 @@ func (s *QuoteService) GetAdminQuotes(sketchId int) (AdminQuoteData, error) {
 	data.TranscriptLines = transcript
 	return data, nil
 }
+
+type QuoteListResult struct {
+	Quotes   []*models.Quote
+	Metadata models.Metadata
+	Filter   *models.Filter
+}
+
+func (s *QuoteService) GetQuotes(f *models.Filter, userId int) (QuoteListResult, error) {
+	quotes, metadata, err := s.Repos.Quotes.GetAll(f, userId)
+
+	return QuoteListResult{
+		Quotes:   quotes,
+		Metadata: metadata,
+		Filter:   f,
+	}, err
+}

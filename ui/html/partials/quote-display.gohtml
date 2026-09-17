@@ -107,7 +107,10 @@
           {{ if .IsLiked }}data-liked{{ end }}
         >
           <button
-            class="flex items-center gap-1 text-sm {{ if .IsLiked }}
+            type="button"
+            aria-label="Like quote"
+            class="flex items-center gap-1 text-sm 
+            {{ if .IsLiked }}
               text-orange-500
             {{ else }}
               text-slate-800
