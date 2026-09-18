@@ -6,7 +6,7 @@
 
 {{ define "show-content" }}
   <section id="quotes" class="flex flex-col flex-1 mt-1">
-    <span class="font-bold">{{ .TotalQuotes }} Liked Quotes</span>
+    <span class="font-bold">{{ .TotalQuotesLabel }}</span>
     <div id="results" class="w-full flex flex-col flex-1 gap-3 mt-3">
       {{ template "quotes-result" . }}
     </div>

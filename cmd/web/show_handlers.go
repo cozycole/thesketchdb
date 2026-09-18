@@ -102,7 +102,7 @@ func (app *application) viewShowSketches(w http.ResponseWriter, r *http.Request)
 	}
 
 	filter := &models.Filter{
-		PageSize: 12,
+		PageSize: 24,
 		Page:     currentPage,
 		SortBy:   sort,
 		ShowIDs:  []int{*show.ID},
@@ -267,6 +267,77 @@ func (app *application) viewShowCast(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "show-cast.gohtml", "base", data)
 }
 
+func (app *application) viewShowCharacters(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	id := r.PathValue("id")
+	showId, err := strconv.Atoi(id)
+	if err != nil {
+		app.badRequest(w)
+		return
+	}
+
+	page := r.Form.Get("page")
+	currentPage, err := strconv.Atoi(page)
+	if err != nil || currentPage < 1 {
+		currentPage = 1
+	}
+
+	show, err := app.shows.GetById(showId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(r, w, err)
+		}
+		return
+	}
+
+	filter := &models.Filter{
+		Page:     currentPage,
+		PageSize: 25,
+		ShowIDs:  []int{showId},
+	}
+	characterResults, err := app.services.Characters.GetCharacters(filter)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	pageData, err := views.ShowCharactersPageView(show, characterResults, app.baseImgUrl)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+	data.Page = pageData
+
+	filter.ShowIDs = nil
+	url, err := views.BuildURL(
+		fmt.Sprintf("/show/%d/%s/characters", *show.ID, *show.Slug),
+		currentPage,
+		filter,
+	)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	w.Header().Add("HX-Push-Url", url)
+	isHxRequest := r.Header.Get("HX-Request") == "true"
+	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
+	if isHxRequest && !isHistoryRestore {
+		if r.Header.Get("HX-Target") == "showContent" {
+			app.render(r, w, http.StatusOK, "show-characters.gohtml", "show-content", pageData)
+		} else {
+			app.render(r, w, http.StatusOK, "profile-result.gohtml", "profile-result", pageData.CharacterResults)
+		}
+		return
+	}
+
+	app.render(r, w, http.StatusOK, "show-characters.gohtml", "base", data)
+
+}
 func (app *application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
@@ -295,7 +366,7 @@ func (app *application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
 
 	filter := &models.Filter{
 		Page:     currentPage,
-		PageSize: 10,
+		PageSize: 25,
 		ShowIDs:  []int{showId},
 	}
 
@@ -312,7 +383,7 @@ func (app *application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	pageData, err := views.ShowQuotesPageView(show, quoteResults, app.baseImgUrl)
+	data.Page, err = views.ShowQuotesPageView(show, quoteResults, app.baseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -331,14 +402,13 @@ func (app *application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("HX-Push-Url", url)
 
-	data.Page = pageData
 	isHxRequest := r.Header.Get("HX-Request") == "true"
 	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
 	if isHxRequest && !isHistoryRestore {
 		if r.Header.Get("HX-Target") == "showContent" {
-			app.render(r, w, http.StatusOK, "show-quotes.gohtml", "show-content", pageData)
+			app.render(r, w, http.StatusOK, "show-quotes.gohtml", "show-content", data.Page)
 		} else {
-			app.render(r, w, http.StatusOK, "quotes-result.gohtml", "quotes-result", pageData)
+			app.render(r, w, http.StatusOK, "quotes-result.gohtml", "quotes-result", data.Page)
 		}
 		return
 	}

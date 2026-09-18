@@ -22,11 +22,13 @@ type Character struct {
 }
 
 type CharacterRef struct {
-	ID    *int    `json:"id"`
-	Slug  *string `json:"slug"`
-	Name  *string `json:"name"`
-	Type  *string `json:"type"`
-	Image *string `json:"profileImage"`
+	ID              *int     `json:"id"`
+	Slug            *string  `json:"slug"`
+	Name            *string  `json:"name"`
+	Type            *string  `json:"type"`
+	Image           *string  `json:"profileImage"`
+	AppearanceCount *int     `json:"appearanceCount"`
+	PopularityScore *float32 `json:"popularity"`
 }
 
 type CharacterModelInterface interface {
@@ -35,6 +37,7 @@ type CharacterModelInterface interface {
 	Get(filter *Filter) ([]*Character, error)
 	GetById(id int) (*Character, error)
 	GetCharactersRefs(ids []int) ([]*CharacterRef, error)
+	GetAll(*Filter) ([]*CharacterRef, Metadata, error)
 	GetCount(filter *Filter) (int, error)
 	Insert(character *Character) (int, error)
 	List(f *Filter) ([]*CharacterRef, Metadata, error)
@@ -265,6 +268,299 @@ func (m *CharacterModel) Insert(character *Character) (int, error) {
 	}
 
 	return id, err
+}
+
+func (m *CharacterModel) GetAll(f *Filter) ([]*CharacterRef, Metadata, error) {
+	total, err := m.countCharacters(f)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	if total == 0 {
+		return []*CharacterRef{},
+			Metadata{
+				CurrentPage:  1,
+				PageSize:     f.PageSize,
+				TotalPages:   0,
+				TotalRecords: 0,
+			}, nil
+	}
+
+	characters, err := m.getCharacterPage(f)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	return characters, calculateMetadata(total, f.Page, f.PageSize), nil
+
+}
+
+func (m *CharacterModel) getCharacterPage(f *Filter) ([]*CharacterRef, error) {
+	appearanceWhere, characterWhere, args := buildCharacterWhere(f)
+
+	orderBy := "c.popularity_score DESC, c.id"
+
+	switch f.SortBy {
+	case "appearances":
+		orderBy = "cs.appearance_count DESC, c.popularity_score DESC, c.id"
+	case "popular":
+		orderBy = "c.popularity_score DESC, cs.appearance_count DESC, c.id"
+	}
+
+	limitArg := len(args) + 1
+	offsetArg := len(args) + 2
+
+	args = append(
+		args,
+		f.PageSize,
+		(f.Page-1)*f.PageSize,
+	)
+
+	query := fmt.Sprintf(`
+		WITH filtered_appearances AS (
+			SELECT
+				cm.character_id,
+				cm.sketch_id,
+				cm.profile_img,
+				cm.position
+			FROM cast_members cm
+			JOIN sketch sk
+				ON sk.id = cm.sketch_id
+			LEFT JOIN episode e
+				ON e.id = sk.episode_id
+			LEFT JOIN season se
+				ON se.id = e.season_id
+			LEFT JOIN sketch_grouping sg
+				ON sg.id = sk.grouping_id
+			WHERE %s
+		),
+		character_stats AS (
+			SELECT
+				character_id,
+				COUNT(DISTINCT sketch_id)::int AS appearance_count
+			FROM filtered_appearances
+			GROUP BY character_id
+		)
+		SELECT
+			c.id,
+			c.slug,
+			c.name,
+			c.character_type,
+			c.popularity_score,
+			cs.appearance_count,
+			COALESCE(img.profile_img, c.img_name) AS profile_img
+		FROM "character" c
+		JOIN character_stats cs
+			ON cs.character_id = c.id
+
+		LEFT JOIN LATERAL (
+			SELECT fa.profile_img
+			FROM filtered_appearances fa
+			WHERE fa.character_id = c.id
+			  AND fa.profile_img IS NOT NULL
+			ORDER BY
+				fa.position ASC NULLS LAST,
+				fa.sketch_id DESC
+			LIMIT 1
+		) img ON TRUE
+
+		WHERE %s
+
+		ORDER BY %s
+		LIMIT $%d
+		OFFSET $%d
+	`,
+		appearanceWhere,
+		characterWhere,
+		orderBy,
+		limitArg,
+		offsetArg,
+	)
+
+	rows, err := m.DB.Query(context.Background(), query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	characters := []*CharacterRef{}
+
+	for rows.Next() {
+		character := &CharacterRef{}
+
+		err := rows.Scan(
+			&character.ID,
+			&character.Slug,
+			&character.Name,
+			&character.Type,
+			&character.PopularityScore,
+			&character.AppearanceCount,
+			&character.Image,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		characters = append(characters, character)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return characters, nil
+}
+
+func (m *CharacterModel) countCharacters(f *Filter) (int, error) {
+	appearanceWhere, characterWhere, args := buildCharacterWhere(f)
+
+	query := fmt.Sprintf(`
+		WITH filtered_appearances AS (
+			SELECT
+				cm.character_id,
+				cm.sketch_id
+			FROM cast_members cm
+			JOIN sketch sk
+				ON sk.id = cm.sketch_id
+			LEFT JOIN episode e
+				ON e.id = sk.episode_id
+			LEFT JOIN season se
+				ON se.id = e.season_id
+			LEFT JOIN sketch_grouping sg
+				ON sg.id = sk.grouping_id
+			WHERE %s
+		),
+		character_stats AS (
+			SELECT
+				character_id,
+				COUNT(DISTINCT sketch_id) AS appearance_count
+			FROM filtered_appearances
+			GROUP BY character_id
+		)
+		SELECT COUNT(*)
+		FROM "character" c
+		JOIN character_stats cs
+			ON cs.character_id = c.id
+		WHERE %s
+	`, appearanceWhere, characterWhere)
+
+	var total int
+
+	err := m.DB.QueryRow(context.Background(), query, args...).Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+
+	return total, nil
+}
+
+func buildCharacterWhere(f *Filter) (string, string, []any) {
+	appearanceConditions := []string{
+		"cm.character_id IS NOT NULL",
+	}
+
+	characterConditions := []string{
+		"TRUE",
+	}
+
+	args := []any{}
+
+	addArg := func(value any) string {
+		args = append(args, value)
+		return fmt.Sprintf("$%d", len(args))
+	}
+
+	if len(f.PersonIDs) > 0 {
+		arg := addArg(f.PersonIDs)
+		appearanceConditions = append(
+			appearanceConditions,
+			fmt.Sprintf("cm.person_id = ANY(%s)", arg),
+		)
+	}
+
+	if len(f.SketchIDs) > 0 {
+		arg := addArg(f.SketchIDs)
+		appearanceConditions = append(
+			appearanceConditions,
+			fmt.Sprintf("sk.id = ANY(%s)", arg),
+		)
+	}
+
+	if len(f.ShowIDs) > 0 {
+		arg := addArg(f.ShowIDs)
+
+		appearanceConditions = append(
+			appearanceConditions,
+			fmt.Sprintf(`
+				(
+					se.show_id = ANY(%s)
+					OR sg.show_id = ANY(%s)
+				)
+			`, arg, arg),
+		)
+	}
+
+	if len(f.CreatorIDs) > 0 {
+		arg := addArg(f.CreatorIDs)
+
+		appearanceConditions = append(
+			appearanceConditions,
+			fmt.Sprintf(`
+				EXISTS (
+					SELECT 1
+					FROM sketch_creator_rel scr
+					WHERE scr.sketch_id = sk.id
+					  AND scr.creator_id = ANY(%s)
+				)
+			`, arg),
+		)
+	}
+
+	if len(f.TagIDs) > 0 {
+		arg := addArg(f.TagIDs)
+
+		appearanceConditions = append(
+			appearanceConditions,
+			fmt.Sprintf(`
+				EXISTS (
+					SELECT 1
+					FROM sketch_tags st
+					WHERE st.sketch_id = sk.id
+					  AND st.tag_id = ANY(%s)
+				)
+			`, arg),
+		)
+	}
+
+	if len(f.CharacterIDs) > 0 {
+		arg := addArg(f.CharacterIDs)
+		characterConditions = append(
+			characterConditions,
+			fmt.Sprintf("c.id = ANY(%s)", arg),
+		)
+	}
+
+	if f.Type != "" {
+		arg := addArg(f.Type)
+		characterConditions = append(
+			characterConditions,
+			fmt.Sprintf("c.character_type = %s::character_type", arg),
+		)
+	}
+
+	if f.Query != "" {
+		arg := addArg(f.Query)
+		characterConditions = append(
+			characterConditions,
+			fmt.Sprintf(`
+				c.search_vector @@ websearch_to_tsquery('english', %s)
+			`, arg),
+		)
+	}
+
+	return strings.Join(appearanceConditions, " AND "),
+		strings.Join(characterConditions, " AND "),
+		args
 }
 
 func (m *CharacterModel) List(f *Filter) ([]*CharacterRef, Metadata, error) {

@@ -55,7 +55,10 @@
               </div>
             </div>
           </section>
-          <div id="showNavigationAnchor" class="w-full flex flex-col flex-1 gap-2 self-stretch">
+          <div
+            id="showNavigationAnchor"
+            class="w-full flex flex-col flex-1 gap-2 self-stretch"
+          >
             <horizontal-fade class="sticky top-0 z-10 block bg-white">
               <nav
                 id="showNavigation"
@@ -152,24 +155,24 @@
                     Cast
                   </a>
 
-                  <!--<a-->
-                  <!--  href="/show/{{ .ID }}/{{ .Slug }}/characters"-->
-                  <!--  hx-get="/show/{{ .ID }}/{{ .Slug }}/characters"-->
-                  <!--  hx-target="#showContent"-->
-                  <!--  hx-push-url="true"-->
-                  <!--  class="-->
-                  <!--border-b-2 px-4 py-3 text-sm-->
-                  <!--{{ if eq .ActiveTab `characters` }}-->
-                  <!--    border-slate-950 font-bold text-slate-950-->
-                  <!--  {{ else }}-->
-                  <!--    border-transparent font-medium text-slate-600-->
-                  <!--    hover:border-slate-300 hover:text-slate-950-->
-                  <!--  {{ end }}-->
-                  <!--"-->
-                  <!-->-->
-                  <!--  Characters-->
-                  <!--</a>-->
-                  <!---->
+                  <a
+                    href="/show/{{ .ID }}/{{ .Slug }}/characters"
+                    hx-get="/show/{{ .ID }}/{{ .Slug }}/characters"
+                    hx-target="#showContent"
+                    hx-push-url="true"
+                    class="
+                  border-b-2 px-4 py-3 text-sm
+                  {{ if eq .ActiveTab `characters` }}
+                      border-slate-950 font-bold text-slate-950
+                    {{ else }}
+                      border-transparent font-medium text-slate-600
+                      hover:border-slate-300 hover:text-slate-950
+                    {{ end }}
+                  "
+                  >
+                    Characters
+                  </a>
+
                   <a
                     href="/show/{{ .ID }}/{{ .Slug }}/quotes"
                     hx-get="/show/{{ .ID }}/{{ .Slug }}/quotes"

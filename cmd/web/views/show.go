@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 
+	"sketchdb.cozycole.net/internal/domain/characters"
 	"sketchdb.cozycole.net/internal/domain/quotes"
 	"sketchdb.cozycole.net/internal/domain/sketches"
 	"sketchdb.cozycole.net/internal/models"
@@ -222,11 +223,80 @@ func ShowCastPageView(show *models.Show, cast []*models.Person, baseImgUrl strin
 	return &page, nil
 }
 
+type CharacterResults struct {
+	ProfileResults ProfileGallery
+	HasResults     bool
+	Pages          []*PaginationItem
+}
+
+type ShowCharactersPage struct {
+	baseShowLayout
+	CharacterResults     CharacterResults
+	TotalCharactersLabel string
+}
+
+func ShowCharactersPageView(
+	show *models.Show,
+	results characters.GetCharactersResult,
+	baseImgUrl string,
+) (*ShowCharactersPage, error) {
+	base, err := baseShowLayoutView(show, ShowTabCharacters, baseImgUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	page := ShowCharactersPage{
+		baseShowLayout: base,
+	}
+	for _, c := range results.Characters {
+		var sketchLabel string
+		if safeDeref(c.AppearanceCount) > 1 {
+			sketchLabel = "Sketches"
+		} else {
+			sketchLabel = "Sketch"
+		}
+
+		page.CharacterResults.ProfileResults.Cards = append(
+			page.CharacterResults.ProfileResults.Cards, &Card{
+				Url: fmt.Sprintf("/catalog/sketches?show=%d&character=%d",
+					safeDeref(show.ID),
+					safeDeref(c.ID),
+				),
+				ImageUrl: fmt.Sprintf("%s/cast/profile/medium/%s",
+					baseImgUrl,
+					safeDeref(c.Image),
+				),
+				Title: safeDeref(c.Name),
+				Subtitle: fmt.Sprintf(
+					"%d %s",
+					safeDeref(c.AppearanceCount),
+					sketchLabel,
+				),
+			})
+	}
+	page.CharacterResults.HasResults = len(results.Characters) > 0
+
+	pagination, err := buildPagination(
+		results.Metadata.CurrentPage,
+		results.Metadata.TotalPages,
+		fmt.Sprintf("/show/%d/%s/characters", page.ID, page.Slug),
+		results.Filter,
+	)
+	if results.Metadata.TotalRecords == 1 {
+		page.TotalCharactersLabel = fmt.Sprintf("%d Character", results.Metadata.TotalRecords)
+	} else {
+		page.TotalCharactersLabel = fmt.Sprintf("%d Characters", results.Metadata.TotalRecords)
+	}
+
+	page.CharacterResults.Pages = pagination
+	return &page, nil
+}
+
 type ShowQuotesPage struct {
 	baseShowLayout
 	QuoteResultsList []QuoteListItem
 	HasResults       bool
-	TotalQuotes      int
+	TotalQuotesLabel string
 	Pages            []*PaginationItem
 }
 
@@ -251,7 +321,12 @@ func ShowQuotesPageView(
 		fmt.Sprintf("/show/%d/%s/quotes", page.ID, page.Slug),
 		results.Filter,
 	)
-	page.TotalQuotes = results.Metadata.TotalRecords
+
+	if results.Metadata.TotalRecords == 1 {
+		page.TotalQuotesLabel = fmt.Sprintf("%d Liked Quote", results.Metadata.TotalRecords)
+	} else {
+		page.TotalQuotesLabel = fmt.Sprintf("%d Liked Quotes", results.Metadata.TotalRecords)
+	}
 
 	page.Pages = pagination
 	page.HasResults = len(results.Quotes) > 0

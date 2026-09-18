@@ -30,3 +30,19 @@ func (s *CharacterService) ListCharacters(f *models.Filter, includeRefs bool) (C
 	result.TotalCount = metadata.TotalRecords
 	return result, nil
 }
+
+type GetCharactersResult struct {
+	Characters []*models.CharacterRef
+	Metadata   models.Metadata
+	Filter     *models.Filter
+}
+
+func (s *CharacterService) GetCharacters(f *models.Filter) (GetCharactersResult, error) {
+	characters, metadata, err := s.Repos.Characters.GetAll(f)
+
+	return GetCharactersResult{
+		Characters: characters,
+		Metadata:   metadata,
+		Filter:     f,
+	}, err
+}

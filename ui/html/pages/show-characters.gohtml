@@ -1,0 +1,14 @@
+{{ define "title" }}{{ .Page.ShowName }} Characters{{ end }}
+
+{{ define "main" }}
+  {{ template "show-layout" . }}
+{{ end }}
+
+{{ define "show-content" }}
+  <section id="characters" class="flex flex-col flex-1 mt-1">
+    <span class="font-bold">{{ .TotalCharactersLabel }}</span>
+    <div id="results" class="w-full flex flex-col flex-1 gap-3 mt-3">
+      {{ template "profile-result" .CharacterResults }}
+    </div>
+  </section>
+{{ end }}
