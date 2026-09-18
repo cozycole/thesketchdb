@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -140,7 +139,6 @@ func (app *application) viewShowSketches(w http.ResponseWriter, r *http.Request)
 	if isHxRequest && !isHistoryRestore {
 		if r.Header.Get("HX-Target") == "showContent" {
 			app.render(r, w, http.StatusOK, "show-sketches.gohtml", "show-content", pageData)
-
 		} else {
 			app.render(r, w, http.StatusOK, "sketches-result.gohtml", "sketches-result", pageData)
 		}
@@ -337,7 +335,11 @@ func (app *application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
 	isHxRequest := r.Header.Get("HX-Request") == "true"
 	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
 	if isHxRequest && !isHistoryRestore {
-		app.render(r, w, http.StatusOK, "show-quotes.gohtml", "show-content", pageData)
+		if r.Header.Get("HX-Target") == "showContent" {
+			app.render(r, w, http.StatusOK, "show-quotes.gohtml", "show-content", pageData)
+		} else {
+			app.render(r, w, http.StatusOK, "quotes-result.gohtml", "quotes-result", pageData)
+		}
 		return
 	}
 	app.render(r, w, http.StatusOK, "show-quotes.gohtml", "base", data)

@@ -11,7 +11,8 @@ export class QuoteLikeButton extends HTMLElement {
 
     this.likeButton = this.querySelector("button");
     this.icon = this.querySelector("svg");
-    this.likeCount = this.querySelector(".count");
+    this.likeCountDisplay = this.querySelector(".count");
+    this.quoteData = this.closest("[data-like-count]");
 
     if (!(this.likeButton && this.icon)) {
       throw Error(`Like button error`);
@@ -61,8 +62,9 @@ export class QuoteLikeButton extends HTMLElement {
     this.likeButton.classList.toggle("text-orange-500", this.liked);
 
     let likeDiff = this.liked ? 1 : -1;
-    let current = Number(this.likeCount.textContent);
-    this.likeCount.textContent = current + likeDiff;
+    let current = Number(this.likeCountDisplay.textContent);
+    this.likeCountDisplay.textContent = current + likeDiff;
+    this.quoteData.dataset.likeCount = current + likeDiff;
   }
 }
 

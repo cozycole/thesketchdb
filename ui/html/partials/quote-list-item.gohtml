@@ -96,111 +96,7 @@
       </div>
       <!-- Attribution display -->
       <div class="mt-2 flex items-center justify-between gap-3">
-        {{ $n := len .CastMembers }}
-        {{ if eq $n 1 }}
-          {{ $cm := index .CastMembers 0 }}
-          <p class="min-w-0 text-[14px] italic text-slate-500">
-            <a
-              href="{{ $cm.PersonURL }}"
-              class="font-medium text-slate-600 hover:text-orange-600"
-            >
-              {{ $cm.PersonName }}
-            </a>
-            {{ with $cm.CharacterName }}
-              <span class="text-slate-400"> as </span>
-              <a
-                href="{{ $cm.CharacterURL }}"
-                class="font-medium text-slate-600 hover:text-orange-600"
-              >
-                {{ $cm.CharacterName }}
-              </a>
-            {{ end }}
-            <span class="text-slate-400"> in </span>
-            <a
-              href="{{ .SketchURL }}"
-              class="font-medium text-slate-600 hover:text-orange-600"
-            >
-              {{ .SketchTitle }}
-            </a>
-          </p>
-        {{ else if eq $n 2 }}
-          {{ $cm0 := index .CastMembers 0 }}
-          {{ $cm1 := index .CastMembers 1 }}
-          <p class="min-w-0 text-[14px] italic text-slate-500">
-            <a
-              href="{{ $cm0.PersonURL }}"
-              class="font-medium text-slate-600 hover:text-orange-600"
-            >
-              {{ $cm0.PersonName }}
-            </a>
-            {{ with $cm0.CharacterName }}
-              <span class="text-slate-400"> as </span>
-              <a
-                href="{{ $cm0.CharacterURL }}"
-                class="font-medium text-slate-600 hover:text-orange-600"
-              >
-                {{ $cm0.CharacterName }}
-              </a>
-            {{ end }}
-            <span class="text-slate-400"> and </span>
-            <a
-              href="{{ $cm1.PersonURL }}"
-              class="font-medium text-slate-600 hover:text-orange-600"
-            >
-              {{ $cm1.PersonName }}
-            </a>
-            {{ with $cm1.CharacterName }}
-              <span class="text-slate-400"> as </span>
-              <a
-                href="{{ $cm1.CharacterURL }}"
-                class="font-medium text-slate-600 hover:text-orange-600"
-              >
-                {{ $cm1.CharacterName }}
-              </a>
-            {{ end }}
-            <span class="text-slate-400"> in </span>
-            <a
-              href="{{ .SketchURL }}"
-              class="font-medium text-slate-600 hover:text-orange-600"
-            >
-              {{ .SketchTitle }}
-            </a>
-          </p>
-        {{ else if gt $n 2 }}
-          {{ $cm0 := index .CastMembers 0 }}
-          {{ $cm1 := index .CastMembers 1 }}
-          <p class="min-w-0 text-[14px] italic text-slate-500">
-            <a
-              href="{{ $cm0.PersonURL }}"
-              class="font-medium text-slate-600 hover:text-orange-600"
-            >
-              {{ $cm0.PersonName }}
-            </a>
-            <span class="text-slate-400"> , </span>
-            <a
-              href="{{ $cm1.PersonURL }}"
-              class="font-medium text-slate-600 hover:text-orange-600"
-            >
-              {{ $cm1.PersonName }}
-            </a>
-            <span class="text-slate-400"> and </span>
-            <span class="font-medium text-slate-600">
-              {{ .ExtraCastNamesCount }}
-              {{ if eq (inc .ExtraCastNamesCount) 1 -}}
-                other
-              {{- else -}}
-                others
-              {{- end -}}
-            </span>
-            <span class="text-slate-400"> in </span>
-            <a
-              href="{{ .SketchURL }}"
-              class="font-medium text-slate-600 hover:text-orange-600"
-            >
-              {{ .SketchTitle }}
-            </a>
-          </p>
-        {{ end }}
+        {{ template "quote-footer" . }}
 
 
         <quote-like-button
@@ -228,4 +124,142 @@
       </div>
     </div>
   </div>
+{{ end }}
+
+{{ define "quote-footer" }}
+  {{ $n := len .CastMembers }}
+  {{ if eq $n 1 }}
+    {{ $cm := index .CastMembers 0 }}
+    <p class="min-w-0 text-[14px] italic text-slate-500">
+      {{ with $cm.PersonName }}
+        <a
+          href="{{ $cm.PersonURL }}"
+          class="font-medium text-slate-600 hover:text-orange-600"
+        >
+          {{ $cm.PersonName }}
+        </a>
+        <span class="text-slate-400"> as </span>
+      {{ end }}
+      {{ with $cm.CharacterName }}
+        {{ with $cm.CharacterURL }}
+          <a
+            href="{{ $cm.CharacterURL }}"
+            class="font-medium text-slate-600 hover:text-orange-600"
+          >
+            {{ $cm.CharacterName }}
+          </a>
+        {{ else }}
+          <span class="font-medium text-slate-600 "
+            >{{ $cm.CharacterName }}</span
+          >
+        {{ end }}
+      {{ end }}
+      <span class="text-slate-400"> in </span>
+      <a
+        href="{{ .SketchURL }}"
+        class="font-medium text-slate-600 hover:text-orange-600"
+      >
+        {{ .SketchTitle }}
+      </a>
+    </p>
+  {{ else if eq $n 2 }}
+    {{ $cm0 := index .CastMembers 0 }}
+    {{ $cm1 := index .CastMembers 1 }}
+    <p class="min-w-0 text-[14px] italic text-slate-500">
+      {{ with $cm0.PersonName }}
+        <a
+          href="{{ $cm0.PersonURL }}"
+          class="font-medium text-slate-600 hover:text-orange-600"
+        >
+          {{ $cm0.PersonName }}
+        </a>
+        <span class="text-slate-400"> as </span>
+      {{ end }}
+      {{ with $cm0.CharacterName }}
+        {{ with $cm0.CharacterURL }}
+          <a
+            href="{{ $cm0.CharacterURL }}"
+            class="font-medium text-slate-600 hover:text-orange-600"
+            >{{ $cm0.CharacterName }}
+          </a>
+        {{ else }}
+          <span class="font-medium text-slate-600 "
+            >{{ $cm0.CharacterName }}</span
+          >
+        {{ end }}
+      {{ end }}
+      <span class="text-slate-400"> and </span>
+
+      {{ with $cm1.PersonName }}
+        <a
+          href="{{ $cm1.PersonURL }}"
+          class="font-medium text-slate-600 hover:text-orange-600"
+        >
+          {{ $cm1.PersonName }}
+        </a>
+        <span class="text-slate-400"> as </span>
+      {{ end }}
+      {{ with $cm1.CharacterName }}
+        {{ with $cm1.CharacterURL }}
+          <a
+            href="{{ $cm1.CharacterURL }}"
+            class="font-medium text-slate-600 hover:text-orange-600"
+            >{{ $cm1.CharacterName }}
+          </a>
+        {{ else }}
+          <span class="font-medium text-slate-600 "
+            >{{ $cm1.CharacterName }}</span
+          >
+        {{ end }}
+      {{ end }}
+      <span class="text-slate-400"> in </span>
+      <a
+        href="{{ .SketchURL }}"
+        class="font-medium text-slate-600 hover:text-orange-600"
+      >
+        {{ .SketchTitle }}
+      </a>
+    </p>
+  {{ else if gt $n 2 }}
+    {{ $cm0 := index .CastMembers 0 }}
+    {{ $cm1 := index .CastMembers 1 }}
+    <p class="min-w-0 text-[14px] italic text-slate-500">
+      {{ with $cm0.PersonName }}
+        <a
+          href="{{ $cm0.PersonURL }}"
+          class="font-medium text-slate-600 hover:text-orange-600"
+        >
+          {{ $cm0.PersonName }}
+        </a>
+      {{ else }}
+        <span class="font-medium text-slate-600 hover:text-orange-600"
+          >{{ $cm.CharacterName }}</span
+        >
+      {{ end }}
+      <span class="text-slate-400"> , </span>
+      <a
+        href="{{ $cm1.PersonURL }}"
+        class="font-medium text-slate-600 hover:text-orange-600"
+      >
+        {{ $cm1.PersonName }}
+      </a>
+      <span class="text-slate-400"> and </span>
+      <span class="font-medium text-slate-600">
+        {{ .ExtraCastNamesCount }}
+        {{ if eq (inc .ExtraCastNamesCount) 1 -}}
+          other
+        {{- else -}}
+          others
+        {{- end -}}
+      </span>
+      <span class="text-slate-400"> in </span>
+      <a
+        href="{{ .SketchURL }}"
+        class="font-medium text-slate-600 hover:text-orange-600"
+      >
+        {{ .SketchTitle }}
+      </a>
+    </p>
+  {{ end }}
+
 {{ end }}
