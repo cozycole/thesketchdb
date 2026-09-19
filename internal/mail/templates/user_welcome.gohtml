@@ -1,0 +1,166 @@
+{{ define "subject" }}Welcome to theSketchDb!{{ end }}
+<!-- prettier-ignore -->
+{{ define "plainBody" }}
+  Verify your email Thank you for creating an account! Verify your email address
+  by visiting:
+
+  {{ .ActivationURL }}
+
+  This link will expire in 24 hours. If you didn't create a theSketchDb account,
+  you can ignore this email. 
+
+  theSketchDb
+{{ end }}
+
+{{ define "htmlBody" }}
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Activate your account</title>
+    </head>
+
+    <body
+      style="
+  margin: 0;
+  padding: 0;
+  background-color: #f1f5f9;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #0f172a;
+"
+    >
+      <table
+        role="presentation"
+        width="100%"
+        cellspacing="0"
+        cellpadding="0"
+        border="0"
+        style="background-color: #f1f5f9;"
+      >
+        <tr>
+          <td align="center" style="padding: 48px 16px;">
+            <table
+              role="presentation"
+              width="100%"
+              cellspacing="0"
+              cellpadding="0"
+              border="0"
+              style="
+            max-width: 560px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+          "
+            >
+              <!-- Header -->
+              <tr>
+                <td align="center" style="padding: 32px 32px 20px;">
+                  <div
+                    style="
+                display: inline-block;
+                background-color: #0f172a;
+                border-radius: 10px;
+                padding: 12px 18px;
+                color: #ffffff;
+                font-size: 22px;
+                font-weight: 700;
+                letter-spacing: -0.5px;
+              "
+                  >
+                    <span
+                      style="
+                  color: #cbd5e1;
+                  font-size: 14px;
+                  font-weight: bold;
+                "
+                      >the</span
+                    >Sketch<span style="color: #ea580c;">Db</span>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Content -->
+              <tr>
+                <td style="padding: 8px 40px 40px;">
+                  <h1
+                    style="
+                margin: 0 0 16px;
+                text-align: center;
+                font-size: 24px;
+                line-height: 32px;
+                color: #0f172a;
+              "
+                  >
+                    Verify your email
+                  </h1>
+
+                  <p
+                    style="
+                margin: 0 0 28px;
+                text-align: center;
+                color: #475569;
+                font-size: 15px;
+                line-height: 24px;
+              "
+                  >
+                    Thank you for creating an account! Verify your email address
+                    to finish setting up your theSketchDb account.
+                  </p>
+
+                  <div style="text-align: center;">
+                    <a
+                      href="{{ .ActivationURL }}"
+                      style="
+                    display: inline-block;
+                    background-color: #ea580c;
+                    color: #ffffff;
+                    text-decoration: none;
+                    font-size: 15px;
+                    font-weight: 600;
+                    padding: 12px 22px;
+                    border-radius: 8px;
+                  "
+                    >
+                      Verify email address
+                    </a>
+                  </div>
+
+                  <p
+                    style="
+                margin: 28px 0 0;
+                text-align: center;
+                color: #64748b;
+                font-size: 13px;
+                line-height: 20px;
+              "
+                  >
+                    This link will expire in 24 hours.
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td
+                  style="
+              border-top: 1px solid #e2e8f0;
+              padding: 20px 32px;
+              text-align: center;
+              color: #94a3b8;
+              font-size: 12px;
+              line-height: 18px;
+            "
+                >
+                  If you didn't create a theSketchDb account, you can ignore
+                  this email.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+  </html>
+{{ end }}

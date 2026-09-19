@@ -33,6 +33,7 @@ import (
 	"sketchdb.cozycole.net/internal/domain/tags"
 
 	"sketchdb.cozycole.net/internal/fileStore"
+	"sketchdb.cozycole.net/internal/mail"
 	"sketchdb.cozycole.net/internal/models"
 )
 
@@ -58,6 +59,7 @@ type application struct {
 	users          models.UserModelInterface
 	sketches       models.SketchModelInterface
 	services       Services
+	mail           mail.Mailer
 	sessionManager *scs.SessionManager
 	debugMode      bool
 	formDecoder    *form.Decoder
@@ -173,6 +175,14 @@ func main() {
 		errorLog.Fatal("Storage path not defined")
 	}
 
+	mailApiKey := os.Getenv("MAIL_API_KEY")
+	mailDomain := os.Getenv("MAIL_DOMAIN")
+	mailSender := os.Getenv("MAIL_SENDER")
+
+	if mailApiKey == "" || mailDomain == "" || mailSender == "" {
+		errorLog.Fatal("MAIL_API_KEY, MAIL_DOMAIN, and MAIL_SENDER must be set")
+	}
+
 	dbpool, err := openDB(dbUrl)
 	if err != nil {
 		errorLog.Fatal(err)
@@ -213,6 +223,7 @@ func main() {
 		users:          &models.UserModel{DB: dbpool},
 		services:       NewServices(newRepositories(dbpool), fileStorage, archiveStorage),
 		sessionManager: sessionManager,
+		mail:           mail.New(mailDomain, mailApiKey, mailSender),
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,
 		assets:         StaticAssets,

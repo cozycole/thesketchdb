@@ -6,15 +6,16 @@ require (
 	github.com/alexedwards/scs/pgxstore v0.0.0-20240316134038-7e11d57e8885
 	github.com/alexedwards/scs/v2 v2.8.0
 	github.com/aws/aws-sdk-go v1.55.7
-	github.com/go-chi/chi/v5 v5.1.0
+	github.com/go-chi/chi/v5 v5.3.1
 	github.com/go-playground/form/v4 v4.2.1
 	github.com/golang-migrate/migrate/v4 v4.19.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/joho/godotenv v1.5.1
-	golang.org/x/crypto v0.36.0
+	github.com/mailgun/mailgun-go/v5 v5.19.3
+	golang.org/x/crypto v0.46.0
 	golang.org/x/image v0.24.0
-	golang.org/x/text v0.23.0
+	golang.org/x/text v0.32.0
 )
 
 require (
@@ -25,5 +26,6 @@ require (
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
-	golang.org/x/sync v0.12.0 // indirect
+	github.com/oapi-codegen/runtime v1.6.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
 )
