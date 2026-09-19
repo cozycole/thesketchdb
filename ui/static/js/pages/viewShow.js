@@ -6,7 +6,7 @@ export function initViewShow() {
   setupNavbar();
 
   document.addEventListener("change", (e) => {
-    // auto update the sketch results when the sort
+    // auto update the sketch/cast/character results when the sort
     // dropdown has changed
     if (e.target.id !== "sortDropdown") return;
 

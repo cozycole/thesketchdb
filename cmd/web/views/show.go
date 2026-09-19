@@ -256,17 +256,28 @@ func ShowCharactersPageView(
 			sketchLabel = "Sketch"
 		}
 
+		var imageUrl string
+		if safeDeref(c.CastImage) != "" {
+			imageUrl = fmt.Sprintf("%s/cast/profile/medium/%s",
+				baseImgUrl,
+				safeDeref(c.CastImage),
+			)
+		} else {
+			imageUrl = fmt.Sprintf("%s/character/medium/%s",
+				baseImgUrl,
+				safeDeref(c.Image),
+			)
+
+		}
+
 		page.CharacterResults.ProfileResults.Cards = append(
 			page.CharacterResults.ProfileResults.Cards, &Card{
 				Url: fmt.Sprintf("/catalog/sketches?show=%d&character=%d",
 					safeDeref(show.ID),
 					safeDeref(c.ID),
 				),
-				ImageUrl: fmt.Sprintf("%s/cast/profile/medium/%s",
-					baseImgUrl,
-					safeDeref(c.Image),
-				),
-				Title: safeDeref(c.Name),
+				ImageUrl: imageUrl,
+				Title:    safeDeref(c.Name),
 				Subtitle: fmt.Sprintf(
 					"%d %s",
 					safeDeref(c.AppearanceCount),

@@ -27,6 +27,7 @@ type CharacterRef struct {
 	Name            *string  `json:"name"`
 	Type            *string  `json:"type"`
 	Image           *string  `json:"profileImage"`
+	CastImage       *string  `json:"castImage"`
 	AppearanceCount *int     `json:"appearanceCount"`
 	PopularityScore *float32 `json:"popularity"`
 }
@@ -37,7 +38,7 @@ type CharacterModelInterface interface {
 	Get(filter *Filter) ([]*Character, error)
 	GetById(id int) (*Character, error)
 	GetCharactersRefs(ids []int) ([]*CharacterRef, error)
-	GetAll(*Filter) ([]*CharacterRef, Metadata, error)
+	GetAll(*Filter, bool) ([]*CharacterRef, Metadata, error)
 	GetCount(filter *Filter) (int, error)
 	Insert(character *Character) (int, error)
 	List(f *Filter) ([]*CharacterRef, Metadata, error)
@@ -270,8 +271,8 @@ func (m *CharacterModel) Insert(character *Character) (int, error) {
 	return id, err
 }
 
-func (m *CharacterModel) GetAll(f *Filter) ([]*CharacterRef, Metadata, error) {
-	total, err := m.countCharacters(f)
+func (m *CharacterModel) GetAll(f *Filter, includeGeneric bool) ([]*CharacterRef, Metadata, error) {
+	total, err := m.countCharacters(f, includeGeneric)
 	if err != nil {
 		return nil, Metadata{}, err
 	}
@@ -286,25 +287,28 @@ func (m *CharacterModel) GetAll(f *Filter) ([]*CharacterRef, Metadata, error) {
 			}, nil
 	}
 
-	characters, err := m.getCharacterPage(f)
+	characters, err := m.getCharacterPage(f, includeGeneric)
 	if err != nil {
 		return nil, Metadata{}, err
 	}
 
 	return characters, calculateMetadata(total, f.Page, f.PageSize), nil
-
 }
 
-func (m *CharacterModel) getCharacterPage(f *Filter) ([]*CharacterRef, error) {
-	appearanceWhere, characterWhere, args := buildCharacterWhere(f)
+func (m *CharacterModel) getCharacterPage(f *Filter, includeGeneric bool) ([]*CharacterRef, error) {
+	appearanceWhere, characterWhere, args := buildCharacterWhere(f, includeGeneric)
 
-	orderBy := "c.popularity_score DESC, c.id"
+	orderBy := "cs.appearance_count DESC, c.popularity_score DESC, c.id"
 
 	switch f.SortBy {
 	case "appearances":
 		orderBy = "cs.appearance_count DESC, c.popularity_score DESC, c.id"
 	case "popular":
 		orderBy = "c.popularity_score DESC, cs.appearance_count DESC, c.id"
+	case "az":
+		orderBy = "c.name ASC"
+	case "za":
+		orderBy = "c.name DESC"
 	}
 
 	limitArg := len(args) + 1
@@ -322,7 +326,8 @@ func (m *CharacterModel) getCharacterPage(f *Filter) ([]*CharacterRef, error) {
 				cm.character_id,
 				cm.sketch_id,
 				cm.profile_img,
-				cm.position
+				cm.position,
+				sk.popularity_score as sketch_popularity
 			FROM cast_members cm
 			JOIN sketch sk
 				ON sk.id = cm.sketch_id
@@ -348,7 +353,8 @@ func (m *CharacterModel) getCharacterPage(f *Filter) ([]*CharacterRef, error) {
 			c.character_type,
 			c.popularity_score,
 			cs.appearance_count,
-			COALESCE(img.profile_img, c.img_name) AS profile_img
+			img.profile_img  AS profile_img,
+			c.img_name as character_img
 		FROM "character" c
 		JOIN character_stats cs
 			ON cs.character_id = c.id
@@ -359,8 +365,8 @@ func (m *CharacterModel) getCharacterPage(f *Filter) ([]*CharacterRef, error) {
 			WHERE fa.character_id = c.id
 			  AND fa.profile_img IS NOT NULL
 			ORDER BY
-				fa.position ASC NULLS LAST,
-				fa.sketch_id DESC
+				fa.sketch_popularity DESC NULLS LAST,
+				fa.position ASC NULLS LAST
 			LIMIT 1
 		) img ON TRUE
 
@@ -395,6 +401,7 @@ func (m *CharacterModel) getCharacterPage(f *Filter) ([]*CharacterRef, error) {
 			&character.Type,
 			&character.PopularityScore,
 			&character.AppearanceCount,
+			&character.CastImage,
 			&character.Image,
 		)
 		if err != nil {
@@ -411,8 +418,8 @@ func (m *CharacterModel) getCharacterPage(f *Filter) ([]*CharacterRef, error) {
 	return characters, nil
 }
 
-func (m *CharacterModel) countCharacters(f *Filter) (int, error) {
-	appearanceWhere, characterWhere, args := buildCharacterWhere(f)
+func (m *CharacterModel) countCharacters(f *Filter, includeGeneric bool) (int, error) {
+	appearanceWhere, characterWhere, args := buildCharacterWhere(f, includeGeneric)
 
 	query := fmt.Sprintf(`
 		WITH filtered_appearances AS (
@@ -454,13 +461,16 @@ func (m *CharacterModel) countCharacters(f *Filter) (int, error) {
 	return total, nil
 }
 
-func buildCharacterWhere(f *Filter) (string, string, []any) {
+func buildCharacterWhere(f *Filter, includeGeneric bool) (string, string, []any) {
 	appearanceConditions := []string{
 		"cm.character_id IS NOT NULL",
 	}
 
 	characterConditions := []string{
 		"TRUE",
+	}
+	if !includeGeneric {
+		characterConditions = append(characterConditions, "c.character_type <> 'generic'")
 	}
 
 	args := []any{}

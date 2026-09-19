@@ -37,8 +37,8 @@ type GetCharactersResult struct {
 	Filter     *models.Filter
 }
 
-func (s *CharacterService) GetCharacters(f *models.Filter) (GetCharactersResult, error) {
-	characters, metadata, err := s.Repos.Characters.GetAll(f)
+func (s *CharacterService) GetCharacters(f *models.Filter, includeGeneric bool) (GetCharactersResult, error) {
+	characters, metadata, err := s.Repos.Characters.GetAll(f, includeGeneric)
 
 	return GetCharactersResult{
 		Characters: characters,

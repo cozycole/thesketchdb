@@ -6,7 +6,21 @@
 
 {{ define "show-content" }}
   <section id="characters" class="flex flex-col flex-1 mt-1">
-    <span class="font-bold">{{ .TotalCharactersLabel }}</span>
+    <div class="flex justify-between items-center mb-3">
+      <span class="font-bold">{{ .TotalCharactersLabel }}</span>
+      <select
+        id="sortDropdown"
+        data-type="sort"
+        autocomplete="off"
+        class="block 
+              border border-slate-300 hover:border-slate-400 
+              px-3 py-1.5 rounded-lg shadow-sm focus:outline-none"
+      >
+        <option value="appearances">Appearances</option>
+        <option value="az">A-Z</option>
+        <option value="za">Z-A</option>
+      </select>
+    </div>
     <div id="results" class="w-full flex flex-col flex-1 gap-3 mt-3">
       {{ template "profile-result" .CharacterResults }}
     </div>

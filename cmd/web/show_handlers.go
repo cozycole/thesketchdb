@@ -283,6 +283,8 @@ func (app *application) viewShowCharacters(w http.ResponseWriter, r *http.Reques
 		currentPage = 1
 	}
 
+	sort := r.Form.Get("sort")
+
 	show, err := app.shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
@@ -294,11 +296,12 @@ func (app *application) viewShowCharacters(w http.ResponseWriter, r *http.Reques
 	}
 
 	filter := &models.Filter{
+		SortBy:   sort,
 		Page:     currentPage,
 		PageSize: 25,
 		ShowIDs:  []int{showId},
 	}
-	characterResults, err := app.services.Characters.GetCharacters(filter)
+	characterResults, err := app.services.Characters.GetCharacters(filter, false)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
