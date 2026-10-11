@@ -8,7 +8,9 @@ import (
 
 type UserRepository interface {
 	GetByEmail(email string) (*models.User, error)
+	GetByToken(plaintext, scope string) (*models.User, error)
 	Insert(user *models.User) error
+	Update(user *models.User) error
 }
 
 type TokenRepository interface {
@@ -21,9 +23,9 @@ type Mailer interface {
 }
 
 type Config struct {
-	origin             string
-	activationTokenTTL time.Duration
-	passwordTokenTTL   time.Duration
+	Origin             string
+	ActivationTokenTTL time.Duration
+	PasswordTokenTTL   time.Duration
 }
 
 type UserService struct {

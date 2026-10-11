@@ -13,6 +13,7 @@ type Repositories struct {
 	Shows      ShowModelInterface
 	Series     SeriesModelInterface
 	Tags       TagModelInterface
+	Tokens     TokenModelInterface
 	Users      UserModelInterface
 	Sketches   SketchModelInterface
 }

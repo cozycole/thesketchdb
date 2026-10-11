@@ -63,7 +63,7 @@ func (s *UserService) Signup(input SignupInput) error {
 
 	// now create a token either for the previously unactivated user or
 	// the newly inserted user
-	token, err := s.tokens.New(userId, s.config.activationTokenTTL, models.ScopeActivation)
+	token, err := s.tokens.New(userId, s.config.ActivationTokenTTL, models.ScopeActivation)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (s *UserService) Signup(input SignupInput) error {
 		map[string]string{
 			"ActivationURL": fmt.Sprintf(
 				"%s/verify-email?token=%s",
-				s.config.origin,
+				s.config.Origin,
 				*token.Plaintext,
 			),
 		},

@@ -10,18 +10,13 @@ import (
 	"github.com/mailgun/mailgun-go/v5"
 )
 
-// Below we declare a new variable with the type embed.FS (embedded file system) to hold
-// our email templates. This has a comment directive in the format `//go:embed <path>`
-// IMMEDIATELY ABOVE it, which indicates to Go that we want to store the contents of the
-// ./templates directory in the templateFS embedded file system variable.
-// ↓↓↓
-
 //go:embed "templates"
 var templateFS embed.FS
 
-// Define a Mailer struct which contains a mail.Dialer instance (used to connect to a
-// SMTP server) and the sender information for your emails (the name and address you
-// want the email to be from, such as "Alice Smith <alice@example.com>").
+type MailerInterface interface {
+	Send(string, string, any) error
+}
+
 type Mailer struct {
 	client *mailgun.Client
 	domain string

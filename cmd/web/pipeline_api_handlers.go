@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const MAX_FILE_SIZE = 262_144_000 // 250 MiB
+const MAX_FILE_SIZE = 2 * 262_144_000 // 500 MiB
 
 var allowedMIMETypes = map[string]bool{
 	"video/mp4":        true,

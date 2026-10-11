@@ -1,0 +1,59 @@
+{{ define "title" }}Verify Email{{ end }}
+{{ define "main" }}
+  <main class="flex flex-1 justify-center px-4 py-12 bg-slate-300">
+    <div
+      class="w-full self-start max-w-md rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm"
+    >
+      {{ if .Token }}
+        <h1 class="mb-3 text-2xl font-bold text-slate-950">
+          Activate your account
+        </h1>
+
+        <p class="mb-12 text-sm leading-6 text-slate-600">
+          Click below to finish verifying your email address and activate your
+          account.
+        </p>
+
+        <form method="POST" action="/activate-user">
+          <input type="hidden" name="token" value="{{ .Token }}" />
+
+          <button
+            type="submit"
+            class="w-full rounded-lg bg-orange-600 px-4 py-2.5 font-semibold text-white
+                 transition-colors hover:bg-orange-500 focus:outline-none
+                 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+          >
+            Activate
+          </button>
+        </form>
+      {{ else }}
+        <div
+          class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-orange-50"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-7 w-7 text-orange-600"
+            aria-hidden="true"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="m3 7 9 6 9-6" />
+          </svg>
+        </div>
+
+        <h1 class="mb-3 text-2xl font-bold text-slate-950">Check your email</h1>
+
+        <p class="text-sm leading-6 text-slate-600">
+          To activate your account, please follow the instructions sent to the
+          provided address.
+        </p>
+      {{ end }}
+
+    </div>
+  </main>
+{{ end }}

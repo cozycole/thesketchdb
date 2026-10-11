@@ -48,3 +48,7 @@ func SafeDeref[T any](ptr *T) T {
 	var zero T
 	return zero
 }
+
+func Ptr[T any](v T) *T {
+	return &v
+}
