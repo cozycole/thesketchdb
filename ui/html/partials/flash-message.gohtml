@@ -1,38 +1,36 @@
 {{ define "flash-message" }}
   {{ with .Flash }}
-    <div id="flash" hx-swap-oob="true">
-      {{- if eq .Level "error" -}}
-        <flash-message
-          class="fixed z-50 top-3 right-3"
-          type="error"
-          duration="7000"
-        >
-          <p class="w-fit bg-red-100 text-red-800 px-4 py-2 rounded-md">
-            {{- .Message -}}
-          </p>
-        </flash-message>
-      {{- else if eq .Level "success" -}}
-        <flash-message
-          class="fixed z-50 top-3 right-3"
-          type="success"
-          duration="5000"
-        >
-          <p class="w-fit bg-green-100 text-green-800 px-4 py-2 rounded-md">
-            {{- .Message -}}
-          </p>
-        </flash-message>
-      {{- else if eq .Level "info" -}}
-        <flash-message
-          class="fixed z-50 top-3 right-3"
-          type="info"
-          duration="5000"
-        >
-          <p class="w-fit bg-blue-100 text-blue-800 px-4 py-2 rounded-md">
-            {{- .Message -}}
-          </p>
-        </flash-message>
-      {{- end -}}
-
-    </div>
-  {{- end -}}
+    {{ if .Message }}
+      <div
+        id="flash"
+        hx-swap-oob="true"
+        class="fixed top-3 inset-x-0 z-50 pointer-events-none"
+      >
+        <div class="max-w-screen-xl mx-auto px-4 flex justify-end">
+          <flash-message
+            class="pointer-events-auto"
+            type="{{ .Level }}"
+            duration="{{ if eq .Level "error" }}
+              7000
+            {{ else }}
+              5000
+            {{ end }}"
+          >
+            <p
+              class="w-fit px-4 py-2 rounded-md shadow-sm
+                {{- if eq .Level "error" }}
+                bg-red-100 text-red-800
+              {{- else if eq .Level "success" }}
+                bg-green-100 text-green-800
+              {{- else if eq .Level "info" }}
+                bg-blue-100 text-blue-800
+              {{- end }}"
+            >
+              {{ .Message }}
+            </p>
+          </flash-message>
+        </div>
+      </div>
+    {{ end }}
+  {{ end }}
 {{ end }}

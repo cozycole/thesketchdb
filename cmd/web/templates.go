@@ -10,6 +10,12 @@ import (
 	"sketchdb.cozycole.net/ui"
 )
 
+const (
+	FlashSuccess = "success"
+	FlashInfo    = "info"
+	FlashError   = "error"
+)
+
 type flashMessage struct {
 	Message string
 	Level   string
@@ -43,6 +49,7 @@ type templateData struct {
 	SectionType     string
 	Show            *models.Show
 	Tags            *[]*models.Tag
+	Token           string
 	ThumbnailType   string
 	User            *models.User
 	Sketch          *models.Sketch
