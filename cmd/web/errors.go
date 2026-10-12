@@ -18,7 +18,7 @@ func (app *application) serverError(r *http.Request, w http.ResponseWriter, err 
 	if isHxRequest {
 		data := app.newTemplateData(r)
 		data.Flash = flashMessage{
-			Level:   "error",
+			Level:   FlashError,
 			Message: "500 Internal Server Error",
 		}
 		app.render(r, w,

@@ -90,6 +90,10 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 		// AUTHN
 		r.Get("/signup", app.userSignup)
 		r.Post("/signup", app.userSignupPost)
+
+		r.Get("/verify-email", app.verifyEmail)
+		r.Post("/activate-user", app.activateUser)
+
 		r.Get("/login", app.userLogin)
 		r.Post("/login", app.userLoginPost)
 		r.Post("/logout", app.userLogoutPost)
@@ -206,7 +210,7 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 			// admin only api routes
 			r.Group(func(r chi.Router) {
 				r.Use(app.requireRoles(adminOnly))
-				r.Get("/admin/get-token", app.createAdminToken)
+				r.Get("/admin/get-token", app.createAPIKeyToken)
 				r.Delete("/sketch/{id}/screenshots", app.deleteScreenshotsAPI)
 			})
 		})

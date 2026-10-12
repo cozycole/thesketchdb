@@ -93,10 +93,6 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Page = homePageData
 
-	for _, f := range data.Featured {
-		app.infoLog.Printf("%s\n", *f.Title)
-	}
-
 	app.render(r, w, http.StatusOK, "home.gohtml", "base", data)
 }
 

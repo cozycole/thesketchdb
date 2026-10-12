@@ -43,15 +43,24 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 	} else {
 		isEditor = false
 	}
+
+	flash := flashMessage{}
+
+	f := app.sessionManager.Pop(r.Context(), "flash")
+	if f != nil {
+		flash = f.(flashMessage)
+	}
+
 	return &templateData{
-		CurrentYear:  time.Now().Year(),
 		Assets:       app.assets,
-		ImageBaseUrl: app.baseImgUrl,
+		CurrentYear:  time.Now().Year(),
+		Flash:        flash,
 		Forms:        Forms{},
-		User:         user,
-		Origin:       app.settings.origin,
-		IsEditor:     isEditor,
+		ImageBaseUrl: app.baseImgUrl,
 		IsAdmin:      isAdmin,
+		IsEditor:     isEditor,
+		Origin:       app.settings.origin,
+		User:         user,
 	}
 }
 

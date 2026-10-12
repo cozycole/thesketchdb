@@ -67,11 +67,13 @@ type UserModelInterface interface {
 	Authenticate(username, password string) (int, error)
 	DeleteRating(userId, sketchId int) error
 	GetById(id int) (*User, error)
-	GetByToken(plaintext string) (*User, error)
+	GetByToken(plaintext, scope string) (*User, error)
+	GetByEmail(email string) (*User, error)
 	GetByUsername(username string) (*User, error)
 	GetUserSketchInfo(userId, sketchId int) (*UserSketchInfo, error)
 	Insert(user *User) error
 	RemoveLike(userId, sketchId int) error
+	Update(user *User) error
 	UpdateRating(userId, sketchId, rating int) error
 }
 
@@ -175,6 +177,40 @@ func (m *UserModel) Authenticate(username, password string) (int, error) {
 	return id, nil
 }
 
+func (m *UserModel) GetByEmail(email string) (*User, error) {
+	query := `
+		SELECT id, created_at, username, email, password_hash, activated, role, profile_image
+		FROM users
+		WHERE email = $1
+	`
+
+	var user User
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	password := password{}
+	err := m.DB.QueryRow(ctx, query, email).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Username,
+		&user.Email,
+		&password.hash,
+		&user.Activated,
+		&user.Role,
+		&user.ProfileImage,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+
+	user.Password = password
+
+	return &user, nil
+}
+
 func (m *UserModel) GetByUsername(username string) (*User, error) {
 	query := `
 		SELECT id, created_at, username, email, password_hash, activated, role, profile_image
@@ -245,24 +281,26 @@ func (m *UserModel) GetById(id int) (*User, error) {
 	return &user, nil
 }
 
-func (m *UserModel) GetByToken(plaintext string) (*User, error) {
+func (m *UserModel) GetByToken(plaintext, scope string) (*User, error) {
 	sum := sha256.Sum256([]byte(plaintext))
 	hash := sum[:]
 
 	query := `
 		SELECT u.id, u.created_at, u.username, u.email, u.password_hash, u.activated, u.role
 		FROM users as u
-		JOIN token as t ON u.id = t.user_id
+		JOIN token as t
+		ON u.id = t.user_id
 		WHERE t.token_hash = $1
+			AND t.scope = $2
+			AND (t.ttl IS NULL OR t.ttl > $3)
 	`
 
 	var user User
-
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	password := password{}
-	err := m.DB.QueryRow(ctx, query, hash).Scan(
+	err := m.DB.QueryRow(ctx, query, hash, scope, time.Now()).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.Username,
@@ -286,15 +324,16 @@ func (m *UserModel) GetByToken(plaintext string) (*User, error) {
 
 func (m *UserModel) Insert(user *User) error {
 	query := `
-		INSERT INTO users (username, email, password_hash, activated)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, created_at`
+		INSERT INTO users (username, email, password_hash)
+		VALUES ($1, $2, $3)
+		RETURNING id, created_at
+	`
 
 	args := []any{
 		user.Username,
 		user.Email,
 		user.Password.hash,
-		user.Activated}
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -325,5 +364,30 @@ func (m *UserModel) RemoveLike(userId, sketchId int) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (m UserModel) Update(user *User) error {
+	stmt := `
+		UPDATE users
+		SET username = $1, email = $2, password_hash = $3, activated = $4, role = $5,
+		profile_image = $6
+		WHERE id = $7
+		`
+	args := []any{
+		user.Username,
+		user.Email,
+		user.Password.hash,
+		user.Activated,
+		user.Role,
+		user.ProfileImage,
+		user.ID,
+	}
+
+	_, err := m.DB.Exec(context.Background(), stmt, args...)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

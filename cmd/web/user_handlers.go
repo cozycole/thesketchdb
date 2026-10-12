@@ -2,10 +2,10 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"sketchdb.cozycole.net/cmd/web/views"
+	"sketchdb.cozycole.net/internal/domain/users"
 	"sketchdb.cozycole.net/internal/models"
 )
 
@@ -32,28 +32,16 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	activated := false
-	user := &models.User{
-		Username:  &form.Username,
-		Email:     &form.Email,
-		Activated: &activated,
+	input := users.SignupInput{
+		Username: form.Username,
+		Email:    form.Email,
+		Password: form.Password,
 	}
 
-	err = user.Password.Set(form.Password)
+	err = app.services.Users.Signup(input)
 	if err != nil {
-		app.serverError(r, w, err)
-		return
-	}
-
-	err = app.users.Insert(user)
-	if err != nil {
-		fmt.Println(err.Error())
 		data := app.newTemplateData(r)
-		if errors.Is(err, models.ErrDuplicateEmail) {
-			form.Validator.AddFieldError("email", "A user with this email address already exists.")
-			data.Forms.Signup = &form
-			app.render(r, w, http.StatusUnprocessableEntity, "signup.gohtml", "base", data)
-		} else if errors.Is(err, models.ErrDuplicateUsername) {
+		if errors.Is(err, users.ErrUsernameUnavailable) {
 			form.Validator.AddFieldError("username", "A user with this username already exists.")
 			data.Forms.Signup = &form
 			app.render(r, w, http.StatusUnprocessableEntity, "signup.gohtml", "base", data)
@@ -63,9 +51,40 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.sessionManager.Put(r.Context(), "flash", "Successful signup! Please log in.")
+	http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
+}
 
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+func (app *application) verifyEmail(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	data.Token = r.URL.Query().Get("token")
+
+	app.render(r, w, http.StatusOK, "verify-email.gohtml", "base", data)
+}
+
+func (app *application) activateUser(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	token := r.PostForm.Get("token")
+	user, err := app.services.Users.Activate(token)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	// login user
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	app.sessionManager.Put(r.Context(), "authenticatedUserID", *user.ID)
+	flash := flashMessage{
+		Message: "Account activated!",
+		Level:   FlashSuccess,
+	}
+	app.sessionManager.Put(r.Context(), "flash", flash)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
@@ -114,7 +133,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		url := app.sessionManager.Pop(r.Context(), "postLoginRedirectURL").(string)
 		http.Redirect(w, r, url, http.StatusSeeOther)
 	} else {
-		http.Redirect(w, r, "/browse", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 
@@ -159,7 +178,12 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
-	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
+
+	flash := flashMessage{
+		Message: "You've been logged out successfully!",
+		Level:   FlashSuccess,
+	}
+	app.sessionManager.Put(r.Context(), "flash", flash)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

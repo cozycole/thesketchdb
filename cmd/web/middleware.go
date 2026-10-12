@@ -88,7 +88,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		authHeader := r.Header.Get("Authorization")
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			token := strings.TrimPrefix(authHeader, "Bearer ")
-			user, err := app.users.GetByToken(token)
+			user, err := app.users.GetByToken(token, models.ScopeAPIKey)
 			if err != nil {
 				app.errorLog.Print(err)
 				next.ServeHTTP(w, r)

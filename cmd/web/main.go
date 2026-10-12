@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"flag"
 	"html/template"
@@ -31,8 +32,10 @@ import (
 	"sketchdb.cozycole.net/internal/domain/shows"
 	"sketchdb.cozycole.net/internal/domain/sketches"
 	"sketchdb.cozycole.net/internal/domain/tags"
+	"sketchdb.cozycole.net/internal/domain/users"
 
 	"sketchdb.cozycole.net/internal/fileStore"
+	"sketchdb.cozycole.net/internal/mail"
 	"sketchdb.cozycole.net/internal/models"
 )
 
@@ -58,6 +61,7 @@ type application struct {
 	users          models.UserModelInterface
 	sketches       models.SketchModelInterface
 	services       Services
+	mail           mail.MailerInterface
 	sessionManager *scs.SessionManager
 	debugMode      bool
 	formDecoder    *form.Decoder
@@ -66,12 +70,17 @@ type application struct {
 }
 
 type settings struct {
-	pageSize          int
-	maxSearchResults  int
+	pageSize         int
+	maxSearchResults int
+
+	passwordTTL   time.Duration
+	activationTTL time.Duration
+
 	localImageServer  bool
 	localImageStorage bool
 	devEnv            bool
-	origin            string
+
+	origin string
 }
 
 var StaticAssets = map[string]string{
@@ -173,6 +182,15 @@ func main() {
 		errorLog.Fatal("Storage path not defined")
 	}
 
+	mailApiKey := os.Getenv("MAIL_API_KEY")
+	mailDomain := os.Getenv("MAIL_DOMAIN")
+	mailSender := os.Getenv("MAIL_SENDER")
+
+	if mailApiKey == "" || mailDomain == "" || mailSender == "" {
+		errorLog.Fatal("MAIL_API_KEY, MAIL_DOMAIN, and MAIL_SENDER must be set")
+	}
+	mailer := mail.New(mailDomain, mailApiKey, mailSender)
+
 	dbpool, err := openDB(dbUrl)
 	if err != nil {
 		errorLog.Fatal(err)
@@ -188,7 +206,16 @@ func main() {
 	if err != nil {
 		errorLog.Fatal(err)
 	}
-
+	appSettings := settings{
+		pageSize:          24,
+		maxSearchResults:  12,
+		localImageServer:  *localImgServer,
+		localImageStorage: *localImgStorage,
+		passwordTTL:       30 * time.Minute,
+		activationTTL:     24 * time.Hour,
+		origin:            origin,
+		devEnv:            *dev,
+	}
 	formDecoder := form.NewDecoder()
 	app := &application{
 		errorLog:       errorLog,
@@ -211,20 +238,15 @@ func main() {
 		tags:           &models.TagModel{DB: dbpool},
 		tokens:         &models.TokenModel{DB: dbpool},
 		users:          &models.UserModel{DB: dbpool},
-		services:       NewServices(newRepositories(dbpool), fileStorage, archiveStorage),
+		services:       NewServices(newRepositories(dbpool), fileStorage, archiveStorage, mailer, appSettings),
 		sessionManager: sessionManager,
+		mail:           mailer,
 		debugMode:      *debug,
 		baseImgUrl:     imgBaseUrl,
 		assets:         StaticAssets,
-		settings: settings{
-			pageSize:          24,
-			maxSearchResults:  12,
-			localImageServer:  *localImgServer,
-			localImageStorage: *localImgStorage,
-			origin:            origin,
-			devEnv:            *dev,
-		},
+		settings:       appSettings,
 	}
+
 	app.infoLog.Println("ORIGIN: ", origin)
 
 	srv := &http.Server{
@@ -296,6 +318,7 @@ func newRepositories(dbpool *pgxpool.Pool) models.Repositories {
 		Recurring:  &models.RecurringModel{DB: dbpool},
 		Shows:      &models.ShowModel{DB: dbpool},
 		Tags:       &models.TagModel{DB: dbpool},
+		Tokens:     &models.TokenModel{DB: dbpool},
 		Users:      &models.UserModel{DB: dbpool},
 		Sketches:   &models.SketchModel{DB: dbpool},
 		Series:     &models.SeriesModel{DB: dbpool},
@@ -314,12 +337,15 @@ type Services struct {
 	Shows      shows.ShowService
 	Sketches   sketches.SketchService
 	Tags       tags.TagsService
+	Users      users.UserService
 }
 
 func NewServices(
 	repos models.Repositories,
 	fileStore fileStore.FileStorageInterface,
 	archiveStore fileStore.FileStorageInterface,
+	mailer mail.MailerInterface,
+	settings settings,
 ) Services {
 	return Services{
 		Sketches: sketches.SketchService{
@@ -367,5 +393,16 @@ func NewServices(
 			Repos:    repos,
 			ImgStore: fileStore,
 		},
+		Users: *users.New(repos.Users, repos.Tokens, mailer,
+			users.Config{
+				Origin:             settings.origin,
+				ActivationTokenTTL: settings.passwordTTL,
+				PasswordTokenTTL:   settings.passwordTTL,
+			}),
 	}
+}
+
+func init() {
+	// Register the struct so encoding/gob knows how to handle it
+	gob.Register(flashMessage{})
 }
