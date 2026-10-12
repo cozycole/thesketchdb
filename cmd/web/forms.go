@@ -11,17 +11,19 @@ import (
 )
 
 type Forms struct {
-	Cast       *castForm
-	Category   *categoryForm
-	Creator    *creatorForm
-	Episode    *episodeForm
-	Login      *userLoginForm
-	Person     *personForm
-	Show       *showForm
-	Signup     *userSignupForm
-	Tag        *tagForm
-	Sketch     *sketchForm
-	SketchTags *sketchTagsForm
+	Cast           *castForm
+	Category       *categoryForm
+	Creator        *creatorForm
+	Episode        *episodeForm
+	Login          *userLoginForm
+	Person         *personForm
+	Show           *showForm
+	Signup         *userSignupForm
+	Tag            *tagForm
+	Sketch         *sketchForm
+	SketchTags     *sketchTagsForm
+	ForgotPassword *userForgotPasswordForm
+	ResetPassword  *userResetPasswordForm
 }
 
 // Changes to the form fields must be updated in their respective
@@ -309,6 +311,35 @@ type userLoginForm struct {
 func (app *application) validateUserLoginForm(form *userLoginForm) {
 	form.CheckField(validator.NotBlank(form.Username), "username", "Field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
+}
+
+type userForgotPasswordForm struct {
+	Email               string `form:"email"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateUserForgotPassword(form *userForgotPasswordForm) {
+	form.CheckField(validator.NotBlank(form.Email), "email", "Field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRegEx), "email", "Please enter a valid email")
+}
+
+type userResetPasswordForm struct {
+	Token               string `form:"token"`
+	Password            string `form:"password"`
+	ConfirmPassword     string `form:"confirmPassword"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateUserPasswordReset(form *userResetPasswordForm) {
+	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
+	form.CheckField(validator.NotBlank(form.ConfirmPassword), "confirmPassword", "Field cannot be blank")
+	if form.Password != form.ConfirmPassword {
+		form.AddNonFieldError("Passwords must match")
+		return
+	}
+
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "Password must be 8-20 chararacters")
+	form.CheckField(validator.MaxChars(form.Password, 20), "password", "Password Must be 8-20 chararacters")
 }
 
 type categoryForm struct {

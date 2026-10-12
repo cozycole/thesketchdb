@@ -94,6 +94,13 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 		r.Get("/verify-email", app.verifyEmail)
 		r.Post("/activate-user", app.activateUser)
 
+		r.Get("/forgot-password", app.forgotPassword)
+		r.Post("/forgot-password", app.forgotPasswordPost)
+		r.Get("/password-reset-sent", app.passwordResetSent)
+
+		r.Get("/reset-password", app.resetPassword)
+		r.Post("/reset-password", app.resetPasswordPost)
+
 		r.Get("/login", app.userLogin)
 		r.Post("/login", app.userLoginPost)
 		r.Post("/logout", app.userLogoutPost)
