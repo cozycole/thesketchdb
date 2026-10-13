@@ -57,6 +57,13 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 func (app *application) verifyEmail(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Token = r.URL.Query().Get("token")
+
+	// if there's no token, we are just rendering the "check your email" blurb
+	if data.Token == "" {
+		app.render(r, w, http.StatusOK, "verify-email.gohtml", "base", data)
+		return
+	}
+
 	_, err := app.users.GetByToken(data.Token, models.ScopePasswordReset)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
