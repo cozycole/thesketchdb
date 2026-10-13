@@ -286,7 +286,7 @@ func (m *UserModel) GetByToken(plaintext, scope string) (*User, error) {
 	hash := sum[:]
 
 	query := `
-		SELECT u.id, u.created_at, u.username, u.email, u.password_hash, u.activated, u.role
+		SELECT u.id, u.created_at, u.username, u.email, u.password_hash, u.activated, u.role, u.profile_image
 		FROM users as u
 		JOIN token as t
 		ON u.id = t.user_id
@@ -308,6 +308,7 @@ func (m *UserModel) GetByToken(plaintext, scope string) (*User, error) {
 		&password.hash,
 		&user.Activated,
 		&user.Role,
+		&user.ProfileImage,
 	)
 
 	if err != nil {

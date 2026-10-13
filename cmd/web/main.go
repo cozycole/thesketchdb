@@ -396,7 +396,7 @@ func NewServices(
 		Users: *users.New(repos.Users, repos.Tokens, mailer,
 			users.Config{
 				Origin:             settings.origin,
-				ActivationTokenTTL: settings.passwordTTL,
+				ActivationTokenTTL: settings.activationTTL,
 				PasswordTokenTTL:   settings.passwordTTL,
 			}),
 	}

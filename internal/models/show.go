@@ -613,6 +613,7 @@ func (m *ShowModel) GetShowCast(id int) ([]*Person, error) {
 		JOIN show as sh ON se.show_id = sh.id
 		WHERE sh.id = $1
 		AND cm.role = 'cast'
+		ORDER BY p.id asc
 		`
 
 	rows, err := m.DB.Query(context.Background(), stmt, id)

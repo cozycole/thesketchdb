@@ -11,19 +11,20 @@ import (
 )
 
 type Forms struct {
-	Cast           *castForm
-	Category       *categoryForm
-	Creator        *creatorForm
-	Episode        *episodeForm
-	Login          *userLoginForm
-	Person         *personForm
-	Show           *showForm
-	Signup         *userSignupForm
-	Tag            *tagForm
-	Sketch         *sketchForm
-	SketchTags     *sketchTagsForm
-	ForgotPassword *userForgotPasswordForm
-	ResetPassword  *userResetPasswordForm
+	Cast             *castForm
+	Category         *categoryForm
+	Creator          *creatorForm
+	Episode          *episodeForm
+	Login            *userLoginForm
+	Person           *personForm
+	Show             *showForm
+	Signup           *userSignupForm
+	Tag              *tagForm
+	Sketch           *sketchForm
+	SketchTags       *sketchTagsForm
+	ForgotPassword   *userForgotPasswordForm
+	ResetPassword    *userResetPasswordForm
+	ResendActivation *userResendActivationForm
 }
 
 // Changes to the form fields must be updated in their respective
@@ -340,6 +341,16 @@ func (app *application) validateUserPasswordReset(form *userResetPasswordForm) {
 
 	form.CheckField(validator.MinChars(form.Password, 8), "password", "Password must be 8-20 chararacters")
 	form.CheckField(validator.MaxChars(form.Password, 20), "password", "Password Must be 8-20 chararacters")
+}
+
+type userResendActivationForm struct {
+	Email               string `form:"email"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) validateUserResendActivation(form *userResendActivationForm) {
+	form.CheckField(validator.NotBlank(form.Email), "email", "Field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRegEx), "email", "Please enter a valid email")
 }
 
 type categoryForm struct {
