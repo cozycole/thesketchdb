@@ -64,7 +64,7 @@ func (app *application) verifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := app.users.GetByToken(data.Token, models.ScopePasswordReset)
+	_, err := app.users.GetByToken(data.Token, models.ScopeActivation)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			data := app.newTemplateData(r)
@@ -109,6 +109,37 @@ func (app *application) activateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	app.sessionManager.Put(r.Context(), "flash", flash)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (app *application) resendActivationLink(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	data.Forms.ResendActivation = &userResendActivationForm{}
+	app.render(r, w, http.StatusOK, "resend-activation.gohtml", "base", data)
+}
+
+func (app *application) resendActivationLinkPost(w http.ResponseWriter, r *http.Request) {
+	var form userResendActivationForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	app.validateUserResendActivation(&form)
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Forms.ResendActivation = &form
+		app.render(r, w, http.StatusUnprocessableEntity, "resend-activation.gohtml", "base", data)
+		return
+	}
+
+	err = app.services.Users.ResendActivationLink(form.Email)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
 }
 
 func (app *application) forgotPassword(w http.ResponseWriter, r *http.Request) {
@@ -158,6 +189,7 @@ func (app *application) resetPassword(w http.ResponseWriter, r *http.Request) {
 
 	app.render(r, w, http.StatusOK, "reset-password.gohtml", "base", data)
 }
+
 func (app *application) resetPasswordPost(w http.ResponseWriter, r *http.Request) {
 	var form userResetPasswordForm
 	err := app.decodePostForm(r, &form)

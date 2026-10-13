@@ -93,6 +93,8 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 
 		r.Get("/verify-email", app.verifyEmail)
 		r.Post("/activate-user", app.activateUser)
+		r.Get("/resend-verification", app.resendActivationLink)
+		r.Post("/resend-verification", app.resendActivationLinkPost)
 
 		r.Get("/forgot-password", app.forgotPassword)
 		r.Post("/forgot-password", app.forgotPasswordPost)
