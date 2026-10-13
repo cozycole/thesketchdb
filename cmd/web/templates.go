@@ -46,15 +46,12 @@ type templateData struct {
 	IsEditor        bool
 	Origin          string
 	Season          *models.Season
-	SectionType     string
 	Show            *models.Show
 	Tags            *[]*models.Tag
 	Token           string
-	ThumbnailType   string
+	TokenScope      string
 	User            *models.User
-	Sketch          *models.Sketch
 	Assets          map[string]string
-	Form            any
 	Page            any
 }
 

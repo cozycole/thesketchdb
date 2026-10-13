@@ -61,7 +61,7 @@ func (s *UserService) Signup(input SignupInput) error {
 		userEmail = *existingUser.Email
 	}
 
-	// now create a token either for the previously unactivated user or
+	// now create a token either for the previously inactivated user or
 	// the newly inserted user
 	token, err := s.tokens.New(userId, s.config.ActivationTokenTTL, models.ScopeActivation)
 	if err != nil {
