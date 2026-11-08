@@ -24,26 +24,26 @@
           {{ end }}
 
 
-          <!-- Username -->
+          <!-- Email -->
           <div>
             <label
-              for="username"
+              for="email"
               class="mb-1.5 block text-sm font-medium text-slate-700"
             >
-              Username
+              Email
             </label>
 
             <input
-              id="username"
+              id="email"
               type="text"
-              name="username"
-              autocomplete="username"
-              placeholder="Enter your username"
-              value="{{ .Forms.Login.Username }}"
+              name="email"
+              autocomplete="email"
+              placeholder="Enter your email"
+              value="{{ .Forms.Login.Email }}"
               class="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
             />
 
-            {{ with .Forms.Login.FieldErrors.username }}
+            {{ with .Forms.Login.FieldErrors.email }}
               <p class="mt-1 text-xs text-red-600">{{ . }}</p>
             {{ end }}
           </div>

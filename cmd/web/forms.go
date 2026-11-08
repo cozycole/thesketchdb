@@ -304,13 +304,13 @@ func (app *application) validateUserSignupForm(form *userSignupForm) {
 }
 
 type userLoginForm struct {
-	Username            string `form:"username"`
+	Email               string `form:"email"`
 	Password            string `form:"password"`
 	validator.Validator `form:"-"`
 }
 
 func (app *application) validateUserLoginForm(form *userLoginForm) {
-	form.CheckField(validator.NotBlank(form.Username), "username", "Field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Email), "email", "Field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
 }
 
