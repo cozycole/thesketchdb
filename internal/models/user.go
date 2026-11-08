@@ -64,7 +64,7 @@ type UserSketchInfo struct {
 type UserModelInterface interface {
 	AddRating(userId, sketchId, rating int) error
 	AddLike(userId, sketchId int) error
-	Authenticate(username, password string) (int, error)
+	Authenticate(username, password string) (*User, error)
 	DeleteRating(userId, sketchId int) error
 	GetById(id int) (*User, error)
 	GetByToken(plaintext, scope string) (*User, error)
@@ -134,7 +134,6 @@ func (m *UserModel) UpdateRating(userId, sketchId, rating int) error {
 		return err
 	}
 	return nil
-
 }
 
 func (m *UserModel) DeleteRating(userId, sketchId int) error {
@@ -150,31 +149,44 @@ func (m *UserModel) DeleteRating(userId, sketchId int) error {
 	return nil
 }
 
-func (m *UserModel) Authenticate(username, password string) (int, error) {
-	var id int
+func (m *UserModel) Authenticate(email, password string) (*User, error) {
+	var user User
 	var hashedPassword []byte
 
-	stmt := "SELECT id, password_hash FROM users WHERE username = $1"
+	stmt := `
+		SELECT id, username, email, activated, role, password_hash, profile_image
+		FROM users 
+		WHERE email = $1
+	`
 
-	err := m.DB.QueryRow(context.Background(), stmt, username).Scan(&id, &hashedPassword)
+	err := m.DB.QueryRow(context.Background(), stmt, email).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Activated,
+		&user.Role,
+		&hashedPassword,
+		&user.ProfileImage,
+	)
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrInvalidCredentials
+			return nil, ErrInvalidCredentials
 		} else {
-			return 0, err
+			return nil, err
 		}
 	}
 
 	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return 0, ErrInvalidCredentials
+			return nil, ErrInvalidCredentials
 		} else {
-			return 0, err
+			return nil, err
 		}
 	}
 
-	return id, nil
+	return &user, nil
 }
 
 func (m *UserModel) GetByEmail(email string) (*User, error) {

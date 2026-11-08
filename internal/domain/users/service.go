@@ -7,6 +7,7 @@ import (
 )
 
 type UserRepository interface {
+	Authenticate(email, password string) (*models.User, error)
 	GetByEmail(email string) (*models.User, error)
 	GetByToken(plaintext, scope string) (*models.User, error)
 	Insert(user *models.User) error
