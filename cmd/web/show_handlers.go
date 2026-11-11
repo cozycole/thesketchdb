@@ -13,16 +13,16 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) viewShowHome(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewShowHome(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	showId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	show, err := app.shows.GetById(showId)
+	show, err := app.Shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -39,20 +39,20 @@ func (app *application) viewShowHome(w http.ResponseWriter, r *http.Request) {
 		ShowIDs:  []int{*show.ID},
 	}
 
-	popular, _, err := app.sketches.Get(filter)
+	popular, _, err := app.Sketches.Get(filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	cast, err := app.shows.GetShowCast(*show.ID)
+	cast, err := app.Shows.GetShowCast(*show.ID)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	pageData, err := views.ShowHomePageView(show, popular, cast, app.baseImgUrl)
+	pageData, err := views.ShowHomePageView(show, popular, cast, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -69,14 +69,14 @@ func (app *application) viewShowHome(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "show-home.gohtml", "base", data)
 }
 
-func (app *application) viewShowSketches(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewShowSketches(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	id := r.PathValue("id")
 	showId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -91,7 +91,7 @@ func (app *application) viewShowSketches(w http.ResponseWriter, r *http.Request)
 		sort = "popular"
 	}
 
-	show, err := app.shows.GetById(showId)
+	show, err := app.Shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -108,14 +108,14 @@ func (app *application) viewShowSketches(w http.ResponseWriter, r *http.Request)
 		ShowIDs:  []int{*show.ID},
 	}
 
-	results, err := app.services.Sketches.ListSketches(filter, true)
+	results, err := app.Services.Sketches.ListSketches(filter, true)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	pageData, err := views.ShowSketchesPageView(show, results, app.baseImgUrl)
+	pageData, err := views.ShowSketchesPageView(show, results, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -147,7 +147,7 @@ func (app *application) viewShowSketches(w http.ResponseWriter, r *http.Request)
 	app.render(r, w, http.StatusOK, "show-sketches.gohtml", "base", data)
 }
 
-func (app *application) viewShowSeasons(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewShowSeasons(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	id := r.PathValue("id")
@@ -157,7 +157,7 @@ func (app *application) viewShowSeasons(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	show, err := app.shows.GetById(showId)
+	show, err := app.Shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -168,7 +168,7 @@ func (app *application) viewShowSeasons(w http.ResponseWriter, r *http.Request) 
 	}
 
 	data := app.newTemplateData(r)
-	pageData, err := views.ShowSeasonsPageView(show, app.baseImgUrl)
+	pageData, err := views.ShowSeasonsPageView(show, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -185,7 +185,7 @@ func (app *application) viewShowSeasons(w http.ResponseWriter, r *http.Request) 
 	app.render(r, w, http.StatusOK, "show-seasons.gohtml", "base", data)
 }
 
-func (app *application) viewShowGroupings(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewShowGroupings(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	showId, err := strconv.Atoi(id)
 	if err != nil {
@@ -193,7 +193,7 @@ func (app *application) viewShowGroupings(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	show, err := app.shows.GetById(showId)
+	show, err := app.Shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -203,14 +203,14 @@ func (app *application) viewShowGroupings(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	groupings, err := app.shows.GetGroupings(showId)
+	groupings, err := app.Shows.GetGroupings(showId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	pageData, err := views.ShowExtrasPageView(show, groupings, app.baseImgUrl)
+	pageData, err := views.ShowExtrasPageView(show, groupings, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -226,7 +226,7 @@ func (app *application) viewShowGroupings(w http.ResponseWriter, r *http.Request
 	app.render(r, w, http.StatusOK, "show-extras.gohtml", "base", data)
 }
 
-func (app *application) viewShowCast(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewShowCast(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	showId, err := strconv.Atoi(id)
 	if err != nil {
@@ -234,7 +234,7 @@ func (app *application) viewShowCast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	show, err := app.shows.GetById(showId)
+	show, err := app.Shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -244,14 +244,14 @@ func (app *application) viewShowCast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cast, err := app.shows.GetShowCast(*show.ID)
+	cast, err := app.Shows.GetShowCast(*show.ID)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	pageData, err := views.ShowCastPageView(show, cast, app.baseImgUrl)
+	pageData, err := views.ShowCastPageView(show, cast, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -267,7 +267,7 @@ func (app *application) viewShowCast(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "show-cast.gohtml", "base", data)
 }
 
-func (app *application) viewShowCharacters(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewShowCharacters(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	id := r.PathValue("id")
@@ -285,7 +285,7 @@ func (app *application) viewShowCharacters(w http.ResponseWriter, r *http.Reques
 
 	sort := r.Form.Get("sort")
 
-	show, err := app.shows.GetById(showId)
+	show, err := app.Shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -301,14 +301,14 @@ func (app *application) viewShowCharacters(w http.ResponseWriter, r *http.Reques
 		PageSize: 25,
 		ShowIDs:  []int{showId},
 	}
-	characterResults, err := app.services.Characters.GetCharacters(filter, false)
+	characterResults, err := app.Services.Characters.GetCharacters(filter, false)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	pageData, err := views.ShowCharactersPageView(show, characterResults, app.baseImgUrl)
+	pageData, err := views.ShowCharactersPageView(show, characterResults, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -341,7 +341,7 @@ func (app *application) viewShowCharacters(w http.ResponseWriter, r *http.Reques
 	app.render(r, w, http.StatusOK, "show-characters.gohtml", "base", data)
 
 }
-func (app *application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	id := r.PathValue("id")
@@ -357,7 +357,7 @@ func (app *application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
 		currentPage = 1
 	}
 
-	show, err := app.shows.GetById(showId)
+	show, err := app.Shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -379,14 +379,14 @@ func (app *application) viewShowQuotes(w http.ResponseWriter, r *http.Request) {
 		userId = *user.ID
 	}
 
-	quoteResults, err := app.services.Quotes.GetQuotes(filter, userId)
+	quoteResults, err := app.Services.Quotes.GetQuotes(filter, userId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	data.Page, err = views.ShowQuotesPageView(show, quoteResults, app.baseImgUrl)
+	data.Page, err = views.ShowQuotesPageView(show, quoteResults, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -428,7 +428,7 @@ type showFormPage struct {
 	SeasonForm      seasonForm
 }
 
-func (app *application) addShowPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addShowPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Page = showFormPage{
 		Title: "Add Show",
@@ -437,12 +437,12 @@ func (app *application) addShowPage(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "base", data)
 }
 
-func (app *application) addShow(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addShow(w http.ResponseWriter, r *http.Request) {
 	var form showForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -471,7 +471,7 @@ func (app *application) addShow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	id, err := app.shows.Insert(&show)
+	id, err := app.Shows.Insert(&show)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -481,7 +481,7 @@ func (app *application) addShow(w http.ResponseWriter, r *http.Request) {
 
 	err = app.saveLargeProfile(*show.ProfileImg, "show", form.ProfileImg)
 	if err != nil {
-		app.shows.Delete(&show)
+		app.Shows.Delete(&show)
 		app.serverError(r, w, err)
 		return
 	}
@@ -495,16 +495,16 @@ func (app *application) addShow(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/show/%d/%s", *show.ID, *show.Slug), http.StatusSeeOther)
 }
 
-func (app *application) updateShowPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateShowPage(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	showId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	show, err := app.shows.GetById(showId)
+	show, err := app.Shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -515,7 +515,7 @@ func (app *application) updateShowPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	form := app.convertShowtoForm(show)
-	form.ProfileImgUrl = fmt.Sprintf("%s/show/small/%s", app.baseImgUrl, safeDeref(show.ProfileImg))
+	form.ProfileImgUrl = fmt.Sprintf("%s/show/small/%s", app.Config.BaseImgUrl, safeDeref(show.ProfileImg))
 	form.Action = fmt.Sprintf("/show/%d/update", showId)
 	data := app.newTemplateData(r)
 	data.Page = showFormPage{
@@ -524,18 +524,18 @@ func (app *application) updateShowPage(w http.ResponseWriter, r *http.Request) {
 		ShowForm:        form,
 		ViewShowUrl:     fmt.Sprintf("/show/%d/%s", showId, safeDeref(show.Slug)),
 		DisplaySeasons:  true,
-		SeasonDropdowns: views.SeasonDropdownsView(show, app.baseImgUrl),
+		SeasonDropdowns: views.SeasonDropdownsView(show, app.Config.BaseImgUrl),
 		SeasonForm:      seasonForm{ShowID: showId},
 	}
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "base", data)
 }
 
-func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateShow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	showId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -543,11 +543,11 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 	err = app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	oldShow, err := app.shows.GetById(showId)
+	oldShow, err := app.Shows.GetById(showId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -559,7 +559,7 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 
 	app.validateShowForm(&form)
 	form.Action = fmt.Sprintf("/show/%d/update", showId)
-	form.ProfileImgUrl = fmt.Sprintf("%s/show/small/%s", app.baseImgUrl, safeDeref(oldShow.ProfileImg))
+	form.ProfileImgUrl = fmt.Sprintf("%s/show/small/%s", app.Config.BaseImgUrl, safeDeref(oldShow.ProfileImg))
 	if !form.Valid() {
 		app.render(r, w, http.StatusUnprocessableEntity, "show-form.gohtml", "show-form", form)
 		return
@@ -575,7 +575,7 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 
 	if newShow.WikiPage != nil {
 		about, err := wikipedia.GetExtract(*newShow.WikiPage)
-		app.infoLog.Printf(about)
+		app.InfoLog.Printf(about)
 		if nil == err {
 			newShow.About = &about
 		}
@@ -596,7 +596,7 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newShow.ProfileImg = &profileImg
-	err = app.shows.Update(&newShow)
+	err = app.Shows.Update(&newShow)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -610,7 +610,7 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	updatedShow, err := app.shows.GetById(showId)
+	updatedShow, err := app.Shows.GetById(showId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -618,7 +618,7 @@ func (app *application) updateShow(w http.ResponseWriter, r *http.Request) {
 
 	form = app.convertShowtoForm(updatedShow)
 	form.Action = fmt.Sprintf("/show/%d/update", showId)
-	form.ProfileImgUrl = fmt.Sprintf("%s/show/small/%s", app.baseImgUrl, safeDeref(oldShow.ProfileImg))
+	form.ProfileImgUrl = fmt.Sprintf("%s/show/small/%s", app.Config.BaseImgUrl, safeDeref(oldShow.ProfileImg))
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "show-form", form)
 }
 

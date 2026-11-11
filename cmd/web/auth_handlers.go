@@ -13,17 +13,17 @@ import (
 	"sketchdb.cozycole.net/internal/utils"
 )
 
-func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
+func (app *Application) userSignup(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.Signup = &userSignupForm{}
 	app.render(r, w, http.StatusOK, "signup.gohtml", "base", data)
 }
 
-func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
+func (app *Application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	var form userSignupForm
 
 	err := app.decodePostForm(r, &form)
-	app.infoLog.Println(err)
+	app.InfoLog.Println(err)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
@@ -42,7 +42,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 		Password: form.Password,
 	}
 
-	err = app.services.Users.Signup(input)
+	err = app.Services.Users.Signup(input)
 	if err != nil {
 		data := app.newTemplateData(r)
 		if errors.Is(err, users.ErrUsernameUnavailable) {
@@ -58,7 +58,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
 }
 
-func (app *application) verifyEmail(w http.ResponseWriter, r *http.Request) {
+func (app *Application) verifyEmail(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Token = r.URL.Query().Get("token")
 
@@ -68,7 +68,7 @@ func (app *application) verifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := app.users.GetByToken(data.Token, models.ScopeActivation)
+	_, err := app.Users.GetByToken(data.Token, models.ScopeActivation)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			data := app.newTemplateData(r)
@@ -83,11 +83,11 @@ func (app *application) verifyEmail(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "verify-email.gohtml", "base", data)
 }
 
-func (app *application) activateUser(w http.ResponseWriter, r *http.Request) {
+func (app *Application) activateUser(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	token := r.PostForm.Get("token")
-	user, err := app.services.Users.Activate(token)
+	user, err := app.Services.Users.Activate(token)
 	if err != nil {
 		if errors.Is(err, users.ErrInvalidToken) {
 			data := app.newTemplateData(r)
@@ -100,28 +100,28 @@ func (app *application) activateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// login user
-	err = app.sessionManager.RenewToken(r.Context())
+	err = app.SessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	app.sessionManager.Put(r.Context(), "authenticatedUserID", *user.ID)
+	app.SessionManager.Put(r.Context(), "authenticatedUserID", *user.ID)
 	flash := flashMessage{
 		Message: "Account activated!",
 		Level:   FlashSuccess,
 	}
-	app.sessionManager.Put(r.Context(), "flash", flash)
+	app.SessionManager.Put(r.Context(), "flash", flash)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func (app *application) resendActivationLink(w http.ResponseWriter, r *http.Request) {
+func (app *Application) resendActivationLink(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.ResendActivation = &userResendActivationForm{}
 	app.render(r, w, http.StatusOK, "resend-activation.gohtml", "base", data)
 }
 
-func (app *application) resendActivationLinkPost(w http.ResponseWriter, r *http.Request) {
+func (app *Application) resendActivationLinkPost(w http.ResponseWriter, r *http.Request) {
 	var form userResendActivationForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -137,7 +137,7 @@ func (app *application) resendActivationLinkPost(w http.ResponseWriter, r *http.
 		return
 	}
 
-	err = app.services.Users.ResendActivationLink(form.Email)
+	err = app.Services.Users.ResendActivationLink(form.Email)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -146,13 +146,13 @@ func (app *application) resendActivationLinkPost(w http.ResponseWriter, r *http.
 	http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
 }
 
-func (app *application) forgotPassword(w http.ResponseWriter, r *http.Request) {
+func (app *Application) forgotPassword(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.ForgotPassword = &userForgotPasswordForm{}
 	app.render(r, w, http.StatusOK, "forgot-password.gohtml", "base", data)
 }
 
-func (app *application) forgotPasswordPost(w http.ResponseWriter, r *http.Request) {
+func (app *Application) forgotPasswordPost(w http.ResponseWriter, r *http.Request) {
 	var form userForgotPasswordForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -168,23 +168,23 @@ func (app *application) forgotPasswordPost(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = app.services.Users.ForgotPassword(form.Email)
+	err = app.Services.Users.ForgotPassword(form.Email)
 
 	http.Redirect(w, r, "/password-reset-sent", http.StatusSeeOther)
 }
 
-func (app *application) passwordResetSent(w http.ResponseWriter, r *http.Request) {
+func (app *Application) passwordResetSent(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	app.render(r, w, http.StatusOK, "password-reset-sent.gohtml", "base", data)
 }
 
-func (app *application) resetPassword(w http.ResponseWriter, r *http.Request) {
+func (app *Application) resetPassword(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	data := app.newTemplateData(r)
 	data.Token = r.URL.Query().Get("token")
 	data.Forms.ResetPassword = &userResetPasswordForm{}
 
-	_, err := app.users.GetByToken(data.Token, models.ScopePasswordReset)
+	_, err := app.Users.GetByToken(data.Token, models.ScopePasswordReset)
 	if errors.Is(err, models.ErrNoRecord) {
 		data.TokenScope = "password-reset"
 		app.render(r, w, http.StatusOK, "invalid-token.gohtml", "base", data)
@@ -194,7 +194,7 @@ func (app *application) resetPassword(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "reset-password.gohtml", "base", data)
 }
 
-func (app *application) resetPasswordPost(w http.ResponseWriter, r *http.Request) {
+func (app *Application) resetPasswordPost(w http.ResponseWriter, r *http.Request) {
 	var form userResetPasswordForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -211,7 +211,7 @@ func (app *application) resetPasswordPost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.services.Users.ResetPassword(form.Token, form.Password)
+	err = app.Services.Users.ResetPassword(form.Token, form.Password)
 	if err != nil {
 		if errors.Is(err, users.ErrInvalidToken) {
 			data.TokenScope = "password-reset"
@@ -222,7 +222,7 @@ func (app *application) resetPasswordPost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	app.sessionManager.Put(r.Context(), "flash", flashMessage{
+	app.SessionManager.Put(r.Context(), "flash", flashMessage{
 		Message: "Password reset! Please log in.",
 		Level:   "success",
 	})
@@ -230,13 +230,13 @@ func (app *application) resetPasswordPost(w http.ResponseWriter, r *http.Request
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
-func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
+func (app *Application) userLogin(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Forms.Login = &userLoginForm{}
 	app.render(r, w, http.StatusOK, "login.gohtml", "base", data)
 }
 
-func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
+func (app *Application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	var form userLoginForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
@@ -256,7 +256,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		Email:    form.Email,
 		Password: form.Password,
 	}
-	user, err := app.services.Users.Login(input)
+	user, err := app.Services.Users.Login(input)
 	if err != nil {
 		if errors.Is(err, users.ErrInvalidLoginCredentials) {
 			form.AddNonFieldError("Email or password is incorrect")
@@ -271,35 +271,35 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.sessionManager.RenewToken(r.Context())
+	err = app.SessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	app.sessionManager.Put(r.Context(), "authenticatedUserID", utils.SafeDeref(user.ID))
-	if app.sessionManager.Exists(r.Context(), "postLoginRedirectURL") {
-		url := app.sessionManager.Pop(r.Context(), "postLoginRedirectURL").(string)
+	app.SessionManager.Put(r.Context(), "authenticatedUserID", utils.SafeDeref(user.ID))
+	if app.SessionManager.Exists(r.Context(), "postLoginRedirectURL") {
+		url := app.SessionManager.Pop(r.Context(), "postLoginRedirectURL").(string)
 		http.Redirect(w, r, url, http.StatusSeeOther)
 	} else {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 
-func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
-	err := app.sessionManager.RenewToken(r.Context())
+func (app *Application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
+	err := app.SessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
+	app.SessionManager.Remove(r.Context(), "authenticatedUserID")
 
 	flash := flashMessage{
 		Message: "You've been logged out successfully!",
 		Level:   FlashSuccess,
 	}
-	app.sessionManager.Put(r.Context(), "flash", flash)
+	app.SessionManager.Put(r.Context(), "flash", flash)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
@@ -314,7 +314,7 @@ type PendingRegistration struct {
 	ExpiresAt time.Time
 }
 
-func (app *application) googleLogin(w http.ResponseWriter, r *http.Request) {
+func (app *Application) googleLogin(w http.ResponseWriter, r *http.Request) {
 	provider, err := goth.GetProvider("google")
 	if err != nil {
 		app.serverError(r, w, err)
@@ -334,8 +334,8 @@ func (app *application) googleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store temporary OAuth information using SCS.
-	app.sessionManager.Put(r.Context(), "oauth_state", state)
-	app.sessionManager.Put(r.Context(), "oauth_session", session.Marshal())
+	app.SessionManager.Put(r.Context(), "oauth_state", state)
+	app.SessionManager.Put(r.Context(), "oauth_session", session.Marshal())
 
 	authURL, err := session.GetAuthURL()
 	if err != nil {
@@ -346,7 +346,7 @@ func (app *application) googleLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, authURL, http.StatusFound)
 }
 
-func (app *application) googleCallback(w http.ResponseWriter, r *http.Request) {
+func (app *Application) googleCallback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	provider, err := goth.GetProvider("google")
@@ -356,7 +356,7 @@ func (app *application) googleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate OAuth state.
-	expectedState := app.sessionManager.PopString(ctx, "oauth_state")
+	expectedState := app.SessionManager.PopString(ctx, "oauth_state")
 	receivedState := r.URL.Query().Get("state")
 
 	if expectedState == "" ||
@@ -370,7 +370,7 @@ func (app *application) googleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Retrieve Goth's temporary session.
-	sessionData := app.sessionManager.PopString(ctx, "oauth_session")
+	sessionData := app.SessionManager.PopString(ctx, "oauth_session")
 	if sessionData == "" {
 		http.Error(w, "OAuth session expired", http.StatusBadRequest)
 		return
@@ -396,7 +396,7 @@ func (app *application) googleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := app.services.Users.AuthenticateSocial(
+	result, err := app.Services.Users.AuthenticateSocial(
 		"google",
 		googleUser.UserID,
 		googleUser.Email,
@@ -409,12 +409,12 @@ func (app *application) googleCallback(w http.ResponseWriter, r *http.Request) {
 	switch result.Status {
 
 	case users.SocialAuthAuthenticated:
-		if err := app.sessionManager.RenewToken(ctx); err != nil {
+		if err := app.SessionManager.RenewToken(ctx); err != nil {
 			app.serverError(r, w, err)
 			return
 		}
 
-		app.sessionManager.Put(
+		app.SessionManager.Put(
 			ctx,
 			"authenticatedUserID",
 			result.User.ID,
@@ -425,7 +425,7 @@ func (app *application) googleCallback(w http.ResponseWriter, r *http.Request) {
 			Level:   FlashSuccess,
 		}
 
-		app.sessionManager.Put(r.Context(), "flash", flash)
+		app.SessionManager.Put(r.Context(), "flash", flash)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	case users.SocialAuthRegistrationRequired:
@@ -435,7 +435,7 @@ func (app *application) googleCallback(w http.ResponseWriter, r *http.Request) {
 			ExpiresAt: time.Now().Add(15 * time.Minute),
 		}
 
-		app.sessionManager.Put(ctx, "pendingRegistration", pending)
+		app.SessionManager.Put(ctx, "pendingRegistration", pending)
 
 		http.Redirect(w, r, "/complete-signup", http.StatusSeeOther)
 	}

@@ -30,11 +30,11 @@ const (
 	SmallProfileWidth     = 88
 )
 
-func (app *application) deleteImage(prefix, imgName string) error {
+func (app *Application) deleteImage(prefix, imgName string) error {
 	for _, size := range []string{"small", "medium", "large"} {
 		imgSubPath := path.Join(prefix, size, imgName)
-		app.infoLog.Printf("Deleting %s\n", imgSubPath)
-		err := app.fileStorage.DeleteFile(imgSubPath)
+		app.InfoLog.Printf("Deleting %s\n", imgSubPath)
+		err := app.FileStorage.DeleteFile(imgSubPath)
 		if err != nil {
 			return err
 		}
@@ -42,7 +42,7 @@ func (app *application) deleteImage(prefix, imgName string) error {
 	return nil
 }
 
-func (app *application) saveCastImages(member *models.CastMember) error {
+func (app *Application) saveCastImages(member *models.CastMember) error {
 	if member.ThumbnailFile != nil {
 		err := app.saveMediumThumbnail(
 			safeDeref(member.ThumbnailName),
@@ -71,7 +71,7 @@ func (app *application) saveCastImages(member *models.CastMember) error {
 }
 
 // saveLargeThumbnail saves large, medium and small resolutions
-func (app *application) saveLargeThumbnail(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
+func (app *Application) saveLargeThumbnail(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
 	file, err := fileHeader.Open()
 	if err != nil {
 		return err
@@ -123,7 +123,7 @@ func (app *application) saveLargeThumbnail(imgName string, prefix string, fileHe
 			return err
 		}
 
-		err = app.fileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
+		err = app.FileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
 		if err != nil {
 			return err
 		}
@@ -133,7 +133,7 @@ func (app *application) saveLargeThumbnail(imgName string, prefix string, fileHe
 }
 
 // saveMediumThumbnail saves medium and small resolutions
-func (app *application) saveMediumThumbnail(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
+func (app *Application) saveMediumThumbnail(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
 	file, err := fileHeader.Open()
 	if err != nil {
 		return err
@@ -178,7 +178,7 @@ func (app *application) saveMediumThumbnail(imgName string, prefix string, fileH
 			return err
 		}
 
-		err = app.fileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
+		err = app.FileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
 		if err != nil {
 			return err
 		}
@@ -187,7 +187,7 @@ func (app *application) saveMediumThumbnail(imgName string, prefix string, fileH
 	return nil
 }
 
-func (app *application) saveLargeProfile(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
+func (app *Application) saveLargeProfile(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
 	file, err := fileHeader.Open()
 	if err != nil {
 		return err
@@ -244,7 +244,7 @@ func (app *application) saveLargeProfile(imgName string, prefix string, fileHead
 			return err
 		}
 
-		err = app.fileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
+		err = app.FileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
 		if err != nil {
 			return err
 		}
@@ -253,7 +253,7 @@ func (app *application) saveLargeProfile(imgName string, prefix string, fileHead
 	return nil
 }
 
-func (app *application) saveMediumProfile(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
+func (app *Application) saveMediumProfile(imgName string, prefix string, fileHeader *multipart.FileHeader) error {
 	file, err := fileHeader.Open()
 	if err != nil {
 		return err
@@ -298,7 +298,7 @@ func (app *application) saveMediumProfile(imgName string, prefix string, fileHea
 			return err
 		}
 
-		err = app.fileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
+		err = app.FileStorage.SaveFile(path.Join(prefix, size, imgName), &dstFile)
 		if err != nil {
 			return err
 		}

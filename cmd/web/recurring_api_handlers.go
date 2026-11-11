@@ -9,7 +9,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) listRecurringAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) listRecurringAPI(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	page := r.Form.Get("page")
@@ -36,7 +36,7 @@ func (app *application) listRecurringAPI(w http.ResponseWriter, r *http.Request)
 	query, _ = url.QueryUnescape(query)
 	filterQuery := strings.Join(strings.Fields(query), " | ")
 
-	recurringList, err := app.services.Recurring.ListRecurring(
+	recurringList, err := app.Services.Recurring.ListRecurring(
 		&models.Filter{
 			Query:    filterQuery,
 			SortBy:   sort,

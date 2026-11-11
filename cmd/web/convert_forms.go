@@ -150,7 +150,7 @@ func convertEpisodeToForm(episode *models.Episode) episodeForm {
 	}
 }
 
-func (app *application) convertFormtoEpisode(form *episodeForm) models.Episode {
+func (app *Application) convertFormtoEpisode(form *episodeForm) models.Episode {
 	airDate, err := time.Parse(time.DateOnly, form.AirDate)
 	episodeAirDate := &airDate
 	if err != nil {
@@ -396,10 +396,10 @@ func convertTagtoForm(tag *models.Tag) tagForm {
 	}
 }
 
-func (app *application) convertFormtoSketchTags(form *sketchTagsForm) ([]*models.Tag, error) {
+func (app *Application) convertFormtoSketchTags(form *sketchTagsForm) ([]*models.Tag, error) {
 	var tags []*models.Tag
 	for _, tagId := range form.TagIds {
-		tag, err := app.tags.Get(tagId)
+		tag, err := app.Tags.Get(tagId)
 		if err != nil {
 			return nil, err
 		}
@@ -410,7 +410,7 @@ func (app *application) convertFormtoSketchTags(form *sketchTagsForm) ([]*models
 	return tags, nil
 }
 
-func (app *application) convertFormtoShow(form *showForm) models.Show {
+func (app *Application) convertFormtoShow(form *showForm) models.Show {
 	var wikiUrl *string
 	if form.WikiPage != "" {
 		url, _ := wikipedia.ExtractPageName(form.WikiPage)
@@ -429,7 +429,7 @@ func (app *application) convertFormtoShow(form *showForm) models.Show {
 	}
 }
 
-func (app *application) convertShowtoForm(show *models.Show) showForm {
+func (app *Application) convertShowtoForm(show *models.Show) showForm {
 	var wikiUrl string
 	if pageId := safeDeref(show.WikiPage); pageId != "" {
 		wikiUrl = fmt.Sprintf(wikipedia.URL_TEMPLATE, pageId)
@@ -444,7 +444,7 @@ func (app *application) convertShowtoForm(show *models.Show) showForm {
 	}
 }
 
-func (app *application) convertSeriestoForm(series *models.Series) seriesForm {
+func (app *Application) convertSeriestoForm(series *models.Series) seriesForm {
 	return seriesForm{
 		ID:            safeDeref(series.ID),
 		Title:         safeDeref(series.Title),
@@ -453,7 +453,7 @@ func (app *application) convertSeriestoForm(series *models.Series) seriesForm {
 	}
 }
 
-func (app *application) convertFormtoSeries(form *seriesForm) models.Series {
+func (app *Application) convertFormtoSeries(form *seriesForm) models.Series {
 	return models.Series{
 		ID:            &form.ID,
 		Title:         &form.Title,
@@ -463,7 +463,7 @@ func (app *application) convertFormtoSeries(form *seriesForm) models.Series {
 
 }
 
-func (app *application) convertRecurringtoForm(recurring *models.Recurring) recurringForm {
+func (app *Application) convertRecurringtoForm(recurring *models.Recurring) recurringForm {
 	return recurringForm{
 		ID:            safeDeref(recurring.ID),
 		Title:         safeDeref(recurring.Title),
@@ -472,7 +472,7 @@ func (app *application) convertRecurringtoForm(recurring *models.Recurring) recu
 	}
 }
 
-func (app *application) convertFormtoRecurring(form *recurringForm) models.Recurring {
+func (app *Application) convertFormtoRecurring(form *recurringForm) models.Recurring {
 	return models.Recurring{
 		ID:            &form.ID,
 		Title:         &form.Title,

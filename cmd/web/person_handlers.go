@@ -11,7 +11,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewPerson(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	personId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -19,7 +19,7 @@ func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	person, err := app.people.GetById(personId)
+	person, err := app.People.GetById(personId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -29,7 +29,7 @@ func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	popular, _, err := app.sketches.Get(
+	popular, _, err := app.Sketches.Get(
 		&models.Filter{
 			Page:      1,
 			PageSize:  12,
@@ -38,13 +38,13 @@ func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	showCreatorCounts, err := app.people.GetCreatorShowCounts(personId)
+	showCreatorCounts, err := app.People.GetCreatorShowCounts(personId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	stats, err := app.people.GetPersonStats(personId)
+	stats, err := app.People.GetPersonStats(personId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -60,7 +60,7 @@ func (app *application) viewPerson(w http.ResponseWriter, r *http.Request) {
 		stats,
 		popular,
 		showCreatorCounts,
-		app.baseImgUrl)
+		app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -75,7 +75,7 @@ type personFormPage struct {
 	Form  personForm
 }
 
-func (app *application) addPersonPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addPersonPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	data.Page = personFormPage{
@@ -87,7 +87,7 @@ func (app *application) addPersonPage(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "add-person.gohtml", "base", data)
 }
 
-func (app *application) addPerson(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addPerson(w http.ResponseWriter, r *http.Request) {
 	var form personForm
 
 	err := app.decodePostForm(r, &form)
@@ -125,7 +125,7 @@ func (app *application) addPerson(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	id, err := app.people.Insert(&person)
+	id, err := app.People.Insert(&person)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -134,24 +134,24 @@ func (app *application) addPerson(w http.ResponseWriter, r *http.Request) {
 	err = app.saveLargeProfile(*person.ProfileImg, "person", form.ProfileImage)
 	if err != nil {
 		app.serverError(r, w, err)
-		app.people.Delete(id)
+		app.People.Delete(id)
 		return
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/person/%d/%s", id, slug), http.StatusSeeOther)
 }
 
-func (app *application) updatePersonPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updatePersonPage(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("id")
 	personId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	person, err := app.people.GetById(personId)
+	person, err := app.People.GetById(personId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -162,7 +162,7 @@ func (app *application) updatePersonPage(w http.ResponseWriter, r *http.Request)
 	}
 
 	personForm := convertPersontoForm(person)
-	personForm.ImageUrl = fmt.Sprintf("%s/person/small/%s", app.baseImgUrl, personForm.ImageUrl)
+	personForm.ImageUrl = fmt.Sprintf("%s/person/small/%s", app.Config.BaseImgUrl, personForm.ImageUrl)
 	personForm.Action = fmt.Sprintf("/person/%d/update", personForm.ID)
 
 	data := app.newTemplateData(r)
@@ -174,16 +174,16 @@ func (app *application) updatePersonPage(w http.ResponseWriter, r *http.Request)
 	app.render(r, w, http.StatusOK, "add-person.gohtml", "base", data)
 }
 
-func (app *application) updatePerson(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updatePerson(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	personId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	oldPerson, err := app.people.GetById(personId)
+	oldPerson, err := app.People.GetById(personId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -205,7 +205,7 @@ func (app *application) updatePerson(w http.ResponseWriter, r *http.Request) {
 	app.validatePersonForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		form.ImageUrl = fmt.Sprintf("%s/person/small/%s", app.baseImgUrl, oldProfileImgName)
+		form.ImageUrl = fmt.Sprintf("%s/person/small/%s", app.Config.BaseImgUrl, oldProfileImgName)
 		form.Action = fmt.Sprintf("/person/%d/update", form.ID)
 		data.Page = personFormPage{
 			Title: "Update Person",
@@ -242,7 +242,7 @@ func (app *application) updatePerson(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = app.people.Update(&newPerson)
+	err = app.People.Update(&newPerson)
 	if err != nil {
 		app.serverError(r, w, err)
 		return

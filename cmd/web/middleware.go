@@ -14,11 +14,11 @@ type contextKey string
 
 const userContextKey = contextKey("user")
 
-func (app *application) secureHeaders(next http.Handler) http.Handler {
+func (app *Application) secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		scriptSrc := "script-src 'self' https://www.youtube.com"
 		scriptSrcElem := "script-src https://static.cloudflareinsights.com"
-		if app.debugMode {
+		if app.Config.DebugMode {
 			// browser sync injects script
 			scriptSrc += " 'unsafe-inline'"
 			scriptSrcElem += " 'unsafe-inline'"
@@ -44,7 +44,7 @@ func (app *application) secureHeaders(next http.Handler) http.Handler {
 	})
 }
 
-func (app *application) recoverPanic(next http.Handler) http.Handler {
+func (app *Application) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -59,21 +59,21 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 	})
 }
 
-func (app *application) logRequest(next http.Handler) http.Handler {
+func (app *Application) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if app.debugMode {
-			app.infoLog.Printf("%s - %s %s %s", r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
+		if app.Config.DebugMode {
+			app.InfoLog.Printf("%s - %s %s %s", r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
 		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-func (app *application) authenticate(next http.Handler) http.Handler {
+func (app *Application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+		id := app.SessionManager.GetInt(r.Context(), "authenticatedUserID")
 		if id != 0 {
-			user, err := app.users.GetById(id)
+			user, err := app.Users.GetById(id)
 			if err != nil {
 				next.ServeHTTP(w, r)
 				return
@@ -88,9 +88,9 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		authHeader := r.Header.Get("Authorization")
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			token := strings.TrimPrefix(authHeader, "Bearer ")
-			user, err := app.users.GetByToken(token, models.ScopeAPIKey)
+			user, err := app.Users.GetByToken(token, models.ScopeAPIKey)
 			if err != nil {
-				app.errorLog.Print(err)
+				app.ErrorLog.Print(err)
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -110,7 +110,7 @@ var (
 	adminOnly   = []string{"admin"}
 )
 
-func (app *application) requireRoles(roles []string) func(http.Handler) http.Handler {
+func (app *Application) requireRoles(roles []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			user, ok := r.Context().Value(userContextKey).(*models.User)
@@ -123,10 +123,10 @@ func (app *application) requireRoles(roles []string) func(http.Handler) http.Han
 	}
 }
 
-func (app *application) requireAuthentication(next http.Handler) http.Handler {
+func (app *Application) requireAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !app.isAutheticated(r) {
-			app.sessionManager.Put(r.Context(), "postLoginRedirectURL", r.URL.Path)
+			app.SessionManager.Put(r.Context(), "postLoginRedirectURL", r.URL.Path)
 			w.Header().Add("Hx-Redirect", "/login")
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return

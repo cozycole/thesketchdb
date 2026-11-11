@@ -15,7 +15,7 @@ type tagFormPage struct {
 	Form  tagForm
 }
 
-func (app *application) tagAddPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) tagAddPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Page = tagFormPage{
 		Title: "Add Tag",
@@ -26,13 +26,13 @@ func (app *application) tagAddPage(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "add-tag.gohtml", "base", data)
 }
 
-func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
+func (app *Application) tagAdd(w http.ResponseWriter, r *http.Request) {
 	var form tagForm
 
 	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -46,7 +46,7 @@ func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 	tag := convertFormtoTag(&form)
 	tagSlug := safeDeref(tag.Name)
 	if tag.Category != nil && tag.Category.ID != nil {
-		category, err := app.categories.Get(safeDeref(tag.Category.ID))
+		category, err := app.Categories.Get(safeDeref(tag.Category.ID))
 		if err != nil && !errors.Is(err, models.ErrNoRecord) {
 			app.serverError(r, w, err)
 			return
@@ -56,7 +56,7 @@ func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 
 	slug := models.CreateSlugName(tagSlug)
 	tag.Slug = &slug
-	id, err := app.tags.Insert(&tag)
+	id, err := app.Tags.Insert(&tag)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -65,7 +65,7 @@ func (app *application) tagAdd(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Hx-Redirect", fmt.Sprintf("/tag/%d/update", id))
 }
 
-func (app *application) tagUpdatePage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) tagUpdatePage(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	tagId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -73,7 +73,7 @@ func (app *application) tagUpdatePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tag, err := app.tags.Get(tagId)
+	tag, err := app.Tags.Get(tagId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -95,7 +95,7 @@ func (app *application) tagUpdatePage(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "add-tag.gohtml", "base", data)
 }
 
-func (app *application) tagUpdate(w http.ResponseWriter, r *http.Request) {
+func (app *Application) tagUpdate(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	tagId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -110,7 +110,7 @@ func (app *application) tagUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = app.tags.Get(tagId)
+	_, err = app.Tags.Get(tagId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -130,7 +130,7 @@ func (app *application) tagUpdate(w http.ResponseWriter, r *http.Request) {
 	tag := convertFormtoTag(&form)
 	tagSlug := safeDeref(tag.Name)
 	if tag.Category != nil && tag.Category.ID != nil {
-		category, err := app.categories.Get(safeDeref(tag.Category.ID))
+		category, err := app.Categories.Get(safeDeref(tag.Category.ID))
 		if err != nil && !errors.Is(err, models.ErrNoRecord) {
 			app.serverError(r, w, err)
 			return
@@ -141,7 +141,7 @@ func (app *application) tagUpdate(w http.ResponseWriter, r *http.Request) {
 	slug := models.CreateSlugName(tagSlug)
 	tag.Slug = &slug
 
-	err = app.tags.Update(&tag)
+	err = app.Tags.Update(&tag)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -150,6 +150,6 @@ func (app *application) tagUpdate(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "add-tag.gohtml", "tag-form", form)
 }
 
-func (app *application) tagRow(w http.ResponseWriter, r *http.Request) {
+func (app *Application) tagRow(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "tag-table.gohtml", "tag-row", views.TagRow{})
 }

@@ -10,7 +10,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) characterView(w http.ResponseWriter, r *http.Request) {
+func (app *Application) characterView(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	characterdId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -18,7 +18,7 @@ func (app *application) characterView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	character, err := app.characters.GetById(characterdId)
+	character, err := app.Characters.GetById(characterdId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -28,7 +28,7 @@ func (app *application) characterView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	popularSketches, _, err := app.sketches.Get(
+	popularSketches, _, err := app.Sketches.Get(
 		&models.Filter{
 			Page:         1,
 			PageSize:     12,
@@ -41,7 +41,7 @@ func (app *application) characterView(w http.ResponseWriter, r *http.Request) {
 	page, err := views.CharacterPageView(
 		character,
 		popularSketches,
-		app.baseImgUrl,
+		app.Config.BaseImgUrl,
 	)
 	if err != nil {
 		app.serverError(r, w, err)
@@ -57,7 +57,7 @@ type characterFormPage struct {
 	Form  characterForm
 }
 
-func (app *application) addCharacterPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addCharacterPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	data.Page = characterFormPage{
@@ -70,7 +70,7 @@ func (app *application) addCharacterPage(w http.ResponseWriter, r *http.Request)
 	app.render(r, w, http.StatusOK, "character-form.gohtml", "base", data)
 }
 
-func (app *application) addCharacter(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addCharacter(w http.ResponseWriter, r *http.Request) {
 	var form characterForm
 
 	err := app.decodePostForm(r, &form)
@@ -91,7 +91,7 @@ func (app *application) addCharacter(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if form.PersonID != 0 {
-		exists, err := app.people.Exists(form.PersonID)
+		exists, err := app.People.Exists(form.PersonID)
 		if err != nil {
 			app.serverError(r, w, err)
 			return
@@ -121,33 +121,33 @@ func (app *application) addCharacter(w http.ResponseWriter, r *http.Request) {
 	}
 	character.Image = &thumbName
 
-	id, err := app.characters.Insert(&character)
+	id, err := app.Characters.Insert(&character)
 	if err != nil {
 		app.serverError(r, w, err)
-		app.characters.Delete(id)
+		app.Characters.Delete(id)
 		return
 	}
 
 	err = app.saveLargeProfile(thumbName, "character", form.ProfileImage)
 	if err != nil {
 		app.serverError(r, w, err)
-		app.characters.Delete(id)
+		app.Characters.Delete(id)
 		return
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/character/%d/%s", id, slug), http.StatusSeeOther)
 }
 
-func (app *application) updateCharacterPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateCharacterPage(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	characterId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	character, err := app.characters.GetById(characterId)
+	character, err := app.Characters.GetById(characterId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -158,7 +158,7 @@ func (app *application) updateCharacterPage(w http.ResponseWriter, r *http.Reque
 	}
 
 	characterForm := convertCharactertoForm(character)
-	characterForm.ImageUrl = fmt.Sprintf("%s/character/small/%s", app.baseImgUrl, characterForm.ImageUrl)
+	characterForm.ImageUrl = fmt.Sprintf("%s/character/small/%s", app.Config.BaseImgUrl, characterForm.ImageUrl)
 	characterForm.Action = fmt.Sprintf("/character/%d/update", characterForm.ID)
 
 	data := app.newTemplateData(r)
@@ -170,16 +170,16 @@ func (app *application) updateCharacterPage(w http.ResponseWriter, r *http.Reque
 	app.render(r, w, http.StatusOK, "character-form.gohtml", "base", data)
 }
 
-func (app *application) updateCharacter(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateCharacter(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	characterId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	staleCharacter, err := app.characters.GetById(characterId)
+	staleCharacter, err := app.Characters.GetById(characterId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -201,7 +201,7 @@ func (app *application) updateCharacter(w http.ResponseWriter, r *http.Request) 
 	app.validateCharacterForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		form.ImageUrl = fmt.Sprintf("%s/character/small/%s", app.baseImgUrl, oldProfileImgName)
+		form.ImageUrl = fmt.Sprintf("%s/character/small/%s", app.Config.BaseImgUrl, oldProfileImgName)
 		form.Action = fmt.Sprintf("/character/%d/update", form.ID)
 		data.Page = characterFormPage{
 			Title: "Update Character",
@@ -230,7 +230,7 @@ func (app *application) updateCharacter(w http.ResponseWriter, r *http.Request) 
 	updatedCharacter.Image = &profileImgName
 	slug := models.CreateSlugName(form.Name)
 	updatedCharacter.Slug = &slug
-	err = app.characters.Update(&updatedCharacter)
+	err = app.Characters.Update(&updatedCharacter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return

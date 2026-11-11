@@ -10,7 +10,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) recurringView(w http.ResponseWriter, r *http.Request) {
+func (app *Application) recurringView(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	recurringId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -18,7 +18,7 @@ func (app *application) recurringView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	recurring, err := app.recurring.GetById(recurringId)
+	recurring, err := app.Recurring.GetById(recurringId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -28,7 +28,7 @@ func (app *application) recurringView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page, err := views.RecurringPageView(recurring, app.baseImgUrl)
+	page, err := views.RecurringPageView(recurring, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -45,7 +45,7 @@ type recurringFormPage struct {
 	Form         recurringForm
 }
 
-func (app *application) recurringAddPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) recurringAddPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Page = recurringFormPage{
 		Title: "Add recurring",
@@ -57,13 +57,13 @@ func (app *application) recurringAddPage(w http.ResponseWriter, r *http.Request)
 	app.render(r, w, http.StatusOK, "recurring-form-page.gohtml", "base", data)
 }
 
-func (app *application) recurringAdd(w http.ResponseWriter, r *http.Request) {
+func (app *Application) recurringAdd(w http.ResponseWriter, r *http.Request) {
 	var form recurringForm
 
 	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (app *application) recurringAdd(w http.ResponseWriter, r *http.Request) {
 
 	slug := models.CreateSlugName(safeDeref(recurring.Title))
 	recurring.Slug = &slug
-	id, err := app.recurring.Insert(&recurring)
+	id, err := app.Recurring.Insert(&recurring)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -94,14 +94,14 @@ func (app *application) recurringAdd(w http.ResponseWriter, r *http.Request) {
 	err = app.saveLargeThumbnail(thumbnailName, "recurring", form.Thumbnail)
 	if err != nil {
 		app.serverError(r, w, err)
-		app.recurring.Delete(id)
+		app.Recurring.Delete(id)
 		return
 	}
 
 	w.Header().Add("Hx-Redirect", fmt.Sprintf("/recurring/%d/update", id))
 }
 
-func (app *application) recurringUpdatePage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) recurringUpdatePage(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	recurringId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -109,7 +109,7 @@ func (app *application) recurringUpdatePage(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	recurring, err := app.recurring.GetById(recurringId)
+	recurring, err := app.Recurring.GetById(recurringId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -123,7 +123,7 @@ func (app *application) recurringUpdatePage(w http.ResponseWriter, r *http.Reque
 	form.Action = fmt.Sprintf("/recurring/%d/update", recurringId)
 	form.ImageUrl = fmt.Sprintf(
 		"%s/recurring/small/%s",
-		app.baseImgUrl,
+		app.Config.BaseImgUrl,
 		safeDeref(recurring.ThumbnailName),
 	)
 
@@ -137,7 +137,7 @@ func (app *application) recurringUpdatePage(w http.ResponseWriter, r *http.Reque
 	app.render(r, w, http.StatusOK, "recurring-form-page.gohtml", "base", data)
 }
 
-func (app *application) recurringUpdate(w http.ResponseWriter, r *http.Request) {
+func (app *Application) recurringUpdate(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	recurringId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -145,7 +145,7 @@ func (app *application) recurringUpdate(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	stalerecurring, err := app.recurring.GetById(recurringId)
+	stalerecurring, err := app.Recurring.GetById(recurringId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -162,7 +162,7 @@ func (app *application) recurringUpdate(w http.ResponseWriter, r *http.Request) 
 	err = app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -170,7 +170,7 @@ func (app *application) recurringUpdate(w http.ResponseWriter, r *http.Request) 
 	if !form.Valid() {
 		form.ImageUrl = fmt.Sprintf(
 			"%s/recurring/small/%s",
-			app.baseImgUrl,
+			app.Config.BaseImgUrl,
 			safeDeref(stalerecurring.ThumbnailName),
 		)
 
@@ -200,7 +200,7 @@ func (app *application) recurringUpdate(w http.ResponseWriter, r *http.Request) 
 	slug := models.CreateSlugName(safeDeref(updaterecurring.Title))
 	updaterecurring.Slug = &slug
 
-	err = app.recurring.Update(&updaterecurring)
+	err = app.Recurring.Update(&updaterecurring)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -216,14 +216,14 @@ func (app *application) recurringUpdate(w http.ResponseWriter, r *http.Request) 
 
 	form.ImageUrl = fmt.Sprintf(
 		"%s/recurring/small/%s",
-		app.baseImgUrl,
+		app.Config.BaseImgUrl,
 		safeDeref(updaterecurring.ThumbnailName),
 	)
 
 	app.render(r, w, http.StatusOK, "recurring-form-page.gohtml", "recurring-form", form)
 }
 
-func (app *application) deleterecurring(w http.ResponseWriter, r *http.Request) {
+func (app *Application) deleterecurring(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	recurringId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -231,7 +231,7 @@ func (app *application) deleterecurring(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	_, err = app.recurring.GetById(recurringId)
+	_, err = app.Recurring.GetById(recurringId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)

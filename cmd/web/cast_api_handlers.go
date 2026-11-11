@@ -10,7 +10,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) adminGetCastAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) adminGetCastAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -18,7 +18,7 @@ func (app *application) adminGetCastAPI(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	cast, err := app.services.Casts.GetAdminCast(sketchId)
+	cast, err := app.Services.Casts.GetAdminCast(sketchId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -35,7 +35,7 @@ func (app *application) adminGetCastAPI(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (app *application) updateCastOrderAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateCastOrderAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -58,7 +58,7 @@ func (app *application) updateCastOrderAPI(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = app.services.Casts.ReorderCast(sketchId, input.CastPositions)
+	err = app.Services.Casts.ReorderCast(sketchId, input.CastPositions)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -67,7 +67,7 @@ func (app *application) updateCastOrderAPI(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (app *application) createCastAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) createCastAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -94,7 +94,7 @@ func (app *application) createCastAPI(w http.ResponseWriter, r *http.Request) {
 	thumbnail, _ := fileHeaderToBytes(form.CharacterThumbnail)
 	profile, _ := fileHeaderToBytes(form.CharacterProfile)
 
-	newCast, err := app.services.Casts.CreateCastMember(&castMember, thumbnail, profile, form.CropThumbnailBorder)
+	newCast, err := app.Services.Casts.CreateCastMember(&castMember, thumbnail, profile, form.CropThumbnailBorder)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -106,7 +106,7 @@ func (app *application) createCastAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) updateCastAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateCastAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -132,9 +132,9 @@ func (app *application) updateCastAPI(w http.ResponseWriter, r *http.Request) {
 
 	thumbnail, _ := fileHeaderToBytes(form.CharacterThumbnail)
 	profile, _ := fileHeaderToBytes(form.CharacterProfile)
-	app.infoLog.Printf("%+v", castMember)
+	app.InfoLog.Printf("%+v", castMember)
 
-	updatedCast, err := app.services.Casts.UpdateCastMember(&castMember, thumbnail, profile, form.CropThumbnailBorder)
+	updatedCast, err := app.Services.Casts.UpdateCastMember(&castMember, thumbnail, profile, form.CropThumbnailBorder)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -146,7 +146,7 @@ func (app *application) updateCastAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) deleteCastAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) deleteCastAPI(w http.ResponseWriter, r *http.Request) {
 	castIdParam := r.PathValue("castId")
 	castId, err := strconv.Atoi(castIdParam)
 	if err != nil {
@@ -154,7 +154,7 @@ func (app *application) deleteCastAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.services.Casts.DeleteCastmember(castId)
+	err = app.Services.Casts.DeleteCastmember(castId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -162,7 +162,7 @@ func (app *application) deleteCastAPI(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (app *application) listCastAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) listCastAPI(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	page := r.Form.Get("page")
@@ -190,9 +190,9 @@ func (app *application) listCastAPI(w http.ResponseWriter, r *http.Request) {
 	filterQuery := strings.Join(strings.Fields(query), " | ")
 
 	sketchIds := extractUrlParamIDs(r.URL.Query()["sketch"])
-	app.infoLog.Printf("SKETCHES: %v", sketchIds)
+	app.InfoLog.Printf("SKETCHES: %v", sketchIds)
 
-	castList, err := app.services.Casts.ListCasts(
+	castList, err := app.Services.Casts.ListCasts(
 		&models.Filter{
 			Query:     filterQuery,
 			SortBy:    sort,

@@ -9,7 +9,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) listTagsAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) listTagsAPI(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	page := r.Form.Get("page")
@@ -36,7 +36,7 @@ func (app *application) listTagsAPI(w http.ResponseWriter, r *http.Request) {
 	query, _ = url.QueryUnescape(query)
 	filterQuery := strings.Join(strings.Fields(query), " | ")
 
-	tagsList, err := app.services.Tags.ListTags(
+	tagsList, err := app.Services.Tags.ListTags(
 		&models.Filter{
 			Query:    filterQuery,
 			Type:     r.Form.Get("type"),

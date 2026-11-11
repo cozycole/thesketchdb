@@ -6,14 +6,14 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *application) routes(staticRoute string, serveStatic bool) http.Handler {
+func (app *Application) routes(staticRoute string, serveStatic bool) http.Handler {
 	r := chi.NewRouter()
 
 	if serveStatic {
 		r.Group(func(r chi.Router) {
 			r.Use(app.recoverPanic)
 			fs := http.FileServer(http.Dir(staticRoute))
-			app.infoLog.Printf("Starting static file server rooted at %s\n", staticRoute)
+			app.InfoLog.Printf("Starting static file server rooted at %s\n", staticRoute)
 			r.Handle("/static/*", http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 				w.Header().Set("Pragma", "no-cache")
@@ -27,7 +27,7 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 		r.Use(
 			app.recoverPanic,
 			app.secureHeaders,
-			app.sessionManager.LoadAndSave,
+			app.SessionManager.LoadAndSave,
 			app.logRequest,
 			app.authenticate,
 		)

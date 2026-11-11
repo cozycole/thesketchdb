@@ -10,7 +10,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) seriesView(w http.ResponseWriter, r *http.Request) {
+func (app *Application) seriesView(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	seriesId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -18,7 +18,7 @@ func (app *application) seriesView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	series, err := app.series.GetById(seriesId)
+	series, err := app.Series.GetById(seriesId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -28,7 +28,7 @@ func (app *application) seriesView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page, err := views.SeriesPageView(series, app.baseImgUrl)
+	page, err := views.SeriesPageView(series, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -45,7 +45,7 @@ type seriesFormPage struct {
 	Form      seriesForm
 }
 
-func (app *application) seriesAddPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) seriesAddPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Page = seriesFormPage{
 		Title: "Add Series",
@@ -57,13 +57,13 @@ func (app *application) seriesAddPage(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "series-form-page.gohtml", "base", data)
 }
 
-func (app *application) seriesAdd(w http.ResponseWriter, r *http.Request) {
+func (app *Application) seriesAdd(w http.ResponseWriter, r *http.Request) {
 	var form seriesForm
 
 	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (app *application) seriesAdd(w http.ResponseWriter, r *http.Request) {
 
 	slug := models.CreateSlugName(safeDeref(series.Title))
 	series.Slug = &slug
-	id, err := app.series.Insert(&series)
+	id, err := app.Series.Insert(&series)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -94,14 +94,14 @@ func (app *application) seriesAdd(w http.ResponseWriter, r *http.Request) {
 	err = app.saveLargeThumbnail(thumbnailName, "series", form.Thumbnail)
 	if err != nil {
 		app.serverError(r, w, err)
-		app.series.Delete(id)
+		app.Series.Delete(id)
 		return
 	}
 
 	w.Header().Add("Hx-Redirect", fmt.Sprintf("/series/%d/update", id))
 }
 
-func (app *application) seriesUpdatePage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) seriesUpdatePage(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	seriesId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -109,7 +109,7 @@ func (app *application) seriesUpdatePage(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	series, err := app.series.GetById(seriesId)
+	series, err := app.Series.GetById(seriesId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -123,7 +123,7 @@ func (app *application) seriesUpdatePage(w http.ResponseWriter, r *http.Request)
 	form.Action = fmt.Sprintf("/series/%d/update", seriesId)
 	form.ImageUrl = fmt.Sprintf(
 		"%s/series/small/%s",
-		app.baseImgUrl,
+		app.Config.BaseImgUrl,
 		safeDeref(series.ThumbnailName),
 	)
 
@@ -137,7 +137,7 @@ func (app *application) seriesUpdatePage(w http.ResponseWriter, r *http.Request)
 	app.render(r, w, http.StatusOK, "series-form-page.gohtml", "base", data)
 }
 
-func (app *application) seriesUpdate(w http.ResponseWriter, r *http.Request) {
+func (app *Application) seriesUpdate(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	seriesId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -145,7 +145,7 @@ func (app *application) seriesUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	staleSeries, err := app.series.GetById(seriesId)
+	staleSeries, err := app.Series.GetById(seriesId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -162,7 +162,7 @@ func (app *application) seriesUpdate(w http.ResponseWriter, r *http.Request) {
 	err = app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -170,7 +170,7 @@ func (app *application) seriesUpdate(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		form.ImageUrl = fmt.Sprintf(
 			"%s/series/small/%s",
-			app.baseImgUrl,
+			app.Config.BaseImgUrl,
 			safeDeref(staleSeries.ThumbnailName),
 		)
 
@@ -200,7 +200,7 @@ func (app *application) seriesUpdate(w http.ResponseWriter, r *http.Request) {
 	slug := models.CreateSlugName(safeDeref(updateSeries.Title))
 	updateSeries.Slug = &slug
 
-	err = app.series.Update(&updateSeries)
+	err = app.Series.Update(&updateSeries)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -216,14 +216,14 @@ func (app *application) seriesUpdate(w http.ResponseWriter, r *http.Request) {
 
 	form.ImageUrl = fmt.Sprintf(
 		"%s/series/small/%s",
-		app.baseImgUrl,
+		app.Config.BaseImgUrl,
 		safeDeref(updateSeries.ThumbnailName),
 	)
 
 	app.render(r, w, http.StatusOK, "series-form-page.gohtml", "series-form", form)
 }
 
-func (app *application) deleteSeries(w http.ResponseWriter, r *http.Request) {
+func (app *Application) deleteSeries(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	seriesId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -231,7 +231,7 @@ func (app *application) deleteSeries(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = app.series.GetById(seriesId)
+	_, err = app.Series.GetById(seriesId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)

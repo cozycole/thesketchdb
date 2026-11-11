@@ -11,7 +11,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) search(w http.ResponseWriter, r *http.Request) {
+func (app *Application) search(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	query, _ := url.QueryUnescape(r.Form.Get("query"))
 	fmt.Println("QUERY", query)
@@ -24,7 +24,7 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 		filter := &models.Filter{
 			Query:    filterQuery,
 			Page:     1,
-			PageSize: app.settings.maxSearchResults,
+			PageSize: app.Config.MaxSearchResults,
 			SortBy:   "popular",
 		}
 
@@ -39,8 +39,8 @@ func (app *application) search(w http.ResponseWriter, r *http.Request) {
 	data.Page, err = views.SearchPageView(
 		results,
 		query,
-		app.baseImgUrl,
-		app.settings.maxSearchResults,
+		app.Config.BaseImgUrl,
+		app.Config.MaxSearchResults,
 	)
 	if err != nil {
 		app.serverError(r, w, err)
@@ -62,7 +62,7 @@ type result struct {
 	Text     string
 }
 
-func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
+func (app *Application) personSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
 	redirLink := "/person/add"
@@ -74,7 +74,7 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 
 	if q != "" {
 		q = strings.Replace(q, " ", "", -1)
-		dbResults, err := app.people.Search(q)
+		dbResults, err := app.People.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)
@@ -86,7 +86,7 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 			res := []result{}
 			for _, row := range dbResults {
 				r := result{}
-				r.ImageUrl = fmt.Sprintf("%s/person/small/%s", app.baseImgUrl, safeDeref(row.ProfileImg))
+				r.ImageUrl = fmt.Sprintf("%s/person/small/%s", app.Config.BaseImgUrl, safeDeref(row.ProfileImg))
 				r.Text = *row.First + " " + *row.Last
 				r.ID = *row.ID
 				res = append(res, r)
@@ -104,7 +104,7 @@ func (app *application) personSearch(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
-func (app *application) episodeSearch(w http.ResponseWriter, r *http.Request) {
+func (app *Application) episodeSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
 	results := dropdownSearchResults{}
@@ -115,7 +115,7 @@ func (app *application) episodeSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if q != "" {
-		episodes, _, err := app.shows.ListEpisodes(f)
+		episodes, _, err := app.Shows.ListEpisodes(f)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)
@@ -127,7 +127,7 @@ func (app *application) episodeSearch(w http.ResponseWriter, r *http.Request) {
 			res := []result{}
 			for _, e := range episodes {
 				r := result{}
-				r.ImageUrl = fmt.Sprintf("%s/episode/small/%s", app.baseImgUrl, safeDeref(e.Thumbnail))
+				r.ImageUrl = fmt.Sprintf("%s/episode/small/%s", app.Config.BaseImgUrl, safeDeref(e.Thumbnail))
 				r.Text = views.PrintEpisodeName(e)
 				r.ID = safeDeref(e.ID)
 				res = append(res, r)
@@ -146,7 +146,7 @@ func (app *application) episodeSearch(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) {
+func (app *Application) characterSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
 	redirLink := "/character/add"
@@ -158,7 +158,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 
 	if q != "" {
 		q = strings.Replace(q, " ", "", -1)
-		characters, err := app.characters.Search(q)
+		characters, err := app.Characters.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)
@@ -170,7 +170,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 			res := []result{}
 			for _, c := range characters {
 				r := result{}
-				r.ImageUrl = fmt.Sprintf("%s/character/small/%s", app.baseImgUrl, safeDeref(c.Image))
+				r.ImageUrl = fmt.Sprintf("%s/character/small/%s", app.Config.BaseImgUrl, safeDeref(c.Image))
 				r.Text = *c.Name
 				r.ID = *c.ID
 				res = append(res, r)
@@ -188,7 +188,7 @@ func (app *application) characterSearch(w http.ResponseWriter, r *http.Request) 
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
-func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
+func (app *Application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
 	redirLink := "/creator/add"
@@ -200,7 +200,7 @@ func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 
 	if q != "" {
 		q = strings.Replace(q, " ", "", -1)
-		creators, err := app.creators.Search(q)
+		creators, err := app.Creators.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)
@@ -212,7 +212,7 @@ func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 			res := []result{}
 			for _, c := range creators {
 				r := result{}
-				r.ImageUrl = fmt.Sprintf("%s/creator/small/%s", app.baseImgUrl, safeDeref(c.ProfileImage))
+				r.ImageUrl = fmt.Sprintf("%s/creator/small/%s", app.Config.BaseImgUrl, safeDeref(c.ProfileImage))
 				r.ID = *c.ID
 				r.Text = *c.Name
 				res = append(res, r)
@@ -229,7 +229,7 @@ func (app *application) creatorSearch(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
-func (app *application) showSearch(w http.ResponseWriter, r *http.Request) {
+func (app *Application) showSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
 	redirLink := "/show/add"
@@ -241,7 +241,7 @@ func (app *application) showSearch(w http.ResponseWriter, r *http.Request) {
 
 	if q != "" {
 		q = strings.Replace(q, " ", "", -1)
-		shows, err := app.shows.Search(q)
+		shows, err := app.Shows.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)
@@ -253,7 +253,7 @@ func (app *application) showSearch(w http.ResponseWriter, r *http.Request) {
 			res := []result{}
 			for _, s := range shows {
 				r := result{}
-				r.ImageUrl = fmt.Sprintf("%s/show/small/%s", app.baseImgUrl, safeDeref(s.ProfileImg))
+				r.ImageUrl = fmt.Sprintf("%s/show/small/%s", app.Config.BaseImgUrl, safeDeref(s.ProfileImg))
 				r.ID = *s.ID
 				r.Text = *s.Name
 				res = append(res, r)
@@ -270,7 +270,7 @@ func (app *application) showSearch(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
-func (app *application) categorySearch(w http.ResponseWriter, r *http.Request) {
+func (app *Application) categorySearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
 	redirLink := "/category/add"
@@ -282,7 +282,7 @@ func (app *application) categorySearch(w http.ResponseWriter, r *http.Request) {
 
 	if q != "" {
 		q = strings.Replace(q, " ", "", -1)
-		categories, err := app.categories.Search(q)
+		categories, err := app.Categories.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)
@@ -310,7 +310,7 @@ func (app *application) categorySearch(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
-func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
+func (app *Application) tagSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
 	redirLink := "/tag/add"
@@ -322,7 +322,7 @@ func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
 
 	if q != "" {
 		q = strings.Replace(q, " ", "", -1)
-		tags, err := app.tags.Search(q)
+		tags, err := app.Tags.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)
@@ -355,7 +355,7 @@ func (app *application) tagSearch(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
-func (app *application) seriesSearch(w http.ResponseWriter, r *http.Request) {
+func (app *Application) seriesSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
 	redirLink := "/series/add"
@@ -367,7 +367,7 @@ func (app *application) seriesSearch(w http.ResponseWriter, r *http.Request) {
 
 	if q != "" {
 		q = strings.Replace(q, " ", "", -1)
-		series, err := app.series.Search(q)
+		series, err := app.Series.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)
@@ -381,7 +381,7 @@ func (app *application) seriesSearch(w http.ResponseWriter, r *http.Request) {
 				r := result{}
 				r.ID = safeDeref(s.ID)
 				r.Text = safeDeref(s.Title)
-				r.ImageUrl = fmt.Sprintf("%s/series/small/%s", app.baseImgUrl, safeDeref(s.ThumbnailName))
+				r.ImageUrl = fmt.Sprintf("%s/series/small/%s", app.Config.BaseImgUrl, safeDeref(s.ThumbnailName))
 				res = append(res, r)
 			}
 
@@ -396,7 +396,7 @@ func (app *application) seriesSearch(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "dropdown.gohtml", "", data)
 }
 
-func (app *application) recurringSearch(w http.ResponseWriter, r *http.Request) {
+func (app *Application) recurringSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("query")
 
 	redirLink := "/recurring/add"
@@ -408,7 +408,7 @@ func (app *application) recurringSearch(w http.ResponseWriter, r *http.Request) 
 
 	if q != "" {
 		q = strings.Replace(q, " ", "", -1)
-		recurring, err := app.recurring.Search(q)
+		recurring, err := app.Recurring.Search(q)
 		if err != nil {
 			if !errors.Is(err, models.ErrNoRecord) {
 				app.serverError(r, w, err)
@@ -422,7 +422,7 @@ func (app *application) recurringSearch(w http.ResponseWriter, r *http.Request) 
 				r := result{}
 				r.ID = safeDeref(s.ID)
 				r.Text = safeDeref(s.Title)
-				r.ImageUrl = fmt.Sprintf("%s/recurring/small/%s", app.baseImgUrl, safeDeref(s.ThumbnailName))
+				r.ImageUrl = fmt.Sprintf("%s/recurring/small/%s", app.Config.BaseImgUrl, safeDeref(s.ThumbnailName))
 				res = append(res, r)
 			}
 

@@ -14,20 +14,19 @@ import (
 	"sketchdb.cozycole.net/internal/utils"
 )
 
-func newTestApplication(t *testing.T) *application {
+func newTestApplication(t *testing.T) *Application {
 	templateCache, err := newTemplateCache()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	formDecoder := form.NewDecoder()
-	return &application{
-		errorLog:      log.New(io.Discard, "", 0),
-		infoLog:       log.New(io.Discard, "", 0),
-		fileStorage:   &imgmock.FileStorage{},
-		formDecoder:   formDecoder,
-		templateCache: templateCache,
-		debugMode:     true,
+	return &Application{
+		ErrorLog:      log.New(io.Discard, "", 0),
+		InfoLog:       log.New(io.Discard, "", 0),
+		FileStorage:   &imgmock.FileStorage{},
+		FormDecoder:   formDecoder,
+		TemplateCache: templateCache,
 	}
 }
 

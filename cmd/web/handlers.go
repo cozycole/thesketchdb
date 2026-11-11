@@ -23,15 +23,15 @@ type HomePage struct {
 	Actors          []*models.Person
 }
 
-func (app *application) home(w http.ResponseWriter, r *http.Request) {
+func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 
-	featured, err := app.sketches.GetFeatured()
+	featured, err := app.Sketches.GetFeatured()
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
 	}
 
-	featuredSketchViews, err := views.FeaturedSketchesView(featured, app.baseImgUrl)
+	featuredSketchViews, err := views.FeaturedSketchesView(featured, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -43,13 +43,13 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		SortBy:   "recent",
 	}
 
-	recentSketches, _, err := app.sketches.Get(&filter)
+	recentSketches, _, err := app.Sketches.Get(&filter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	recentSketchView, err := views.SketchThumbnailsView(recentSketches, app.baseImgUrl, "", true)
+	recentSketchView, err := views.SketchThumbnailsView(recentSketches, app.Config.BaseImgUrl, "", true)
 
 	popularFilter := models.Filter{
 		SortBy:   "popular",
@@ -57,17 +57,17 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		PageSize: 20,
 	}
 
-	popularSketches, _, err := app.sketches.Get(&popularFilter)
+	popularSketches, _, err := app.Sketches.Get(&popularFilter)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	popularSketchViews, err := views.SketchThumbnailsView(popularSketches, app.baseImgUrl, "", true)
+	popularSketchViews, err := views.SketchThumbnailsView(popularSketches, app.Config.BaseImgUrl, "", true)
 
 	peopleIds := []int{61, 52, 42, 1, 2, 3, 39, 54, 56}
 	// peopleIds := []int{5, 6, 7, 9, 2, 3, 1, 10, 4}
-	people, err := app.people.GetPeople(peopleIds)
+	people, err := app.People.GetPeople(peopleIds)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -96,7 +96,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "home.gohtml", "base", data)
 }
 
-func (app *application) browse(w http.ResponseWriter, r *http.Request) {
+func (app *Application) browse(w http.ResponseWriter, r *http.Request) {
 
 	var sections []views.BrowseSectionDefinition
 	for _, def := range views.BrowseSectionDefinitions {
@@ -105,7 +105,7 @@ func (app *application) browse(w http.ResponseWriter, r *http.Request) {
 			Filter: def.Filter,
 		}
 
-		sketches, _, err := app.sketches.Get(&section.Filter)
+		sketches, _, err := app.Sketches.Get(&section.Filter)
 		if err != nil {
 			app.serverError(r, w, err)
 			return
@@ -116,7 +116,7 @@ func (app *application) browse(w http.ResponseWriter, r *http.Request) {
 		sections = append(sections, section)
 	}
 
-	browsePage, err := views.BrowsePageView(sections, app.baseImgUrl)
+	browsePage, err := views.BrowsePageView(sections, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -125,7 +125,7 @@ func (app *application) browse(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Page = browsePage
 
-	app.infoLog.Printf("%+v\n", browsePage)
+	app.InfoLog.Printf("%+v\n", browsePage)
 
 	app.render(r, w, http.StatusOK, "browse.gohtml", "base", data)
 }
@@ -135,7 +135,7 @@ type Catalog struct {
 	Catalog     any
 }
 
-func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
+func (app *Application) catalogView(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	page := r.Form.Get("page")
@@ -167,10 +167,10 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 		TagIDs:       tagIds,
 		SortBy:       sort,
 		Page:         currentPage,
-		PageSize:     app.settings.pageSize,
+		PageSize:     app.Config.PageSize,
 	}
 
-	results, err := app.services.Sketches.ListSketches(filter, true)
+	results, err := app.Services.Sketches.ListSketches(filter, true)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -183,7 +183,7 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	sketchCatalog, err := views.SketchCatalogView(
 		&results,
 		isHxRequest && !isHistoryRestore,
-		app.baseImgUrl,
+		app.Config.BaseImgUrl,
 	)
 
 	if err != nil {
@@ -200,7 +200,7 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("HX-Push-Url", url)
 
 	if isHxRequest && !isHistoryRestore {
-		app.infoLog.Println("TARGET: ", r.Header.Get("HX-Target"))
+		app.InfoLog.Println("TARGET: ", r.Header.Get("HX-Target"))
 		if r.Header.Get("HX-Target") == "catalogSection" {
 			app.render(r, w, http.StatusOK, "sketch-catalog.gohtml", "sketch-catalog", sketchCatalog)
 		} else {
@@ -217,9 +217,9 @@ func (app *application) catalogView(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "view-catalog.gohtml", "base", data)
 }
 
-func (app *application) serveCMS(w http.ResponseWriter, r *http.Request) {
+func (app *Application) serveCMS(w http.ResponseWriter, r *http.Request) {
 	cmsDistPath := "./cmsdist"
-	if app.settings.devEnv {
+	if app.Config.DevEnv {
 		cmsDistPath = "./ui/static/js/dist/cms"
 	}
 

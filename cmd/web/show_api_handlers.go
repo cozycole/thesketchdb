@@ -8,7 +8,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) listEpisodesAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) listEpisodesAPI(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	page := r.Form.Get("page")
@@ -34,8 +34,8 @@ func (app *application) listEpisodesAPI(w http.ResponseWriter, r *http.Request) 
 	}
 	query, _ = url.QueryUnescape(query)
 
-	app.infoLog.Printf("QUERY: '%s'", query)
-	episodeList, err := app.services.Shows.ListEpisodes(
+	app.InfoLog.Printf("QUERY: '%s'", query)
+	episodeList, err := app.Services.Shows.ListEpisodes(
 		&models.Filter{
 			Query:    query,
 			SortBy:   sort,

@@ -10,7 +10,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
+func (app *Application) creatorView(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	creatorId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -18,7 +18,7 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	creator, err := app.creators.GetById(creatorId)
+	creator, err := app.Creators.GetById(creatorId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -28,7 +28,7 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	popularSketches, _, err := app.sketches.Get(
+	popularSketches, _, err := app.Sketches.Get(
 		&models.Filter{
 			Page:       1,
 			PageSize:   12,
@@ -42,7 +42,7 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cast, err := app.creators.GetCast(creatorId)
+	cast, err := app.Creators.GetCast(creatorId)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
@@ -52,7 +52,7 @@ func (app *application) creatorView(w http.ResponseWriter, r *http.Request) {
 	page, err := views.CreatorPageView(
 		creator,
 		popularSketches,
-		cast, app.baseImgUrl)
+		cast, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 	}
@@ -66,7 +66,7 @@ type creatorFormPage struct {
 	Form  creatorForm
 }
 
-func (app *application) addCreatorPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addCreatorPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 
 	data.Page = creatorFormPage{
@@ -79,7 +79,7 @@ func (app *application) addCreatorPage(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "add-creator.gohtml", "base", data)
 }
 
-func (app *application) addCreator(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addCreator(w http.ResponseWriter, r *http.Request) {
 	var form creatorForm
 
 	err := app.decodePostForm(r, &form)
@@ -110,7 +110,7 @@ func (app *application) addCreator(w http.ResponseWriter, r *http.Request) {
 	}
 	creator.ProfileImage = &thumbName
 
-	id, err := app.creators.Insert(&creator)
+	id, err := app.Creators.Insert(&creator)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -119,23 +119,23 @@ func (app *application) addCreator(w http.ResponseWriter, r *http.Request) {
 	err = app.saveLargeProfile(thumbName, "creator", form.ProfileImage)
 	if err != nil {
 		app.serverError(r, w, err)
-		app.creators.Delete(id)
+		app.Creators.Delete(id)
 		return
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/creator/%d/%s", id, slug), http.StatusSeeOther)
 }
 
-func (app *application) updateCreatorPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateCreatorPage(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	creatorId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	creator, err := app.creators.GetById(creatorId)
+	creator, err := app.Creators.GetById(creatorId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -146,7 +146,7 @@ func (app *application) updateCreatorPage(w http.ResponseWriter, r *http.Request
 	}
 
 	creatorForm := convertCreatortoForm(creator)
-	creatorForm.ImageUrl = fmt.Sprintf("%s/creator/small/%s", app.baseImgUrl, creatorForm.ImageUrl)
+	creatorForm.ImageUrl = fmt.Sprintf("%s/creator/small/%s", app.Config.BaseImgUrl, creatorForm.ImageUrl)
 	creatorForm.Action = fmt.Sprintf("/creator/%d/update", creatorForm.ID)
 
 	data := app.newTemplateData(r)
@@ -158,16 +158,16 @@ func (app *application) updateCreatorPage(w http.ResponseWriter, r *http.Request
 	app.render(r, w, http.StatusOK, "add-creator.gohtml", "base", data)
 }
 
-func (app *application) updateCreator(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateCreator(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	creatorId, err := strconv.Atoi(id)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	staleCreator, err := app.creators.GetById(creatorId)
+	staleCreator, err := app.Creators.GetById(creatorId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -189,7 +189,7 @@ func (app *application) updateCreator(w http.ResponseWriter, r *http.Request) {
 	app.validateCreatorForm(&form)
 	if !form.Valid() {
 		data := app.newTemplateData(r)
-		form.ImageUrl = fmt.Sprintf("%s/creator/small/%s", app.baseImgUrl, oldProfileImgName)
+		form.ImageUrl = fmt.Sprintf("%s/creator/small/%s", app.Config.BaseImgUrl, oldProfileImgName)
 		form.Action = fmt.Sprintf("/creator/%d/update", form.ID)
 		data.Page = creatorFormPage{
 			Title: "Update Creator",
@@ -219,7 +219,7 @@ func (app *application) updateCreator(w http.ResponseWriter, r *http.Request) {
 	slug := models.CreateSlugName(form.Name)
 	updatedCreator.Slug = &slug
 
-	err = app.creators.Update(&updatedCreator)
+	err = app.Creators.Update(&updatedCreator)
 	if err != nil {
 		app.serverError(r, w, err)
 		return

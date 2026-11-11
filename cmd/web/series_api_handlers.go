@@ -9,7 +9,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) listSeriesAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) listSeriesAPI(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	page := r.Form.Get("page")
@@ -36,7 +36,7 @@ func (app *application) listSeriesAPI(w http.ResponseWriter, r *http.Request) {
 	query, _ = url.QueryUnescape(query)
 	filterQuery := strings.Join(strings.Fields(query), " | ")
 
-	seriesList, err := app.services.Series.ListSeries(
+	seriesList, err := app.Services.Series.ListSeries(
 		&models.Filter{
 			Query:    filterQuery,
 			SortBy:   sort,

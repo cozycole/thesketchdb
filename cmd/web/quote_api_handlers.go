@@ -8,7 +8,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) adminGetQuotesAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) adminGetQuotesAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -16,7 +16,7 @@ func (app *application) adminGetQuotesAPI(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	quoteData, err := app.services.Quotes.GetAdminQuotes(sketchId)
+	quoteData, err := app.Services.Quotes.GetAdminQuotes(sketchId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -33,7 +33,7 @@ func (app *application) adminGetQuotesAPI(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (app *application) updateQuotesAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateQuotesAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -87,7 +87,7 @@ func (app *application) updateQuotesAPI(w http.ResponseWriter, r *http.Request) 
 		quotes = append(quotes, &modelQ)
 	}
 
-	updatedQuotes, err := app.services.Quotes.UpdateQuotes(sketchId, quotes, input.DeleteIds)
+	updatedQuotes, err := app.Services.Quotes.UpdateQuotes(sketchId, quotes, input.DeleteIds)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

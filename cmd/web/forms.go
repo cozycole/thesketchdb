@@ -41,7 +41,7 @@ type creatorForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateCreatorForm(form *creatorForm) {
+func (app *Application) validateCreatorForm(form *creatorForm) {
 	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.URL), "url", "This field cannot be blank")
 	if form.EstablishedDate != "" {
@@ -82,7 +82,7 @@ type personForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validatePersonForm(form *personForm) {
+func (app *Application) validatePersonForm(form *personForm) {
 	form.CheckField(validator.NotBlank(form.First), "first", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Last), "last", "This field cannot be blank")
 	if form.BirthDate != "" {
@@ -125,7 +125,7 @@ type characterForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateCharacterForm(form *characterForm) {
+func (app *Application) validateCharacterForm(form *characterForm) {
 	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Type), "type", "This field cannot be blank")
 
@@ -186,7 +186,7 @@ type sketchForm struct {
 
 // We need this function to have access to the apps state
 // to validate based on database queries
-func (app *application) validateSketchForm(form *sketchForm) {
+func (app *Application) validateSketchForm(form *sketchForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(form.CreatorID != 0 || form.EpisodeID != 0 || form.GroupingID != 0,
 		"creatorId", "A creator, episode or grouping must be defined",
@@ -234,14 +234,14 @@ type castForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateCastForm(form *castForm, isUpdate bool) {
+func (app *Application) validateCastForm(form *castForm, isUpdate bool) {
 	if isUpdate {
 		form.CheckField(form.ID != 0, "id", "invalid cast id")
 	}
 	pid := form.PersonID
 	if pid != 0 {
 		form.CheckField(
-			validator.BoolWithError(app.people.Exists(pid)),
+			validator.BoolWithError(app.People.Exists(pid)),
 			"personId",
 			"Person does not exist. Please add it, then resubmit sketch!",
 		)
@@ -250,7 +250,7 @@ func (app *application) validateCastForm(form *castForm, isUpdate bool) {
 	cid := form.CharacterID
 	if cid != 0 {
 		form.CheckField(
-			validator.BoolWithError(app.characters.Exists(cid)),
+			validator.BoolWithError(app.Characters.Exists(cid)),
 			"characterId",
 			"Character does not exist. Please add it, then resubmit sketch!",
 		)
@@ -294,7 +294,7 @@ type userSignupForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateUserSignupForm(form *userSignupForm) {
+func (app *Application) validateUserSignupForm(form *userSignupForm) {
 	form.CheckField(validator.NotBlank(form.Username), "username", "Field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Email), "email", "Field cannot be blank")
 	form.CheckField(validator.Matches(form.Email, validator.EmailRegEx), "email", "Please enter a valid email")
@@ -309,7 +309,7 @@ type userLoginForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateUserLoginForm(form *userLoginForm) {
+func (app *Application) validateUserLoginForm(form *userLoginForm) {
 	form.CheckField(validator.NotBlank(form.Email), "email", "Field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
 }
@@ -319,7 +319,7 @@ type userForgotPasswordForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateUserForgotPassword(form *userForgotPasswordForm) {
+func (app *Application) validateUserForgotPassword(form *userForgotPasswordForm) {
 	form.CheckField(validator.NotBlank(form.Email), "email", "Field cannot be blank")
 	form.CheckField(validator.Matches(form.Email, validator.EmailRegEx), "email", "Please enter a valid email")
 }
@@ -331,7 +331,7 @@ type userResetPasswordForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateUserPasswordReset(form *userResetPasswordForm) {
+func (app *Application) validateUserPasswordReset(form *userResetPasswordForm) {
 	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
 	form.CheckField(validator.NotBlank(form.ConfirmPassword), "confirmPassword", "Field cannot be blank")
 	if form.Password != form.ConfirmPassword {
@@ -348,7 +348,7 @@ type userResendActivationForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateUserResendActivation(form *userResendActivationForm) {
+func (app *Application) validateUserResendActivation(form *userResendActivationForm) {
 	form.CheckField(validator.NotBlank(form.Email), "email", "Field cannot be blank")
 	form.CheckField(validator.Matches(form.Email, validator.EmailRegEx), "email", "Please enter a valid email")
 }
@@ -360,7 +360,7 @@ type categoryForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateCategoryForm(form *categoryForm) {
+func (app *Application) validateCategoryForm(form *categoryForm) {
 	form.CheckField(validator.NotBlank(form.Name), "categoryName", "Field cannot be blank")
 }
 
@@ -374,11 +374,11 @@ type tagForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateTagForm(form *tagForm) {
+func (app *Application) validateTagForm(form *tagForm) {
 	form.CheckField(validator.NotBlank(form.Name), "tag", "Field cannot be blank")
 	if form.CategoryID != 0 {
 		form.CheckField(
-			validator.BoolWithError(app.categories.Exists(form.CategoryID)),
+			validator.BoolWithError(app.Categories.Exists(form.CategoryID)),
 			"categoryId",
 			"Category does not exist. Please add it, then resubmit tag!",
 		)
@@ -391,13 +391,13 @@ type sketchTagsForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateSketchTagsForm(form *sketchTagsForm) {
+func (app *Application) validateSketchTagsForm(form *sketchTagsForm) {
 	for i, tagId := range form.TagIds {
 		if tagId == 0 {
 			form.AddMultiFieldError("tagId", i, "Please input tag")
 		}
 
-		if exists, _ := app.tags.Exists(tagId); !exists {
+		if exists, _ := app.Tags.Exists(tagId); !exists {
 			form.AddMultiFieldError("tagId", i, "Tag does not exist")
 		}
 	}
@@ -416,7 +416,7 @@ type showForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateShowForm(form *showForm) {
+func (app *Application) validateShowForm(form *showForm) {
 	form.CheckField(validator.NotBlank(form.Name), "name", "Field cannot be blank")
 	if form.ID != 0 {
 		form.CheckField(validator.NotBlank(form.Slug), "slug", "Field cannot be blank")
@@ -446,7 +446,7 @@ type seasonForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateSeasonForm(form *seasonForm) {
+func (app *Application) validateSeasonForm(form *seasonForm) {
 	form.CheckField(form.Number > 0, "number", "Input valid season number")
 }
 
@@ -464,7 +464,7 @@ type episodeForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateEpisodeForm(form *episodeForm) {
+func (app *Application) validateEpisodeForm(form *episodeForm) {
 	form.CheckField(form.Number != 0, "number", "Please enter a valid number")
 
 	// validate episode number
@@ -472,9 +472,9 @@ func (app *application) validateEpisodeForm(form *episodeForm) {
 		form.AddNonFieldError("Season ID not defined")
 	}
 
-	season, err := app.shows.GetSeason(form.SeasonId)
+	season, err := app.Shows.GetSeason(form.SeasonId)
 	if err != nil {
-		app.errorLog.Printf("Error getting season for episode form validation: %s", err)
+		app.ErrorLog.Printf("Error getting season for episode form validation: %s", err)
 		form.AddNonFieldError("Error getting season")
 	}
 
@@ -517,7 +517,7 @@ type seriesForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateSeriesForm(form *seriesForm) {
+func (app *Application) validateSeriesForm(form *seriesForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "Please enter a title")
 
 	if form.ID == 0 {
@@ -549,7 +549,7 @@ type recurringForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateRecurringForm(form *recurringForm) {
+func (app *Application) validateRecurringForm(form *recurringForm) {
 	form.CheckField(validator.NotBlank(form.Title), "title", "Please enter a title")
 
 	if form.ID == 0 {
@@ -585,7 +585,7 @@ type quoteForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateQuoteForm(form *quoteForm) {
+func (app *Application) validateQuoteForm(form *quoteForm) {
 	for i := range len(form.QuoteID) {
 		if form.CastMemberID[i] == 0 {
 			form.AddNonFieldError("Ensure all cast members are defined")
@@ -612,7 +612,7 @@ type sketchRatingForm struct {
 	validator.Validator `form:"-"`
 }
 
-func (app *application) validateSketchRatingForm(form *sketchRatingForm) {
+func (app *Application) validateSketchRatingForm(form *sketchRatingForm) {
 	if form.Rating == 0 {
 		form.AddNonFieldError("Rating not defined")
 		return

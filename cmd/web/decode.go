@@ -15,7 +15,7 @@ import (
 
 // see ~/go/pkg/mod/github.com/go-playground/form/v4@v4.2.1/README.md
 // for doc on the form decoder
-func (app *application) decodePostForm(r *http.Request, dst any) error {
+func (app *Application) decodePostForm(r *http.Request, dst any) error {
 	var err error
 	contentType := r.Header.Get("Content-Type")
 	isMultipart := strings.Contains(contentType, "multipart/form-data")
@@ -29,7 +29,7 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 		return err
 	}
 
-	err = app.formDecoder.Decode(dst, r.PostForm)
+	err = app.FormDecoder.Decode(dst, r.PostForm)
 	if err != nil {
 
 		var invalidDecoderError *form.InvalidDecoderError

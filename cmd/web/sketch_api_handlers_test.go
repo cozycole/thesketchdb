@@ -13,12 +13,12 @@ import (
 func TestCreateSketchAPI(t *testing.T) {
 	app := newTestApplication(t)
 	db := models.NewTestDb(t)
-	app.services = NewServices(
+	app.Services = NewServices(
 		models.Repositories{
 			Creators: &models.CreatorModel{DB: db},
 			Sketches: &models.SketchModel{DB: db},
 			Shows:    &models.ShowModel{DB: db},
-		}, app.fileStorage)
+		}, app.FileStorage)
 
 	_ = insertTestCreator(t, &models.CreatorModel{DB: db})
 
@@ -66,12 +66,12 @@ func TestCreateSketchAPI(t *testing.T) {
 func TestUpdateSketchAPI(t *testing.T) {
 	app := newTestApplication(t)
 	db := models.NewTestDb(t)
-	app.services = NewServices(
+	app.Services = NewServices(
 		models.Repositories{
 			Creators: &models.CreatorModel{DB: db},
 			Sketches: &models.SketchModel{DB: db},
 			Shows:    &models.ShowModel{DB: db},
-		}, app.fileStorage)
+		}, app.FileStorage)
 
 	_ = insertTestCreator(t, &models.CreatorModel{DB: db})
 	_ = insertTestCreator(t, &models.CreatorModel{DB: db})

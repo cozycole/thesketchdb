@@ -9,7 +9,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) listCreatorsAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) listCreatorsAPI(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	page := r.Form.Get("page")
@@ -36,7 +36,7 @@ func (app *application) listCreatorsAPI(w http.ResponseWriter, r *http.Request) 
 	query, _ = url.QueryUnescape(query)
 	filterQuery := strings.Join(strings.Fields(query), " | ")
 
-	creatorList, err := app.services.Creators.ListCreators(
+	creatorList, err := app.Services.Creators.ListCreators(
 		&models.Filter{
 			Query:    filterQuery,
 			SortBy:   sort,

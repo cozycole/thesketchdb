@@ -10,8 +10,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-
-func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewEpisode(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	episodeId, err := strconv.Atoi(id)
@@ -20,7 +19,7 @@ func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	episode, err := app.shows.GetEpisode(episodeId)
+	episode, err := app.Shows.GetEpisode(episodeId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -31,8 +30,8 @@ func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := app.newTemplateData(r)
-	page, err := views.EpisodePageView(episode, app.baseImgUrl)
-	app.infoLog.Printf("%+v\n", page)
+	page, err := views.EpisodePageView(episode, app.Config.BaseImgUrl)
+	app.InfoLog.Printf("%+v\n", page)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -42,16 +41,16 @@ func (app *application) viewEpisode(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "view-episode.gohtml", "base", data)
 }
 
-func (app *application) addEpisodeForm(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addEpisodeForm(w http.ResponseWriter, r *http.Request) {
 	seasonIdParam := r.PathValue("id")
 	seasonId, err := strconv.Atoi(seasonIdParam)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	season, _ := app.shows.GetSeason(seasonId)
+	season, _ := app.Shows.GetSeason(seasonId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -72,12 +71,12 @@ func (app *application) addEpisodeForm(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-form-modal", formModal)
 }
 
-func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addEpisode(w http.ResponseWriter, r *http.Request) {
 	seasonIdParam := r.PathValue("id")
 	seasonId, err := strconv.Atoi(seasonIdParam)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -103,7 +102,7 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 		episode.YoutubeID = &youtubeID
 	}
 
-	season, err := app.shows.GetSeason(seasonId)
+	season, err := app.Shows.GetSeason(seasonId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -124,7 +123,7 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 
 	episode.Thumbnail = &thumbnailName
 
-	id, err := app.shows.InsertEpisode(&episode)
+	id, err := app.Shows.InsertEpisode(&episode)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -134,33 +133,33 @@ func (app *application) addEpisode(w http.ResponseWriter, r *http.Request) {
 	err = app.saveLargeThumbnail(thumbnailName, "episode", form.Thumbnail)
 	if err != nil {
 		app.serverError(r, w, err)
-		app.shows.DeleteEpisode(id)
+		app.Shows.DeleteEpisode(id)
 		return
 	}
 
-	newSeason, err := app.shows.GetSeason(*episode.Season.ID)
+	newSeason, err := app.Shows.GetSeason(*episode.Season.ID)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	table := views.EpisodeTableView(
-		newSeason, app.baseImgUrl,
+		newSeason, app.Config.BaseImgUrl,
 		fmt.Sprintf("/show/%d/%s", safeDeref(season.Show.ID), safeDeref(season.Show.Slug)),
 	)
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-table", table)
 }
 
-func (app *application) updateEpisodeForm(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateEpisodeForm(w http.ResponseWriter, r *http.Request) {
 	epIdParam := r.PathValue("id")
 	epId, err := strconv.Atoi(epIdParam)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	episode, err := app.shows.GetEpisode(epId)
+	episode, err := app.Shows.GetEpisode(epId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -171,7 +170,7 @@ func (app *application) updateEpisodeForm(w http.ResponseWriter, r *http.Request
 	}
 
 	form := convertEpisodeToForm(episode)
-	form.ThumbnailUrl = fmt.Sprintf("%s/episode/small/%s", app.baseImgUrl, form.ThumbnailName)
+	form.ThumbnailUrl = fmt.Sprintf("%s/episode/small/%s", app.Config.BaseImgUrl, form.ThumbnailName)
 	form.Action = fmt.Sprintf("/episode/%d/update", epId)
 
 	formModal := views.FormModal{
@@ -185,12 +184,12 @@ func (app *application) updateEpisodeForm(w http.ResponseWriter, r *http.Request
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-form-modal", formModal)
 }
 
-func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 	epIdParam := r.PathValue("id")
 	epId, err := strconv.Atoi(epIdParam)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -201,7 +200,7 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oldEpisode, err := app.shows.GetEpisode(epId)
+	oldEpisode, err := app.Shows.GetEpisode(epId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -214,7 +213,7 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 	app.validateEpisodeForm(&form)
 	if !form.Valid() {
 		form.Action = fmt.Sprintf("/episode/%d/update", epId)
-		form.ThumbnailUrl = fmt.Sprintf("%s/episode/small/%s", app.baseImgUrl, safeDeref(oldEpisode.Thumbnail))
+		form.ThumbnailUrl = fmt.Sprintf("%s/episode/small/%s", app.Config.BaseImgUrl, safeDeref(oldEpisode.Thumbnail))
 		app.render(r, w, http.StatusUnprocessableEntity, "show-form-page.gohtml", "episode-form", form)
 		return
 	}
@@ -249,8 +248,8 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 
 	episode.ID = &epId
 	episode.Thumbnail = &thumbnailName
-	app.infoLog.Printf("%+v\n", episode)
-	err = app.shows.UpdateEpisode(&episode)
+	app.InfoLog.Printf("%+v\n", episode)
+	err = app.Shows.UpdateEpisode(&episode)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -264,29 +263,29 @@ func (app *application) updateEpisode(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	season, err := app.shows.GetSeason(safeDeref(episode.Season.ID))
+	season, err := app.Shows.GetSeason(safeDeref(episode.Season.ID))
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	table := views.EpisodeTableView(season, app.baseImgUrl,
+	table := views.EpisodeTableView(season, app.Config.BaseImgUrl,
 		fmt.Sprintf("/show/%d/%s", safeDeref(season.Show.ID), safeDeref(season.Show.Slug)),
 	)
 
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "episode-table", table)
 }
 
-func (app *application) deleteEpisode(w http.ResponseWriter, r *http.Request) {
+func (app *Application) deleteEpisode(w http.ResponseWriter, r *http.Request) {
 	epIdParam := r.PathValue("id")
 	epId, err := strconv.Atoi(epIdParam)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	episode, err := app.shows.GetEpisode(epId)
+	episode, err := app.Shows.GetEpisode(epId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -301,19 +300,19 @@ func (app *application) deleteEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.shows.DeleteEpisode(*episode.ID)
+	err = app.Shows.DeleteEpisode(*episode.ID)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	season, err := app.shows.GetSeason(safeDeref(episode.Season.ID))
+	season, err := app.Shows.GetSeason(safeDeref(episode.Season.ID))
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	table := views.EpisodeTableView(season, app.baseImgUrl,
+	table := views.EpisodeTableView(season, app.Config.BaseImgUrl,
 		fmt.Sprintf("/show/%d/%s", safeDeref(season.Show.ID), safeDeref(season.Show.Slug)),
 	)
 

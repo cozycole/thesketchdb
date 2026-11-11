@@ -8,11 +8,11 @@ import (
 
 const NO_EXPIRY = 0
 
-func (app *application) createAPIKeyToken(w http.ResponseWriter, r *http.Request) {
+func (app *Application) createAPIKeyToken(w http.ResponseWriter, r *http.Request) {
 	// pull the authenticated user from context the same way your other handlers do
-	userID := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+	userID := app.SessionManager.GetInt(r.Context(), "authenticatedUserID")
 
-	token, err := app.tokens.New(userID, NO_EXPIRY, models.ScopeAPIKey)
+	token, err := app.Tokens.New(userID, NO_EXPIRY, models.ScopeAPIKey)
 	if err != nil {
 		app.serverError(r, w, err)
 		return

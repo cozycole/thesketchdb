@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -10,7 +10,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewSeason(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	seasonId, err := strconv.Atoi(id)
 	if err != nil {
@@ -18,7 +18,7 @@ func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	season, err := app.shows.GetSeason(seasonId)
+	season, err := app.Shows.GetSeason(seasonId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -28,7 +28,7 @@ func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	show, err := app.shows.GetById(safeDeref(season.Show.ID))
+	show, err := app.Shows.GetById(safeDeref(season.Show.ID))
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -40,7 +40,7 @@ func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
 	isHistoryRestore := r.Header.Get("HX-History-Restore-Request") == "true"
 	if isHxRequest && !isHistoryRestore {
 		format := r.URL.Query().Get("format")
-		templateData := views.EpisodeGalleryView(season.Episodes, app.baseImgUrl, format, true)
+		templateData := views.EpisodeGalleryView(season.Episodes, app.Config.BaseImgUrl, format, true)
 
 		if isSeasonPath(r) {
 			w.Header().Add("HX-Push-Url", fmt.Sprintf("/season/%d/%s", *season.ID, *season.Slug))
@@ -50,18 +50,18 @@ func (app *application) viewSeason(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page := views.SeasonPageView(show, season, app.baseImgUrl)
+	page := views.SeasonPageView(show, season, app.Config.BaseImgUrl)
 	data.Page = page
 	app.render(r, w, http.StatusOK, "view-season.gohtml", "base", data)
 }
 
-func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
+func (app *Application) addSeason(w http.ResponseWriter, r *http.Request) {
 
 	var form seasonForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -75,11 +75,11 @@ func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
 	showId, err := strconv.Atoi(showIdParam)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	show, err := app.shows.GetById(showId)
+	show, err := app.Shows.GetById(showId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -94,34 +94,34 @@ func (app *application) addSeason(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	_, err = app.shows.AddSeason(newSeason)
+	_, err = app.Shows.AddSeason(newSeason)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	show, err = app.shows.GetById(showId)
+	show, err = app.Shows.GetById(showId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	data := views.SeasonDropdownsView(show, app.baseImgUrl)
+	data := views.SeasonDropdownsView(show, app.Config.BaseImgUrl)
 	app.render(r, w, http.StatusOK, "show-form-page.gohtml", "season-dropdowns", data)
 }
 
-func (app *application) deleteSeason(w http.ResponseWriter, r *http.Request) {
+func (app *Application) deleteSeason(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	seasonIdParam := r.PathValue("id")
 	seasonId, err := strconv.Atoi(seasonIdParam)
 	if err != nil {
 		app.badRequest(w)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
-	err = app.shows.DeleteSeason(seasonId)
+	err = app.Shows.DeleteSeason(seasonId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -129,4 +129,3 @@ func (app *application) deleteSeason(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
-

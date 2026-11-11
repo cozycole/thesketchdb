@@ -10,7 +10,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
+func (app *Application) sketchView(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -18,7 +18,7 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sketch, err := app.sketches.GetById(sketchId)
+	sketch, err := app.Sketches.GetById(sketchId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -28,7 +28,7 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags, err := app.tags.GetBySketch(sketchId)
+	tags, err := app.Tags.GetBySketch(sketchId)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
@@ -37,9 +37,9 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 	var userSketchInfo *models.UserSketchInfo
 	user, ok := r.Context().Value(userContextKey).(*models.User)
 	if ok && user.ID != nil {
-		hasLike, _ := app.sketches.HasLike(*sketch.ID, *user.ID)
+		hasLike, _ := app.Sketches.HasLike(*sketch.ID, *user.ID)
 		sketch.Liked = &hasLike
-		userSketchInfo, err = app.users.GetUserSketchInfo(*user.ID, sketchId)
+		userSketchInfo, err = app.Users.GetUserSketchInfo(*user.ID, sketchId)
 		if err != nil && !errors.Is(err, models.ErrNoRecord) {
 			app.serverError(r, w, err)
 			return
@@ -52,14 +52,14 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 	} else {
 		userId = user.ID
 	}
-	quotes, err := app.quotes.GetBySketch(sketchId, userId)
+	quotes, err := app.Quotes.GetBySketch(sketchId, userId)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
 	}
 
 	data := app.newTemplateData(r)
-	sketchPage, err := views.SketchPageView(sketch, quotes, tags, userSketchInfo, app.baseImgUrl)
+	sketchPage, err := views.SketchPageView(sketch, quotes, tags, userSketchInfo, app.Config.BaseImgUrl)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -70,7 +70,7 @@ func (app *application) sketchView(w http.ResponseWriter, r *http.Request) {
 	app.render(r, w, http.StatusOK, "view-sketch.gohtml", "base", data)
 }
 
-func (app *application) sketchAddLike(w http.ResponseWriter, r *http.Request) {
+func (app *Application) sketchAddLike(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -80,12 +80,12 @@ func (app *application) sketchAddLike(w http.ResponseWriter, r *http.Request) {
 
 	user, ok := r.Context().Value(userContextKey).(*models.User)
 	if !ok || nil == user {
-		app.infoLog.Println("User not logged in!")
+		app.InfoLog.Println("User not logged in!")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	err = app.users.AddLike(*user.ID, sketchId)
+	err = app.Users.AddLike(*user.ID, sketchId)
 	if err != nil {
 		// check if problem with primary key constraint
 		app.badRequest(w)
@@ -93,7 +93,7 @@ func (app *application) sketchAddLike(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) sketchRemoveLike(w http.ResponseWriter, r *http.Request) {
+func (app *Application) sketchRemoveLike(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -106,7 +106,7 @@ func (app *application) sketchRemoveLike(w http.ResponseWriter, r *http.Request)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	err = app.users.RemoveLike(*user.ID, sketchId)
+	err = app.Users.RemoveLike(*user.ID, sketchId)
 	if err != nil {
 		app.badRequest(w)
 		return
@@ -134,7 +134,7 @@ func createSketchSlug(sketch *models.Sketch) string {
 	return models.CreateSlugName(slugInput + " " + safeDeref(sketch.Title))
 }
 
-func (app *application) sketchUpdateRating(w http.ResponseWriter, r *http.Request) {
+func (app *Application) sketchUpdateRating(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -149,7 +149,7 @@ func (app *application) sketchUpdateRating(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, err = app.sketches.GetById(sketchId)
+	_, err = app.Sketches.GetById(sketchId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -173,29 +173,29 @@ func (app *application) sketchUpdateRating(w http.ResponseWriter, r *http.Reques
 	}
 
 	// check if they already have a rating
-	userSketchInfo, err := app.users.GetUserSketchInfo(*user.ID, sketchId)
+	userSketchInfo, err := app.Users.GetUserSketchInfo(*user.ID, sketchId)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		app.serverError(r, w, err)
 		return
 	}
 
 	if safeDeref(userSketchInfo.Rating) == 0 {
-		err = app.users.AddRating(*user.ID, sketchId, form.Rating)
+		err = app.Users.AddRating(*user.ID, sketchId, form.Rating)
 	} else {
-		err = app.users.UpdateRating(*user.ID, sketchId, form.Rating)
+		err = app.Users.UpdateRating(*user.ID, sketchId, form.Rating)
 	}
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	sketch, err := app.sketches.GetById(sketchId)
+	sketch, err := app.Sketches.GetById(sketchId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	userSketchInfo, err = app.users.GetUserSketchInfo(*user.ID, sketchId)
+	userSketchInfo, err = app.Users.GetUserSketchInfo(*user.ID, sketchId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -205,7 +205,7 @@ func (app *application) sketchUpdateRating(w http.ResponseWriter, r *http.Reques
 	app.render(r, w, http.StatusOK, "sketch-rating.gohtml", "sketch-rating", ratingView)
 }
 
-func (app *application) sketchDeleteRating(w http.ResponseWriter, r *http.Request) {
+func (app *Application) sketchDeleteRating(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -220,7 +220,7 @@ func (app *application) sketchDeleteRating(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, err = app.sketches.GetById(sketchId)
+	_, err = app.Sketches.GetById(sketchId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -231,21 +231,21 @@ func (app *application) sketchDeleteRating(w http.ResponseWriter, r *http.Reques
 	}
 
 	// check if they already have a rating
-	userSketchInfo, err := app.users.GetUserSketchInfo(*user.ID, sketchId)
+	userSketchInfo, err := app.Users.GetUserSketchInfo(*user.ID, sketchId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
 	if safeDeref(userSketchInfo.Rating) != 0 {
-		err = app.users.DeleteRating(*user.ID, sketchId)
+		err = app.Users.DeleteRating(*user.ID, sketchId)
 	}
 	if err != nil {
 		app.serverError(r, w, err)
 		return
 	}
 
-	sketch, err := app.sketches.GetById(sketchId)
+	sketch, err := app.Sketches.GetById(sketchId)
 	if err != nil {
 		app.serverError(r, w, err)
 		return

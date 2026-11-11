@@ -13,49 +13,49 @@ import (
 // - SearchResult.Query -> "kenan+snl"
 // - templateData.Query -> "kenan snl" (i.e. user facing)
 
-func (app *application) getSearchResults(filter *models.Filter) (*models.SearchResult, error) {
+func (app *Application) getSearchResults(filter *models.Filter) (*models.SearchResult, error) {
 
-	sketches, _, err := app.sketches.Get(filter)
+	sketches, _, err := app.Sketches.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		return nil, fmt.Errorf("search sketch error: %s", err)
 	}
 
-	sketchCount, err := app.sketches.GetCount(filter)
+	sketchCount, err := app.Sketches.GetCount(filter)
 	if err != nil {
 		return nil, fmt.Errorf("search sketch count error: %s", err)
 	}
 
-	people, err := app.people.Get(filter)
+	people, err := app.People.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		return nil, fmt.Errorf("search person error: %s", err)
 	}
 
-	peopleCount, err := app.people.GetCount(filter)
+	peopleCount, err := app.People.GetCount(filter)
 	if err != nil {
 		return nil, fmt.Errorf("search person count error: %s", err)
 	}
 
-	creators, creatorMetadata, err := app.creators.List(filter)
+	creators, creatorMetadata, err := app.Creators.List(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		return nil, fmt.Errorf("search creator error: %s", err)
 	}
 
-	characters, err := app.characters.Get(filter)
+	characters, err := app.Characters.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		return nil, fmt.Errorf("search character error: %s", err)
 	}
 
-	characterCount, err := app.characters.GetCount(filter)
+	characterCount, err := app.Characters.GetCount(filter)
 	if err != nil {
 		return nil, fmt.Errorf("search character count error: %s", err)
 	}
 
-	shows, err := app.shows.Get(filter)
+	shows, err := app.Shows.Get(filter)
 	if err != nil && !errors.Is(err, models.ErrNoRecord) {
 		return nil, fmt.Errorf("search show error: %s", err)
 	}
 
-	showCount, err := app.shows.GetCount(filter)
+	showCount, err := app.Shows.GetCount(filter)
 	if err != nil {
 		return nil, fmt.Errorf("search show count error: %s", err)
 	}

@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"flag"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -21,67 +20,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
-	"sketchdb.cozycole.net/internal/domain/casts"
-	"sketchdb.cozycole.net/internal/domain/characters"
-	"sketchdb.cozycole.net/internal/domain/creators"
-	"sketchdb.cozycole.net/internal/domain/people"
-	"sketchdb.cozycole.net/internal/domain/pipeline"
-	"sketchdb.cozycole.net/internal/domain/quotes"
-	"sketchdb.cozycole.net/internal/domain/recurring"
-	"sketchdb.cozycole.net/internal/domain/series"
-	"sketchdb.cozycole.net/internal/domain/shows"
-	"sketchdb.cozycole.net/internal/domain/sketches"
-	"sketchdb.cozycole.net/internal/domain/tags"
-	"sketchdb.cozycole.net/internal/domain/users"
-
 	"sketchdb.cozycole.net/internal/fileStore"
 	"sketchdb.cozycole.net/internal/mail"
 	"sketchdb.cozycole.net/internal/models"
 )
-
-type application struct {
-	errorLog       *log.Logger
-	infoLog        *log.Logger
-	templateCache  map[string]*template.Template
-	fileStorage    fileStore.FileStorageInterface
-	archiveStorage fileStore.FileStorageInterface
-	baseImgUrl     string
-	cast           models.CastModelInterface
-	categories     models.CategoryInterface
-	characters     models.CharacterModelInterface
-	creators       models.CreatorModelInterface
-	quotes         models.QuoteModelInterface
-	people         models.PersonModelInterface
-	profile        models.ProfileModelInterface
-	recurring      models.RecurringModelInterface
-	shows          models.ShowModelInterface
-	series         models.SeriesModelInterface
-	tags           models.TagModelInterface
-	tokens         models.TokenModelInterface
-	users          models.UserModelInterface
-	sketches       models.SketchModelInterface
-	services       Services
-	mail           mail.MailerInterface
-	sessionManager *scs.SessionManager
-	debugMode      bool
-	formDecoder    *form.Decoder
-	assets         map[string]string
-	settings       settings
-}
-
-type settings struct {
-	pageSize         int
-	maxSearchResults int
-
-	passwordTTL   time.Duration
-	activationTTL time.Duration
-
-	localImageServer  bool
-	localImageStorage bool
-	devEnv            bool
-
-	origin string
-}
 
 var StaticAssets = map[string]string{
 	"css": "styles.css",
@@ -92,8 +34,6 @@ func main() {
 	addr := flag.String("addr", "localhost:8080", "HTTP network address")
 	debug := flag.Bool("debug", false, "debug mode")
 	dev := flag.Bool("dev", false, "use dev config and set debug true")
-	localImgServer := flag.Bool("localimg", false, "serve images from local directory")
-	localImgStorage := flag.Bool("localstorage", false, "store/delete images in local directory")
 	serveStatic := flag.Bool("serve-static", false, "serve css, js and images")
 
 	flag.Parse()
@@ -106,8 +46,8 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	var dbUrl, imgStoragePath, imgBaseUrl, origin string
-	var fileStorage, archiveStorage fileStore.FileStorageInterface
+	var dbUrl, imgBaseUrl, origin string
+	var fileStorage, ArchiveStorage fileStore.FileStorageInterface
 	if *dev {
 		*debug = true
 		*serveStatic = true
@@ -137,7 +77,7 @@ func main() {
 			os.Getenv("DEV_S3_ARCHIVE_SECRET"),
 		)
 
-		archiveStorage = &fileStore.S3Storage{
+		ArchiveStorage = &fileStore.S3Storage{
 			Client:     archiveClient,
 			BucketName: os.Getenv("DEV_S3_ARCHIVE_BUCKET"),
 		}
@@ -168,7 +108,7 @@ func main() {
 			os.Getenv("S3_ARCHIVE_SECRET"),
 		)
 
-		archiveStorage = &fileStore.S3Storage{
+		ArchiveStorage = &fileStore.S3Storage{
 			Client:     archiveClient,
 			BucketName: os.Getenv("S3_ARCHIVE_BUCKET"),
 		}
@@ -176,10 +116,6 @@ func main() {
 
 	if dbUrl == "" {
 		errorLog.Fatal("Database URL not defined")
-	}
-
-	if imgStoragePath == "" && *localImgStorage {
-		errorLog.Fatal("Storage path not defined")
 	}
 
 	mailApiKey := os.Getenv("MAIL_API_KEY")
@@ -206,49 +142,47 @@ func main() {
 	if err != nil {
 		errorLog.Fatal(err)
 	}
-	appSettings := settings{
-		pageSize:          24,
-		maxSearchResults:  12,
-		localImageServer:  *localImgServer,
-		localImageStorage: *localImgStorage,
-		passwordTTL:       30 * time.Minute,
-		activationTTL:     24 * time.Hour,
-		origin:            origin,
-		devEnv:            *dev,
+	appConfig := AppConfig{
+		Origin:     origin,
+		DevEnv:     *dev,
+		DebugMode:  *debug,
+		BaseImgUrl: imgBaseUrl,
+
+		PasswordTTL:      30 * time.Minute,
+		ActivationTTL:    24 * time.Hour,
+		PageSize:         24,
+		MaxSearchResults: 12,
 	}
 	configureOAuth(origin)
 	formDecoder := form.NewDecoder()
-	app := &application{
-		errorLog:       errorLog,
-		infoLog:        infoLog,
-		templateCache:  templateCache,
-		formDecoder:    formDecoder,
-		fileStorage:    fileStorage,
-		archiveStorage: archiveStorage,
-		cast:           &models.CastModel{DB: dbpool},
-		categories:     &models.CategoryModel{DB: dbpool},
-		characters:     &models.CharacterModel{DB: dbpool},
-		creators:       &models.CreatorModel{DB: dbpool},
-		people:         &models.PersonModel{DB: dbpool},
-		profile:        &models.ProfileModel{DB: dbpool},
-		quotes:         &models.QuoteModel{DB: dbpool},
-		recurring:      &models.RecurringModel{DB: dbpool},
-		series:         &models.SeriesModel{DB: dbpool},
-		shows:          &models.ShowModel{DB: dbpool},
-		sketches:       &models.SketchModel{DB: dbpool},
-		tags:           &models.TagModel{DB: dbpool},
-		tokens:         &models.TokenModel{DB: dbpool},
-		users:          &models.UserModel{DB: dbpool},
-		services:       NewServices(newRepositories(dbpool), fileStorage, archiveStorage, mailer, appSettings),
-		sessionManager: sessionManager,
-		mail:           mailer,
-		debugMode:      *debug,
-		baseImgUrl:     imgBaseUrl,
-		assets:         StaticAssets,
-		settings:       appSettings,
+	app := &Application{
+		ErrorLog:       errorLog,
+		InfoLog:        infoLog,
+		TemplateCache:  templateCache,
+		FormDecoder:    formDecoder,
+		FileStorage:    fileStorage,
+		ArchiveStorage: ArchiveStorage,
+		Categories:     &models.CategoryModel{DB: dbpool},
+		Characters:     &models.CharacterModel{DB: dbpool},
+		Creators:       &models.CreatorModel{DB: dbpool},
+		People:         &models.PersonModel{DB: dbpool},
+		Profile:        &models.ProfileModel{DB: dbpool},
+		Quotes:         &models.QuoteModel{DB: dbpool},
+		Recurring:      &models.RecurringModel{DB: dbpool},
+		Series:         &models.SeriesModel{DB: dbpool},
+		Shows:          &models.ShowModel{DB: dbpool},
+		Sketches:       &models.SketchModel{DB: dbpool},
+		Tags:           &models.TagModel{DB: dbpool},
+		Tokens:         &models.TokenModel{DB: dbpool},
+		Users:          &models.UserModel{DB: dbpool},
+		Services:       NewServices(newRepositories(dbpool), fileStorage, ArchiveStorage, mailer, appConfig),
+		SessionManager: sessionManager,
+		Mail:           mailer,
+		Assets:         StaticAssets,
+		Config:         appConfig,
 	}
 
-	app.infoLog.Println("ORIGIN: ", origin)
+	app.InfoLog.Println("ORIGIN: ", origin)
 
 	srv := &http.Server{
 		Addr:     *addr,
@@ -304,103 +238,6 @@ func loadAssets() error {
 		StaticAssets[k] = v
 	}
 	return nil
-}
-
-func newRepositories(dbpool *pgxpool.Pool) models.Repositories {
-	return models.Repositories{
-		Cast:       &models.CastModel{DB: dbpool},
-		Categories: &models.CategoryModel{DB: dbpool},
-		Characters: &models.CharacterModel{DB: dbpool},
-		Creators:   &models.CreatorModel{DB: dbpool},
-		Quotes:     &models.QuoteModel{DB: dbpool},
-		People:     &models.PersonModel{DB: dbpool},
-		Profile:    &models.ProfileModel{DB: dbpool},
-		Pipeline:   &models.PipelineModel{DB: dbpool},
-		Recurring:  &models.RecurringModel{DB: dbpool},
-		Shows:      &models.ShowModel{DB: dbpool},
-		Tags:       &models.TagModel{DB: dbpool},
-		Tokens:     &models.TokenModel{DB: dbpool},
-		Users:      &models.UserModel{DB: dbpool},
-		Sketches:   &models.SketchModel{DB: dbpool},
-		Series:     &models.SeriesModel{DB: dbpool},
-	}
-}
-
-type Services struct {
-	Casts      casts.CastService
-	Characters characters.CharacterService
-	Creators   creators.CreatorService
-	People     people.PersonService
-	Pipeline   pipeline.PipelineService
-	Quotes     quotes.QuoteService
-	Recurring  recurring.RecurringService
-	Series     series.SeriesService
-	Shows      shows.ShowService
-	Sketches   sketches.SketchService
-	Tags       tags.TagsService
-	Users      users.UserService
-}
-
-func NewServices(
-	repos models.Repositories,
-	fileStore fileStore.FileStorageInterface,
-	archiveStore fileStore.FileStorageInterface,
-	mailer mail.MailerInterface,
-	settings settings,
-) Services {
-	return Services{
-		Sketches: sketches.SketchService{
-			Repos:        repos,
-			ImgStore:     fileStore,
-			ArchiveStore: archiveStore,
-		},
-		Creators: creators.CreatorService{
-			Repos:    repos,
-			ImgStore: fileStore,
-		},
-		Shows: shows.ShowService{
-			Repos:    repos,
-			ImgStore: fileStore,
-		},
-		Recurring: recurring.RecurringService{
-			Repos:    repos,
-			ImgStore: fileStore,
-		},
-		Series: series.SeriesService{
-			Repos:    repos,
-			ImgStore: fileStore,
-		},
-		Casts: casts.CastService{
-			Repos:    repos,
-			ImgStore: fileStore,
-		},
-		People: people.PersonService{
-			Repos:    repos,
-			ImgStore: fileStore,
-		},
-		Pipeline: pipeline.PipelineService{
-			Repos:    repos,
-			ImgStore: fileStore,
-		},
-		Characters: characters.CharacterService{
-			Repos:    repos,
-			ImgStore: fileStore,
-		},
-		Quotes: quotes.QuoteService{
-			Repos:    repos,
-			ImgStore: fileStore,
-		},
-		Tags: tags.TagsService{
-			Repos:    repos,
-			ImgStore: fileStore,
-		},
-		Users: *users.New(repos.Users, repos.Tokens, mailer,
-			users.Config{
-				Origin:             settings.origin,
-				ActivationTokenTTL: settings.activationTTL,
-				PasswordTokenTTL:   settings.passwordTTL,
-			}),
-	}
 }
 
 func init() {

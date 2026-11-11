@@ -11,7 +11,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	page := r.Form.Get("page")
@@ -44,7 +44,7 @@ func (app *application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) 
 	showIds := extractUrlParamIDs(r.URL.Query()["show"])
 	tagIds := extractUrlParamIDs(r.URL.Query()["tag"])
 
-	sketchList, err := app.services.Sketches.ListSketches(
+	sketchList, err := app.Services.Sketches.ListSketches(
 		&models.Filter{
 			Query:        filterQuery,
 			CharacterIDs: characterIds,
@@ -95,7 +95,7 @@ func (app *application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (app *application) adminGetSketchAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) adminGetSketchAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -103,7 +103,7 @@ func (app *application) adminGetSketchAPI(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	sketch, err := app.services.Sketches.GetSketch(sketchId)
+	sketch, err := app.Services.Sketches.GetSketch(sketchId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoSketch) {
 			app.notFoundResponse(w, r)
@@ -119,7 +119,7 @@ func (app *application) adminGetSketchAPI(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (app *application) createSketchAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) createSketchAPI(w http.ResponseWriter, r *http.Request) {
 	var form sketchForm
 
 	err := app.decodePostForm(r, &form)
@@ -135,7 +135,7 @@ func (app *application) createSketchAPI(w http.ResponseWriter, r *http.Request) 
 	}
 
 	formSketch := convertFormToSketch(&form)
-	sketch, err := app.services.Sketches.CreateSketch(&formSketch, form.Thumbnail, form.CropThumbnailBorder)
+	sketch, err := app.Services.Sketches.CreateSketch(&formSketch, form.Thumbnail, form.CropThumbnailBorder)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -147,7 +147,7 @@ func (app *application) createSketchAPI(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (app *application) updateSketchAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) updateSketchAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -173,7 +173,7 @@ func (app *application) updateSketchAPI(w http.ResponseWriter, r *http.Request) 
 	sketch.ID = &sketchId
 	file, _ := fileHeaderToBytes(form.Thumbnail)
 
-	updatedSketch, err := app.services.Sketches.UpdateSketch(&sketch, file, form.CropThumbnailBorder)
+	updatedSketch, err := app.Services.Sketches.UpdateSketch(&sketch, file, form.CropThumbnailBorder)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -185,7 +185,7 @@ func (app *application) updateSketchAPI(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (app *application) deleteSketchAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) deleteSketchAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -194,7 +194,7 @@ func (app *application) deleteSketchAPI(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// verify sketch has no cast and quotes
-	castInfo, err := app.services.Casts.GetAdminCast(sketchId)
+	castInfo, err := app.Services.Casts.GetAdminCast(sketchId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -205,7 +205,7 @@ func (app *application) deleteSketchAPI(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	quoteInfo, err := app.services.Quotes.GetAdminQuotes(sketchId)
+	quoteInfo, err := app.Services.Quotes.GetAdminQuotes(sketchId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -217,7 +217,7 @@ func (app *application) deleteSketchAPI(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// deleting between postgres and s3 isn't atomic so need two step process
-	deleteInfo, err := app.services.Sketches.DeleteSketch(sketchId)
+	deleteInfo, err := app.Services.Sketches.DeleteSketch(sketchId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -225,13 +225,13 @@ func (app *application) deleteSketchAPI(w http.ResponseWriter, r *http.Request) 
 
 	app.writeJSON(w, http.StatusOK, envelope{"message": "Sketch successfully deleted."}, nil)
 
-	err = app.services.Sketches.CleanupSketchMedia(deleteInfo)
+	err = app.Services.Sketches.CleanupSketchMedia(deleteInfo)
 	if err != nil {
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 	}
 }
 
-func (app *application) deleteScreenshotsAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) deleteScreenshotsAPI(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -239,7 +239,7 @@ func (app *application) deleteScreenshotsAPI(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = app.services.Sketches.DeleteScreenshots(sketchId)
+	err = app.Services.Sketches.DeleteScreenshots(sketchId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -248,7 +248,7 @@ func (app *application) deleteScreenshotsAPI(w http.ResponseWriter, r *http.Requ
 	app.writeJSON(w, http.StatusOK, envelope{"message": "Screenshots deleted successfully"}, nil)
 }
 
-func (app *application) insertQuoteLike(w http.ResponseWriter, r *http.Request) {
+func (app *Application) insertQuoteLike(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	quoteIdParam := r.Form.Get("quoteId")
@@ -264,7 +264,7 @@ func (app *application) insertQuoteLike(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = app.quotes.InsertQuoteLike(quoteId, *user.ID)
+	err = app.Quotes.InsertQuoteLike(quoteId, *user.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -273,7 +273,7 @@ func (app *application) insertQuoteLike(w http.ResponseWriter, r *http.Request) 
 	app.writeJSON(w, http.StatusOK, envelope{"message": "quote like added"}, nil)
 }
 
-func (app *application) deleteQuoteLike(w http.ResponseWriter, r *http.Request) {
+func (app *Application) deleteQuoteLike(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	quoteIdParam := r.Form.Get("quoteId")
@@ -289,7 +289,7 @@ func (app *application) deleteQuoteLike(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = app.quotes.DeleteQuoteLike(quoteId, *user.ID)
+	err = app.Quotes.DeleteQuoteLike(quoteId, *user.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

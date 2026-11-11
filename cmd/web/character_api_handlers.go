@@ -9,7 +9,7 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) listCharactersAPI(w http.ResponseWriter, r *http.Request) {
+func (app *Application) listCharactersAPI(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	page := r.Form.Get("page")
@@ -36,7 +36,7 @@ func (app *application) listCharactersAPI(w http.ResponseWriter, r *http.Request
 	query, _ = url.QueryUnescape(query)
 	filterQuery := strings.Join(strings.Fields(query), " | ")
 
-	charactersList, err := app.services.Characters.ListCharacters(
+	charactersList, err := app.Services.Characters.ListCharacters(
 		&models.Filter{
 			Query:    filterQuery,
 			SortBy:   sort,

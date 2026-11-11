@@ -36,7 +36,7 @@ func extractUrlParamIDs(idParams []string) []int {
 	return ids
 }
 
-func (app *application) newTemplateData(r *http.Request) *templateData {
+func (app *Application) newTemplateData(r *http.Request) *templateData {
 	user, ok := r.Context().Value(userContextKey).(*models.User)
 	var isEditor, isAdmin bool
 	if ok {
@@ -48,20 +48,20 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 
 	flash := flashMessage{}
 
-	f := app.sessionManager.Pop(r.Context(), "flash")
+	f := app.SessionManager.Pop(r.Context(), "flash")
 	if f != nil {
 		flash = f.(flashMessage)
 	}
 
 	return &templateData{
-		Assets:       app.assets,
+		Assets:       app.Assets,
 		CurrentYear:  time.Now().Year(),
 		Flash:        flash,
 		Forms:        Forms{},
-		ImageBaseUrl: app.baseImgUrl,
+		ImageBaseUrl: app.Config.BaseImgUrl,
 		IsAdmin:      isAdmin,
 		IsEditor:     isEditor,
-		Origin:       app.settings.origin,
+		Origin:       app.Config.Origin,
 		User:         user,
 	}
 }
@@ -115,8 +115,8 @@ func convertStringsToInts(strs []string) ([]int, error) {
 	return ints, nil
 }
 
-func (app *application) isAutheticated(r *http.Request) bool {
-	if app.sessionManager.Exists(r.Context(), "authenticatedUserID") {
+func (app *Application) isAutheticated(r *http.Request) bool {
+	if app.SessionManager.Exists(r.Context(), "authenticatedUserID") {
 		return true
 	}
 
@@ -124,8 +124,8 @@ func (app *application) isAutheticated(r *http.Request) bool {
 	return ok
 }
 
-func (app *application) render(r *http.Request, w http.ResponseWriter, status int, page string, baseTemplate string, data any) {
-	ts, ok := app.templateCache[page]
+func (app *Application) render(r *http.Request, w http.ResponseWriter, status int, page string, baseTemplate string, data any) {
+	ts, ok := app.TemplateCache[page]
 	if !ok {
 		err := fmt.Errorf("the template %s does not exist", page)
 		r.Header.Set("HX-Request", "false")
@@ -157,7 +157,7 @@ func (app *application) render(r *http.Request, w http.ResponseWriter, status in
 
 // *** API HELPERS ***
 
-func (app *application) readIDParam(r *http.Request) (int, error) {
+func (app *Application) readIDParam(r *http.Request) (int, error) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 32)
 	if err != nil || id < 1 {
 		return 0, errors.New("invalid id parameter")
@@ -167,7 +167,7 @@ func (app *application) readIDParam(r *http.Request) (int, error) {
 
 type envelope map[string]any
 
-func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
+func (app *Application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
 	// Encode the data to JSON, returning the error if there was one.
 	js, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
@@ -189,7 +189,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 	return nil
 }
 
-func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+func (app *Application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	// Use http.MaxBytesReader() to limit the size of the request body to 1MB.
 	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))

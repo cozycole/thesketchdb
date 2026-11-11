@@ -20,7 +20,7 @@ var allowedMIMETypes = map[string]bool{
 	"video/x-matroska": true,
 }
 
-func (app *application) generateSketchVideoS3PutUrl(w http.ResponseWriter, r *http.Request) {
+func (app *Application) generateSketchVideoS3PutUrl(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -28,7 +28,7 @@ func (app *application) generateSketchVideoS3PutUrl(w http.ResponseWriter, r *ht
 		return
 	}
 
-	videos, err := app.services.Sketches.GetVideos(sketchId)
+	videos, err := app.Services.Sketches.GetVideos(sketchId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -69,7 +69,7 @@ func (app *application) generateSketchVideoS3PutUrl(w http.ResponseWriter, r *ht
 
 	ext := filepath.Ext(input.FileName)
 	s3Key := fmt.Sprintf("video/%s%s", uuid.New().String(), ext)
-	url, err := app.fileStorage.PresignedUploadURL(s3Key, 30*time.Minute, input.FileSize)
+	url, err := app.FileStorage.PresignedUploadURL(s3Key, 30*time.Minute, input.FileSize)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -83,7 +83,7 @@ func (app *application) generateSketchVideoS3PutUrl(w http.ResponseWriter, r *ht
 	app.writeJSON(w, http.StatusOK, response, nil)
 }
 
-func (app *application) sketchVideoUploaded(w http.ResponseWriter, r *http.Request) {
+func (app *Application) sketchVideoUploaded(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -91,7 +91,7 @@ func (app *application) sketchVideoUploaded(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	exists, err := app.sketches.Exists(sketchId)
+	exists, err := app.Sketches.Exists(sketchId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -117,7 +117,7 @@ func (app *application) sketchVideoUploaded(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	exists, err = app.fileStorage.Exists(input.S3Key)
+	exists, err = app.FileStorage.Exists(input.S3Key)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -128,19 +128,19 @@ func (app *application) sketchVideoUploaded(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	video, err := app.services.Sketches.AddVideo(sketchId, input.S3Key)
+	video, err := app.Services.Sketches.AddVideo(sketchId, input.S3Key)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	_, err = app.services.Pipeline.AddPipelineJob(safeDeref(video.ID))
+	_, err = app.Services.Pipeline.AddPipelineJob(safeDeref(video.ID))
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	videos, err := app.services.Sketches.GetVideos(sketchId)
+	videos, err := app.Services.Sketches.GetVideos(sketchId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -153,7 +153,7 @@ func (app *application) sketchVideoUploaded(w http.ResponseWriter, r *http.Reque
 	app.writeJSON(w, http.StatusOK, response, nil)
 }
 
-func (app *application) getSketchVideos(w http.ResponseWriter, r *http.Request) {
+func (app *Application) getSketchVideos(w http.ResponseWriter, r *http.Request) {
 	sketchIdParam := r.PathValue("id")
 	sketchId, err := strconv.Atoi(sketchIdParam)
 	if err != nil {
@@ -161,7 +161,7 @@ func (app *application) getSketchVideos(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	videos, err := app.services.Sketches.GetVideos(sketchId)
+	videos, err := app.Services.Sketches.GetVideos(sketchId)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

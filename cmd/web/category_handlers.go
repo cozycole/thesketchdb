@@ -9,8 +9,8 @@ import (
 	"sketchdb.cozycole.net/internal/models"
 )
 
-func (app *application) categoriesView(w http.ResponseWriter, r *http.Request) {
-	categories, err := app.categories.GetAll()
+func (app *Application) categoriesView(w http.ResponseWriter, r *http.Request) {
+	categories, err := app.Categories.GetAll()
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -30,7 +30,7 @@ type categoryPage struct {
 	Form  categoryForm
 }
 
-func (app *application) categoryAddPage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) categoryAddPage(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Page = categoryPage{
 		Title: "Add Category",
@@ -42,13 +42,13 @@ func (app *application) categoryAddPage(w http.ResponseWriter, r *http.Request) 
 	app.render(r, w, http.StatusOK, "add-category.gohtml", "base", data)
 }
 
-func (app *application) categoryAdd(w http.ResponseWriter, r *http.Request) {
+func (app *Application) categoryAdd(w http.ResponseWriter, r *http.Request) {
 	var form categoryForm
 
 	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -62,7 +62,7 @@ func (app *application) categoryAdd(w http.ResponseWriter, r *http.Request) {
 	category := convertFormtoCategory(&form)
 	slug := models.CreateSlugName(*category.Name)
 	category.Slug = &slug
-	id, err := app.categories.Insert(&category)
+	id, err := app.Categories.Insert(&category)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
@@ -71,14 +71,14 @@ func (app *application) categoryAdd(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Hx-Redirect", fmt.Sprintf("/category/%d/update", id))
 }
 
-func (app *application) categoryUpdatePage(w http.ResponseWriter, r *http.Request) {
+func (app *Application) categoryUpdatePage(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	categoryId, err := strconv.Atoi(idParam)
 	if err != nil {
 		app.badRequest(w)
 		return
 	}
-	category, err := app.categories.Get(categoryId)
+	category, err := app.Categories.Get(categoryId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -106,7 +106,7 @@ func (app *application) categoryUpdatePage(w http.ResponseWriter, r *http.Reques
 	app.render(r, w, http.StatusOK, "add-category.gohtml", "base", data)
 }
 
-func (app *application) categoryUpdate(w http.ResponseWriter, r *http.Request) {
+func (app *Application) categoryUpdate(w http.ResponseWriter, r *http.Request) {
 	idParam := r.PathValue("id")
 	categoryId, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -114,7 +114,7 @@ func (app *application) categoryUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	staleCategory, err := app.categories.Get(categoryId)
+	staleCategory, err := app.Categories.Get(categoryId)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -129,7 +129,7 @@ func (app *application) categoryUpdate(w http.ResponseWriter, r *http.Request) {
 	err = app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
-		app.errorLog.Print(err)
+		app.ErrorLog.Print(err)
 		return
 	}
 
@@ -143,7 +143,7 @@ func (app *application) categoryUpdate(w http.ResponseWriter, r *http.Request) {
 	updatedCategory := convertFormtoCategory(&form)
 	slug := models.CreateSlugName(safeDeref(updatedCategory.Name))
 	updatedCategory.Slug = &slug
-	err = app.categories.Update(&updatedCategory)
+	err = app.Categories.Update(&updatedCategory)
 	if err != nil {
 		app.serverError(r, w, err)
 		return
