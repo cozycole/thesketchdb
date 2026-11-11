@@ -62,16 +62,19 @@ type UserSketchInfo struct {
 }
 
 type UserModelInterface interface {
-	AddRating(userId, sketchId, rating int) error
 	AddLike(userId, sketchId int) error
+	AddRating(userId, sketchId, rating int) error
 	Authenticate(username, password string) (*User, error)
+	CreateIdentity(userId int, provider, providerUserId string) error
 	DeleteRating(userId, sketchId int) error
-	GetById(id int) (*User, error)
-	GetByToken(plaintext, scope string) (*User, error)
 	GetByEmail(email string) (*User, error)
+	GetById(id int) (*User, error)
+	GetByIdentity(provider, providerUserId string) (*User, error)
+	GetByToken(plaintext, scope string) (*User, error)
 	GetByUsername(username string) (*User, error)
 	GetUserSketchInfo(userId, sketchId int) (*UserSketchInfo, error)
 	Insert(user *User) error
+	InsertFromIdentity(user *User, provider, providerUserId string) error
 	RemoveLike(userId, sketchId int) error
 	Update(user *User) error
 	UpdateRating(userId, sketchId, rating int) error
@@ -258,6 +261,45 @@ func (m *UserModel) GetByUsername(username string) (*User, error) {
 	return &user, nil
 }
 
+func (m *UserModel) GetByIdentity(provider, providerUserId string) (*User, error) {
+	query := `
+		SELECT u.id, u.created_at, u.username, u.email, u.password_hash, u.activated, 
+		u.role, u.profile_image
+		FROM users AS u
+		JOIN user_identities AS ui
+		ON u.id = ui.user_id
+		WHERE ui.provider = $1
+		AND ui.provider_user_id = $2
+	`
+
+	var user User
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	password := password{}
+	err := m.DB.QueryRow(ctx, query, provider, providerUserId).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Username,
+		&user.Email,
+		&password.hash,
+		&user.Activated,
+		&user.Role,
+		&user.ProfileImage,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, err
+	}
+
+	user.Password = password
+
+	return &user, nil
+
+}
+
 func (m *UserModel) GetById(id int) (*User, error) {
 	query := `
 		SELECT id, created_at, username, email, password_hash, activated, role
@@ -335,6 +377,25 @@ func (m *UserModel) GetByToken(plaintext, scope string) (*User, error) {
 	return &user, nil
 }
 
+func (m *UserModel) CreateIdentity(userId int, provider, providerUserId string) error {
+	query := `
+		INSERT INTO user_identities (user_id, provider, provider_user_id)
+		VALUES ($1, $2, $3)
+	`
+
+	args := []any{
+		userId,
+		provider,
+		providerUserId,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := m.DB.Exec(ctx, query, args...)
+	return err
+}
+
 func (m *UserModel) Insert(user *User) error {
 	query := `
 		INSERT INTO users (username, email, password_hash)
@@ -365,6 +426,64 @@ func (m *UserModel) Insert(user *User) error {
 	}
 
 	return nil
+}
+
+func (m *UserModel) InsertFromIdentity(user *User, provider, providerUserId string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	query := `
+		INSERT INTO users (username, email, activated)
+		VALUES ($1, $2, $3)
+		RETURNING id, created_at;
+	`
+
+	activated := true
+	args := []any{
+		user.Username,
+		user.Email,
+		activated,
+	}
+
+	err = tx.QueryRow(ctx, query, args...).Scan(
+		&user.ID, &user.CreatedAt)
+	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), `violates unique constraint "users_email_key"`):
+			return ErrDuplicateEmail
+		case strings.Contains(err.Error(), `violates unique constraint "users_username_key"`):
+			return ErrDuplicateUsername
+		default:
+			return err
+		}
+	}
+
+	query = `
+		INSERT INTO user_identities (user_id, provider, provider_user_id)
+		VALUES ($1, $2, $3);
+	`
+	args = []any{
+		*user.ID,
+		provider,
+		providerUserId,
+	}
+
+	_, err = tx.Exec(ctx, query, args)
+	if err != nil {
+		if strings.Contains(err.Error(), `violates unique constraint "user_identities_provider_provider_user_id_key"`) ||
+			strings.Contains(err.Error(), `violates unique constraint "user_identities_user_id_provider_key"`) {
+			return ErrDuplicateProvider
+		}
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (m *UserModel) RemoveLike(userId, sketchId int) error {

@@ -1,8 +1,12 @@
 package main
 
 import (
+	"crypto/subtle"
 	"errors"
 	"net/http"
+	"time"
+
+	"github.com/markbates/goth"
 
 	"sketchdb.cozycole.net/internal/domain/users"
 	"sketchdb.cozycole.net/internal/models"
@@ -298,4 +302,141 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	app.sessionManager.Put(r.Context(), "flash", flash)
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// SOCIAL LOGIN
+
+// Used for storing info before redirecting user
+// to username form if they need to create an account
+type PendingRegistration struct {
+	GoogleID  string
+	Email     string
+	ExpiresAt time.Time
+}
+
+func (app *application) googleLogin(w http.ResponseWriter, r *http.Request) {
+	provider, err := goth.GetProvider("google")
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	state, err := generateSecureState()
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	session, err := provider.BeginAuth(state)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	// Store temporary OAuth information using SCS.
+	app.sessionManager.Put(r.Context(), "oauth_state", state)
+	app.sessionManager.Put(r.Context(), "oauth_session", session.Marshal())
+
+	authURL, err := session.GetAuthURL()
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	http.Redirect(w, r, authURL, http.StatusFound)
+}
+
+func (app *application) googleCallback(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	provider, err := goth.GetProvider("google")
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	// Validate OAuth state.
+	expectedState := app.sessionManager.PopString(ctx, "oauth_state")
+	receivedState := r.URL.Query().Get("state")
+
+	if expectedState == "" ||
+		receivedState == "" ||
+		subtle.ConstantTimeCompare(
+			[]byte(expectedState),
+			[]byte(receivedState),
+		) != 1 {
+		http.Error(w, "Invalid OAuth state", http.StatusBadRequest)
+		return
+	}
+
+	// Retrieve Goth's temporary session.
+	sessionData := app.sessionManager.PopString(ctx, "oauth_session")
+	if sessionData == "" {
+		http.Error(w, "OAuth session expired", http.StatusBadRequest)
+		return
+	}
+
+	session, err := provider.UnmarshalSession(sessionData)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	// Exchange authorization code for tokens.
+	_, err = session.Authorize(provider, r.URL.Query())
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	// Retrieve the Google user's identity.
+	googleUser, err := provider.FetchUser(session)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	result, err := app.services.Users.AuthenticateSocial(
+		"google",
+		googleUser.UserID,
+		googleUser.Email,
+	)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	switch result.Status {
+
+	case users.SocialAuthAuthenticated:
+		if err := app.sessionManager.RenewToken(ctx); err != nil {
+			app.serverError(r, w, err)
+			return
+		}
+
+		app.sessionManager.Put(
+			ctx,
+			"authenticatedUserID",
+			result.User.ID,
+		)
+
+		flash := flashMessage{
+			Message: "Account linked!",
+			Level:   FlashSuccess,
+		}
+
+		app.sessionManager.Put(r.Context(), "flash", flash)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+
+	case users.SocialAuthRegistrationRequired:
+		pending := PendingRegistration{
+			GoogleID:  googleUser.UserID,
+			Email:     googleUser.Email,
+			ExpiresAt: time.Now().Add(15 * time.Minute),
+		}
+
+		app.sessionManager.Put(ctx, "pendingRegistration", pending)
+
+		http.Redirect(w, r, "/complete-signup", http.StatusSeeOther)
+	}
 }

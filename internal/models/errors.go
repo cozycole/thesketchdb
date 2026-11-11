@@ -9,6 +9,7 @@ var (
 	ErrInvalidCredentials     = errors.New("models: invalid crednetials")
 	ErrDuplicateEmail         = errors.New("models: duplicate email")
 	ErrDuplicateUsername      = errors.New("models: duplicate username")
+	ErrDuplicateProvider      = errors.New("models: duplicate provider / provider ID")
 	ErrDuplicateVidCreatorRel = errors.New("models: duplicate sketch creator relation")
 	ErrDuplicateVidPersonRel  = errors.New("models: duplicate sketch person relation")
 	ErrNoEpisode              = errors.New("models: episode does not exist")

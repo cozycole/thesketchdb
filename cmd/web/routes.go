@@ -107,8 +107,8 @@ func (app *application) routes(staticRoute string, serveStatic bool) http.Handle
 		r.Post("/login", app.userLoginPost)
 		r.Post("/logout", app.userLogoutPost)
 
-		// GOTH
-		// r.Get("/auth/{provider}", app.authCallback)
+		r.Get("/auth/google", app.googleLogin)
+		r.Get("/auth/google/callback", app.googleCallback)
 
 		r.HandleFunc("/ping", ping)
 

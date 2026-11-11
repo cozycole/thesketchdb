@@ -8,7 +8,9 @@ import (
 
 type UserRepository interface {
 	Authenticate(email, password string) (*models.User, error)
+	CreateIdentity(userId int, provider, providerUserId string) error
 	GetByEmail(email string) (*models.User, error)
+	GetByIdentity(provider, providerUserId string) (*models.User, error)
 	GetByToken(plaintext, scope string) (*models.User, error)
 	Insert(user *models.User) error
 	Update(user *models.User) error

@@ -216,6 +216,7 @@ func main() {
 		origin:            origin,
 		devEnv:            *dev,
 	}
+	configureOAuth(origin)
 	formDecoder := form.NewDecoder()
 	app := &application{
 		errorLog:       errorLog,
@@ -405,4 +406,5 @@ func NewServices(
 func init() {
 	// Register the struct so encoding/gob knows how to handle it
 	gob.Register(flashMessage{})
+	gob.Register(PendingRegistration{})
 }

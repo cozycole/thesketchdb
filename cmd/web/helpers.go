@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -70,6 +72,16 @@ func safeDeref[T any](ptr *T) T {
 	}
 	var zero T
 	return zero
+}
+
+func generateSecureState() (string, error) {
+	b := make([]byte, 32)
+
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 func extractYouTubeVideoID(rawURL string) (string, error) {
