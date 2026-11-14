@@ -3,38 +3,14 @@ package main
 import (
 	"html/template"
 	"log"
-	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"sketchdb.cozycole.net/internal/fileStore"
 	"sketchdb.cozycole.net/internal/mail"
 	"sketchdb.cozycole.net/internal/models"
 )
-
-type AppDependencies struct {
-	DB             *pgxpool.Pool
-	templateCache  map[string]*template.Template
-	SessionManager *scs.SessionManager
-	formDecoder    *form.Decoder
-	Mailer         mail.MailerInterface
-	FileStorage    fileStore.FileStorageInterface
-	ArchiveStorage fileStore.FileStorageInterface
-}
-
-type AppConfig struct {
-	Origin        string
-	DebugMode     bool
-	DevEnv        bool
-	BaseImgUrl    string
-	PasswordTTL   time.Duration
-	ActivationTTL time.Duration
-
-	PageSize         int
-	MaxSearchResults int
-}
 
 type Application struct {
 	ErrorLog       *log.Logger
@@ -62,4 +38,48 @@ type Application struct {
 	FormDecoder    *form.Decoder
 	Assets         map[string]string
 	Config         AppConfig
+}
+
+func NewApplication(
+	config AppConfig,
+	deps AppDependencies,
+) *Application {
+	db := deps.DB
+
+	return &Application{
+		Config:         config,
+		InfoLog:        deps.InfoLog,
+		ErrorLog:       deps.ErrorLog,
+		TemplateCache:  deps.TemplateCache,
+		SessionManager: deps.SessionManager,
+		FormDecoder:    deps.FormDecoder,
+
+		FileStorage:    deps.FileStorage,
+		ArchiveStorage: deps.ArchiveStorage,
+		Mail:           deps.Mailer,
+
+		Categories: &models.CategoryModel{DB: db},
+		Characters: &models.CharacterModel{DB: db},
+		Creators:   &models.CreatorModel{DB: db},
+		People:     &models.PersonModel{DB: db},
+		Profile:    &models.ProfileModel{DB: db},
+		Quotes:     &models.QuoteModel{DB: db},
+		Recurring:  &models.RecurringModel{DB: db},
+		Series:     &models.SeriesModel{DB: db},
+		Shows:      &models.ShowModel{DB: db},
+		Sketches:   &models.SketchModel{DB: db},
+		Tags:       &models.TagModel{DB: db},
+		Tokens:     &models.TokenModel{DB: db},
+		Users:      &models.UserModel{DB: db},
+
+		Services: NewServices(
+			newRepositories(db),
+			deps.FileStorage,
+			deps.ArchiveStorage,
+			deps.Mailer,
+			config,
+		),
+
+		Assets: deps.Assets,
+	}
 }
