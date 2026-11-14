@@ -6,9 +6,9 @@ import (
 	"io"
 	"mime/multipart"
 
-	"sketchdb.cozycole.net/internal/media"
-	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
+	"github.com/cozycole/thesketchdb/internal/media"
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/internal/utils"
 )
 
 func (s *SketchService) CreateSketch(sketch *models.Sketch, thumbnail *multipart.FileHeader, cropBorder bool) (*models.Sketch, error) {

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/ui"
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/ui"
 )
 
 const (

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"html/template"
 
-	"sketchdb.cozycole.net/internal/domain/characters"
-	"sketchdb.cozycole.net/internal/domain/quotes"
-	"sketchdb.cozycole.net/internal/domain/sketches"
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/domain/characters"
+	"github.com/cozycole/thesketchdb/internal/domain/quotes"
+	"github.com/cozycole/thesketchdb/internal/domain/sketches"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 type ShowTab string

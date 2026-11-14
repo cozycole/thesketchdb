@@ -5,8 +5,8 @@ package main
 // 	"testing"
 // 	"time"
 //
-// 	"sketchdb.cozycole.net/internal/assert"
-// 	"sketchdb.cozycole.net/internal/utils"
+// 	"github.com/cozycole/thesketchdb/internal/assert"
+// 	"github.com/cozycole/thesketchdb/internal/utils"
 // )
 //
 // // This is testing the validation of the struct that

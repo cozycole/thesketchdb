@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 var mimeToExt = map[string]string{

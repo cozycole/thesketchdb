@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 func (app *Application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) {

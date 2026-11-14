@@ -3,9 +3,9 @@ package casts
 import (
 	"fmt"
 
-	"sketchdb.cozycole.net/internal/media"
-	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
+	"github.com/cozycole/thesketchdb/internal/media"
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/internal/utils"
 )
 
 func (s *CastService) ReorderCast(sketchId int, castIds []int) error {

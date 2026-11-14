@@ -7,8 +7,8 @@ import (
 	"path"
 	"testing"
 
-	"sketchdb.cozycole.net/internal/assert"
-	"sketchdb.cozycole.net/internal/fileStore"
+	"github.com/cozycole/thesketchdb/internal/assert"
+	"github.com/cozycole/thesketchdb/internal/fileStore"
 )
 
 func TestCreateImageVariantSpec(t *testing.T) {

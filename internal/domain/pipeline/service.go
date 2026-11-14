@@ -1,8 +1,8 @@
 package pipeline
 
 import (
-	"sketchdb.cozycole.net/internal/fileStore"
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/fileStore"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 type PipelineService struct {

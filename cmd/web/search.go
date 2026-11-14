@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 // NOTE: Query is defined on the Filter, SearchResult and templateData structs

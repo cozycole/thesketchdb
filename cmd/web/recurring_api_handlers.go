@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 func (app *Application) listRecurringAPI(w http.ResponseWriter, r *http.Request) {

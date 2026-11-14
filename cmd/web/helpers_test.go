@@ -5,8 +5,8 @@ import (
 	"path"
 	"testing"
 
-	"sketchdb.cozycole.net/internal/assert"
-	"sketchdb.cozycole.net/internal/utils"
+	"github.com/cozycole/thesketchdb/internal/assert"
+	"github.com/cozycole/thesketchdb/internal/utils"
 )
 
 // Checking that the decodePostForm function correctly

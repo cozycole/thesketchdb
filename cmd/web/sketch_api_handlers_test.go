@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"sketchdb.cozycole.net/internal/assert"
-	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
+	"github.com/cozycole/thesketchdb/internal/assert"
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/internal/utils"
 )
 
 func TestCreateSketchAPI(t *testing.T) {

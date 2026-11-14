@@ -6,9 +6,9 @@ import (
 	"path"
 	"testing"
 
-	"sketchdb.cozycole.net/internal/assert"
-	"sketchdb.cozycole.net/internal/fileStore"
-	"sketchdb.cozycole.net/internal/utils"
+	"github.com/cozycole/thesketchdb/internal/assert"
+	"github.com/cozycole/thesketchdb/internal/fileStore"
+	"github.com/cozycole/thesketchdb/internal/utils"
 )
 
 type Size struct {

@@ -12,8 +12,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/internal/utils"
 )
 
 const (

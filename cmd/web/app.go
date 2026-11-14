@@ -7,9 +7,9 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 
-	"sketchdb.cozycole.net/internal/fileStore"
-	"sketchdb.cozycole.net/internal/mail"
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/fileStore"
+	"github.com/cozycole/thesketchdb/internal/mail"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 type Application struct {

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"sketchdb.cozycole.net/internal/domain/sketches"
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/domain/sketches"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 const YOUTUBE_URL = "https://www.youtube.com/watch?v=%s&t=%ds"

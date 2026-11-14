@@ -18,8 +18,8 @@ import (
 	"github.com/go-playground/form/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"sketchdb.cozycole.net/internal/fileStore"
-	"sketchdb.cozycole.net/internal/mail"
+	"github.com/cozycole/thesketchdb/internal/fileStore"
+	"github.com/cozycole/thesketchdb/internal/mail"
 )
 
 type AppDependencies struct {

@@ -5,9 +5,9 @@ import (
 	"mime/multipart"
 	"strings"
 
-	"sketchdb.cozycole.net/internal/validator"
+	"github.com/cozycole/thesketchdb/internal/validator"
 
-	"sketchdb.cozycole.net/internal/external/wikipedia"
+	"github.com/cozycole/thesketchdb/internal/external/wikipedia"
 )
 
 type Forms struct {

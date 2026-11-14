@@ -3,22 +3,22 @@ package main
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"sketchdb.cozycole.net/internal/domain/casts"
-	"sketchdb.cozycole.net/internal/domain/characters"
-	"sketchdb.cozycole.net/internal/domain/creators"
-	"sketchdb.cozycole.net/internal/domain/people"
-	"sketchdb.cozycole.net/internal/domain/pipeline"
-	"sketchdb.cozycole.net/internal/domain/quotes"
-	"sketchdb.cozycole.net/internal/domain/recurring"
-	"sketchdb.cozycole.net/internal/domain/series"
-	"sketchdb.cozycole.net/internal/domain/shows"
-	"sketchdb.cozycole.net/internal/domain/sketches"
-	"sketchdb.cozycole.net/internal/domain/tags"
-	"sketchdb.cozycole.net/internal/domain/users"
+	"github.com/cozycole/thesketchdb/internal/domain/casts"
+	"github.com/cozycole/thesketchdb/internal/domain/characters"
+	"github.com/cozycole/thesketchdb/internal/domain/creators"
+	"github.com/cozycole/thesketchdb/internal/domain/people"
+	"github.com/cozycole/thesketchdb/internal/domain/pipeline"
+	"github.com/cozycole/thesketchdb/internal/domain/quotes"
+	"github.com/cozycole/thesketchdb/internal/domain/recurring"
+	"github.com/cozycole/thesketchdb/internal/domain/series"
+	"github.com/cozycole/thesketchdb/internal/domain/shows"
+	"github.com/cozycole/thesketchdb/internal/domain/sketches"
+	"github.com/cozycole/thesketchdb/internal/domain/tags"
+	"github.com/cozycole/thesketchdb/internal/domain/users"
 
-	"sketchdb.cozycole.net/internal/fileStore"
-	"sketchdb.cozycole.net/internal/mail"
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/fileStore"
+	"github.com/cozycole/thesketchdb/internal/mail"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 type Services struct {

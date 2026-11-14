@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 const NO_EXPIRY = 0

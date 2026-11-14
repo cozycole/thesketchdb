@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 func (app *Application) categoriesView(w http.ResponseWriter, r *http.Request) {

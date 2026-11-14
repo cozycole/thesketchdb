@@ -1,4 +1,4 @@
-module sketchdb.cozycole.net
+module github.com/cozycole/thesketchdb
 
 go 1.24.0
 

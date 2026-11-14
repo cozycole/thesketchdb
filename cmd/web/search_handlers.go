@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"sketchdb.cozycole.net/cmd/web/views"
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/cmd/web/views"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 func (app *Application) search(w http.ResponseWriter, r *http.Request) {

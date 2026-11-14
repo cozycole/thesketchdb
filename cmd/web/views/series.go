@@ -3,7 +3,7 @@ package views
 import (
 	"fmt"
 
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 type SeriesPage struct {

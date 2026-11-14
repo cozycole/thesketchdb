@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"html/template"
 
-	"sketchdb.cozycole.net/internal/external/moviedb"
-	"sketchdb.cozycole.net/internal/external/wikipedia"
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/external/moviedb"
+	"github.com/cozycole/thesketchdb/internal/external/wikipedia"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 type PersonPage struct {

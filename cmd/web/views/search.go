@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 // Galleries become horizontally scrollable on small

@@ -5,7 +5,7 @@ package main
 // 	"net/http"
 // 	"testing"
 //
-// 	"sketchdb.cozycole.net/internal/assert"
+// 	"github.com/cozycole/thesketchdb/internal/assert"
 // )
 
 // func TestCreatorAddPost(t *testing.T) {

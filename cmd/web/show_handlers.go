@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"sketchdb.cozycole.net/cmd/web/views"
-	"sketchdb.cozycole.net/internal/external/wikipedia"
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/cmd/web/views"
+	"github.com/cozycole/thesketchdb/internal/external/wikipedia"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 func (app *Application) viewShowHome(w http.ResponseWriter, r *http.Request) {

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"sketchdb.cozycole.net/cmd/web/views"
-	"sketchdb.cozycole.net/internal/external/moviedb"
-	"sketchdb.cozycole.net/internal/external/wikipedia"
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/cmd/web/views"
+	"github.com/cozycole/thesketchdb/internal/external/moviedb"
+	"github.com/cozycole/thesketchdb/internal/external/wikipedia"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 func convertFormToSketch(form *sketchForm) models.Sketch {

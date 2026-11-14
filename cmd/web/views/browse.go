@@ -1,7 +1,7 @@
 package views
 
 import (
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 type BrowseSectionDefinition struct {

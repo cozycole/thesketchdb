@@ -8,9 +8,9 @@ import (
 
 	"github.com/markbates/goth"
 
-	"sketchdb.cozycole.net/internal/domain/users"
-	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
+	"github.com/cozycole/thesketchdb/internal/domain/users"
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/internal/utils"
 )
 
 func (app *Application) userSignup(w http.ResponseWriter, r *http.Request) {

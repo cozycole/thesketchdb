@@ -8,10 +8,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	imgmock "github.com/cozycole/thesketchdb/internal/fileStore/mocks"
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/internal/utils"
 	"github.com/go-playground/form/v4"
-	imgmock "sketchdb.cozycole.net/internal/fileStore/mocks"
-	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
 )
 
 func newTestApplication(t *testing.T) *Application {

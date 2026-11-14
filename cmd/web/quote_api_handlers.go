@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 func (app *Application) adminGetQuotesAPI(w http.ResponseWriter, r *http.Request) {

@@ -1,6 +1,6 @@
 package pipeline
 
-import "sketchdb.cozycole.net/internal/models"
+import "github.com/cozycole/thesketchdb/internal/models"
 
 func (s *PipelineService) AddPipelineJob(videoId int) (*models.PipelineJob, error) {
 	status := "pending"

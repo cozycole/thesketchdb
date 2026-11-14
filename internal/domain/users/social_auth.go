@@ -3,7 +3,7 @@ package users
 import (
 	"errors"
 
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 type SocialAuthStatus int
