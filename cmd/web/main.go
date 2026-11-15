@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/joho/godotenv"
+
+	"github.com/cozycole/thesketchdb/internal/web"
 )
 
 func main() {
@@ -29,25 +31,23 @@ func main() {
 	}
 	defer cleanup()
 
-	app := NewApplication(config, deps)
+	app := web.NewApplication(config, deps)
 	configureOAuth(config.Origin)
-
-	app.InfoLog.Println("ORIGIN: ", config.Origin)
-	app.InfoLog.Printf("css: %s js: %s\n", app.Assets["css"], app.Assets["js"])
 
 	srv := &http.Server{
 		Addr:     *addr,
 		ErrorLog: app.ErrorLog,
-		Handler:  app.routes("./ui/static/", *serveStatic),
+		Handler:  app.Routes("./ui/static/", *serveStatic),
 	}
 
-	app.InfoLog.Println("Starting server on", *addr)
+	app.InfoLog.Printf("Starting server on %s with origin %s", *addr, config.Origin)
 	err = srv.ListenAndServe()
 	app.ErrorLog.Fatal(err)
 }
 
 func init() {
-	// Register the struct so encoding/gob knows how to handle it
-	gob.Register(flashMessage{})
-	gob.Register(PendingRegistration{})
+	// Register structs to inform encoding/gob how to handle it
+	// so they can be stored in session data
+	gob.Register(web.FlashMessage{})
+	gob.Register(web.PendingRegistration{})
 }

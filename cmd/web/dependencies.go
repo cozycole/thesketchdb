@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"html/template"
 	"log"
 	"os"
 	"time"
@@ -20,29 +19,17 @@ import (
 
 	"github.com/cozycole/thesketchdb/internal/fileStore"
 	"github.com/cozycole/thesketchdb/internal/mail"
+	"github.com/cozycole/thesketchdb/internal/web"
 )
 
-type AppDependencies struct {
-	DB             *pgxpool.Pool
-	TemplateCache  map[string]*template.Template
-	SessionManager *scs.SessionManager
-	FormDecoder    *form.Decoder
-	Mailer         mail.MailerInterface
-	FileStorage    fileStore.FileStorageInterface
-	ArchiveStorage fileStore.FileStorageInterface
-	InfoLog        *log.Logger
-	ErrorLog       *log.Logger
-	Assets         map[string]string // depends on ./dist/manifest.json
-}
-
 func newDependencies(
-	config AppConfig,
-) (AppDependencies, func(), error) {
+	config web.AppConfig,
+) (web.AppDependencies, func(), error) {
 	dev := config.DevEnv
 
 	dbpool, err := openDB(env("DB_URL", dev))
 	if err != nil {
-		return AppDependencies{}, nil, err
+		return web.AppDependencies{}, nil, err
 	}
 
 	cleanup := func() {
@@ -80,7 +67,7 @@ func newDependencies(
 	mailDomain := os.Getenv("MAIL_DOMAIN")
 	mailSender := os.Getenv("MAIL_SENDER")
 	if mailApiKey == "" || mailDomain == "" || mailSender == "" {
-		return AppDependencies{}, nil, errors.New("error: mailer config")
+		return web.AppDependencies{}, nil, errors.New("error: mailer config")
 	}
 
 	mailer := mail.New(mailDomain, mailApiKey, mailSender)
@@ -90,9 +77,9 @@ func newDependencies(
 	sessionManager.Lifetime = 90 * 24 * time.Hour
 	sessionManager.Cookie.Secure = true
 
-	templateCache, err := newTemplateCache()
+	templateCache, err := web.NewTemplateCache()
 	if err != nil {
-		return AppDependencies{}, nil, err
+		return web.AppDependencies{}, nil, err
 	}
 
 	formDecoder := form.NewDecoder()
@@ -105,12 +92,12 @@ func newDependencies(
 	if !dev {
 		assets, err = loadAssets(assets)
 		if err != nil {
-			return AppDependencies{}, nil, err
+			return web.AppDependencies{}, nil, err
 		}
 	}
 
 	success = true
-	return AppDependencies{
+	return web.AppDependencies{
 		DB:             dbpool,
 		FileStorage:    fileStorage,
 		ArchiveStorage: archiveStorage,
