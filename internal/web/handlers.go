@@ -237,3 +237,13 @@ func (app *Application) serveCMS(w http.ResponseWriter, r *http.Request) {
 func ping(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("pong"))
 }
+
+func (app *Application) privacyPage(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	app.render(r, w, http.StatusOK, "privacy.gohtml", "base", data)
+}
+
+func (app *Application) termsPage(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	app.render(r, w, http.StatusOK, "terms.gohtml", "base", data)
+}

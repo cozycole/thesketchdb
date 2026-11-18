@@ -113,6 +113,9 @@ func (app *Application) Routes(staticRoute string, serveStatic bool) http.Handle
 		r.Get("/complete-signup", app.completeSignup)
 		r.Post("/complete-signup", app.completeSignupPost)
 
+		r.Get("/privacy", app.privacyPage)
+		r.Get("/terms", app.termsPage)
+
 		r.HandleFunc("/ping", ping)
 
 		// public site editor / admin routes
