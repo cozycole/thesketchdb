@@ -62,8 +62,18 @@ func (s *UserService) AuthenticateSocial(provider, providerUserId, email string)
 type SocialSignupInput struct {
 	Username     string
 	Email        string
-	ProviderId   string
+	ProviderID   string
 	ProviderName string
 }
 
-// func (s *UserService) CompleteSocialSignup()
+func (s *UserService) CompleteSocialSignup(input SocialSignupInput) (*models.User, error) {
+	user := &models.User{
+		Email:    &input.Email,
+		Username: &input.Username,
+	}
+	err := s.users.InsertFromIdentity(user, input.ProviderName, input.ProviderID)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}

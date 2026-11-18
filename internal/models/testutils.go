@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 
@@ -32,11 +33,11 @@ func NewTestDb(t *testing.T) *pgxpool.Pool {
 		t.Fatal(err)
 	}
 
-	if err := m.Down(); err != nil && err != migrate.ErrNoChange {
+	if err := m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		t.Fatal(err)
 	}
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		t.Fatal(err)
 	}
 

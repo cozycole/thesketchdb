@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/gob"
 	"flag"
 	"log"
 	"net/http"
@@ -43,11 +42,4 @@ func main() {
 	app.InfoLog.Printf("Starting server on %s with origin %s", *addr, config.Origin)
 	err = srv.ListenAndServe()
 	app.ErrorLog.Fatal(err)
-}
-
-func init() {
-	// Register structs to inform encoding/gob how to handle it
-	// so they can be stored in session data
-	gob.Register(web.FlashMessage{})
-	gob.Register(web.PendingRegistration{})
 }

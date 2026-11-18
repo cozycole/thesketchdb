@@ -474,7 +474,7 @@ func (m *UserModel) InsertFromIdentity(user *User, provider, providerUserId stri
 		providerUserId,
 	}
 
-	_, err = tx.Exec(ctx, query, args)
+	_, err = tx.Exec(ctx, query, args...)
 	if err != nil {
 		if strings.Contains(err.Error(), `violates unique constraint "user_identities_provider_provider_user_id_key"`) ||
 			strings.Contains(err.Error(), `violates unique constraint "user_identities_user_id_provider_key"`) {

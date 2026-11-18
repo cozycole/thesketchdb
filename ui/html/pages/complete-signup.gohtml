@@ -1,0 +1,100 @@
+{{ define "title" }}Complete Signup{{ end }}
+
+{{ define "main" }}
+  <main class="flex flex-1 items-center justify-center bg-slate-50 px-4 py-12">
+    <div class="w-full max-w-sm space-y-4">
+      <!-- Complete Signup Card -->
+      <div
+        class="rounded-xl border border-slate-200 bg-white px-8 py-10 shadow-sm"
+      >
+        <!-- Icon -->
+        <div
+          class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-orange-50"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-7 w-7 text-orange-600"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="8" r="4" />
+            <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
+          </svg>
+        </div>
+
+        <!-- Header -->
+        <div class="mb-8 text-center">
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">
+            One last step!
+          </h1>
+
+          <p class="mt-3 text-sm leading-6 text-slate-500">
+            Choose a username to finish creating your account.
+          </p>
+        </div>
+
+        <!-- Form -->
+        <form
+          action="/complete-signup"
+          method="POST"
+          novalidate
+          class="space-y-4"
+        >
+          <!-- Non-field Errors -->
+          {{ range .Forms.CompleteSignup.NonFieldErrors }}
+            <p class="text-center text-sm text-red-600">
+              {{ . }}
+            </p>
+          {{ end }}
+
+
+          <!-- Username -->
+          <div>
+            <label
+              for="username"
+              class="mb-1.5 block text-sm font-medium text-slate-700"
+            >
+              Username
+            </label>
+
+            <input
+              id="username"
+              type="text"
+              name="username"
+              autocomplete="username"
+              placeholder="Choose a username"
+              value="{{ .Forms.CompleteSignup.Username }}"
+              minlength="3"
+              maxlength="20"
+              required
+              autofocus
+              aria-describedby="username-hint"
+              class="w-full rounded-lg border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+            />
+
+            <p id="username-hint" class="mt-1.5 text-xs text-slate-500">
+              Between 3 and 20 characters.
+            </p>
+
+            {{ with .Forms.CompleteSignup.FieldErrors.username }}
+              <p class="mt-1 text-xs text-red-600">{{ . }}</p>
+            {{ end }}
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            class="w-full rounded-lg bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+          >
+            Create account
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+{{ end }}

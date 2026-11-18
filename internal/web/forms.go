@@ -25,6 +25,7 @@ type Forms struct {
 	ForgotPassword   *userForgotPasswordForm
 	ResetPassword    *userResetPasswordForm
 	ResendActivation *userResendActivationForm
+	CompleteSignup   *userCompleteSignupForm
 }
 
 // Changes to the form fields must be updated in their respective
@@ -301,6 +302,16 @@ func (app *Application) validateUserSignupForm(form *userSignupForm) {
 	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be blank")
 	form.CheckField(validator.MinChars(form.Password, 8), "password", "Password must be 8-20 chararacters")
 	form.CheckField(validator.MaxChars(form.Password, 20), "password", "Password Must be 8-20 chararacters")
+}
+
+type userCompleteSignupForm struct {
+	Username            string `form:"username"`
+	validator.Validator `form:"-"`
+}
+
+func (app *Application) validateUserCompleteSignupForm(form *userCompleteSignupForm) {
+	form.CheckField(validator.NotBlank(form.Username), "username", "Field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Username, 20), "username", "Username must be less than 20 chararacters")
 }
 
 type userLoginForm struct {

@@ -110,6 +110,9 @@ func (app *Application) Routes(staticRoute string, serveStatic bool) http.Handle
 		r.Get("/auth/google", app.googleLogin)
 		r.Get("/auth/google/callback", app.googleCallback)
 
+		r.Get("/complete-signup", app.completeSignup)
+		r.Post("/complete-signup", app.completeSignupPost)
+
 		r.HandleFunc("/ping", ping)
 
 		// public site editor / admin routes

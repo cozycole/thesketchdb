@@ -3,6 +3,7 @@ package web
 import (
 	"crypto/subtle"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -309,9 +310,10 @@ func (app *Application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 // Used for storing info before redirecting user
 // to username form if they need to create an account
 type PendingRegistration struct {
-	GoogleID  string
-	Email     string
-	ExpiresAt time.Time
+	ProviderID   string
+	ProviderName string
+	Email        string
+	ExpiresAt    time.Time
 }
 
 func (app *Application) googleLogin(w http.ResponseWriter, r *http.Request) {
@@ -333,7 +335,6 @@ func (app *Application) googleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Store temporary OAuth information using SCS.
 	app.SessionManager.Put(r.Context(), "oauth_state", state)
 	app.SessionManager.Put(r.Context(), "oauth_session", session.Marshal())
 
@@ -430,13 +431,74 @@ func (app *Application) googleCallback(w http.ResponseWriter, r *http.Request) {
 
 	case users.SocialAuthRegistrationRequired:
 		pending := PendingRegistration{
-			GoogleID:  googleUser.UserID,
-			Email:     googleUser.Email,
-			ExpiresAt: time.Now().Add(15 * time.Minute),
+			ProviderID:   googleUser.UserID,
+			ProviderName: "google",
+			Email:        googleUser.Email,
+			ExpiresAt:    time.Now().Add(15 * time.Minute),
 		}
 
 		app.SessionManager.Put(ctx, "pendingRegistration", pending)
-
 		http.Redirect(w, r, "/complete-signup", http.StatusSeeOther)
 	}
+}
+
+func (app *Application) completeSignup(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	data.Forms.CompleteSignup = &userCompleteSignupForm{}
+	app.render(r, w, http.StatusUnprocessableEntity, "complete-signup.gohtml", "base", data)
+}
+
+func (app *Application) completeSignupPost(w http.ResponseWriter, r *http.Request) {
+	var form userCompleteSignupForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		fmt.Printf("problem decoding form: %v", err)
+		app.badRequest(w)
+		return
+	}
+
+	app.validateUserCompleteSignupForm(&form)
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Forms.CompleteSignup = &form
+		app.render(r, w, http.StatusUnprocessableEntity, "complete-signup.gohtml", "base", data)
+		return
+	}
+
+	reg, ok := app.SessionManager.Pop(
+		r.Context(),
+		"pendingRegistration",
+	).(PendingRegistration)
+	if !ok {
+		fmt.Printf("problem getting registration info")
+		app.badRequest(w)
+		return
+	}
+
+	input := users.SocialSignupInput{
+		Username:     form.Username,
+		Email:        reg.Email,
+		ProviderID:   reg.ProviderID,
+		ProviderName: reg.ProviderName,
+	}
+
+	user, err := app.Services.Users.CompleteSocialSignup(input)
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	err = app.SessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	app.SessionManager.Put(r.Context(), "authenticatedUserID", *user.ID)
+	flash := FlashMessage{
+		Message: "Account created!",
+		Level:   FlashSuccess,
+	}
+	app.SessionManager.Put(r.Context(), "flash", flash)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

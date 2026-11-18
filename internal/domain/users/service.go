@@ -13,6 +13,7 @@ type UserRepository interface {
 	GetByIdentity(provider, providerUserId string) (*models.User, error)
 	GetByToken(plaintext, scope string) (*models.User, error)
 	Insert(user *models.User) error
+	InsertFromIdentity(user *models.User, provider, providerUserId string) error
 	Update(user *models.User) error
 }
 
