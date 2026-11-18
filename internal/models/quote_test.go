@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"sketchdb.cozycole.net/internal/assert"
+	"github.com/cozycole/thesketchdb/internal/assert"
 )
 
 func TestBatchQuoteUpdate(t *testing.T) {

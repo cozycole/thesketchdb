@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	"sketchdb.cozycole.net/internal/assert"
+	"github.com/cozycole/thesketchdb/internal/assert"
 )
 
 func TestCharacterSearch(t *testing.T) {

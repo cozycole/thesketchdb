@@ -4,8 +4,8 @@ import (
 	"slices"
 	"time"
 
-	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/internal/utils"
 )
 
 var mockSketch = &models.Sketch{

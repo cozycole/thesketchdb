@@ -1,0 +1,47 @@
+package views
+
+import (
+	"fmt"
+
+	"github.com/cozycole/thesketchdb/internal/models"
+)
+
+type RecurringPage struct {
+	RecurringTitle     string
+	Description        string
+	Image              string
+	UpdateRecurringUrl string
+	SketchCount        int
+	Sketches           *SketchGallery
+}
+
+func RecurringPageView(recurring *models.Recurring, baseImgUrl string) (*RecurringPage, error) {
+	page := RecurringPage{}
+	page.RecurringTitle = safeDeref(recurring.Title)
+	page.Description = safeDeref(recurring.Description)
+	page.Image = fmt.Sprintf(
+		"%s/recurring/medium/%s",
+		baseImgUrl,
+		safeDeref(recurring.ThumbnailName),
+	)
+
+	page.UpdateRecurringUrl = fmt.Sprintf(
+		"/recurring/%d/update",
+		safeDeref(recurring.ID),
+	)
+
+	page.SketchCount = len(recurring.Sketches)
+	sketches, err := SketchGalleryView(
+		recurring.Sketches,
+		baseImgUrl,
+		"default",
+		"full",
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	page.Sketches = sketches
+	return &page, nil
+}

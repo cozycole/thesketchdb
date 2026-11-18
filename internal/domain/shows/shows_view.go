@@ -3,8 +3,8 @@ package shows
 import (
 	"errors"
 
-	"sketchdb.cozycole.net/internal/domain/shared"
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/domain/shared"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 // you'll need to refactor the models into their respective

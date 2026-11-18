@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/internal/utils"
 )
 
 func TestUserService_Signup(t *testing.T) {

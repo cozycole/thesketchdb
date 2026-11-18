@@ -1,6 +1,6 @@
 package sketches
 
-import "sketchdb.cozycole.net/internal/models"
+import "github.com/cozycole/thesketchdb/internal/models"
 
 func (s *SketchService) AddVideo(sketchId int, hotS3Key string) (*models.SketchVideo, error) {
 	video := &models.SketchVideo{HotS3Key: &hotS3Key}

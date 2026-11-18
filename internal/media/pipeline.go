@@ -8,7 +8,7 @@ import (
 	"math"
 	"path"
 
-	"sketchdb.cozycole.net/internal/fileStore"
+	"github.com/cozycole/thesketchdb/internal/fileStore"
 )
 
 const (

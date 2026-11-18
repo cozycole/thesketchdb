@@ -1,0 +1,299 @@
+package web
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+
+	"github.com/cozycole/thesketchdb/internal/models"
+)
+
+func (app *Application) viewSketchesAPI(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	page := r.Form.Get("page")
+	selectedPage, err := strconv.Atoi(page)
+	if err != nil || selectedPage < 1 {
+		selectedPage = 1
+	}
+
+	pageSize := r.Form.Get("pageSize")
+	selectedPageSize, err := strconv.Atoi(pageSize)
+	if err != nil || selectedPageSize < 1 {
+		selectedPageSize = 10
+	}
+
+	sort := r.Form.Get("sort")
+	if sort == "" {
+		sort = "popular"
+	}
+
+	query := r.Form.Get("query")
+	if query == "" {
+		query = r.Form.Get("q")
+	}
+	query, _ = url.QueryUnescape(query)
+	filterQuery := strings.Join(strings.Fields(query), " | ")
+
+	personIds := extractUrlParamIDs(r.URL.Query()["person"])
+	characterIds := extractUrlParamIDs(r.URL.Query()["character"])
+	creatorIds := extractUrlParamIDs(r.URL.Query()["creator"])
+	showIds := extractUrlParamIDs(r.URL.Query()["show"])
+	tagIds := extractUrlParamIDs(r.URL.Query()["tag"])
+
+	sketchList, err := app.Services.Sketches.ListSketches(
+		&models.Filter{
+			Query:        filterQuery,
+			CharacterIDs: characterIds,
+			CreatorIDs:   creatorIds,
+			PersonIDs:    personIds,
+			ShowIDs:      showIds,
+			TagIDs:       tagIds,
+			SortBy:       sort,
+			PageSize:     selectedPageSize,
+			Page:         selectedPage,
+		}, true)
+
+	if err != nil {
+		app.serverError(r, w, err)
+		return
+	}
+
+	filterRefs := map[string]any{}
+	if len(sketchList.CreatorRefs) > 0 {
+		filterRefs["creators"] = sketchList.CreatorRefs
+	}
+
+	if len(sketchList.CharacterRefs) > 0 {
+		filterRefs["characters"] = sketchList.CharacterRefs
+	}
+
+	if len(sketchList.PersonRefs) > 0 {
+		filterRefs["people"] = sketchList.PersonRefs
+	}
+
+	if len(sketchList.ShowRefs) > 0 {
+		filterRefs["shows"] = sketchList.ShowRefs
+	}
+
+	if len(sketchList.TagRefs) > 0 {
+		filterRefs["tags"] = sketchList.TagRefs
+	}
+
+	response := envelope{
+		"filter_refs": filterRefs,
+		"sketches":    sketchList.Sketches,
+		"meta":        sketchList.Metadata,
+	}
+
+	err = app.writeJSON(w, http.StatusOK, response, nil)
+	if err != nil {
+		app.serverError(r, w, err)
+	}
+}
+
+func (app *Application) adminGetSketchAPI(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("id param not defined"))
+		return
+	}
+
+	sketch, err := app.Services.Sketches.GetSketch(sketchId)
+	if err != nil {
+		if errors.Is(err, models.ErrNoSketch) {
+			app.notFoundResponse(w, r)
+		} else {
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"sketch": sketch}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *Application) createSketchAPI(w http.ResponseWriter, r *http.Request) {
+	var form sketchForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	app.validateSketchForm(&form)
+	if !form.Valid() {
+		app.failedValidationResponse(w, r, form.Validator.FieldErrors)
+		return
+	}
+
+	formSketch := convertFormToSketch(&form)
+	sketch, err := app.Services.Sketches.CreateSketch(&formSketch, form.Thumbnail, form.CropThumbnailBorder)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"sketch": sketch}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *Application) updateSketchAPI(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("id param not defined"))
+		return
+	}
+
+	var form sketchForm
+	err = app.decodePostForm(r, &form)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	app.validateSketchForm(&form)
+	if !form.Valid() {
+		app.failedValidationResponse(w, r, form.Validator.FieldErrors)
+		return
+	}
+
+	sketch := convertFormToSketch(&form)
+
+	sketch.ID = &sketchId
+	file, _ := fileHeaderToBytes(form.Thumbnail)
+
+	updatedSketch, err := app.Services.Sketches.UpdateSketch(&sketch, file, form.CropThumbnailBorder)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"sketch": updatedSketch}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *Application) deleteSketchAPI(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("id param not defined"))
+		return
+	}
+
+	// verify sketch has no cast and quotes
+	castInfo, err := app.Services.Casts.GetAdminCast(sketchId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if len(castInfo.Cast) > 0 {
+		app.errorResponse(w, r, http.StatusUnprocessableEntity, "Delete all cast members before deleting sketch.")
+		return
+	}
+
+	quoteInfo, err := app.Services.Quotes.GetAdminQuotes(sketchId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if len(quoteInfo.Quotes) > 0 {
+		app.errorResponse(w, r, http.StatusUnprocessableEntity, "Delete all quotes before deleting sketch.")
+		return
+	}
+
+	// deleting between postgres and s3 isn't atomic so need two step process
+	deleteInfo, err := app.Services.Sketches.DeleteSketch(sketchId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"message": "Sketch successfully deleted."}, nil)
+
+	err = app.Services.Sketches.CleanupSketchMedia(deleteInfo)
+	if err != nil {
+		app.ErrorLog.Print(err)
+	}
+}
+
+func (app *Application) deleteScreenshotsAPI(w http.ResponseWriter, r *http.Request) {
+	sketchIdParam := r.PathValue("id")
+	sketchId, err := strconv.Atoi(sketchIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("id param not defined"))
+		return
+	}
+
+	err = app.Services.Sketches.DeleteScreenshots(sketchId)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"message": "Screenshots deleted successfully"}, nil)
+}
+
+func (app *Application) insertQuoteLike(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	quoteIdParam := r.Form.Get("quoteId")
+	quoteId, err := strconv.Atoi(quoteIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, errors.New("no/malformed quote id defined"))
+		return
+	}
+
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	if !ok || user.ID == nil {
+		app.errorResponse(w, r, http.StatusUnauthorized, "please sign in to like quotes")
+		return
+	}
+
+	err = app.Quotes.InsertQuoteLike(quoteId, *user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"message": "quote like added"}, nil)
+}
+
+func (app *Application) deleteQuoteLike(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	quoteIdParam := r.Form.Get("quoteId")
+	quoteId, err := strconv.Atoi(quoteIdParam)
+	if err != nil {
+		app.badRequestResponse(w, r, errors.New("no/malformed quote id defined"))
+		return
+	}
+
+	user, ok := r.Context().Value(userContextKey).(*models.User)
+	if !ok || user.ID == nil {
+		app.errorResponse(w, r, http.StatusUnauthorized, "please sign in to like quotes")
+		return
+	}
+
+	err = app.Quotes.DeleteQuoteLike(quoteId, *user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"message": "quote like removed"}, nil)
+}

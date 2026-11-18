@@ -1,0 +1,47 @@
+package views
+
+import (
+	"fmt"
+
+	"github.com/cozycole/thesketchdb/internal/models"
+)
+
+type SeriesPage struct {
+	SeriesTitle     string
+	Description     string
+	Image           string
+	UpdateSeriesUrl string
+	PartCount       int
+	Sketches        *SketchGallery
+}
+
+func SeriesPageView(series *models.Series, baseImgUrl string) (*SeriesPage, error) {
+	page := SeriesPage{}
+	page.SeriesTitle = safeDeref(series.Title)
+	page.Description = safeDeref(series.Description)
+	page.Image = fmt.Sprintf(
+		"%s/series/medium/%s",
+		baseImgUrl,
+		safeDeref(series.ThumbnailName),
+	)
+
+	page.UpdateSeriesUrl = fmt.Sprintf(
+		"/series/%d/update",
+		safeDeref(series.ID),
+	)
+
+	page.PartCount = len(series.Sketches)
+	sketches, err := SketchGalleryView(
+		series.Sketches,
+		baseImgUrl,
+		"default",
+		"full",
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	page.Sketches = sketches
+	return &page, nil
+}

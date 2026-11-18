@@ -5,7 +5,7 @@ package models
 // 	"testing"
 // 	"time"
 //
-// 	"sketchdb.cozycole.net/internal/assert"
+// 	"github.com/cozycole/thesketchdb/internal/assert"
 // )
 //
 // func TestPersonInsert(t *testing.T) {

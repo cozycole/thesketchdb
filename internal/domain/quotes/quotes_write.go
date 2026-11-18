@@ -1,7 +1,7 @@
 package quotes
 
 import (
-	"sketchdb.cozycole.net/internal/models"
+	"github.com/cozycole/thesketchdb/internal/models"
 )
 
 func (s *QuoteService) UpdateQuotes(sketchId int, quotes []*models.Quote, deleted []int) ([]*models.Quote, error) {

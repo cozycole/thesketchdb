@@ -7,7 +7,7 @@ import (
 	"path"
 	"testing"
 
-	"sketchdb.cozycole.net/internal/assert"
+	"github.com/cozycole/thesketchdb/internal/assert"
 )
 
 func TestProcessCoverImage(t *testing.T) {

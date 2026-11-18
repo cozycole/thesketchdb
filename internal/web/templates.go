@@ -1,0 +1,152 @@
+package web
+
+import (
+	"html/template"
+	"io/fs"
+	"path/filepath"
+	"time"
+
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/ui"
+)
+
+const (
+	FlashSuccess = "success"
+	FlashInfo    = "info"
+	FlashError   = "error"
+)
+
+type FlashMessage struct {
+	Message string
+	Level   string
+}
+
+// Define a templateData type to act as the holding
+// struct for any dynamic data we want to pass to the
+// HTML templates. Since the ExecuteTemplate only accepts one
+// struct for inserting data and data can come from many sources,
+// you need to combine it all into one
+type templateData struct {
+	BrowseSections  map[string][]*models.Sketch
+	Categories      *[]*models.Category
+	CSRFToken       string
+	Cast            []*models.CastMember
+	CatalogType     string
+	Creator         *models.Creator
+	CurrentYear     int
+	DropdownResults dropdownSearchResults
+	Episode         *models.Episode
+	Episodes        []*models.Episode
+	Featured        []*models.Sketch
+	Flash           FlashMessage
+	Forms           Forms
+	HtmxRequest     bool
+	ImageBaseUrl    string
+	IsAdmin         bool
+	IsEditor        bool
+	Origin          string
+	Season          *models.Season
+	Show            *models.Show
+	Tags            *[]*models.Tag
+	Token           string
+	TokenScope      string
+	User            *models.User
+	Assets          map[string]string
+	Page            any
+}
+
+func formDate(t *time.Time) string {
+	if t == nil || t.IsZero() {
+		return ""
+	}
+	return t.Format("2006-01-02")
+}
+
+func PrintPersonName(a *models.Person) string {
+	if a == nil || a.First == nil {
+		return ""
+	}
+
+	name := *a.First
+	if a.Last == nil {
+		return name
+	}
+	return name + " " + *a.Last
+}
+
+func until(n int) []int {
+	out := make([]int, n)
+	for i := range out {
+		out[i] = i
+	}
+	return out
+}
+
+func dict(values ...any) map[string]any {
+	if len(values)%2 != 0 {
+		panic("invalid dict call")
+	}
+	m := make(map[string]interface{}, len(values)/2)
+	for i := 0; i < len(values); i += 2 {
+		key, ok := values[i].(string)
+		if !ok {
+			panic("dict keys must be strings")
+		}
+		m[key] = values[i+1]
+	}
+	return m
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func inc(i int) int {
+	return i + 1
+}
+
+// Init global variable which maps string func names to
+// functions to be used within templates (since you can call
+// functions from template). NOTE: The tempalte functions should only
+// return a single value
+var functions = template.FuncMap{
+	"dict":        dict,
+	"until":       until,
+	"derefString": derefString,
+	"inc":         inc,
+}
+
+// Getting mapping of html page filename to template set for the page
+func NewTemplateCache() (map[string]*template.Template, error) {
+	cache := map[string]*template.Template{}
+
+	// Add all pages and partials to the cache
+	pages, err := fs.Glob(ui.Files, "html/**/*.gohtml")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, page := range pages {
+		// fmt.Println(page)
+		name := filepath.Base(page)
+
+		patterns := []string{
+			"html/base.gohtml",
+			"html/partials/*.gohtml",
+			page,
+		}
+
+		// Register the funcMap before parsing the files
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
+		if err != nil {
+			return nil, err
+		}
+
+		cache[name] = ts
+	}
+
+	return cache, nil
+}

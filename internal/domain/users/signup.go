@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"sketchdb.cozycole.net/internal/models"
-	"sketchdb.cozycole.net/internal/utils"
+	"github.com/cozycole/thesketchdb/internal/models"
+	"github.com/cozycole/thesketchdb/internal/utils"
 )
 
 type SignupInput struct {
