@@ -200,7 +200,6 @@ func (app *Application) catalogView(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("HX-Push-Url", url)
 
 	if isHxRequest && !isHistoryRestore {
-		app.InfoLog.Println("TARGET: ", r.Header.Get("HX-Target"))
 		if r.Header.Get("HX-Target") == "catalogSection" {
 			app.render(r, w, http.StatusOK, "sketch-catalog.gohtml", "sketch-catalog", sketchCatalog)
 		} else {

@@ -210,298 +210,228 @@ func (m *SketchModel) BatchUpdateTags(sketchId int, tags []*Tag) error {
 	return nil
 }
 
-type Arguements struct {
-	Args     []any
-	ArgIndex int
-	ImgField string
+var sketchListSorts = map[string]string{
+	"popular": "v.popularity_score DESC, v.upload_date DESC, v.id DESC",
+	"recent":  "v.id DESC",
+	"newest":  "v.upload_date DESC, v.title ASC, v.id DESC",
+	"oldest":  "v.upload_date ASC, v.title ASC, v.id DESC",
+	"az":      "v.title ASC, v.id DESC",
+	"za":      "v.title DESC, v.id DESC",
 }
 
-func determineFields(filter *Filter, args *Arguements) string {
-	rankParam := ""
-	if filter.Query != "" {
-		args.ArgIndex++
-		rankParam = fmt.Sprintf(`
-			 , ts_rank(
-				setweight(to_tsvector('english', v.title), 'A') ||
-				setweight(to_tsvector('english', c.name), 'B') ||
-				setweight(to_tsvector('english', array_to_string(ARRAY(
-					SELECT a.first
-					FROM cast_members AS cm 
-					JOIN person AS a ON cm.person_id = a.id 
-					WHERE cm.sketch_id = v.id
-				), ' ')), 'B') ||
-				setweight(to_tsvector('english', array_to_string(ARRAY(
-					SELECT a.last
-					FROM cast_members AS cm 
-					JOIN person AS a ON cm.person_id = a.id 
-					WHERE cm.sketch_id = v.id
-				), ' ')), 'B') ||
-				setweight(to_tsvector('english', array_to_string(ARRAY(
-					SELECT cm.character_name
-					FROM cast_members AS cm 
-					WHERE cm.sketch_id = v.id
-				), ' ')), 'B') ||
-				setweight(to_tsvector('english', array_to_string(ARRAY(
-					SELECT cm.character_name
-					FROM cast_members AS cm 
-					JOIN character AS c ON cm.character_id = c.id 
-					WHERE cm.sketch_id = v.id
-				), ' ')), 'B') ||
-				setweight(to_tsvector('english', array_to_string(ARRAY(
-					SELECT t.name
-					FROM sketch_tags AS vt 
-					JOIN tags AS t ON vt.tag_id = t.id 
-					WHERE vt.sketch_id = v.id
-				), ' ')), 'C'),
-				websearch_to_tsquery('english', $%d)
-				) AS rank
-		`, args.ArgIndex)
-		args.Args = append(args.Args, filter.Query)
+func sketchListOrder(sortBy string) string {
+	if order, ok := sketchListSorts[sortBy]; ok {
+		return order
 	}
-
-	baseFields := `
-		 v.id as sketch_id, v.title as sketch_title, v.sketch_number as sketch_number, 
-		v.slug as sketch_slug, v.thumbnail_name as thumbnail_name,
-		v.upload_date as upload_date, v.rating as rating,
-		c.id as creator_id, c.name as creator_name, c.slug as creator_slug, 
-		c.profile_img as creator_img, sh.id as show_id, sh.name as show_name,
-		sh.profile_img as show_img, sh.slug as show_slug, v.popularity_score as popularity,
-		se.id as season_id, se.slug as season_slug, se.season_number as season_number, 
-		e.id as episode_id, e.slug as episode_slug, e.episode_number as episode_number, e.air_date as episode_airdate,
-		shg.id as grouping_show_id, shg.slug as grouping_show_slug, shg.name as grouping_show_name, shg.profile_img as grouping_show_img, 
-		(select thumbnail_name from cast_members where %s and sketch_id = v.id order by position limit 1) as cast_thumbnail_name
-		%s
-	`
-
-	castThumbnailClause := ""
-	if len(filter.PersonIDs) == 0 && len(filter.CharacterIDs) == 0 {
-		castThumbnailClause = "1=1"
-	}
-	if len(filter.PersonIDs) != 0 {
-		personId := filter.PersonIDs[0]
-		args.ArgIndex++
-		args.Args = append(args.Args, personId)
-		castThumbnailClause = fmt.Sprintf("person_id = $%d", args.ArgIndex)
-	}
-	if len(filter.CharacterIDs) != 0 {
-		characterId := filter.CharacterIDs[0]
-		args.ArgIndex++
-		args.Args = append(args.Args, characterId)
-		if castThumbnailClause == "" {
-			castThumbnailClause = fmt.Sprintf("character_id = $%d", args.ArgIndex)
-		} else {
-			castThumbnailClause += fmt.Sprintf(" AND character_id = $%d", args.ArgIndex)
-		}
-	}
-
-	fields := fmt.Sprintf(baseFields, castThumbnailClause, rankParam)
-
-	return fields
+	return "v.upload_date ASC, v.popularity_score ASC, v.id DESC"
 }
 
-func determineConditions(filter *Filter, args *Arguements) string {
-	clause := ""
-
-	if filter.Query != "" {
-		args.ArgIndex++
-		clause += fmt.Sprintf(`
-			AND
-			to_tsvector(
-				'english',
-				COALESCE(v.title, '') || ' ' || COALESCE(c.name, '') || ' ' ||
-				COALESCE(c.alias, '') || ' ' || COALESCE(sh.name, '') || 
-				' ' || COALESCE(sh.aliases,'') || ' ' ||
-				COALESCE(array_to_string(ARRAY(
-					SELECT a.first
-					FROM cast_members AS cm 
-					JOIN person AS a ON cm.person_id = a.id 
-					WHERE cm.sketch_id = v.id
-				), ' '),'') || ' ' ||
-				COALESCE(array_to_string(ARRAY(
-					SELECT a.last
-					FROM cast_members AS cm 
-					JOIN person AS a ON cm.person_id = a.id 
-					WHERE cm.sketch_id = v.id
-				), ' '),'') || ' ' ||
-				COALESCE(array_to_string(ARRAY(
-					SELECT t.name 
-					FROM sketch_tags AS vt 
-					JOIN tags AS t ON vt.tag_id = t.id 
-					WHERE vt.sketch_id = v.id
-				), ' '),'') || ' ' ||
-				COALESCE(array_to_string(ARRAY(
-					SELECT cm.character_name
-					FROM cast_members AS cm 
-					WHERE cm.sketch_id = v.id
-				), ' '),'') || ' ' ||
-				COALESCE(array_to_string(ARRAY(
-					SELECT c.name
-					FROM cast_members AS cm 
-					JOIN character as c ON cm.character_id = c.id
-					WHERE cm.sketch_id = v.id
-				), ' '),'')) @@ websearch_to_tsquery('english', $%d)
-			`, args.ArgIndex)
-		args.Args = append(args.Args, filter.Query)
-	}
-
-	// NOTE: Creators, shows and tags use OR operator
-	if len(filter.CreatorIDs) > 0 {
-		creatorPlaceholders := []string{}
-		for _, creatorId := range filter.CreatorIDs {
-			args.ArgIndex++
-			creatorPlaceholders = append(creatorPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
-			args.Args = append(args.Args, creatorId)
-		}
-
-		clause += fmt.Sprintf(" AND c.id IN (%s)", strings.Join(creatorPlaceholders, ","))
-	}
-
-	if len(filter.CharacterIDs) > 0 {
-		characterPlaceholders := []string{}
-		for _, characterId := range filter.CharacterIDs {
-			args.ArgIndex++
-			characterPlaceholders = append(characterPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
-			args.Args = append(args.Args, characterId)
-		}
-
-		clause += fmt.Sprintf(" AND cm.character_id IN (%s)", strings.Join(characterPlaceholders, ","))
-	}
-
-	if len(filter.ShowIDs) > 0 {
-		showPlaceholders := []string{}
-		for _, showId := range filter.ShowIDs {
-			args.ArgIndex++
-			showPlaceholders = append(showPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
-			args.Args = append(args.Args, showId)
-		}
-
-		clause += fmt.Sprintf(" AND sh.id IN (%s)", strings.Join(showPlaceholders, ","))
-	}
-
-	if len(filter.TagIDs) > 0 {
-		tagPlaceholders := []string{}
-		for _, tagId := range filter.TagIDs {
-			args.ArgIndex++
-			tagPlaceholders = append(tagPlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
-			args.Args = append(args.Args, tagId)
-		}
-
-		clause += fmt.Sprintf(" AND vt.tag_id IN (%s)", strings.Join(tagPlaceholders, ","))
-	}
-
-	// NOTE: People filter use AND operation
-	if len(filter.PersonIDs) > 0 {
-		peoplePlaceholders := []string{}
-		for _, personId := range filter.PersonIDs {
-			args.ArgIndex++
-			peoplePlaceholders = append(peoplePlaceholders, fmt.Sprintf("$%d", args.ArgIndex))
-			args.Args = append(args.Args, personId)
-		}
-
-		clause += fmt.Sprintf(" AND cm.person_id IN (%s)", strings.Join(peoplePlaceholders, ","))
-		clause += `
-		GROUP BY v.id, v.title, v.slug,
-		         v.thumbnail_name, v.upload_date, v.sketch_number,
-		         c.id, c.name, c.page_url, c.slug, c.profile_img,
-				sh.id, sh.name, sh.profile_img, sh.slug, 
-				se.id, se.slug, se.season_number, 
-				e.id, e.slug, e.episode_number, e.air_date,
-				shg.id, shg.slug, shg.name, shg.profile_img
-		`
-
-		if filter.Query != "" {
-			clause += ", rank"
-		}
-
-		if len(filter.PersonIDs) > 1 {
-			args.ArgIndex++
-			clause += fmt.Sprintf(" HAVING COUNT(DISTINCT cm.person_id) = $%d ", args.ArgIndex)
-			args.Args = append(args.Args, len(filter.PersonIDs))
-		}
-	}
-
-	return clause
+type sketchListBuilder struct {
+	args           []any
+	conditions     []string
+	creatorWhere   string
+	thumbnailWhere string
 }
 
-func determineSort(filter *Filter, args *Arguements) string {
-	sort := "upload_date ASC, popularity ASC"
-	if val, ok := sortMap[filter.SortBy]; ok {
-		sort = val
+func (b *sketchListBuilder) bind(value any) string {
+	b.args = append(b.args, value)
+	return fmt.Sprintf("$%d", len(b.args))
+}
+
+func uniqueSketchFilterIDs(ids []int) []int32 {
+	result := make([]int32, 0, len(ids))
+	seen := make(map[int]struct{}, len(ids))
+	for _, id := range ids {
+		if _, exists := seen[id]; !exists {
+			seen[id] = struct{}{}
+			result = append(result, int32(id))
+		}
+	}
+	return result
+}
+
+// Each filter is independent. Values within each filter are ORed together,
+// except PersonIDs, for which every requested person must appear in the sketch.
+func (b *sketchListBuilder) addFilters(f Filter) {
+	if q := strings.TrimSpace(f.Query); q != "" {
+		param := b.bind(q)
+		b.conditions = append(b.conditions, fmt.Sprintf(`
+            EXISTS (
+                SELECT 1 FROM sketch_search_documents sd
+                WHERE sd.sketch_id = v.id
+                  AND sd.document @@ websearch_to_tsquery('english', %s)
+            )`, param))
 	}
 
-	sort = fmt.Sprintf(" ORDER BY %s", sort)
-	sort += fmt.Sprintf(" LIMIT $%d OFFSET $%d", args.ArgIndex+1, args.ArgIndex+2)
-	args.ArgIndex += 2
-	args.Args = append(args.Args, filter.Limit(), filter.Offset())
+	if len(f.SketchIDs) > 0 {
+		param := b.bind(uniqueSketchFilterIDs(f.SketchIDs))
+		b.conditions = append(b.conditions,
+			fmt.Sprintf("v.id = ANY(%s::int[])", param))
+	}
 
-	return sort
+	if len(f.CreatorIDs) > 0 {
+		param := b.bind(uniqueSketchFilterIDs(f.CreatorIDs))
+		b.conditions = append(b.conditions, fmt.Sprintf(`
+            EXISTS (
+                SELECT 1 FROM sketch_creator_rel scr
+                WHERE scr.sketch_id = v.id
+                  AND scr.creator_id = ANY(%s::int[])
+            )`, param))
+		// The displayed creator should be one of the requested creators.
+		b.creatorWhere = fmt.Sprintf(" AND c.id = ANY(%s::int[])", param)
+	}
+
+	if len(f.ShowIDs) > 0 {
+		param := b.bind(uniqueSketchFilterIDs(f.ShowIDs))
+		b.conditions = append(b.conditions, fmt.Sprintf(`
+            EXISTS (
+                SELECT 1
+                FROM episode e
+                JOIN season se ON se.id = e.season_id
+                WHERE e.id = v.episode_id
+                  AND se.show_id = ANY(%s::int[])
+            )`, param))
+	}
+
+	if len(f.TagIDs) > 0 {
+		param := b.bind(uniqueSketchFilterIDs(f.TagIDs))
+		b.conditions = append(b.conditions, fmt.Sprintf(`
+            EXISTS (
+                SELECT 1 FROM sketch_tags st
+                WHERE st.sketch_id = v.id
+                  AND st.tag_id = ANY(%s::int[])
+            )`, param))
+	}
+
+	// The original query applies character and person conditions to the SAME
+	// cast member rows. Keep that behavior when both filters are supplied.
+	if len(f.PersonIDs) > 0 {
+		ids := uniqueSketchFilterIDs(f.PersonIDs)
+		param := b.bind(ids)
+		castWhere := fmt.Sprintf("cm.person_id = ANY(%s::int[])", param)
+		if len(f.CharacterIDs) > 0 {
+			characters := b.bind(uniqueSketchFilterIDs(f.CharacterIDs))
+			castWhere += fmt.Sprintf(" AND cm.character_id = ANY(%s::int[])", characters)
+		}
+		count := b.bind(len(ids))
+		b.conditions = append(b.conditions, fmt.Sprintf(`
+            v.id IN (
+                SELECT cm.sketch_id
+                FROM cast_members cm
+                WHERE %s
+                GROUP BY cm.sketch_id
+                HAVING COUNT(DISTINCT cm.person_id) = %s
+            )`, castWhere, count))
+	} else if len(f.CharacterIDs) > 0 {
+		param := b.bind(uniqueSketchFilterIDs(f.CharacterIDs))
+		b.conditions = append(b.conditions, fmt.Sprintf(`
+            EXISTS (
+                SELECT 1 FROM cast_members cm
+                WHERE cm.sketch_id = v.id
+                  AND cm.character_id = ANY(%s::int[])
+            )`, param))
+	}
+
+	// Filter.Type was not used in the old query. Its database meaning is not
+	// defined in the supplied schema, so it is intentionally left unhandled.
+	// Add a new condition here once the intended values/column are specified.
 }
+
+func (b *sketchListBuilder) addThumbnailFilter(f Filter) {
+	// Match the existing behavior: use the FIRST selected person and character
+	// for the optional cast-specific thumbnail, rather than all selected IDs.
+	if len(f.PersonIDs) > 0 {
+		b.thumbnailWhere += fmt.Sprintf(" AND cm.person_id = %s", b.bind(f.PersonIDs[0]))
+	}
+	if len(f.CharacterIDs) > 0 {
+		b.thumbnailWhere += fmt.Sprintf(" AND cm.character_id = %s", b.bind(f.CharacterIDs[0]))
+	}
+}
+
+const sketchListSQL = `
+	SELECT
+		page.total_count,
+		v.id, v.title, v.sketch_number, v.slug, v.thumbnail_name,
+		v.upload_date, v.rating,
+		c.id, c.name, c.slug, c.profile_img,
+		sh.id, sh.name, sh.profile_img, sh.slug,
+		se.id, se.slug, se.season_number,
+		e.id, e.slug, e.episode_number, e.air_date,
+		shg.id, shg.slug, shg.name, shg.profile_img,
+		portrait.thumbnail_name
+	FROM (
+		-- There is exactly ONE row per sketch at this stage.
+		SELECT v.id, COUNT(*) OVER () AS total_count
+		FROM sketch v
+		WHERE %s
+		ORDER BY %s
+		LIMIT %s OFFSET %s
+	) AS page
+	JOIN sketch v ON v.id = page.id
+	LEFT JOIN LATERAL (
+		-- A sketch can have multiple creators; select one deterministically.
+		SELECT c.id, c.name, c.slug, c.profile_img
+		FROM sketch_creator_rel scr
+		JOIN creator c ON c.id = scr.creator_id
+		WHERE scr.sketch_id = v.id %s
+		ORDER BY c.id
+		LIMIT 1
+	) c ON TRUE
+	LEFT JOIN episode e ON e.id = v.episode_id
+	LEFT JOIN season se ON se.id = e.season_id
+	LEFT JOIN show sh ON sh.id = se.show_id
+	LEFT JOIN sketch_grouping g ON g.id = v.grouping_id
+	LEFT JOIN show shg ON shg.id = g.show_id
+	LEFT JOIN LATERAL (
+		SELECT cm.thumbnail_name
+		FROM cast_members cm
+		WHERE cm.sketch_id = v.id %s
+		ORDER BY cm.position NULLS LAST, cm.id
+		LIMIT 1
+	) portrait ON TRUE
+	ORDER BY %s
+`
 
 func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
-	// The CTE is used due to possiblility of a single cast member playing
-	// multiple roles in a sketch, this can cause duplicate sketch results (one for
-	// each character/person pairing) so we want to limit it to one (rn = 1)
-	query := `
-		WITH sketch_cast AS (
-		SELECT %s
-		FROM sketch as v
-		LEFT JOIN sketch_creator_rel as vcr ON v.id = vcr.sketch_id
-		LEFT JOIN creator as c ON vcr.creator_id = c.id
-		LEFT JOIN cast_members as cm ON v.id = cm.sketch_id
-		LEFT JOIN sketch_tags as vt ON v.id = vt.sketch_id
-		LEFT JOIN episode as e ON v.episode_id = e.id
-		LEFT JOIN season as se ON e.season_id = se.id
-		LEFT JOIN show as sh ON se.show_id = sh.id
-		LEFT JOIN sketch_grouping as g ON v.grouping_id = g.id
-		LEFT JOIN show as shg ON g.show_id = shg.id
-		WHERE 1=1
-		%s
-		),
-		ranked_sketches AS (
-			SELECT *, 
-			ROW_NUMBER() OVER (PARTITION BY sketch_id ORDER BY sketch_id) AS rn	
-			FROM sketch_cast
-		)
-		SELECT count(*) OVER() as total_count, sketch_id, sketch_title, sketch_number,
-		sketch_slug, thumbnail_name, upload_date, rating,
-		creator_id, creator_name, creator_slug, creator_img, 
-		show_id, show_name, show_img, show_slug, 
-		season_id, season_slug, season_number, 
-		episode_id, episode_slug, episode_number, episode_airdate,
-		grouping_show_id, grouping_show_slug, grouping_show_name, grouping_show_img,
-		cast_thumbnail_name, popularity %s
-		FROM ranked_sketches
-		WHERE rn = 1
-		%s
-	`
-
-	args := &Arguements{ArgIndex: 0}
-
-	rank := ""
-	if filter.Query != "" {
-		rank = ", rank"
+	f := Filter{}
+	if filter != nil {
+		f = *filter
 	}
 
-	fields := determineFields(filter, args)
-	conditionClause := determineConditions(filter, args)
-	sortClause := determineSort(filter, args)
+	page := f.Page
+	if page < 1 {
+		page = 1
+	}
+	pageSize := f.Limit()
+	offset := (page - 1) * pageSize
 
-	// fmt.Println("SORT: ", sortClause)
-	query = fmt.Sprintf(query, fields, conditionClause, rank, sortClause)
-	// fmt.Println(query)
-	// fmt.Printf("ARGS: %+v\n", args.Args)
+	b := &sketchListBuilder{}
+	b.addFilters(f)
+	where := "TRUE"
+	if len(b.conditions) > 0 {
+		where = strings.Join(b.conditions, " AND ")
+	}
 
-	rows, err := m.DB.Query(context.Background(), query, args.Args...)
+	// Retain just filter arguments for the out-of-range-page count fallback.
+	filterArgs := append([]any(nil), b.args...)
+	limitParam := b.bind(pageSize)
+	offsetParam := b.bind(offset)
+	b.addThumbnailFilter(f)
+	order := sketchListOrder(f.SortBy)
+
+	query := fmt.Sprintf(sketchListSQL,
+		where, order, limitParam, offsetParam,
+		b.creatorWhere, b.thumbnailWhere, order,
+	)
+
+	ctx := context.Background() // Prefer passing r.Context() in a future signature.
+	rows, err := m.DB.Query(ctx, query, b.args...)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, Metadata{}, ErrNoRecord
-		} else {
-			return nil, Metadata{}, err
-		}
+		return nil, Metadata{}, fmt.Errorf("list sketches: %w", err)
 	}
 	defer rows.Close()
 
-	sketches := []*SketchRef{}
+	sketches := make([]*SketchRef, 0, pageSize)
 	var totalCount int
 
 	for rows.Next() {
@@ -511,32 +441,29 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
 		shg := &ShowRef{}
 		se := &SeasonRef{}
 		ep := &EpisodeRef{}
-		destinations := []any{
-			&totalCount, &v.ID, &v.Title, &v.Number, &v.Slug, &v.Thumbnail,
+
+		err := rows.Scan(
+			&totalCount,
+			&v.ID, &v.Title, &v.Number, &v.Slug, &v.Thumbnail,
 			&v.UploadDate, &v.Rating,
 			&c.ID, &c.Name, &c.Slug, &c.ProfileImage,
 			&sh.ID, &sh.Name, &sh.ProfileImg, &sh.Slug,
 			&se.ID, &se.Slug, &se.Number,
 			&ep.ID, &ep.Slug, &ep.Number, &ep.AirDate,
 			&shg.ID, &shg.Slug, &shg.Name, &shg.ProfileImg,
-			&v.CastThumbnail, nil,
-		}
-		var rank *float32
-		if filter.Query != "" {
-			destinations = append(destinations, &rank)
-		}
-		err := rows.Scan(destinations...)
+			&v.CastThumbnail,
+		)
 		if err != nil {
-			return nil, Metadata{}, err
+			return nil, Metadata{}, fmt.Errorf("scan listed sketch: %w", err)
 		}
 
 		se.Show = sh
 		ep.Season = se
-
 		if c.ID != nil {
 			v.Creator = c
 		}
 		if shg.ID != nil {
+			// Preserve the old list's grouping-show behavior.
 			v.Show = shg
 		}
 		if ep.ID != nil {
@@ -544,12 +471,21 @@ func (m *SketchModel) Get(filter *Filter) ([]*SketchRef, Metadata, error) {
 		}
 		sketches = append(sketches, v)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, Metadata{}, fmt.Errorf("iterate listed sketches: %w", err)
+	}
+	rows.Close() // Release the connection before running the count fallback.
 
-	if err = rows.Err(); err != nil {
-		return nil, Metadata{}, err
+	if len(sketches) == 0 {
+		// COUNT(*) OVER() returns no rows when OFFSET is past the last page.
+		// Recover an accurate count in that case (including an empty catalog).
+		countSQL := "SELECT COUNT(*) FROM sketch v WHERE " + where
+		if err := m.DB.QueryRow(ctx, countSQL, filterArgs...).Scan(&totalCount); err != nil {
+			return nil, Metadata{}, fmt.Errorf("count sketches: %w", err)
+		}
 	}
 
-	return sketches, calculateMetadata(totalCount, filter.Page, filter.PageSize), nil
+	return sketches, calculateMetadata(totalCount, page, pageSize), nil
 }
 
 func (m *SketchModel) GetById(id int) (*Sketch, error) {
@@ -683,40 +619,30 @@ func (m *SketchModel) GetById(id int) (*Sketch, error) {
 }
 
 func (m *SketchModel) GetCount(filter *Filter) (int, error) {
-	query := `
-		SELECT COUNT(*)
-		FROM (
-			SELECT DISTINCT %s
-			FROM sketch as v
-			LEFT JOIN sketch_creator_rel as vcr ON v.id = vcr.sketch_id
-			LEFT JOIN creator as c ON vcr.creator_id = c.id
-			LEFT JOIN cast_members as cm ON v.id = cm.sketch_id
-			LEFT JOIN sketch_tags as vt ON v.id = vt.sketch_id
-			LEFT JOIN episode as e ON v.episode_id = e.id
-			LEFT JOIN season as se ON e.season_id = se.id
-			LEFT JOIN show as sh ON se.show_id = sh.id
-			LEFT JOIN sketch_grouping as g ON v.grouping_id = g.id
-			LEFT JOIN show as shg ON g.show_id = shg.id
-			WHERE 1=1
-			%s
-		) as grouped_content
-	`
+	f := Filter{}
+	if filter != nil {
+		f = *filter
+	}
 
-	args := &Arguements{}
-	fields := determineFields(filter, args)
-	conditionClause := determineConditions(filter, args)
-	query = fmt.Sprintf(query, fields, conditionClause)
-	// fmt.Println("COUNT QUERY", query)
+	b := &sketchListBuilder{}
+	b.addFilters(f)
+
+	where := "TRUE"
+	if len(b.conditions) > 0 {
+		where = strings.Join(b.conditions, " AND ")
+	}
+
+	query := "SELECT COUNT(*) FROM sketch v WHERE " + where
 
 	var count int
-	err := m.DB.QueryRow(context.Background(), query, args.Args...).Scan(&count)
+	err := m.DB.QueryRow(
+		context.Background(),
+		query,
+		b.args...,
+	).Scan(&count)
 
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrNoRecord
-		} else {
-			return 0, err
-		}
+		return 0, fmt.Errorf("count sketches: %w", err)
 	}
 
 	return count, nil

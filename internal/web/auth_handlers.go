@@ -422,7 +422,7 @@ func (app *Application) googleCallback(w http.ResponseWriter, r *http.Request) {
 		)
 
 		flash := FlashMessage{
-			Message: "Account linked!",
+			Message: "Login successful!",
 			Level:   FlashSuccess,
 		}
 

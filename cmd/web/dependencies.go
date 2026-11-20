@@ -139,7 +139,7 @@ func loadAssets(staticAssets map[string]string) (map[string]string, error) {
 	f, err := os.Open("./dist/manifest.json")
 	if err != nil {
 		log.Println("No asset manifest found — using default asset names")
-		return nil, err
+		return staticAssets, nil
 	}
 	defer f.Close()
 
