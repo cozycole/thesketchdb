@@ -1,0 +1,4 @@
+ALTER TABLE sketch 
+ADD COLUMN IF NOT EXISTS video_start_seconds INT;
+ALTER TABLE quote
+ADD COLUMN IF NOT EXISTS speaker_name TEXT;
