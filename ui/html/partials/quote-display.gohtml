@@ -12,7 +12,12 @@
       <div class="flex -space-x-2">
         {{ $n := len .CastImgUrls }}
 
-        {{ if eq $n 1 }}
+        {{ if eq $n 0 }}
+          <wa-avatar
+            label="Quote speaker"
+            class="border-slate-200 border-2 rounded-full"
+          ></wa-avatar>
+        {{ else if eq $n 1 }}
           <div
             class="w-12 h-12 rounded-full ring-2 ring-white overflow-hidden bg-slate-200"
           >

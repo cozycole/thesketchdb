@@ -1,6 +1,6 @@
 import * as z from "zod";
 import { Sketch } from "@/types/api";
-import { buildImageUrl, formatHMS } from "@/lib/utils";
+import { buildImageUrl, formatHMS, parseDate } from "@/lib/utils";
 
 export const sketchFormSchema = z
   .object({
@@ -9,8 +9,9 @@ export const sketchFormSchema = z
     title: z.string().trim().min(1, "Title is required"),
     url: z.string().optional(),
     description: z.string().optional(),
-    uploadDate: z.coerce.date().optional(),
+    uploadDate: z.date().optional(),
     duration: z.string().optional(),
+    videoStartTime: z.string().optional(),
     popularity: z.string().optional(),
     // optional in schema; required only when mode==create (below)
     cropBorder: z.boolean().optional(),
@@ -92,8 +93,9 @@ export function sketchToFormDefaults(
     url: sketch?.url ?? "",
     description: sketch?.description ?? "",
     duration: formatHMS(sketch?.duration),
+    videoStartTime: formatHMS(sketch?.videoStart),
     popularity: sketch?.popularity ? String(sketch?.popularity) : "",
-    uploadDate: sketch?.uploadDate ? new Date(sketch.uploadDate) : undefined,
+    uploadDate: sketch?.uploadDate ? parseDate(sketch.uploadDate) : undefined,
     cropBorder: undefined,
     thumbnail: undefined,
     creator: c

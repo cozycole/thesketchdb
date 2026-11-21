@@ -90,6 +90,19 @@ export function QuoteFields<T extends QuoteFieldsData = QuoteFieldsData>({
         {errors?.text && <FieldError>{errors.text}</FieldError>}
       </Field>
 
+      <Field>
+        <FieldLabel>Speaker Name</FieldLabel>
+        <Input
+          type="text"
+          className="w-32 bg-white"
+          value={value.speakerName ?? ""}
+          disabled={disabled}
+          onChange={(e) => set("speakerName", e.target.value)}
+          onBlur={() => onBlurQuote?.(value)}
+        />
+        {errors?.speakerName && <FieldError>{errors.speakerName}</FieldError>}
+      </Field>
+
       <AsyncSearchSelect
         value={value.cast ?? []}
         onChange={(c) => set("cast", c)}

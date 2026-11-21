@@ -35,6 +35,9 @@ func SketchQuoteSection(quotes []*models.Quote, baseImgUrl string) []Quote {
 		viewQuote.StartTimestampSeconds = timestamp
 		viewQuote.Text = safeDeref(q.Text)
 		viewQuote.CastLabel = QuoteHeader(q.CastMembers)
+		if viewQuote.CastLabel == "" {
+			viewQuote.CastLabel = safeDeref(q.SpeakerName)
+		}
 		viewQuote.IsLiked = safeDeref(q.UserLiked)
 		viewQuote.LikeCount = safeDeref(q.LikeCount)
 
@@ -108,6 +111,7 @@ func QuoteHeader(members []*models.CastMember) string {
 type QuoteListItem struct {
 	ID                   int
 	Text                 string
+	SpeakerName          string
 	CastMembers          []QuoteCastMember
 	ExtraCastImagesCount int
 	ExtraCastNamesCount  int
@@ -142,6 +146,7 @@ func QuoteListView(quotes []*models.Quote, baseImgUrl string) []QuoteListItem {
 	for _, q := range quotes {
 		qi := QuoteListItem{}
 		qi.ID = safeDeref(q.ID)
+		qi.SpeakerName = safeDeref(q.SpeakerName)
 
 		qi.Text = safeDeref(q.Text)
 		for _, cm := range q.CastMembers {

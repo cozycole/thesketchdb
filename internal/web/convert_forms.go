@@ -11,7 +11,8 @@ import (
 )
 
 func convertFormToSketch(form *sketchForm) models.Sketch {
-	uploadDate, _ := time.Parse(time.DateOnly, form.UploadDate)
+	uploadTimeDate, _ := time.Parse(time.DateOnly, form.UploadDate)
+	uploadDate := models.Date(uploadTimeDate)
 	var creator *models.CreatorRef
 	if form.CreatorID != 0 {
 		creator = &models.CreatorRef{
@@ -51,86 +52,24 @@ func convertFormToSketch(form *sketchForm) models.Sketch {
 	}
 
 	return models.Sketch{
-		ID:           &form.ID,
-		Title:        &form.Title,
-		URL:          &form.URL,
-		Slug:         &form.Slug,
-		Duration:     &form.Duration,
-		Description:  &form.Description,
-		UploadDate:   &uploadDate,
-		Number:       &form.Number,
-		Popularity:   &form.Popularity,
-		Creator:      creator,
-		Episode:      episode,
-		EpisodeStart: &form.EpisodeStart,
-		Grouping:     grouping,
-		Series:       series,
-		SeriesPart:   &form.SeriesPart,
-		Recurring:    recurring,
-		Tags:         tags,
-	}
-}
-
-func convertSketchToForm(sketch *models.Sketch) sketchForm {
-	if sketch == nil {
-		return sketchForm{}
-	}
-	var creatorID int
-	var creatorName string
-	if sketch.Creator != nil {
-		creatorID = safeDeref(sketch.Creator.ID)
-		creatorName = safeDeref(sketch.Creator.Name)
-	}
-	var episodeID int
-	var episodeName string
-	if sketch.Episode != nil {
-		episodeID = safeDeref(sketch.Episode.ID)
-		episodeName = views.PrintEpisodeName(sketch.Episode)
-	}
-
-	var seriesID int
-	var seriesName string
-	if sketch.Series != nil {
-		seriesID = safeDeref(sketch.Series.ID)
-		seriesName = safeDeref(sketch.Series.Title)
-	}
-
-	var recurringID int
-	var recurringName string
-	if sketch.Recurring != nil {
-		recurringID = safeDeref(sketch.Recurring.ID)
-		recurringName = safeDeref(sketch.Recurring.Title)
-	}
-
-	var groupingID int
-	var groupingName string
-	if sketch.Grouping != nil {
-		groupingID = safeDeref(sketch.Grouping.ID)
-		groupingName = safeDeref(sketch.Grouping.Title)
-	}
-	// intTime, _ := models.ParseTimestamp(form.Timestamp)
-	return sketchForm{
-		ID:             safeDeref(sketch.ID),
-		Slug:           safeDeref(sketch.Slug),
-		Title:          safeDeref(sketch.Title),
-		URL:            safeDeref(sketch.URL),
-		Duration:       safeDeref(sketch.Duration),
-		Description:    safeDeref(sketch.Description),
-		UploadDate:     formDate(sketch.UploadDate),
-		Number:         safeDeref(sketch.Number),
-		Popularity:     safeDeref(sketch.Popularity),
-		CreatorID:      creatorID,
-		CreatorInput:   creatorName,
-		EpisodeID:      episodeID,
-		EpisodeInput:   episodeName,
-		EpisodeStart:   safeDeref(sketch.EpisodeStart),
-		GroupingID:     groupingID,
-		GroupingInput:  groupingName,
-		SeriesID:       seriesID,
-		SeriesInput:    seriesName,
-		SeriesPart:     safeDeref(sketch.SeriesPart),
-		RecurringID:    recurringID,
-		RecurringInput: recurringName,
+		ID:                &form.ID,
+		Title:             &form.Title,
+		URL:               &form.URL,
+		Slug:              &form.Slug,
+		Duration:          &form.Duration,
+		VideoStartSeconds: &form.VideoStartTime,
+		Description:       &form.Description,
+		UploadDate:        &uploadDate,
+		Number:            &form.Number,
+		Popularity:        &form.Popularity,
+		Creator:           creator,
+		Episode:           episode,
+		EpisodeStart:      &form.EpisodeStart,
+		Grouping:          grouping,
+		Series:            series,
+		SeriesPart:        &form.SeriesPart,
+		Recurring:         recurring,
+		Tags:              tags,
 	}
 }
 

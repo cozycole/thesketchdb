@@ -8,7 +8,7 @@ import { SketchVideo, PipelineJob } from "@/types/api";
 import { UploadIcon, VideoIcon, XIcon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 
-import { cn, formatBytes } from "@/lib/utils";
+import { cn, formatBytes, parseDate } from "@/lib/utils";
 
 interface VideosResponse {
   videos: SketchVideo[];
@@ -117,7 +117,7 @@ function VideoCard({ video }: { video: SketchVideo }) {
             )}
             {video.archivedAt && (
               <div>
-                Archived At: {new Date(video.archivedAt).toLocaleString()}
+                Archived At: {parseDate(video.archivedAt)?.toLocaleString()}
               </div>
             )}
             {latestJob?.error && (

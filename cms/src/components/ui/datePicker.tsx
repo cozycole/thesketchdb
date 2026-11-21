@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { parseDate } from "@/lib/utils";
 
 function formatDate(date: Date | undefined) {
   if (!date) {
@@ -19,13 +20,6 @@ function formatDate(date: Date | undefined) {
     month: "long",
     year: "numeric",
   });
-}
-
-function isValidDate(date: Date | undefined) {
-  if (!date) {
-    return false;
-  }
-  return !isNaN(date.getTime());
 }
 
 interface DatePickerProps {
@@ -59,8 +53,9 @@ export function DatePicker({
     const newValue = e.target.value;
     setInputValue(newValue);
 
-    const date = new Date(newValue);
-    if (isValidDate(date)) {
+    const date = parseDate(newValue);
+
+    if (date) {
       controlledOnChange?.(date);
       setMonth(date);
     }
