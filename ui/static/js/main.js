@@ -1,5 +1,4 @@
 import htmx from "htmx.org";
-
 import { initHome } from "./pages/home.js";
 import { initViewSketch } from "./pages/viewSketch.js";
 import { initAddTag } from "./pages/addTag.js";
@@ -12,6 +11,7 @@ import { initViewSeason } from "./pages/viewSeason.js";
 import { initViewCatalog } from "./pages/viewCatalog.js";
 
 import "./components/index.js";
+import "@awesome.me/webawesome/dist/components/avatar/avatar.js";
 
 (function () {
   const firstDiv = document.querySelector("main");

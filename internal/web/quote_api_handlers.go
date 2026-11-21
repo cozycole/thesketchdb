@@ -46,6 +46,7 @@ func (app *Application) updateQuotesAPI(w http.ResponseWriter, r *http.Request) 
 		StartTimeMs *int    `json:"startTimeMs"`
 		EndTimeMs   *int    `json:"endTimeMs"`
 		Text        *string `json:"text"`
+		SpeakerName *string `json:"speakerName"`
 		CastIDs     []int   `json:"cast"`
 		TagIDs      []int   `json:"tags"`
 	}
@@ -68,6 +69,7 @@ func (app *Application) updateQuotesAPI(w http.ResponseWriter, r *http.Request) 
 			StartTimeMs: q.StartTimeMs,
 			EndTimeMs:   q.EndTimeMs,
 			Text:        q.Text,
+			SpeakerName: q.SpeakerName,
 		}
 		cast := []*models.CastMember{}
 		for _, id := range q.CastIDs {

@@ -17,6 +17,7 @@ export type Sketch = {
   uploadDate: string;
   thumbnailName: string;
   duration: number;
+  videoStart: number;
   description: string;
   creator: CreatorRef;
   episode: EpisodeRef;
@@ -246,6 +247,7 @@ export type Quote = {
   funny: string;
   startTimeMs: number;
   endTimeMs: number;
+  speakerName: string;
   castMembers: CastMember[];
   tags: Tag[];
 };

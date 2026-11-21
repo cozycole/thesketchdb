@@ -20,13 +20,17 @@ export const updateSketch = async ({
   const fd = new FormData();
 
   const duration = parseHMS(data.duration);
+  const videoStart = parseHMS(data.videoStartTime);
   const episodeStart = parseHMS(data.episodeStartTime);
+
+  console.log("VIDEO START: ", videoStart);
 
   fd.append("id", String(data.id));
   fd.append("title", data.title);
   fd.append("url", data.url);
   fd.append("description", data.description);
   fd.append("duration", duration ? String(duration) : "");
+  fd.append("videoStart", videoStart ? String(videoStart) : "");
   fd.append("uploadDate", toYYYYMMDD(data.uploadDate));
   fd.append("popularity", String(data.popularity));
 

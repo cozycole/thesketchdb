@@ -76,12 +76,13 @@ func SketchPageView(
 	page.Description = strings.TrimSpace(safeDeref(sketch.Description))
 
 	if sketch.UploadDate != nil {
-		page.Date = sketch.UploadDate.UTC().Format("Jan 2, 2006")
+		page.Date = sketch.UploadDate.ViewDate()
 	}
 
 	if sketch.YoutubeID != nil {
 		page.YoutubeId = *sketch.YoutubeID
 		page.YoutubeUrl = fmt.Sprintf(YOUTUBE_URL, *sketch.YoutubeID, 0)
+		page.StartTime = safeDeref(sketch.VideoStartSeconds)
 	} else if sketch.Episode != nil {
 		page.YoutubeId = safeDeref(sketch.Episode.YoutubeID)
 		page.YoutubeUrl = fmt.Sprintf(YOUTUBE_URL, page.YoutubeId, safeDeref(sketch.EpisodeStart))
@@ -369,7 +370,7 @@ func SketchThumbnailView(sketch *models.SketchRef, baseImgUrl string, thumbnailT
 	}
 
 	if sketch.UploadDate != nil {
-		sketchView.Date = sketch.UploadDate.UTC().Format("Jan 2, 2006")
+		sketchView.Date = sketch.UploadDate.ViewDate()
 	}
 
 	if safeDeref(sketch.Rating) != 0.0 {

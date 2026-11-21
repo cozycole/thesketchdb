@@ -42,7 +42,7 @@ import { useUpdateSketch } from "../api/updateSketch";
 import { useDeleteSketch } from "../api/deleteSketch";
 
 import { sketchFormSchema, sketchToFormDefaults } from "./sketchForm.schema";
-import { buildImageUrl } from "@/lib/utils";
+import { buildImageUrl, parseDate } from "@/lib/utils";
 import { useEffect } from "react";
 
 type AlertDialogDestructiveProps = {
@@ -279,7 +279,7 @@ export function SketchForm({
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor="uploadDate">Upload Date</FieldLabel>
               <DatePicker
-                value={field.value ? new Date(String(field.value)) : undefined}
+                value={field.value}
                 onChange={field.onChange}
                 name={field.name}
                 placeholder="Select upload date"
@@ -288,26 +288,54 @@ export function SketchForm({
             </Field>
           )}
         />
-        <Controller
-          name="duration"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="duration">Duration</FieldLabel>
-              <div className="flex">
-                <Input
-                  {...field}
-                  id="duration"
-                  type="text"
-                  className="w-16"
-                  aria-invalid={fieldState.invalid}
-                  autoComplete="off"
-                />
-              </div>
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
+        <div className="flex gap-6">
+          <Controller
+            name="duration"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="w-fit">
+                <FieldLabel htmlFor="duration">Duration</FieldLabel>
+                <div className="flex">
+                  <Input
+                    {...field}
+                    id="duration"
+                    type="text"
+                    className="w-16"
+                    aria-invalid={fieldState.invalid}
+                    autoComplete="off"
+                  />
+                </div>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+          <Controller
+            name="videoStartTime"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="w-fit">
+                <FieldLabel htmlFor="videoStartTime">
+                  Video Start Time
+                </FieldLabel>
+                <div className="flex">
+                  <Input
+                    {...field}
+                    id="videoStartTime"
+                    type="text"
+                    className="w-20"
+                    aria-invalid={fieldState.invalid}
+                    autoComplete="off"
+                  />
+                </div>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+        </div>
         <Controller
           name="popularity"
           control={form.control}
@@ -349,7 +377,7 @@ export function SketchForm({
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="episodeSketchOrder">
+              <FieldLabel htmlFor="episodeSketchTime">
                 Episode Start Time
               </FieldLabel>
               <div className="flex">

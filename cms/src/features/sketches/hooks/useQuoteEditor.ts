@@ -74,6 +74,7 @@ function isEqual(a?: QuoteUI, b?: QuoteUI) {
     a.startTimeMs === b.startTimeMs &&
     (a.endTimeMs ?? null) === (b.endTimeMs ?? null) &&
     a.text === b.text &&
+    a.speakerName === b.speakerName &&
     idsEqual(a.cast, b.cast) &&
     idsEqual(a.tags, b.tags)
   );

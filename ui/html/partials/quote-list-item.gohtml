@@ -21,7 +21,7 @@
                 loading="lazy"
               />
             </div>
-          {{ else }}
+          {{ else if gt $n 1 }}
             <div class="flex flex-col">
               <div class="flex -space-x-2">
                 {{ if ge $n 1 }}
@@ -91,6 +91,11 @@
                 {{ end }}
               </div>
             </div>
+          {{ else }}
+            <wa-avatar
+              label="Quote speaker"
+              class="border-slate-200 border-2 rounded-full"
+            ></wa-avatar>
           {{ end }}
         </div>
       </div>
@@ -138,7 +143,10 @@
         >
           {{ $cm.PersonName }}
         </a>
-        <span class="text-slate-400"> as </span>
+
+        {{ with $cm.CharacterName }}
+          <span class="text-slate-400"> as </span>
+        {{ end }}
       {{ end }}
       {{ with $cm.CharacterName }}
         {{ with $cm.CharacterURL }}
@@ -173,7 +181,9 @@
         >
           {{ $cm0.PersonName }}
         </a>
-        <span class="text-slate-400"> as </span>
+        {{ with $cm0.CharacterName }}
+          <span class="text-slate-400"> as </span>
+        {{ end }}
       {{ end }}
       {{ with $cm0.CharacterName }}
         {{ with $cm0.CharacterURL }}
@@ -197,7 +207,10 @@
         >
           {{ $cm1.PersonName }}
         </a>
-        <span class="text-slate-400"> as </span>
+
+        {{ with $cm0.CharacterName }}
+          <span class="text-slate-400"> as </span>
+        {{ end }}
       {{ end }}
       {{ with $cm1.CharacterName }}
         {{ with $cm1.CharacterURL }}
@@ -246,11 +259,24 @@
       <span class="text-slate-400"> and </span>
       <span class="font-medium text-slate-600">
         {{ .ExtraCastNamesCount }}
-        {{ if eq (inc .ExtraCastNamesCount) 1 -}}
+        {{ if eq .ExtraCastNamesCount 1 -}}
           other
         {{- else -}}
           others
         {{- end -}}
+      </span>
+      <span class="text-slate-400"> in </span>
+      <a
+        href="{{ .SketchURL }}"
+        class="font-medium text-slate-600 hover:text-orange-600"
+      >
+        {{ .SketchTitle }}
+      </a>
+    </p>
+  {{ else if .SpeakerName }}
+    <p class="min-w-0 text-[14px] italic text-slate-500">
+      <span class="font-medium text-slate-600 hover:text-orange-600">
+        {{ .SpeakerName }}
       </span>
       <span class="text-slate-400"> in </span>
       <a

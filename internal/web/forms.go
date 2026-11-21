@@ -162,6 +162,7 @@ type sketchForm struct {
 	Rating              string                `form:"rating"`
 	UploadDate          string                `form:"uploadDate"`
 	Duration            int                   `form:"duration"`
+	VideoStartTime      int                   `form:"videoStart"`
 	Number              int                   `form:"number"`
 	Popularity          float32               `form:"popularity"`
 	Description         string                `form:"description"`

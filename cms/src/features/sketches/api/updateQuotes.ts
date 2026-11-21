@@ -27,6 +27,7 @@ export const updateQuotes = async ({
         startTimeMs: q.startMs * 1000,
         endTimeMs: parseHMS(q.endTimeMs) ? parseHMS(q.endTimeMs) * 1000 : null,
         text: q.text ?? "",
+        speakerName: q.speakerName ?? "",
         cast: q.cast.map((c) => c.id),
         tags: q.tags.map((t) => t.id),
       };

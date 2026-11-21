@@ -19,6 +19,7 @@ type Quote struct {
 	Funny       *string       `json:"funny"`
 	StartTimeMs *int          `json:"startTimeMs"`
 	EndTimeMs   *int          `json:"endTimeMs"`
+	SpeakerName *string       `json:"speakerName"`
 	CastMembers []*CastMember `json:"castMembers"`
 	Tags        []*Tag        `json:"tags"`
 	UserLiked   *bool         `json:"userLiked"`
@@ -121,6 +122,7 @@ func (m QuoteModel) getQuotePage(f *Filter, userID int) ([]*Quote, error) {
 			q.id,
 			q.text,
 			q.type,
+			q.speaker_name,
 			COALESCE(q.start_time_ms, 0),
 			COALESCE(q.end_time_ms, 0),
 
@@ -184,6 +186,7 @@ func (m QuoteModel) getQuotePage(f *Filter, userID int) ([]*Quote, error) {
 			&q.ID,
 			&q.Text,
 			&q.Type,
+			&q.SpeakerName,
 			&q.StartTimeMs,
 			&q.EndTimeMs,
 			&q.LikeCount,
@@ -493,7 +496,7 @@ func (m *QuoteModel) GetBySketch(sketchId int, userId *int) ([]*Quote, error) {
 	  GROUP BY ql.quote_id
 	)
 	SELECT
-	  q.id, q.text, q.type, q.funny, q.start_time_ms, q.end_time_ms,
+	  q.id, q.text, q.type, q.funny, q.start_time_ms, q.end_time_ms, q.speaker_name,
 	  COALESCE(qlc.like_count, 0) AS like_count,
 	  EXISTS (
 		SELECT 1
@@ -543,8 +546,8 @@ func (m *QuoteModel) GetBySketch(sketchId int, userId *int) ([]*Quote, error) {
 
 		hasRows = true
 		err := rows.Scan(
-			&q.ID, &q.Text, &q.Type, &q.Funny, &q.StartTimeMs, &q.EndTimeMs,
-			&q.LikeCount, &q.UserLiked,
+			&q.ID, &q.Text, &q.Type, &q.Funny, &q.StartTimeMs,
+			&q.EndTimeMs, &q.SpeakerName, &q.LikeCount, &q.UserLiked,
 
 			&cm.ID, &cm.Position, &cm.CharacterName, &cm.CastRole, &cm.ProfileImg,
 			&cm.ThumbnailName,
@@ -781,7 +784,7 @@ func (m *QuoteModel) BatchUpdateQuotes(sketchID int, quotes []*Quote, deletedIds
 
 func getExistingQuotes(ctx context.Context, tx pgx.Tx, sketchID int) ([]*Quote, error) {
 	rows, err := tx.Query(ctx, `
-		SELECT id, start_time_ms, end_time_ms, text, type, funny
+		SELECT id, start_time_ms, end_time_ms, text, type, funny, speaker_name
 		FROM quote
 		WHERE sketch_id = $1
 		ORDER BY start_time_ms asc, id`, sketchID)
@@ -794,7 +797,7 @@ func getExistingQuotes(ctx context.Context, tx pgx.Tx, sketchID int) ([]*Quote, 
 	for rows.Next() {
 		quote := &Quote{}
 		err := rows.Scan(&quote.ID, &quote.StartTimeMs, &quote.EndTimeMs,
-			&quote.Text, &quote.Type, &quote.Funny)
+			&quote.Text, &quote.Type, &quote.Funny, &quote.SpeakerName)
 		if err != nil {
 			return nil, err
 		}
@@ -807,9 +810,9 @@ func getExistingQuotes(ctx context.Context, tx pgx.Tx, sketchID int) ([]*Quote, 
 
 func insertQuote(ctx context.Context, tx pgx.Tx, quote *Quote, sketchId int) (int, error) {
 	row := tx.QueryRow(ctx, `
-		INSERT INTO quote (sketch_id, start_time_ms, end_time_ms, text, type, funny)
-		VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`,
-		sketchId, quote.StartTimeMs, quote.EndTimeMs, quote.Text, quote.Type, quote.Funny)
+		INSERT INTO quote (sketch_id, start_time_ms, end_time_ms, text, type, funny, speaker_name)
+		VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`,
+		sketchId, quote.StartTimeMs, quote.EndTimeMs, quote.Text, quote.Type, quote.Funny, quote.SpeakerName)
 
 	var id int
 	if err := row.Scan(&id); err != nil {
@@ -825,9 +828,9 @@ func updateQuote(ctx context.Context, tx pgx.Tx, quote *Quote) error {
 
 	_, err := tx.Exec(ctx, `
 		UPDATE quote 
-		SET start_time_ms = $2, end_time_ms = $3, text = $4, type = $5, funny = $6
+		SET start_time_ms = $2, end_time_ms = $3, text = $4, type = $5, funny = $6, speaker_name = $7
 		WHERE id = $1`,
-		quote.ID, quote.StartTimeMs, quote.EndTimeMs, quote.Text, quote.Type, quote.Funny)
+		quote.ID, quote.StartTimeMs, quote.EndTimeMs, quote.Text, quote.Type, quote.Funny, quote.SpeakerName)
 	return err
 }
 

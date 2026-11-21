@@ -15,29 +15,33 @@ const hmsField = z.string().superRefine((val, ctx) => {
   }
 });
 
-export const quoteFieldsSchema = z.object({
-  id: z.number().optional(),
-  text: z.string().nonempty("Quote can't be empty"),
-  startTimeMs: hmsField.nonempty("Required"),
-  endTimeMs: hmsField.optional(),
-  cast: z
-    .array(
+export const quoteFieldsSchema = z
+  .object({
+    id: z.number().optional(),
+    text: z.string().nonempty("Quote can't be empty"),
+    startTimeMs: hmsField.nonempty("Required"),
+    endTimeMs: hmsField.optional(),
+    speakerName: z.string().optional(),
+    cast: z.array(
       z.object({
         id: z.number(),
         label: z.string(),
         image: z.string().optional(),
       }),
-    )
-    .nonempty("Must attribute cast member"),
-  tags: z
-    .array(
-      z.object({
-        id: z.number(),
-        label: z.string(),
-      }),
-    )
-    .optional(),
-});
+    ),
+    tags: z
+      .array(
+        z.object({
+          id: z.number(),
+          label: z.string(),
+        }),
+      )
+      .optional(),
+  })
+  .refine((data) => !!data.speakerName?.trim() || data.cast.length > 0, {
+    message: "Provide a speaker name or select a cast member",
+    path: ["speakerName"],
+  });
 
 export type QuoteFieldsData = z.infer<typeof quoteFieldsSchema>;
 export type QuoteFieldsErrors = Partial<
@@ -65,6 +69,7 @@ export function mapQuoteToQuoteFields(q: Quote): QuoteFieldsData {
     text: q.text ?? "",
     startTimeMs: q.startTimeMs !== null ? formatHMS(q.startTimeMs / 1000) : "",
     endTimeMs: q.endTimeMs ? formatHMS(q.endTimeMs / 1000) : "",
+    speakerName: q.speakerName ?? "",
     cast: q.castMembers
       ? q.castMembers
           .sort((a, b) => a.position - b.position)
